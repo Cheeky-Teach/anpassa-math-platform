@@ -16,6 +16,11 @@ import LiveLaunchModal from '../modals/LiveLaunchModal';
 import StudioTutorialModal from '../modals/StudioTutorialModal.jsx';
 import SheetLibraryModal from '../modals/SheetLibraryModal';
 
+import MathDisplay from '../shared/MathDisplay';
+import { compileAnchoredStory } from '../../core/utils/storyCompiler';
+import { liveCreateRoom
+
+ } from '../live/core/liveCreateRoom.js';
 import ActivityHubModal from '../activities/modals/ActivityHubModal';
 import CategoryClashEngine from '../activities/engines/CategoryClashEngine';
 
@@ -24,88 +29,6 @@ import CategoryClashEngine from '../activities/engines/CategoryClashEngine';
 import '../../styles/theme.css'; 
 import PreferencesToggle from '../ui/PreferencesToggle';
 
-const MathDisplay = ({ content, className = "" }) => {
-    const containerRef = useRef(null);
-    useEffect(() => {
-        if (!content || !containerRef.current) return;
-        const renderMath = () => {
-            containerRef.current.innerText = content;
-            if (window.renderMathInElement) {
-                window.renderMathInElement(containerRef.current, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '$', right: '$', display: false },
-                        { left: '\\(', right: '\\)', display: false },
-                        { left: '\\[', right: '\\]', display: true }
-                    ],
-                    throwOnError: false, trust: true
-                });
-            }
-        };
-        const timer = setTimeout(renderMath, 30);
-        return () => clearTimeout(timer);
-    }, [content]);
-    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
-};
-
-const compileAnchoredStory = (item, lang = 'sv', includeLatex = false) => {
-    const rd = item.resolvedData?.renderData || item.resolvedData;
-    
-    if (item.selectedStoryIndex === undefined || item.selectedStoryIndex === null || !rd?.availableStories) {
-        const desc = rd?.description;
-        const finalDesc = typeof desc === 'object' && desc !== null ? desc[lang] : desc;
-        
-        if (includeLatex && rd?.latex) {
-            return finalDesc ? `${finalDesc} $${rd.latex}$` : `$${rd.latex}$`;
-        }
-        
-        return finalDesc || item.name;
-    }
-
-    const storyPackage = rd.availableStories[item.selectedStoryIndex];
-    if (!storyPackage) return rd?.description || item.name;
-    
-    let template = storyPackage[lang === 'en' ? 'en' : 'sv'];
-    let params = rd.extractedParams;
-
-    if (!params) {
-        const category = Object.values(SKILL_BUCKETS).find(cat => cat.topics[item.topicId]);
-        const variation = category?.topics[item.topicId]?.variations?.find(v => v.key === item.variationKey);
-        
-        const sourceToken = rd.latex || rd.interceptorToken;
-        if (variation?.extractorPattern && sourceToken) {
-            const match = sourceToken.match(variation.extractorPattern);
-            if (match && match.groups) {
-                params = match.groups;
-            }
-        }
-    }
-
-    if (params) {
-        Object.entries(params).forEach(([key, value]) => {
-            const cleanValue = String(value).replace(/[()]/g, '');
-            template = template.replace(new RegExp(`\\{${key}\\}`, 'g'), cleanValue);
-        });
-    }
-
-    if (item.variationKey === 'apply_factor_inc' || item.variationKey === 'apply_factor_dec') {
-        template += lang === 'en' ? " Calculate the new value." : " Beräkna det nya värdet.";
-    } else if (item.variationKey === 'find_original_inc' || item.variationKey === 'find_original_dec') {
-        template += lang === 'en' ? " Calculate the original value." : " Beräkna det ursprungliga värdet.";
-    } else if (item.variationKey === 'sequential_factors') {
-        template += lang === 'en' ? " Calculate the total combined change factor." : " Beräkna den totala förändringsfaktorn.";
-    } else if (item.topicId === 'equations' || item.topicId === 'equations_word') {
-        if (item.resolvedData?.metadata?.difficulty === 5) {
-            template += lang === 'en' ? " Write the equation that describes this situation." : " Teckna ekvationen som beskriver situationen.";
-        } else {
-            template += lang === 'en' ? " Calculate the value of x." : " Beräkna värdet på x.";
-        }
-    } else if (item.topicId === 'expressions') {
-        template += lang === 'en' ? " Write and simplify the algebraic expression." : " Skriv och förenkla uttrycket.";
-    }
-
-    return template;
-};
 
 export default function QuestionStudio({ 
     profile,
@@ -581,6 +504,43 @@ export default function QuestionStudio({
     } catch (err) { alert("Kunde inte kopiera."); }
   };
 
+  const handleCategoryClashLaunch = async (config) => {
+        if (config.launchTarget === 'live') {
+            try {
+                // 1. Create the Live Room using our standardized utility
+                const roomData = await liveCreateRoom({
+                    teacherId: profile?.id,
+                    profile, // Pass profile for role verification
+                    title: lang === 'sv' ? "Poängjakten Live" : "Category Clash Live",
+                    mode: 'activity_category_clash',
+                    packet: [], // Questions will reside in active_question_data.board
+                    settings: {
+                        gameKey: 'category_clash',
+                        dimensions: config.dimensions,
+                        pointScale: config.pointScale,
+                        categories: config.categories,
+                        teams: config.teams,
+                        wordProblems: config.wordProblems,
+                        sourceMode: config.sourceMode,
+                        allowScratchpad: true,
+                        allowCanvas: true
+                    }
+                });
+
+                // 2. Route directly into TeacherLiveView
+                onDoNowGenerate(null, null, { 
+                    room: roomData, 
+                    packet: [] 
+                });
+            } catch (err) {
+                alert((lang === 'sv' ? "Kunde inte starta live-aktivitet: " : "Failed to start live activity: ") + err.message);
+            }
+        } else {
+            // Local offline projector mode
+            setActiveGameConfig(config);
+        }
+    };
+
   const loadBoard = (sheet) => {
       setActiveBoardSheet(sheet);
       setShowPresentation(true);
@@ -662,40 +622,35 @@ export default function QuestionStudio({
   // progressSync
     const confirmLaunchLive = async (settingsToUse) => {
         setShowLiveModal(false);
-        
         const finalSettings = settingsToUse || liveSettings;
-        
-        syncBatchProgress('live_session_started', packet, {
-            app_mode: 'teacher_live',
-            pacing: finalSettings.pacing,
-            order: finalSettings.order,
-            scratchpad: enableScratchpad
-        });
 
-        const { data: { user } } = await supabase.auth.getUser();
-        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
         try {
-            const { data, error } = await supabase.from('rooms').insert([{ 
-                teacher_id: user.id, 
-                class_code: code, 
-                status: 'active', 
-                title: sheetTitle || "Live Session", 
-                active_worksheet_id: activeSheetId, 
-                active_question_data: { 
-                    packet: packet, 
-                    mode: setupMode, 
-                    settings: { 
-                        ...finalSettings, 
-                        scratchpad: enableScratchpad,
-                        allowScratchpad: enableScratchpad,
-                        allowCanvas: enableCanvas,        
-                        responseStyle: responseStyle     
-                    } 
-                }
-            }]).select().single();
-            if (error) throw error;
-            onDoNowGenerate(null, null, { room: data, packet: packet }); 
-        } catch (err) { alert("Systemfel: " + err.message); }
+            syncBatchProgress('live_session_started', packet, {
+                app_mode: 'teacher_live',
+                pacing: finalSettings.pacing,
+                order: finalSettings.order,
+                scratchpad: enableScratchpad
+            });
+
+            const roomData = await liveCreateRoom({
+                teacherId: profile?.id,
+                title: sheetTitle || (setupMode === 'donow' ? "Do Now Grid" : "Arbetsblad Live"),
+                mode: setupMode || 'worksheet',
+                packet: packet,
+                settings: {
+                    ...finalSettings,
+                    scratchpad: enableScratchpad,
+                    allowScratchpad: enableScratchpad,
+                    allowCanvas: enableCanvas,
+                    responseStyle: responseStyle
+                },
+                activeSheetId
+            });
+
+            onDoNowGenerate(null, null, { room: roomData, packet: roomData.active_question_data.packet });
+        } catch (err) {
+            alert((lang === 'sv' ? "Kunde inte starta live-lektion: " : "Failed to launch live session: ") + err.message);
+        }
     };
 
   const triggerPreview = async (variationKey) => {
@@ -886,14 +841,13 @@ export default function QuestionStudio({
 
               {/* 🟢 Ensure ActivityHubModal & CategoryClashEngine can mount over the library */}
               <ActivityHubModal
-                  isOpen={showActivityHub}
-                  onClose={() => setShowActivityHub(false)}
-                  sourcePacket={[]} // Empty array triggers fresh procedural generation
-                  lang={lang}
-                  onLaunchCategoryClash={(config) => {
-                      setActiveGameConfig(config);
-                  }}
-              />
+                    isOpen={showActivityHub}
+                    onClose={() => setShowActivityHub(false)}
+                    sourcePacket={[]}
+                    profile={profile}
+                    lang={lang}
+                    onLaunchCategoryClash={handleCategoryClashLaunch}
+                />
 
               {activeGameConfig && (
                   <CategoryClashEngine
@@ -1621,8 +1575,9 @@ export default function QuestionStudio({
             isOpen={showActivityHub}
             onClose={() => setShowActivityHub(false)}
             sourcePacket={packet}
+            profile={profile} // 🟢 Pass profile
             lang={lang}
-            onLaunchCategoryClash={(config) => setActiveGameConfig(config)}
+            onLaunchCategoryClash={handleCategoryClashLaunch}
         />
 
         {activeGameConfig && (

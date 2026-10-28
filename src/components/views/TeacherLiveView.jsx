@@ -16,6 +16,9 @@ import {
 } from 'lucide-react';
 import { syncProgress } from '../../lib/progressSync';
 
+// Activities
+import CategoryClashEngine from '../activities/engines/CategoryClashEngine';
+
 export default function TeacherLiveView({ 
     session, 
     packet, 
@@ -34,7 +37,22 @@ export default function TeacherLiveView({
     const [freeTextResponse, setFreeTextResponse] = useState(null);
     const [showPrintReport, setShowPrintReport] = useState(false);
 
+    //detect mode
+    const currentMode = session?.active_question_data?.mode || 'worksheet';
+    const isActivityMode = currentMode.startsWith('activity_');
     const isPresentationMode = session?.active_question_data?.mode === 'presentation';
+
+    if (isActivityMode) {
+        return (
+            <CategoryClashEngine
+                session={session}
+                isLiveHost={true}
+                initialConfig={session?.active_question_data?.settings}
+                onClose={onEndSession}
+                lang={lang}
+            />
+        );
+    }
 
     const handleOpenZoom = (qIdx) => {
         const target = engine.livePacket[qIdx];
@@ -56,6 +74,8 @@ export default function TeacherLiveView({
         engine.setSortMode(mode);
         setIsSortMenuOpen(false);
     };
+
+    
 
     return (
         <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans select-none transition-colors duration-200">

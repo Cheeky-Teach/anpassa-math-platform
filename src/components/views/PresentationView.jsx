@@ -25,7 +25,7 @@ import { getToolDefinition } from '../whiteboard/tools/registry';
 import SheetLibraryModal from '../modals/SheetLibraryModal';
 import SaveToUnitModal from '../modals/SaveToUnitModal';
 import { PRESENTATION_THEMES } from '../../constants/presentationThemes';
-
+import { liveCreateRoom } from '../live/core/liveCreateRoom';
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 
 // Imported extracted modular functions
@@ -638,32 +638,31 @@ export default function PresentationView({
     const confirmLaunchLive = async (configuredSettings) => {
         setShowLiveModal(false);
 
-        syncBatchProgress('presentation_live_started', livePacket, { app_mode: 'teacher_live', ...configuredSettings });
+        syncBatchProgress('presentation_live_started', livePacket, { 
+            app_mode: 'teacher_live', 
+            ...configuredSettings 
+        });
 
         try {
-            if (!teacherId) throw new Error("Not authenticated");
-            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            const sessionPayload = {
+            const roomData = await liveCreateRoom({
+                teacherId,
+                title: localTitle || (lang === 'sv' ? "Live Presentation" : "Live Presentation"),
                 mode: 'presentation',
                 packet: livePacket,
                 slides: slides,
-                settings: { bgType, viewMode, globalZoom, theme: presentationTheme, ...configuredSettings }
-            };
+                settings: {
+                    bgType,
+                    viewMode,
+                    globalZoom,
+                    theme: presentationTheme,
+                    ...configuredSettings
+                },
+                activeSheetId: boardId
+            });
 
-            const { data: roomData, error } = await supabase
-                .from('rooms')
-                .insert([{
-                    teacher_id: teacherId,
-                    class_code: code,
-                    status: 'active',
-                    current_slide_index: activeSlideIndex || 0,
-                    active_question_data: sessionPayload,
-                    active_worksheet_id: boardId || null, 
-                    title: localTitle || (lang === 'sv' ? "Live Presentation" : "Live Presentation")
-                }]).select().single();
-
-            if (error) throw error;
-            if (onLaunchLive) onLaunchLive(roomData);
+            if (onLaunchLive) {
+                onLaunchLive(roomData);
+            }
         } catch (err) {
             console.error("Failed to start live session:", err);
             alert(lang === 'sv' ? "Kunde inte starta live-lektionen." : "Failed to start live session.");

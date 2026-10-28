@@ -1,5 +1,5 @@
 // src/components/ui/SmartMathInput.jsx
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { FractionInput, ExponentInput, ScientificInput } from './InputComponents';
 
 export const sanitizeMathExpression = (val, maxLen = 100) => {
@@ -53,10 +53,13 @@ export default function SmartMathInput({
         }
     };
 
+    // Shared container class for specialized fraction/exponent/scientific widgets
+    const specializedWrapperClass = `flex justify-center py-4 bg-slate-50 border-2 border-dashed border-slate-300 text-slate-900 rounded-[var(--radius-btn)] shadow-inner w-full ${className}`;
+
     // 1. Specialized inputs from InputComponents
     if (effectiveType === 'mixed_fraction') {
         return (
-            <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full">
+            <div className={specializedWrapperClass}>
                 <div className="transform origin-center">
                     <FractionInput 
                         value={value} 
@@ -72,7 +75,7 @@ export default function SmartMathInput({
 
     if (effectiveType === 'fraction') {
         return (
-            <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full">
+            <div className={specializedWrapperClass}>
                 <div className="transform origin-center">
                     <FractionInput 
                         value={value} 
@@ -88,7 +91,7 @@ export default function SmartMathInput({
 
     if (effectiveType === 'exponent' || effectiveType === 'structured_power') {
         return (
-            <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full">
+            <div className={specializedWrapperClass}>
                 <div className="transform origin-center">
                     <ExponentInput 
                         value={value} 
@@ -103,7 +106,7 @@ export default function SmartMathInput({
 
     if (effectiveType === 'scientific' || effectiveType === 'structured_scientific') {
         return (
-            <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full">
+            <div className={specializedWrapperClass}>
                 <div className="transform origin-center">
                     <ScientificInput 
                         value={value} 
@@ -126,7 +129,7 @@ export default function SmartMathInput({
                 maxLength={1500}
                 onChange={(e) => onChange(e.target.value.replace(/<[^>]*>?/gm, '').substring(0, 1500))}
                 placeholder={placeholder}
-                className={`w-full h-36 bg-[var(--bg-surface)] border-2 border-[var(--border-main)] rounded-[var(--radius-btn)] p-4 font-medium text-base outline-none focus:border-[var(--brand-solid)] transition-all resize-none shadow-inner ${className}`}
+                className={`w-full h-36 bg-white border-2 border-slate-300 text-slate-900 placeholder-slate-400 rounded-[var(--radius-btn)] p-4 font-medium text-base outline-none focus:border-indigo-600 focus:bg-white transition-all resize-none shadow-inner ${className}`}
             />
         );
     }
@@ -148,7 +151,7 @@ export default function SmartMathInput({
             onChange={handleTextChange}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className={`w-full p-4 text-center text-2xl font-black border-[3px] rounded-[var(--radius-btn)] outline-none shadow-inner transition-all border-[var(--border-main)] bg-[var(--bg-surface)] focus:border-[var(--brand-text)] focus:bg-[var(--bg-card)] text-[var(--text-main)] ${className}`}
+            className={`w-full p-4 text-center text-2xl font-black border-[3px] rounded-[var(--radius-btn)] outline-none shadow-inner transition-all border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:border-indigo-600 focus:bg-white ${className}`}
         />
     );
 }

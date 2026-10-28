@@ -4,7 +4,7 @@ import { useStudentSessionState } from '../live/core/useStudentSessionState';
 import StudentSummaryGrid from '../live/student/components/StudentSummaryGrid';
 import StudentPresentationView from '../live/student/views/StudentPresentationView';
 import StudentWorksheetView from '../live/teacher/views/StudentWorksheetView';
-//import StudentActivityView from '../live/student/views/StudentActivityView';
+import StudentActivityView from '../live/student/views/StudentActivityView';
 import { LogOut, ListChecks } from 'lucide-react';
 import { syncProgress } from '../../lib/progressSync';
 

@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
     X, Grid, Sparkles, Trophy, Shuffle, Gauge, 
-    Play, Info, ChevronRight, HelpCircle, ArrowRight
+    Play, Info, ChevronRight, HelpCircle, ArrowRight, Monitor
 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../../constants/skillBuckets.js';
 import { extractSeedsFromPacket } from '../../../hooks/useGameQuestionPool.js';
@@ -12,8 +12,15 @@ export default function CategoryClashSetupModal({
     onClose,
     onLaunch,
     sourcePacket = null,
+    profile = null,
     lang = 'sv'
 }) {
+    // Determine teacher permissions ('teacher' or 'super_admin')
+    const userRole = String(profile?.role || '').toLowerCase();
+    const isTeacher = userRole === 'teacher' || userRole === 'super_admin';
+
+    // Track launch target: 'local' | 'live'
+    const [launchTarget, setLaunchTarget] = useState('local');
     // 1. Grid Dimensions
     const [columns, setColumns] = useState(4);
     const [rows, setRows] = useState(4);
@@ -176,9 +183,8 @@ export default function CategoryClashSetupModal({
         setColumnRanges({});
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-
+    // Replace handleSubmit with a direct dispatch function:
+    const handleDoLaunch = (target) => {
         const activeCategories = Array.from({ length: columns }, (_, colIdx) => {
             const topicId = selectedTopics[colIdx] || allTopics[0]?.id || 'equations';
             const topicMeta = allTopics.find(t => t.id === topicId);
@@ -207,6 +213,7 @@ export default function CategoryClashSetupModal({
         }));
 
         onLaunch({
+            launchTarget: target, // 🟢 Guaranteed exact value
             dimensions: { columns, rows },
             pointScale: calculatePointScale(),
             categories: activeCategories,
@@ -456,6 +463,7 @@ export default function CategoryClashSetupModal({
                     </label>
 
                     {/* Submit Bar */}
+                    {/* In CategoryClashSetupModal.jsx action footer: */}
                     <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
                         <button
                             type="button"
@@ -464,13 +472,28 @@ export default function CategoryClashSetupModal({
                         >
                             {t.cancel}
                         </button>
-                        <button
-                            type="submit"
-                            className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
-                        >
-                            <Play size={14} />
-                            {t.start_btn}
-                        </button>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => handleDoLaunch('local')}
+                                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
+                            >
+                                <Play size={14} />
+                                <span>{isTeacher ? (lang === 'sv' ? "Projektorläge" : "Projector Mode") : (lang === 'sv' ? "Spela" : "Play")}</span>
+                            </button>
+
+                            {isTeacher && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleDoLaunch('live')}
+                                    className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-md shadow-rose-600/20 active:scale-95 transition-all cursor-pointer"
+                                >
+                                    <Monitor size={14} />
+                                    <span>{lang === 'sv' ? "Starta Live-rum" : "Host Live Room"}</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                 </form>

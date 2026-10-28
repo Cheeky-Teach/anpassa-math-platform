@@ -8,6 +8,7 @@ export default function ActivityHubModal({
     onClose,
     sourcePacket = [],
     onLaunchCategoryClash, // ({ dimensions, pointScale, categories, teams, wordProblems, sourceMode }) => void
+    profile = null,
     lang = 'sv'
 }) {
     const [activeWizard, setActiveWizard] = useState(null); // null | 'category_clash' | 'millionaire' | ...
@@ -85,6 +86,7 @@ export default function ActivityHubModal({
                 isOpen={true}
                 onClose={() => setActiveWizard(null)}
                 sourcePacket={sourcePacket}
+                profile={profile} // 🟢 Pass profile down
                 lang={lang}
                 onLaunch={(config) => {
                     setActiveWizard(null);

@@ -1,6 +1,8 @@
 // src/components/live/teacher/components/ClassMatrixTable.jsx
 import React from 'react';
-import { UserX, MessageSquare, Maximize2 } from 'lucide-react';
+import { UserX, MessageSquare, Maximize2, Key } from 'lucide-react';
+import MathDisplay from '../../../shared/MathDisplay';
+import { extractDecodedAnswer } from '../../core/liveAnswerUtils';
 
 export default function ClassMatrixTable({
     engine,
@@ -25,6 +27,19 @@ export default function ClassMatrixTable({
 
     const isPresentationMode = session?.active_question_data?.mode === 'presentation';
     const activeSlideIndex = session?.current_slide_index || 0;
+
+    // 🟢 Resolve facit / answer key from target question item
+    const getAnswerKey = (item) => {
+        if (!item) return null;
+        if (item.answerType === 'free_text') return lang === 'sv' ? 'Text' : 'Text';
+
+        const raw = item.answer || 
+                    item.resolvedData?.renderData?.answer || 
+                    extractDecodedAnswer(item.resolvedData);
+
+        if (raw === null || raw === undefined || raw === '') return '—';
+        return String(raw);
+    };
 
     // 🟢 Exact status color mapper with high-contrast borders & shadows
     const getStatusColor = (isCorrect, answered, answerText, answerType) => {
@@ -80,10 +95,18 @@ export default function ClassMatrixTable({
                     })}
                 </tr>
 
-                {/* Column Headers */}
+                {/* Column Headers + Facit Row Display */}
                 <tr className="bg-[var(--bg-surface-hover)] border-b border-[var(--border-main)] text-[var(--text-main)]">
                     <th className="p-3 w-48 text-[9px] font-black uppercase tracking-widest border-r border-[var(--border-main)] text-[var(--text-main)]">
-                        {lang === 'sv' ? "Elev" : "Student"}
+                        <div className="flex items-center justify-between">
+                            <span>{lang === 'sv' ? "Elev" : "Student"}</span>
+                            {showActualAnswers && (
+                                <span className="flex items-center gap-1 text-[10px] font-black uppercase bg-slate-900 text-amber-300 dark:bg-amber-400 dark:text-slate-950 px-2 py-0.5 rounded-md shadow-xs border border-slate-700 dark:border-amber-300">
+                                    <Key size={9} strokeWidth={3} />
+                                    {lang === 'sv' ? "Facit på" : "Key on"}
+                                </span>
+                            )}
+                        </div>
                     </th>
                     <th className="p-3 w-20 text-[9px] font-black uppercase tracking-widest text-center border-r border-[var(--border-main)] text-[var(--text-main)]">
                         {lang === 'sv' ? "Klar" : "Done"}
@@ -91,13 +114,14 @@ export default function ClassMatrixTable({
                     {activeIndices.map((qIdx) => {
                         const targetItem = livePacket[qIdx];
                         const isCanvasSlideOnly = !targetItem && isPresentationMode;
+                        const answerKey = getAnswerKey(targetItem);
 
                         return (
                             <th key={`head-${qIdx}`} className="p-0 border-r border-[var(--border-main)] transition-colors hover:bg-[var(--theme-indigo-bg,rgba(99,102,241,0.1))] group/col">
                                 <button 
                                     type="button"
                                     onClick={() => { if (targetItem) onOpenZoom(qIdx); }} 
-                                    className={`w-full h-full py-2 flex flex-col items-center justify-center gap-1 cursor-pointer ${targetItem ? 'cursor-zoom-in' : 'cursor-default'}`}
+                                    className={`w-full h-full py-2 px-1 flex flex-col items-center justify-center gap-1 cursor-pointer ${targetItem ? 'cursor-zoom-in' : 'cursor-default'}`}
                                 >
                                     <div className="flex items-center gap-1">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] group-hover/col:text-indigo-500 transition-colors">
@@ -105,6 +129,13 @@ export default function ClassMatrixTable({
                                         </span>
                                         {targetItem && <Maximize2 size={10} className="text-indigo-500 opacity-0 group-hover/col:opacity-100 transition-opacity" />}
                                     </div>
+
+                                    {/* 🟢 Facit Answer Key Display under Question Number */}
+                                    {showActualAnswers && targetItem && (
+                                        <div className="w-full max-w-[92%] px-1 py-0.5 mt-0.5 rounded-md bg-slate-900 text-amber-300 dark:bg-amber-400 dark:text-slate-950 border border-slate-700 dark:border-amber-300 font-mono text-[10px] font-black truncate text-center shadow-xs animate-in fade-in zoom-in-95 duration-150">
+                                            <MathDisplay content={`$${answerKey.replace(/\$/g, '')}$`} className="truncate inline-block max-w-full" />
+                                        </div>
+                                    )}
                                 </button>
                             </th>
                         );

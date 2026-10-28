@@ -316,7 +316,7 @@ export default function StudentWorksheetView({
                                                 placeholder={lang === 'sv' ? "Skriv ditt svar här..." : "Write your answer here..."}
                                                 rows={5}
                                                 disabled={isSubmitting}
-                                                className="w-full p-3 text-base border-2 border-slate-200 rounded-xl outline-none focus:border-indigo-500 transition-all text-slate-900 bg-white resize-none"
+                                                className="w-full p-4 text-base font-medium border-2 border-slate-200 rounded-xl outline-none focus:border-indigo-500 transition-all text-slate-900 bg-white placeholder-slate-400 resize-none shadow-inner"
                                             />
                                         </div>
                                     ) : (
@@ -339,6 +339,7 @@ export default function StudentWorksheetView({
                                                 }
                                                 renderData={rd}
                                                 autoFocus={true}
+                                                className="!bg-white !text-slate-900 !border-slate-300 focus:!border-indigo-600 focus:!bg-white"
                                             />
                                         </div>
                                     )}
