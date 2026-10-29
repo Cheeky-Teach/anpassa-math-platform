@@ -183,7 +183,7 @@ export function useGameQuestionPool({ lang = 'sv' } = {}) {
     // Single slot regeneration
     const regenerateSlot = useCallback(async (slotId) => {
         const current = pool[slotId];
-        if (!current) return;
+        if (!current) return null;
 
         try {
             let nextQ = await fetchSingleQuestion({
@@ -204,20 +204,26 @@ export function useGameQuestionPool({ lang = 'sv' } = {}) {
                 nextQ.showLatex = true;
             }
 
+            const freshItem = {
+                ...nextQ,
+                slotId,
+                topicId: current.topicId,
+                level: current.level,
+                minLevel: current.minLevel,
+                maxLevel: current.maxLevel,
+                wordProblem: current.wordProblem
+            };
+
             setPool(prev => ({
                 ...prev,
-                [slotId]: {
-                    ...nextQ,
-                    slotId,
-                    topicId: current.topicId,
-                    level: current.level,
-                    minLevel: current.minLevel,
-                    maxLevel: current.maxLevel,
-                    wordProblem: current.wordProblem
-                }
+                [slotId]: freshItem
             }));
+
+            // 🟢 Return the fresh object synchronously so callers don't wait for React re-render
+            return freshItem;
         } catch (err) {
             console.error(`Failed to regenerate slot ${slotId}:`, err);
+            return null;
         }
     }, [pool, lang]);
 

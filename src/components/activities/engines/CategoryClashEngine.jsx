@@ -4,12 +4,13 @@ import {
     X, Play, Edit3, Save, RotateCcw, Award, Check, 
     RefreshCcw, Eye, Lock, Building2, HelpCircle,
     LayoutGrid, ListFilter, Type, Calculator, Image as ImageIcon,
-    Plus, Minus, Users, CheckCircle2, XCircle, Clock
+    Plus, Minus, Users, CheckCircle2, XCircle, Clock, Sparkles
 } from 'lucide-react';
 import { useGameQuestionPool } from '../../../hooks/useGameQuestionPool.js';
 import GameQuestionStageModal from '../../shared/GameQuestionStageModal.jsx';
 import MathDisplay from '../../shared/MathDisplay.jsx';
 import { supabase } from '../../../lib/supabaseClient.js';
+import CategoryClashHelpModal from '../shared/CategoryClashHelpModal.jsx';
 
 // 🟢 Helper to parse embedded team from alias: "[team_0] Elev 1" -> { teamId: "team_0", displayName: "Elev 1" }
 const parseTeamId = (alias) => {
@@ -36,6 +37,7 @@ export default function CategoryClashEngine({
     const [visibility, setVisibility] = useState(savedBoard?.visibility || 'private');
     const [isSaving, setIsSaving] = useState(false);
     const [boardId, setBoardId] = useState(savedBoard?.id || null);
+    const [isHelpOpen, setIsHelpOpen] = useState(false);
 
     // Grid configuration
     const dimensions = initialConfig?.dimensions || savedBoard?.packet?.dimensions || session?.active_question_data?.settings?.dimensions || { columns: 4, rows: 4 };
@@ -265,20 +267,48 @@ export default function CategoryClashEngine({
         }
     };
 
-    const toggleSlotElement = (slotId, key) => {
+    const toggleSlotElement = async (slotId, key) => {
         const current = pool[slotId];
         if (!current) return;
-        const currentVal = current[key] !== false;
-        updateSlotManually(slotId, { [key]: !currentVal });
-    };
+        
+        // Determine current value (defaults to false for latex if it's a word problem, true otherwise)
+        const isWordProblem = Boolean(
+            current.wordProblem || 
+            current.renderData?.isWordProblemApplied || 
+            current.resolvedData?.metadata?.isWordProblemApplied
+        );
 
+        const currentVal = current[key] !== undefined 
+            ? current[key] 
+            : (key === 'showLatex' ? !isWordProblem : true);
+
+        const nextVal = !currentVal;
+        const updatedQuestion = { ...current, [key]: nextVal };
+
+        // 1. Update teacher's local pool state
+        updateSlotManually(slotId, { [key]: nextVal });
+
+        // 2. 🟢 Broadcast immediately so live students' screens reflect the change in real time
+        if (isLiveHost && session?.id) {
+            // Update active question if this slot is currently open on stage
+            if (activeSlotId === slotId) {
+                await broadcastRoomState(slotId, updatedQuestion);
+            } else {
+                // If toggled from the audit table while tile is not open, sync board pool state
+                await broadcastRoomState(activeSlotId, activeQuestion, teamsRef.current, clearedTiles);
+            }
+        }
+    };
+    
     // 🟢 REGENERATE SINGLE SLOT + RACE-CONDITION-FREE BROADCAST
     const handleRegenerateSlot = async (slotId) => {
         if (!slotId) return;
 
+        // 1. Wipe previous student responses from local state
         const targetNumeric = getNumericIndexForSlot(slotId);
         setLiveResponses(prev => prev.filter(r => r.question_index !== targetNumeric));
 
+        // 2. Delete previous responses in Supabase
         if (isLiveHost && session?.id) {
             try {
                 await supabase
@@ -291,22 +321,21 @@ export default function CategoryClashEngine({
             }
         }
 
+        // 3. Await the actual newly generated question object
         const freshQuestion = await regenerateSlot(slotId);
-        const newRegenVersion = Date.now();
+        if (!freshQuestion) return;
 
-        const itemToBroadcast = freshQuestion || {
-            ...(pool[slotId] || {}),
+        const newRegenVersion = Date.now();
+        const itemToBroadcast = {
+            ...freshQuestion,
             regenVersion: newRegenVersion
         };
 
-        if (freshQuestion) {
-            itemToBroadcast.regenVersion = newRegenVersion;
-            updateSlotManually(slotId, itemToBroadcast);
-        } else {
-            updateSlotManually(slotId, { regenVersion: newRegenVersion });
-        }
+        // 4. Update local pool tracking with the version tag
+        updateSlotManually(slotId, { regenVersion: newRegenVersion });
 
-        if (isLiveHost && session?.id && (mode === 'play' && activeSlotId === slotId)) {
+        // 5. Broadcast the new question to all connected students immediately
+        if (isLiveHost && session?.id) {
             await broadcastRoomState(slotId, itemToBroadcast);
         }
     };
@@ -387,6 +416,15 @@ export default function CategoryClashEngine({
     return (
         <div className="fixed inset-0 z-[500] bg-slate-950 flex flex-col font-sans select-none overflow-hidden animate-in fade-in">
             
+            {/* 🟢 HONEYCOMB BACKDROP PATTERN */}
+            <div 
+                className="absolute inset-0 pointer-events-none z-0 opacity-[0.09]"
+                style={{
+                    backgroundImage: `radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 80%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='96' viewBox='0 0 56 96'%3E%3Cpath d='M28 0l28 16v32L28 64 0 48V16L28 0zm0 96l28-16V48L28 32 0 48v32l28 16z' fill='%236366f1' fill-opacity='0.6' fill-rule='evenodd' stroke='%234338ca' stroke-width='1.2' stroke-opacity='0.4'/%3E%3C/svg%3E")`,
+                    backgroundSize: 'auto, 56px 96px'
+                }}
+            />
+
             {/* Top Navigation & Status Bar */}
             <header className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between text-white shrink-0 gap-4">
                 
@@ -531,7 +569,7 @@ export default function CategoryClashEngine({
                             title="Slumpa om alla brickor"
                         >
                             <RefreshCcw size={13} className={isLoading ? "animate-spin" : ""} />
-                            <span className="hidden md:inline">Slumpa alla</span>
+                            <span className="hidden md:inline">{lang === 'sv' ? "Slumpa alla" : "Randomize all"}</span>
                         </button>
                     )}
 
@@ -545,6 +583,15 @@ export default function CategoryClashEngine({
                             <span className="hidden sm:inline">{lang === 'sv' ? "Spara" : "Save"}</span>
                         </button>
                     )}
+
+                    <button
+                        type="button"
+                        onClick={() => setIsHelpOpen(true)}
+                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 border border-slate-700 transition-colors cursor-pointer"
+                        title={lang === 'sv' ? "Instruktioner & Spelguide" : "Instructions & Game Guide"}
+                    >
+                        <HelpCircle size={16} />
+                    </button>
 
                     <button
                         onClick={handleResetScores}
@@ -889,6 +936,26 @@ export default function CategoryClashEngine({
                 )}
             </main>
 
+            {/* 🟢 ANPASSA WATERMARK FOOTER */}
+            <footer className="relative z-10 px-6 py-2.5 bg-slate-950/80 border-t border-slate-900 flex items-center justify-between text-[11px] font-medium text-slate-500 shrink-0">
+                <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-md bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center">
+                        <Sparkles size={10} className="text-indigo-400" />
+                    </div>
+                    <span className="font-bold tracking-wider uppercase text-slate-400">
+                        Anpassa Math Platform
+                    </span>
+                    <span className="text-slate-600">•</span>
+                    <span className="text-slate-500 font-mono">Poängjakten</span>
+                </div>
+
+                <div className="hidden sm:flex items-center gap-3 text-slate-500 text-[10px] uppercase font-bold tracking-widest">
+                    <span>Activity Mode</span>
+                    <span>•</span>
+                    <span className="text-indigo-400/80 font-black">Live Classroom Sync</span>
+                </div>
+            </footer>
+
             {/* Universal Stage Modal with Live Responses Stream */}
             <GameQuestionStageModal
                 isOpen={isStageModalOpen}
@@ -903,6 +970,11 @@ export default function CategoryClashEngine({
                 showPointsAwarding={Boolean(mode === 'play' || isLiveHost) && teams.length > 0}
                 isLive={isLiveHost && mode === 'play'}
                 liveResponses={currentSlotResponses}
+            />
+            <CategoryClashHelpModal
+                isOpen={isHelpOpen}
+                onClose={() => setIsHelpOpen(false)}
+                lang={lang}
             />
         </div>
     );

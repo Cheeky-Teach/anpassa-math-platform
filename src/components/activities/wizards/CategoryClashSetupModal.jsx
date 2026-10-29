@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../../constants/skillBuckets.js';
 import { extractSeedsFromPacket } from '../../../hooks/useGameQuestionPool.js';
+import CategoryClashHelpModal from '../shared/CategoryClashHelpModal.jsx';
 
 export default function CategoryClashSetupModal({
     isOpen,
@@ -18,6 +19,7 @@ export default function CategoryClashSetupModal({
     // 🟢 Strict teacher / super_admin role checking
     const userRole = String(profile?.role || '').toLowerCase();
     const isTeacher = userRole === 'teacher' || userRole === 'super_admin';
+    const [isHelpOpen, setIsHelpOpen] = useState(false);
 
     // 1. Grid Dimensions
     const [columns, setColumns] = useState(4);
@@ -233,6 +235,14 @@ export default function CategoryClashSetupModal({
                             <p className="text-xs font-bold text-slate-400">Poängjakten • Category Clash</p>
                         </div>
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => setIsHelpOpen(true)}
+                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 border border-slate-700 transition-colors cursor-pointer"
+                        title={lang === 'sv' ? "Instruktioner & Spelguide" : "Instructions & Game Guide"}
+                    >
+                        <HelpCircle size={16} />
+                    </button>
                     <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:bg-slate-200 transition-colors cursor-pointer">
                         <X size={18} />
                     </button>
@@ -547,6 +557,11 @@ export default function CategoryClashSetupModal({
                 )}
 
             </div>
+            <CategoryClashHelpModal
+                isOpen={isHelpOpen}
+                onClose={() => setIsHelpOpen(false)}
+                lang={lang}
+            />
         </div>
     );
 }

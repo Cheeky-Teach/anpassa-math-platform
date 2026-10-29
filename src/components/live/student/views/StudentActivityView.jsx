@@ -127,6 +127,11 @@ export default function StudentActivityView({
         activeQuestion?.resolvedData?.metadata?.isWordProblemApplied
     );
 
+    const effectiveShowText = activeQuestion?.showText !== false;
+    const effectiveShowLatex = activeQuestion?.showLatex !== undefined 
+        ? Boolean(activeQuestion?.showLatex) 
+        : (!isWordProblem);
+
     const hasVisualElement = Boolean(
         rd?.geometry || rd?.graph || rd?.pattern || rd?.marbles || rd?.visualType || rd?.diagram
     );
@@ -190,7 +195,8 @@ export default function StudentActivityView({
             {/* Top Bar */}
             <header className="bg-[var(--bg-card,#0f172a)] border-b border-[var(--border-main,#1e293b)] px-4 py-2.5 sticky top-0 z-50 flex items-center justify-between gap-4 shrink-0">
                 <div className="flex items-center gap-3">
-                    {teams.length > 0 && (
+                    {/* Top Bar: Only show dropdown if more than 1 team exists */}
+                    {teams.length > 1 ? (
                         <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-800 border border-slate-700 shadow-xs">
                             <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: myTeam?.color }} />
                             <select
@@ -204,6 +210,10 @@ export default function StudentActivityView({
                                     </option>
                                 ))}
                             </select>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-black uppercase tracking-wider">
+                            <span>{myTeam?.name || (lang === 'sv' ? 'Individuellt' : 'Solo')}</span>
                         </div>
                     )}
 
@@ -294,14 +304,14 @@ export default function StudentActivityView({
                             )}
 
                             {/* Question Text Prompt */}
-                            {rd.description && (
+                            {effectiveShowText && rd.description && (
                                 <div className="text-xl sm:text-2xl font-bold text-slate-800 leading-relaxed">
                                     <MathDisplay content={rd.description} />
                                 </div>
                             )}
 
-                            {/* LaTeX Display */}
-                            {rd.latex && activeQuestion?.showLatex !== false && (
+                            {/* 🟢 LaTeX Display: Respects teacher toggles & auto-hides on word problems */}
+                            {(effectiveShowLatex || (!rd.description && !hasVisualElement)) && rd.latex && (
                                 <div className="w-full bg-indigo-50/50 border border-indigo-100/60 rounded-2xl p-6 text-center text-2xl sm:text-3xl text-indigo-700 font-serif">
                                     <MathDisplay content={`$$${rd.latex}$$`} />
                                 </div>
