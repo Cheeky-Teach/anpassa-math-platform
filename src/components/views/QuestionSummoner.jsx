@@ -1,3 +1,4 @@
+// src/components/views/QuestionSummoner.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Loader2, RefreshCcw, Type, Calculator, Zap, Plus, BookOpen } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
@@ -21,7 +22,12 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
 };
 
-export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
+export default function QuestionSummoner({ 
+    lang = 'sv', 
+    targetMode = 'presentation', // 🟢 'presentation' | 'activity_four_corners' | 'activity'
+    onClose, 
+    onSummon 
+}) {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTopicId, setSelectedTopicId] = useState('basic_arithmetic');
     const [selectedVariation, setSelectedVariation] = useState(null);
@@ -30,7 +36,7 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
     const [isLoading, setIsLoading] = useState(false);
     const [isWordProblem, setIsWordProblem] = useState(false);
     
-    // 🟢 NEW: Queue state to hold multiple questions
+    // Queue state to hold multiple questions
     const [queue, setQueue] = useState([]);
 
     // Flatten all topics for searching
@@ -71,7 +77,7 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
         }
     };
 
-    // 🟢 UPDATED: Accepts destination layout ('canvas' vs 'instruction_template')
+    // Inside src/components/views/QuestionSummoner.jsx -> handleAddToQueue
     const handleAddToQueue = (layoutTarget = 'canvas') => {
         if (!previewData) return;
         
@@ -82,13 +88,20 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
             variationKey: selectedVariation.key,
             name: selectedVariation.name[lang],
             columnSpan: 6,
-            resolvedData: previewData,
+            wordProblem: isWordProblem, // 🟢 Explicit flag for activity engines
+            resolvedData: {
+                ...previewData,
+                renderData: {
+                    ...previewData.renderData,
+                    isWordProblemApplied: isWordProblem // 🟢 Flag for VisualRenderer
+                }
+            },
             instructionMode: isWordProblem ? 'inline' : 'header',
             showLatex: !isWordProblem,
-            showVisual: !isWordProblem,
+            showVisual: true,
             showText: true,
             selectedStoryIndex: isWordProblem ? 0 : null,
-            targetLayout: layoutTarget // 🟢 Stamped so PresentationView knows how to mount it
+            targetLayout: layoutTarget
         };
         
         setQueue(prev => [...prev, newItem]);
@@ -99,10 +112,27 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
         setQueue(prev => prev.filter(q => q.id !== id));
     };
 
-    // 🟢 UPDATED: Sends the entire array of queued questions to the parent component
     const handleFinalSummon = () => {
         if (queue.length === 0) return;
         onSummon(queue);
+    };
+
+    // Helper for localized button labels based on target mode
+    const getFinalButtonLabel = () => {
+        if (targetMode === 'activity_four_corners') {
+            return lang === 'sv' 
+                ? `Lägg till ${queue.length} st frågor till 4 Hörn` 
+                : `Add ${queue.length} questions to 4 Corners`;
+        }
+        if (targetMode.startsWith('activity')) {
+            return lang === 'sv' 
+                ? `Lägg till ${queue.length} st frågor till aktiviteten` 
+                : `Add ${queue.length} questions to activity`;
+        }
+        // Default PresentationView label
+        return lang === 'sv' 
+            ? `Skapa ${queue.length} st slides` 
+            : `Create ${queue.length} slides`;
     };
 
     return (
@@ -118,7 +148,7 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                             {lang === 'sv' ? "Hämta Uppgifter" : "Summon Questions"}
                         </h2>
                     </div>
-                    <button onClick={onClose} className="p-2 text-slate-400 hover:bg-rose-100 hover:text-rose-600 rounded-full transition-colors">
+                    <button onClick={onClose} className="p-2 text-slate-400 hover:bg-rose-100 hover:text-rose-600 rounded-full transition-colors cursor-pointer">
                         <X size={24} />
                     </button>
                 </header>
@@ -143,7 +173,7 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                                 <button 
                                     key={topic.id} 
                                     onClick={() => setSelectedTopicId(topic.id)} 
-                                    className={`w-full text-left px-4 py-3 text-sm rounded-xl transition-all ${selectedTopicId === topic.id ? 'bg-indigo-600 text-white font-black shadow-md' : 'text-slate-600 font-bold hover:bg-indigo-50'}`}
+                                    className={`w-full text-left px-4 py-3 text-sm rounded-xl transition-all cursor-pointer ${selectedTopicId === topic.id ? 'bg-indigo-600 text-white font-black shadow-md' : 'text-slate-600 font-bold hover:bg-indigo-50'}`}
                                 >
                                     {topic.name[lang]}
                                 </button>
@@ -193,10 +223,9 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                                         <MathDisplay content={previewData.renderData.description} />
                                     </div>
 
-                                    {/* 🟢 RESTORED: Prominent LaTeX Math Preview Box */}
+                                    {/* Prominent LaTeX Math Preview Box */}
                                     {previewData.renderData.latex && !isWordProblem && (
                                         <div className="text-4xl text-indigo-600 bg-indigo-50/50 p-8 rounded-[2.5rem] border-2 border-indigo-100 shadow-inner text-center font-serif my-4 w-full max-w-md overflow-x-auto">
-                                            {/* Wrap in display math delimiters for MathLive/KaTeX to parse it large and centered */}
                                             <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
                                         </div>
                                     )}
@@ -219,7 +248,7 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                             ) : null}
                         </div>
 
-                        {/* 🟢 NEW: Active Queue Panel */}
+                        {/* Active Queue Panel */}
                         {queue.length > 0 && (
                             <div className="max-h-48 bg-slate-50 border-t border-slate-200 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-2 shadow-inner shrink-0 animate-in slide-in-from-bottom-2">
                                 <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1 px-1">
@@ -231,7 +260,7 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                                             <span className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-md flex items-center justify-center text-[10px] font-black shrink-0">{i + 1}</span>
                                             <span className="text-xs font-bold text-slate-700 truncate">{q.name}</span>
                                         </div>
-                                        <button onClick={() => removeFromQueue(q.id)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors">
+                                        <button onClick={() => removeFromQueue(q.id)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors cursor-pointer">
                                             <X size={14} />
                                         </button>
                                     </div>
@@ -244,43 +273,54 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                             <div className="flex gap-2">
                                 <button 
                                     onClick={fetchPreview}
-                                    className="flex-1 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
+                                    className="flex-1 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 cursor-pointer"
                                 >
                                     <RefreshCcw size={14} /> {lang === 'sv' ? "Slumpa Siffror" : "Shuffle Numbers"}
                                 </button>
                                 <button 
                                     onClick={() => setIsWordProblem(!isWordProblem)}
-                                    className={`flex-1 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 ${isWordProblem ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-amber-300'}`}
+                                    className={`flex-1 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 cursor-pointer ${isWordProblem ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-amber-300'}`}
                                 >
                                     <Type size={14} /> {isWordProblem ? (lang === 'sv' ? "Ta bort text" : "Remove Story") : (lang === 'sv' ? "Gör till text" : "Make Story")}
                                 </button>
                             </div>
                             
-                            {/* 🟢 DUAL ACTION: Add as Canvas vs Add as Instruction Slide */}
-                            <div className="grid grid-cols-2 gap-2">
-                                <button 
-                                    onClick={() => handleAddToQueue('canvas')}
-                                    disabled={isLoading || !previewData}
-                                    className="py-3 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 border border-slate-200"
-                                >
-                                    <Plus size={14} /> {lang === 'sv' ? "Vanlig Tavla" : "Canvas"}
-                                </button>
+                            {/* 🟢 ADAPTIVE QUEUE BUTTONS: Mode-specific UI */}
+                            {targetMode === 'presentation' ? (
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button 
+                                        onClick={() => handleAddToQueue('canvas')}
+                                        disabled={isLoading || !previewData}
+                                        className="py-3 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 border border-slate-200 cursor-pointer"
+                                    >
+                                        <Plus size={14} /> {lang === 'sv' ? "Vanlig Tavla" : "Canvas"}
+                                    </button>
 
+                                    <button 
+                                        onClick={() => handleAddToQueue('instruction_template')}
+                                        disabled={isLoading || !previewData}
+                                        className="py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                                    >
+                                        <BookOpen size={14} /> {lang === 'sv' ? "Genomgång" : "Instruction"}
+                                    </button>
+                                </div>
+                            ) : (
                                 <button 
-                                    onClick={() => handleAddToQueue('instruction_template')}
+                                    onClick={() => handleAddToQueue('activity')}
                                     disabled={isLoading || !previewData}
-                                    className="py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
+                                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 shadow-md cursor-pointer"
                                 >
-                                    <BookOpen size={14} /> {lang === 'sv' ? "Genomgång" : "Instruction"}
+                                    <Plus size={15} /> {lang === 'sv' ? "Lägg till i omgången" : "Add to Round"}
                                 </button>
-                            </div>
+                            )}
 
+                            {/* Final Submission Button */}
                             <button 
                                 onClick={handleFinalSummon}
                                 disabled={queue.length === 0}
-                                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                             >
-                                <Zap size={16} /> {lang === 'sv' ? `Skapa ${queue.length} st slides` : `Create ${queue.length} slides`}
+                                <Zap size={16} /> {getFinalButtonLabel()}
                             </button>
                         </div>
                     </div>

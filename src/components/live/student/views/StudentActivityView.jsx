@@ -7,6 +7,7 @@ import InteractiveCanvas from '../../../whiteboard/InteractiveCanvas';
 import PreferencesToggle from '../../../ui/PreferencesToggle';
 import VisualRenderer from '../../../visuals/VisualRenderer';
 import { supabase } from '../../../../lib/supabaseClient';
+import DynamicResponseInput from '../components/DynamicResponseInput';
 import { 
     Send, CheckCircle2, Loader2, Trophy, 
     Calculator, PenTool, LogOut, Check
@@ -29,7 +30,6 @@ export default function StudentActivityView({
     useEffect(() => {
         if (!roomId) return;
 
-        // Fetch latest state immediately on mount
         const fetchCurrent = async () => {
             const { data } = await supabase
                 .from('rooms')
@@ -67,10 +67,19 @@ export default function StudentActivityView({
         }
     }, [engine?.session?.active_question_data]);
 
-    // Extract board properties from live data
+    // Mode determination
+    const isFourCorners = 
+        liveActiveData?.activity_mode === 'activity_four_corners' || 
+        liveActiveData?.mode === 'activity_four_corners' ||
+        liveActiveData?.gameKey === 'four_corners';
+
+    // Extract board & question properties from live data
     const dimensions = liveActiveData?.board?.dimensions || liveActiveData?.settings?.dimensions || { columns: 4, rows: 4 };
     const activeTile = liveActiveData?.activeTile;
-    const activeQuestion = liveActiveData?.activeQuestion;
+
+    // 🟢 Correctly extract the question object from either activeQuestion or root payload
+    const activeQuestion = liveActiveData?.activeQuestion || (isFourCorners && liveActiveData?.renderData ? liveActiveData : null);
+    
     const points = liveActiveData?.points || 100;
     const teams = liveActiveData?.teams || [];
 
@@ -93,7 +102,7 @@ export default function StudentActivityView({
     const allowCanvas = Boolean(settings.allowCanvas);
     const [activeWorkTab, setActiveWorkTab] = useState(allowCanvas && !allowScratchpad ? 'canvas' : 'scratchpad');
 
-    // Local inputs for the active tile
+    // Local inputs for Category Clash active tile
     const [localAnswers, setLocalAnswers] = useState({});
     const [localCompleted, setLocalCompleted] = useState({});
     const [localScratchpad, setLocalScratchpad] = useState({});
@@ -101,17 +110,26 @@ export default function StudentActivityView({
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // 🟢 3. Reset student answer input when teacher rolls new numbers or switches tile
+    // 🟢 REPLACE WITH THIS UPDATED BLOCK:
     useEffect(() => {
-        if (activeTile) {
-            setLocalAnswers(prev => ({ ...prev, [activeTile]: '' }));
+        // Whenever teacher picks a new round or rolls new numbers
+        const targetKey = isFourCorners ? `round_${activeQuestion?.roundIndex}` : activeTile;
+        
+        if (targetKey) {
+            setLocalAnswers(prev => ({ ...prev, [targetKey]: '' }));
             setLocalCompleted(prev => {
                 const next = { ...prev };
-                delete next[activeTile];
+                delete next[targetKey];
                 return next;
             });
             setIsSubmitting(false);
         }
-    }, [activeTile, activeQuestion?.regenVersion]);
+    }, [
+        activeTile, 
+        activeQuestion?.id, 
+        activeQuestion?.roundIndex, 
+        activeQuestion?.regenVersion
+    ]);
 
     const currentAnswer = localAnswers[activeTile] || '';
     const isCompleted = Boolean(localCompleted[activeTile]);
@@ -137,7 +155,33 @@ export default function StudentActivityView({
     );
     const showVisual = activeQuestion?.showVisual !== false;
 
-    // Tile Answer Submit Handler
+    // 🟢 HANDLER 1: For Four Corners & DynamicResponseInput
+    const handleSendAnswer = async (answerVal) => {
+        if (isSubmitting || !roomId) return;
+        setIsSubmitting(true);
+        try {
+            const cleanAlias = (studentAlias || "Elev").replace(/<[^>]*>?/gm, '').substring(0, 20);
+            const teamPrefix = myTeam?.id && teams.length > 1 ? `[${myTeam.id}] ` : '';
+            const taggedAlias = `${teamPrefix}${cleanAlias}`;
+
+            const payload = {
+                room_id: roomId,
+                student_alias: taggedAlias,
+                question_index: activeQuestion?.roundIndex || 0,
+                answer: String(answerVal).trim(),
+                created_at: new Date().toISOString()
+            };
+
+            const { error } = await supabase.from('responses').insert([payload]);
+            if (error && error.code !== '23505') throw error;
+        } catch (err) {
+            console.error("[StudentActivityView] Four Corners submit error:", err);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // 🟢 HANDLER 2: For Category Clash Matrix Tiles
     const handleTileSubmit = async (overrideAnswer = null) => {
         const finalAnswer = overrideAnswer !== null ? overrideAnswer : currentAnswer;
         if (!finalAnswer.trim() || isSubmitting || isCompleted || !activeTile) return;
@@ -164,7 +208,7 @@ export default function StudentActivityView({
             }
 
             const cleanAlias = (studentAlias || "Elev").replace(/<[^>]*>?/gm, '').substring(0, 20);
-            const teamPrefix = myTeam?.id ? `[${myTeam.id}] ` : '';
+            const teamPrefix = myTeam?.id && teams.length > 1 ? `[${myTeam.id}] ` : '';
             const taggedAlias = `${teamPrefix}${cleanAlias}`;
 
             const payload = {
@@ -189,13 +233,17 @@ export default function StudentActivityView({
         }
     };
 
+    // Check if waiting state should be displayed
+    const isWaitingForQuestion = isFourCorners 
+        ? (!activeQuestion || !activeQuestion.renderData) 
+        : (!activeTile || !activeQuestion);
+
     return (
         <div className="min-h-screen bg-[var(--bg-canvas,#020617)] text-[var(--text-main,#f8fafc)] flex flex-col font-sans select-none">
             
             {/* Top Bar */}
             <header className="bg-[var(--bg-card,#0f172a)] border-b border-[var(--border-main,#1e293b)] px-4 py-2.5 sticky top-0 z-50 flex items-center justify-between gap-4 shrink-0">
                 <div className="flex items-center gap-3">
-                    {/* Top Bar: Only show dropdown if more than 1 team exists */}
                     {teams.length > 1 ? (
                         <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-800 border border-slate-700 shadow-xs">
                             <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: myTeam?.color }} />
@@ -213,7 +261,7 @@ export default function StudentActivityView({
                         </div>
                     ) : (
                         <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-black uppercase tracking-wider">
-                            <span>{myTeam?.name || (lang === 'sv' ? 'Individuellt' : 'Solo')}</span>
+                            <span>{isFourCorners ? '4 Hörn' : (myTeam?.name || (lang === 'sv' ? 'Individuellt' : 'Solo'))}</span>
                         </div>
                     )}
 
@@ -238,24 +286,24 @@ export default function StudentActivityView({
             {/* Main Stage */}
             <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center items-center">
                 
-                {/* STATE 1: WAITING FOR TEACHER TO OPEN A TILE */}
-                {!activeTile || !activeQuestion ? (
+                {/* STATE 1: WAITING FOR TEACHER */}
+                {isWaitingForQuestion ? (
                     <div className="w-full max-w-xl bg-slate-900/90 border border-slate-800 rounded-[2.5rem] p-8 sm:p-12 text-center shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-300">
                         <div className="w-20 h-20 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl flex items-center justify-center text-amber-400 mb-6 shadow-inner">
                             <Trophy size={40} />
                         </div>
                         
                         <h2 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tight text-white mb-2">
-                            {lang === 'sv' ? "Väntar på nästa bricka..." : "Waiting for next question..."}
+                            {lang === 'sv' ? "Väntar på nästa uppgift..." : "Waiting for next question..."}
                         </h2>
                         
                         <p className="text-sm font-medium text-slate-400 mb-8 max-w-md">
                             {lang === 'sv' 
-                                ? "Läraren väljer kategori och poängnivå på storskärmen. Håll dig redo!" 
-                                : "The teacher is picking a topic and tier on the board. Get ready!"}
+                                ? "Läraren förbereder nästa runda på storskärmen. Håll dig redo!" 
+                                : "The teacher is setting up the next round on the board. Get ready!"}
                         </p>
 
-                        {teams.length > 0 && (
+                        {teams.length > 0 && !isFourCorners && (
                             <div className="w-full bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 space-y-2.5">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-1">
                                     {lang === 'sv' ? "Aktuell Ställning" : "Current Standings"}
@@ -274,9 +322,92 @@ export default function StudentActivityView({
                             </div>
                         )}
                     </div>
+                ) : isFourCorners ? (
+
+                    /* 🟢 STATE 2A: FOUR CORNERS MATCHED SPLIT-STAGE VIEW */
+                    <div className="w-full max-w-7xl h-full flex flex-col min-h-0 animate-in fade-in duration-300">
+                        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 min-h-0 items-stretch">
+                            
+                            {/* LEFT STAGE (7 Cols / ~58%): Prompt, Diagram Visual, Protected LaTeX */}
+                            <div 
+                                className="lg:col-span-7 rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-xl border overflow-y-auto custom-scrollbar"
+                                style={{ 
+                                    backgroundColor: 'var(--bg-card, #ffffff)', 
+                                    borderColor: 'var(--border-main, #e2e8f0)',
+                                    color: 'var(--text-main, #0f172a)'
+                                }}
+                            >
+                                <div className="space-y-4">
+                                    {/* Header badge */}
+                                    <div className="flex items-center justify-between">
+                                        <span className="badge-brand font-black text-xs px-3 py-1">
+                                            {lang === 'sv' ? `Runda ${activeQuestion?.roundIndex || 1}` : `Round ${activeQuestion?.roundIndex || 1}`}
+                                        </span>
+
+                                        {isWordProblem && (
+                                            <span className="badge-brand theme-amber text-[10px]">
+                                                {lang === 'sv' ? "Textuppgift" : "Word Problem"}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Question Prompt Description */}
+                                    {effectiveShowText && rd.description && (
+                                        <div className="text-xl sm:text-2xl font-bold leading-relaxed">
+                                            <MathDisplay content={rd.description} />
+                                        </div>
+                                    )}
+
+                                    {/* Full-Scale Geometry / Diagram (No Tiny Clipping) */}
+                                    {showVisual && hasVisualElement && (
+                                        <div 
+                                            className="w-full flex justify-center py-4 border rounded-2xl overflow-hidden shadow-inner"
+                                            style={{ 
+                                                backgroundColor: 'var(--bg-surface, #f8fafc)', 
+                                                borderColor: 'var(--border-main, #e2e8f0)' 
+                                            }}
+                                        >
+                                            <VisualRenderer 
+                                                data={rd} 
+                                                isWordProblem={isWordProblem} 
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Protected LaTeX Box (Hides on word problems by default) */}
+                                    {effectiveShowLatex && rd.latex && (
+                                        <div 
+                                            className="text-3xl sm:text-4xl font-serif font-black p-6 rounded-2xl border text-center my-3 shadow-inner"
+                                            style={{ 
+                                                backgroundColor: 'var(--bg-surface, #f8fafc)', 
+                                                borderColor: 'var(--border-main, #e2e8f0)', 
+                                                color: 'var(--brand-solid, #4f46e5)' 
+                                            }}
+                                        >
+                                            <MathDisplay content={`$$${rd.latex}$$`} />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* RIGHT STAGE (5 Cols / ~42%): The 4 Tactile Quadrants (2x2 Grid) */}
+                            <div className="lg:col-span-5 h-full flex flex-col min-h-[350px]">
+                                <DynamicResponseInput
+                                    question={activeQuestion}
+                                    activityMode="activity_four_corners"
+                                    revealedPhase={liveActiveData?.revealedPhase || 'commit'}
+                                    onSubmit={handleSendAnswer}
+                                    disabled={isSubmitting || isCompleted}
+                                    lang={lang}
+                                />
+                            </div>
+                            
+                        </div>
+                    </div>
+
                 ) : (
 
-                    /* STATE 2: ACTIVE QUESTION SOLVING STAGE */
+                    /* STATE 2B: CATEGORY CLASH MATRIX TILE VIEW */
                     <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-5 items-start animate-in fade-in duration-300">
                         
                         {/* Question Card (Left 7 Cols) */}
@@ -310,7 +441,7 @@ export default function StudentActivityView({
                                 </div>
                             )}
 
-                            {/* 🟢 LaTeX Display: Respects teacher toggles & auto-hides on word problems */}
+                            {/* LaTeX Display */}
                             {(effectiveShowLatex || (!rd.description && !hasVisualElement)) && rd.latex && (
                                 <div className="w-full bg-indigo-50/50 border border-indigo-100/60 rounded-2xl p-6 text-center text-2xl sm:text-3xl text-indigo-700 font-serif">
                                     <MathDisplay content={`$$${rd.latex}$$`} />

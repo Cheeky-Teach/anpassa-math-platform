@@ -415,15 +415,6 @@ export default function CategoryClashEngine({
 
     return (
         <div className="fixed inset-0 z-[500] bg-slate-950 flex flex-col font-sans select-none overflow-hidden animate-in fade-in">
-            
-            {/* 🟢 HONEYCOMB BACKDROP PATTERN */}
-            <div 
-                className="absolute inset-0 pointer-events-none z-0 opacity-[0.09]"
-                style={{
-                    backgroundImage: `radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 80%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='96' viewBox='0 0 56 96'%3E%3Cpath d='M28 0l28 16v32L28 64 0 48V16L28 0zm0 96l28-16V48L28 32 0 48v32l28 16z' fill='%236366f1' fill-opacity='0.6' fill-rule='evenodd' stroke='%234338ca' stroke-width='1.2' stroke-opacity='0.4'/%3E%3C/svg%3E")`,
-                    backgroundSize: 'auto, 56px 96px'
-                }}
-            />
 
             {/* Top Navigation & Status Bar */}
             <header className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between text-white shrink-0 gap-4">
