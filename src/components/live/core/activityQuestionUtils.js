@@ -1,90 +1,6 @@
 // src/components/activities/utils/activityQuestionUtils.js
 import { supabase } from '../../../lib/supabaseClient';
-import { useState, useEffect, useRef } from 'react';
-
-export function useActivityEngineSession({
-    session = null,
-    initialConfig = null,
-    isLiveHost = false,
-    profile = null,
-    onClose = null
-}) {
-    // 🟢 1. Universal Session & Code Resolution
-    const effectiveSession = session || initialConfig?.session || initialConfig?.room || null;
-    const effectiveLiveHost = Boolean(isLiveHost || effectiveSession?.id);
-    const effectiveClassCode = effectiveSession?.class_code || effectiveSession?.room_code || initialConfig?.room_code || '';
-    const effectiveRoomId = effectiveSession?.id || initialConfig?.roomId || null;
-
-    const userRole = String(profile?.role || '').toLowerCase();
-    const canHostLiveRoom = userRole === 'teacher' || userRole === 'super_admin';
-    const deliveryMode = initialConfig?.settings?.deliveryMode || initialConfig?.deliveryMode || (effectiveLiveHost ? 'digital' : 'physical');
-    const isDigitalMode = effectiveLiveHost || (deliveryMode === 'digital' && canHostLiveRoom);
-
-    const [activeRoomId, setActiveRoomId] = useState(effectiveRoomId);
-    const [activeClassCode, setActiveClassCode] = useState(effectiveClassCode);
-    const [liveResponses, setLiveResponses] = useState([]);
-
-    const roomIdRef = useRef(effectiveRoomId);
-    useEffect(() => {
-        roomIdRef.current = effectiveRoomId;
-        if (effectiveRoomId && effectiveRoomId !== activeRoomId) setActiveRoomId(effectiveRoomId);
-        if (effectiveClassCode && effectiveClassCode !== activeClassCode) setActiveClassCode(effectiveClassCode);
-    }, [effectiveRoomId, effectiveClassCode]);
-
-    // 🟢 2. Unified Realtime Responses Stream
-    useEffect(() => {
-        const roomId = activeRoomId || effectiveRoomId;
-        if (!isDigitalMode || !roomId) return;
-
-        const fetchInitial = async () => {
-            const { data } = await supabase.from('responses').select('*').eq('room_id', roomId);
-            if (data) setLiveResponses(data);
-        };
-        fetchInitial();
-
-        const channel = supabase.channel(`live_feed_${roomId}`)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'responses', filter: `room_id=eq.${roomId}` }, 
-                payload => setLiveResponses(prev => [...prev, payload.new]))
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'responses', filter: `room_id=eq.${roomId}` }, 
-                payload => setLiveResponses(prev => prev.map(r => r.id === payload.new.id ? payload.new : r)))
-            .subscribe();
-
-        return () => { supabase.removeChannel(channel); };
-    }, [isDigitalMode, activeRoomId, effectiveRoomId]);
-
-    // 🟢 3. Unified Broadcast Helper
-    const broadcast = async (activeQuestionData) => {
-        const roomId = activeRoomId || effectiveRoomId;
-        if (!isDigitalMode || !roomId) return;
-        await broadcastRoomQuestionState({ roomId, activeQuestionData });
-    };
-
-    // 🟢 4. Guaranteed Teardown Helper
-    const closeRoom = async (confirmMessage = "Vill du avsluta live-rummet för eleverna?") => {
-        const roomId = activeRoomId || effectiveRoomId || roomIdRef.current;
-        if (effectiveLiveHost && roomId) {
-            if (window.confirm(confirmMessage)) {
-                await closeActiveRoom(roomId);
-                setActiveRoomId(null);
-                setActiveClassCode('');
-            }
-        }
-        if (onClose) onClose();
-    };
-
-    return {
-        session: effectiveSession,
-        roomId: activeRoomId || effectiveRoomId,
-        classCode: activeClassCode || effectiveClassCode,
-        isLive: isDigitalMode,
-        isLiveHost: effectiveLiveHost,
-        liveResponses,
-        setLiveResponses,
-        broadcast,
-        closeRoom
-    };
-}
-
+import { liveCreateRoom } from '../../live/core/liveCreateRoom';
 
 /**
  * 1. UNIFIED ACTIVITY SAVING (to `saved_sheets`)
@@ -298,4 +214,50 @@ export function unpackSavedActivity(sheetRecord) {
         config: rawConfig,
         type: sheetRecord.type || sheetRecord.activity_mode || 'activity_custom'
     };
+}
+
+/**
+ * 7. ESCALATE LOCAL ACTIVITY TO LIVE ROOM
+ * Provisions an authenticated live room for an active engine on-the-fly,
+ * seeds the room with the engine's current in-memory packet, and synchronizes initial board state.
+ */
+export async function escalateActivityToLiveRoom({
+    teacherId,
+    profile,
+    title,
+    mode,
+    gameKey,
+    packet = [],
+    settings = {},
+    initialBroadcastData = null
+}) {
+    const newRoom = await liveCreateRoom({
+        teacherId,
+        profile,
+        title: title || "Live Session",
+        mode,
+        packet: Array.isArray(packet) ? packet : (packet?.tiles || packet?.livePacket || []),
+        settings: {
+            ...settings,
+            deliveryMode: 'digital'
+        }
+    });
+
+    if (!newRoom) {
+        throw new Error("Could not initialize live room.");
+    }
+
+    if (initialBroadcastData) {
+        await broadcastRoomQuestionState({
+            roomId: newRoom.id,
+            activeQuestionData: {
+                mode,
+                gameKey: gameKey || mode.replace('activity_', ''),
+                ...initialBroadcastData,
+                updated_at: new Date().toISOString()
+            }
+        });
+    }
+
+    return newRoom;
 }

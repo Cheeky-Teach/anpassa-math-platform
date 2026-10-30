@@ -1,8 +1,7 @@
 // src/components/activities/wizards/FourCornersSetupModal.jsx
 import React, { useState, useMemo } from 'react';
 import { 
-    X, Sparkles, FileText, Zap, Check, Monitor,
-    ArrowRight, Loader2, Search, RefreshCcw, Layers, Play
+    X, FileText, Zap, Loader2, Search, Layers, Play
 } from 'lucide-react';
 import { useLibrary } from '../../../hooks/useLibrary';
 import { generateDistractors } from '../../../lib/distractorGenerator';
@@ -16,7 +15,6 @@ export default function FourCornersSetupModal({
     profile = null,
     lang = 'sv'
 }) {
-    // 🟢 Strict teacher / super_admin role check (Identical to Category Clash)
     const userRole = String(profile?.role || '').toLowerCase();
     const isTeacher = userRole === 'teacher' || userRole === 'super_admin';
 
@@ -40,21 +38,18 @@ export default function FourCornersSetupModal({
             rounds_label: "2. Antal Omgångar",
             custom: "Eget:",
             pcs: "st",
-            delivery_label: "3. Genomförande i Klassrummet",
-            del_phys: "Fysiskt i Klassrummet",
-            del_phys_sub: "Eleverna reser sig och rör sig till de 4 hörnen",
-            del_dig: "Digital Röstning",
-            del_dig_sub: "Eleverna sitter kvar vid bänken och röstar på sina skärmar",
-            time_label: "Svarstid per fråga",
+            time_label: "Svarstid per fråga (Standard)",
             no_timer: "Ingen timer (Läraren styr)",
             seconds: "sekunder",
             score_label: "Poängsystem",
             score_formative: "Formativt (Inga poäng)",
             score_solo: "Solo-poäng till varje elev",
             cancel: "Avbryt",
-            start: "Starta Omgång",
-            start_live: "Starta Live-rum",
-            preparing: "Förbereder frågor..."
+            start: "Öppna Omgång",
+            preparing: "Förbereder frågor...",
+            current_active_material: "Aktivt Material (Nuvarande)",
+            current_resource: "Nuvarande material",
+            loading_files: "Laddar dina filer..."
         },
         en: {
             title: "Configure 4 Corners",
@@ -75,21 +70,18 @@ export default function FourCornersSetupModal({
             rounds_label: "2. Number of Rounds",
             custom: "Custom:",
             pcs: "rounds",
-            delivery_label: "3. Classroom Delivery",
-            del_phys: "Physical Movement",
-            del_phys_sub: "Students walk to the 4 corners of the room",
-            del_dig: "Desk Voting",
-            del_dig_sub: "Students vote silently from their screens",
-            time_label: "Time Limit",
+            time_label: "Time Limit (Default)",
             no_timer: "No timer (Teacher controlled)",
             seconds: "seconds",
             score_label: "Scoring System",
             score_formative: "Formative (No scores)",
             score_solo: "Solo points to each student",
             cancel: "Cancel",
-            start: "Play (Projector)",
-            start_live: "Host Live Room",
-            preparing: "Preparing questions..."
+            start: "Open Activity",
+            preparing: "Preparing questions...",
+            current_active_material: "Active Resource (Current)",
+            current_resource: "Current resource",
+            loading_files: "Loading your files..."
         }
     }[lang] || {};
 
@@ -102,15 +94,14 @@ export default function FourCornersSetupModal({
     
     const [loadedSheet, setLoadedSheet] = useState(hasSourcePacket ? {
         id: 'active_source_packet',
-        title: lang === 'sv' ? "Aktivt Material" : "Current Resource",
+        title: t.current_active_material,
         questions: sourcePacket
     } : null);
 
     const [importStrategy, setImportStrategy] = useState('exact');
     const [questionCount, setQuestionCount] = useState(hasSourcePacket ? sourcePacket.length : 8);
-    const [deliveryMode, setDeliveryMode] = useState('physical');
-    const [timerSeconds, setTimerSeconds] = useState(0);
-    const [scoringMode, setScoringMode] = useState('formative');
+    const [timerSeconds, setTimerSeconds] = useState(30);
+    const [scoringMode, setScoringMode] = useState('solo');
     const [isGenerating, setIsGenerating] = useState(false);
 
     const eligibleSheets = useMemo(() => {
@@ -138,7 +129,7 @@ export default function FourCornersSetupModal({
         setQuestionCount(questions.length > 0 ? questions.length : 8);
     };
 
-    const handleLaunch = async (forcedTarget = null) => {
+    const handleLaunch = async () => {
         setIsGenerating(true);
         try {
             let preparedQuestions = [];
@@ -170,7 +161,7 @@ export default function FourCornersSetupModal({
                         return {
                             id: raw.id || crypto.randomUUID(),
                             roundIndex: idx + 1,
-                            name: raw.name || `Uppgift ${idx + 1}`,
+                            name: raw.name || `${lang === 'sv' ? 'Uppgift' : 'Question'} ${idx + 1}`,
                             topicId: raw.topicId || resolved.topicId || raw.renderData?.topicId || (raw.topic_ids?.[0]) || 'imported',
                             variationKey: raw.variationKey || resolved.variationKey || null,
                             source: 'worksheet_exact',
@@ -197,7 +188,7 @@ export default function FourCornersSetupModal({
                             return {
                                 id: crypto.randomUUID(),
                                 roundIndex: idx + 1,
-                                name: `Runda ${idx + 1}`,
+                                name: `${lang === 'sv' ? 'Runda' : 'Round'} ${idx + 1}`,
                                 topicId: seed.topicId,
                                 variationKey: seed.variationKey,
                                 source: 'generator_reroll',
@@ -213,16 +204,10 @@ export default function FourCornersSetupModal({
                 }
             }
 
-            // Determine effective mode: enforce 'physical' if not authorized
-            const effectiveDelivery = (forcedTarget === 'live' || deliveryMode === 'digital') && isTeacher
-                ? 'digital'
-                : 'physical';
-
             onLaunch({
-                launchTarget: forcedTarget || (deliveryMode === 'digital' ? 'live' : 'local'), // 🟢 Added launchTarget
                 initialQuestions: preparedQuestions,
                 settings: {
-                    deliveryMode: effectiveDelivery,
+                    deliveryMode: 'physical',
                     timerSeconds,
                     scoringMode,
                     questionCount
@@ -237,18 +222,34 @@ export default function FourCornersSetupModal({
     };
 
     return (
-        <div className="fixed inset-0 z-[550] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in select-none">
-            <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
-                
+        <div className="fixed inset-0 z-[550] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in select-none">
+            <div 
+                className="w-full max-w-xl rounded-[2.5rem] shadow-2xl border overflow-hidden flex flex-col max-h-[90vh] transition-colors"
+                style={{
+                    backgroundColor: 'var(--bg-card)',
+                    borderColor: 'var(--border-main)',
+                    color: 'var(--text-main)'
+                }}
+            >
                 {/* Header */}
-                <header className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-800/50">
+                <header 
+                    className="px-6 py-4 border-b flex items-center justify-between shrink-0"
+                    style={{
+                        backgroundColor: 'var(--bg-surface)',
+                        borderColor: 'var(--border-main)'
+                    }}
+                >
                     <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-sm">
                             4H
                         </div>
-                        <h2 className="text-base font-black tracking-tight">{t.title}</h2>
+                        <h2 className="text-base font-black tracking-tight text-inherit">{t.title}</h2>
                     </div>
-                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl transition-colors cursor-pointer">
+                    <button 
+                        onClick={onClose} 
+                        className="p-2 rounded-xl transition-colors cursor-pointer hover:bg-rose-500 hover:text-white"
+                        style={{ color: 'var(--text-muted)' }}
+                    >
                         <X size={20} />
                     </button>
                 </header>
@@ -258,7 +259,7 @@ export default function FourCornersSetupModal({
                     
                     {/* 1. START METHOD */}
                     <div>
-                        <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider block mb-2.5">
+                        <label className="text-[11px] font-black uppercase tracking-wider block mb-2.5" style={{ color: 'var(--text-muted)' }}>
                             {t.start_mode_label}
                         </label>
                         <div className="grid grid-cols-2 gap-3">
@@ -267,14 +268,18 @@ export default function FourCornersSetupModal({
                                 onClick={() => setStartMode('library')}
                                 className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
                                     startMode === 'library'
-                                        ? 'border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/30 ring-2 ring-indigo-200 dark:ring-indigo-800'
-                                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-white dark:bg-slate-900'
+                                        ? 'border-indigo-600 ring-2 ring-indigo-500/20'
+                                        : 'hover:border-indigo-400'
                                 }`}
+                                style={{
+                                    backgroundColor: startMode === 'library' ? 'var(--bg-surface)' : 'var(--bg-card)',
+                                    borderColor: startMode === 'library' ? 'var(--brand-solid)' : 'var(--border-main)'
+                                }}
                             >
-                                <FileText size={22} className={startMode === 'library' ? 'text-indigo-600' : 'text-slate-400'} />
+                                <FileText size={22} className={startMode === 'library' ? 'text-indigo-500' : 'opacity-40'} />
                                 <div className="mt-4">
-                                    <div className="text-xs font-black">{t.mode_library}</div>
-                                    <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{t.mode_library_sub}</div>
+                                    <div className="text-xs font-black text-inherit">{t.mode_library}</div>
+                                    <div className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--text-muted)' }}>{t.mode_library_sub}</div>
                                 </div>
                             </button>
 
@@ -287,29 +292,44 @@ export default function FourCornersSetupModal({
                                 }}
                                 className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
                                     startMode === 'quick'
-                                        ? 'border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/30 ring-2 ring-indigo-200 dark:ring-indigo-800'
-                                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-white dark:bg-slate-900'
+                                        ? 'border-indigo-600 ring-2 ring-indigo-500/20'
+                                        : 'hover:border-indigo-400'
                                 }`}
+                                style={{
+                                    backgroundColor: startMode === 'quick' ? 'var(--bg-surface)' : 'var(--bg-card)',
+                                    borderColor: startMode === 'quick' ? 'var(--brand-solid)' : 'var(--border-main)'
+                                }}
                             >
-                                <Zap size={22} className={startMode === 'quick' ? 'text-indigo-600' : 'text-slate-400'} />
+                                <Zap size={22} className={startMode === 'quick' ? 'text-indigo-500' : 'opacity-40'} />
                                 <div className="mt-4">
-                                    <div className="text-xs font-black">{t.mode_quick}</div>
-                                    <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{t.mode_quick_sub}</div>
+                                    <div className="text-xs font-black text-inherit">{t.mode_quick}</div>
+                                    <div className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--text-muted)' }}>{t.mode_quick_sub}</div>
                                 </div>
                             </button>
                         </div>
 
                         {/* Inline Library Selector */}
                         {startMode === 'library' && (
-                            <div className="mt-3 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3 animate-in fade-in">
+                            <div 
+                                className="mt-3 p-4 border rounded-2xl space-y-3 animate-in fade-in"
+                                style={{
+                                    backgroundColor: 'var(--bg-surface)',
+                                    borderColor: 'var(--border-main)'
+                                }}
+                            >
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
+                                    <Search className="absolute left-3 top-2.5 opacity-40" size={14} />
                                     <input
                                         type="text"
                                         placeholder={t.search_placeholder}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full pl-9 pr-3 py-2 border rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
+                                        style={{
+                                            backgroundColor: 'var(--bg-card)',
+                                            borderColor: 'var(--border-main)',
+                                            color: 'var(--text-main)'
+                                        }}
                                     />
                                 </div>
 
@@ -320,7 +340,7 @@ export default function FourCornersSetupModal({
                                                 setSelectedSheetId('active_source_packet');
                                                 setLoadedSheet({
                                                     id: 'active_source_packet',
-                                                    title: lang === 'sv' ? "Aktivt Material (Nuvarande)" : "Current Active Resource",
+                                                    title: t.current_active_material,
                                                     questions: sourcePacket
                                                 });
                                                 setQuestionCount(sourcePacket.length);
@@ -328,21 +348,26 @@ export default function FourCornersSetupModal({
                                             className={`p-2.5 rounded-xl border text-xs flex items-center justify-between cursor-pointer transition-all ${
                                                 selectedSheetId === 'active_source_packet'
                                                     ? 'bg-indigo-600 text-white font-bold border-indigo-600 shadow-sm'
-                                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-indigo-300'
+                                                    : 'hover:border-indigo-400'
                                             }`}
+                                            style={selectedSheetId !== 'active_source_packet' ? {
+                                                backgroundColor: 'var(--bg-card)',
+                                                borderColor: 'var(--border-main)',
+                                                color: 'var(--text-main)'
+                                            } : {}}
                                         >
                                             <div className="flex items-center gap-2 truncate">
                                                 <Layers size={14} className={selectedSheetId === 'active_source_packet' ? 'text-white' : 'text-indigo-500'} />
-                                                <span className="truncate">{lang === 'sv' ? "Nuvarande material" : "Current resource"}</span>
+                                                <span className="truncate">{t.current_resource}</span>
                                             </div>
                                             <span className="text-[10px] opacity-80 shrink-0 font-mono">({sourcePacket.length} {t.questions_count})</span>
                                         </div>
                                     )}
 
                                     {isLoadingLibrary ? (
-                                        <div className="py-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                                        <div className="py-6 text-center text-xs flex items-center justify-center gap-2" style={{ color: 'var(--text-muted)' }}>
                                             <Loader2 size={15} className="animate-spin text-indigo-500" />
-                                            <span>Laddar dina filer...</span>
+                                            <span>{t.loading_files}</span>
                                         </div>
                                     ) : eligibleSheets.length > 0 ? (
                                         eligibleSheets.map(sheet => {
@@ -354,29 +379,34 @@ export default function FourCornersSetupModal({
                                                     className={`p-2.5 rounded-xl border text-xs flex items-center justify-between cursor-pointer transition-all ${
                                                         isSelected
                                                             ? 'bg-indigo-600 text-white font-bold border-indigo-600 shadow-sm'
-                                                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-indigo-300 text-slate-700 dark:text-slate-300'
+                                                            : 'hover:border-indigo-400'
                                                     }`}
+                                                    style={!isSelected ? {
+                                                        backgroundColor: 'var(--bg-card)',
+                                                        borderColor: 'var(--border-main)',
+                                                        color: 'var(--text-main)'
+                                                    } : {}}
                                                 >
                                                     <div className="flex items-center gap-2 truncate pr-2">
-                                                        <FileText size={14} className={isSelected ? 'text-white' : 'text-slate-400'} />
+                                                        <FileText size={14} className={isSelected ? 'text-white' : 'opacity-40'} />
                                                         <span className="truncate">{sheet.title}</span>
                                                     </div>
-                                                    <span className={`text-[10px] shrink-0 font-mono ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
-                                                        {new Date(sheet.updated_at).toLocaleDateString()}
+                                                    <span className={`text-[10px] shrink-0 font-mono ${isSelected ? 'text-white/80' : 'opacity-40'}`}>
+                                                        {new Date(sheet.updated_at).toLocaleDateString(lang === 'sv' ? 'sv-SE' : 'en-US')}
                                                     </span>
                                                 </div>
                                             );
                                         })
                                     ) : (
-                                        <div className="py-4 text-center text-xs text-slate-400 italic">
+                                        <div className="py-4 text-center text-xs italic" style={{ color: 'var(--text-muted)' }}>
                                             {t.no_sheets_found}
                                         </div>
                                     )}
                                 </div>
 
                                 {loadedSheet && (
-                                    <div className="pt-3 border-t border-slate-200 dark:border-slate-700/60">
-                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-2">
+                                    <div className="pt-3 border-t" style={{ borderColor: 'var(--border-main)' }}>
+                                        <span className="text-[10px] font-black uppercase tracking-wider block mb-2" style={{ color: 'var(--text-muted)' }}>
                                             {t.strat_label}
                                         </span>
                                         <div className="grid grid-cols-2 gap-2">
@@ -385,12 +415,17 @@ export default function FourCornersSetupModal({
                                                 onClick={() => setImportStrategy('exact')}
                                                 className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                                                     importStrategy === 'exact'
-                                                        ? 'bg-white dark:bg-slate-900 border-indigo-600 text-indigo-900 dark:text-indigo-300 font-bold shadow-xs'
-                                                        : 'bg-white/60 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                                                        ? 'border-indigo-600 text-indigo-500 font-bold shadow-xs'
+                                                        : 'hover:border-indigo-400'
                                                 }`}
+                                                style={{
+                                                    backgroundColor: 'var(--bg-card)',
+                                                    borderColor: importStrategy === 'exact' ? 'var(--brand-solid)' : 'var(--border-main)',
+                                                    color: importStrategy === 'exact' ? 'var(--brand-solid)' : 'var(--text-muted)'
+                                                }}
                                             >
                                                 <div className="text-xs font-black">{t.strat_exact}</div>
-                                                <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{t.strat_exact_sub}</div>
+                                                <div className="text-[10px] opacity-70 leading-tight mt-0.5">{t.strat_exact_sub}</div>
                                             </button>
 
                                             <button
@@ -398,12 +433,17 @@ export default function FourCornersSetupModal({
                                                 onClick={() => setImportStrategy('reroll_domain')}
                                                 className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                                                     importStrategy === 'reroll_domain'
-                                                        ? 'bg-white dark:bg-slate-900 border-indigo-600 text-indigo-900 dark:text-indigo-300 font-bold shadow-xs'
-                                                        : 'bg-white/60 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                                                        ? 'border-indigo-600 text-indigo-500 font-bold shadow-xs'
+                                                        : 'hover:border-indigo-400'
                                                 }`}
+                                                style={{
+                                                    backgroundColor: 'var(--bg-card)',
+                                                    borderColor: importStrategy === 'reroll_domain' ? 'var(--brand-solid)' : 'var(--border-main)',
+                                                    color: importStrategy === 'reroll_domain' ? 'var(--brand-solid)' : 'var(--text-muted)'
+                                                }}
                                             >
                                                 <div className="text-xs font-black">{t.strat_reroll}</div>
-                                                <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{t.strat_reroll_sub}</div>
+                                                <div className="text-[10px] opacity-70 leading-tight mt-0.5">{t.strat_reroll_sub}</div>
                                             </button>
                                         </div>
                                     </div>
@@ -414,7 +454,7 @@ export default function FourCornersSetupModal({
 
                     {/* 2. ROUND COUNT */}
                     <div>
-                        <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider block mb-2">
+                        <label className="text-[11px] font-black uppercase tracking-wider block mb-2" style={{ color: 'var(--text-muted)' }}>
                             {t.rounds_label}
                         </label>
                         <div className="flex items-center gap-2">
@@ -426,144 +466,108 @@ export default function FourCornersSetupModal({
                                     className={`px-4 py-2.5 rounded-xl text-xs font-black border transition-all cursor-pointer ${
                                         questionCount === num
                                             ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
-                                            : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-indigo-300'
+                                            : 'hover:border-indigo-400'
                                     }`}
+                                    style={questionCount !== num ? {
+                                        backgroundColor: 'var(--bg-surface)',
+                                        borderColor: 'var(--border-main)',
+                                        color: 'var(--text-main)'
+                                    } : {}}
                                 >
                                     {num}
                                 </button>
                             ))}
                             <div className="flex items-center gap-1.5 ml-2">
-                                <span className="text-xs font-bold text-slate-400">{t.custom}</span>
+                                <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>{t.custom}</span>
                                 <input
                                     type="number"
                                     min={1}
                                     max={25}
                                     value={questionCount}
                                     onChange={(e) => setQuestionCount(Math.max(1, Math.min(25, parseInt(e.target.value, 10) || 1)))}
-                                    className="w-16 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-black text-center outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-16 p-2 border rounded-xl text-xs font-black text-center outline-none focus:ring-2 focus:ring-indigo-500"
+                                    style={{
+                                        backgroundColor: 'var(--bg-surface)',
+                                        borderColor: 'var(--border-main)',
+                                        color: 'var(--text-main)'
+                                    }}
                                 />
-                                <span className="text-xs font-bold text-slate-400">{t.pcs}</span>
+                                <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>{t.pcs}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* 3. CLASSROOM DELIVERY (Restricted to Teacher/Super_Admin) */}
-                    <div>
-                        <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider block mb-2">
-                            {t.delivery_label}
-                        </label>
-                        <div className="grid grid-cols-2 gap-2.5">
-                            <button
-                                type="button"
-                                onClick={() => setDeliveryMode('physical')}
-                                className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                                    deliveryMode === 'physical'
-                                        ? 'border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/30 ring-1 ring-indigo-200 dark:ring-indigo-800'
-                                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
-                                }`}
-                            >
-                                <div className="text-xs font-black">{t.del_phys}</div>
-                                <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{t.del_phys_sub}</div>
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={!isTeacher}
-                                onClick={() => {
-                                    if (isTeacher) setDeliveryMode('digital');
-                                }}
-                                className={`p-3 rounded-2xl border-2 text-left transition-all ${
-                                    !isTeacher
-                                        ? 'opacity-40 cursor-not-allowed border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/40'
-                                        : deliveryMode === 'digital'
-                                            ? 'border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/30 ring-1 ring-indigo-200 dark:ring-indigo-800 cursor-pointer'
-                                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 cursor-pointer'
-                                }`}
-                                title={!isTeacher ? (lang === 'sv' ? "Endast tillgängligt för lärare" : "Teacher-only feature") : ""}
-                            >
-                                <div className="text-xs font-black flex items-center justify-between">
-                                    <span>{t.del_dig}</span>
-                                    {!isTeacher && (
-                                        <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold">
-                                            {lang === 'sv' ? "Lärare" : "Teacher"}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{t.del_dig_sub}</div>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* 4. TIMER & SCORING */}
+                    {/* 3. DEFAULT TIMER & SCORING */}
                     <div className="grid grid-cols-2 gap-3 pt-1">
                         <div>
-                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-1.5">
+                            <label className="text-[10px] font-black uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>
                                 {t.time_label}
                             </label>
                             <select
                                 value={timerSeconds}
                                 onChange={(e) => setTimerSeconds(parseInt(e.target.value, 10))}
-                                className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                className="w-full p-2.5 border rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                style={{
+                                    backgroundColor: 'var(--bg-surface)',
+                                    borderColor: 'var(--border-main)',
+                                    color: 'var(--text-main)'
+                                }}
                             >
-                                <option value={0}>{t.no_timer}</option>
-                                <option value={30}>30 {t.seconds}</option>
-                                <option value={45}>45 {t.seconds}</option>
-                                <option value={60}>60 {t.seconds}</option>
-                                <option value={90}>90 {t.seconds}</option>
+                                <option value={0} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>{t.no_timer}</option>
+                                <option value={15} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>15 {t.seconds}</option>
+                                <option value={30} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>30 {t.seconds}</option>
+                                <option value={45} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>45 {t.seconds}</option>
+                                <option value={60} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>60 {t.seconds}</option>
                             </select>
                         </div>
 
                         <div>
-                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-1.5">
+                            <label className="text-[10px] font-black uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>
                                 {t.score_label}
                             </label>
                             <select
                                 value={scoringMode}
                                 onChange={(e) => setScoringMode(e.target.value)}
-                                className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                className="w-full p-2.5 border rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                style={{
+                                    backgroundColor: 'var(--bg-surface)',
+                                    borderColor: 'var(--border-main)',
+                                    color: 'var(--text-main)'
+                                }}
                             >
-                                <option value="formative">{t.score_formative}</option>
-                                <option value="solo">{t.score_solo}</option>
+                                <option value="solo" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>{t.score_solo}</option>
+                                <option value="formative" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>{t.score_formative}</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
-                {/* Footer with Category Clash-style dual buttons for teachers */}
-                <footer className="p-4 px-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 shrink-0">
+                {/* Footer */}
+                <footer 
+                    className="p-4 px-6 border-t flex items-center justify-between shrink-0"
+                    style={{
+                        backgroundColor: 'var(--bg-surface)',
+                        borderColor: 'var(--border-main)'
+                    }}
+                >
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors cursor-pointer"
+                        className="px-4 py-2 text-xs font-bold transition-colors cursor-pointer"
+                        style={{ color: 'var(--text-muted)' }}
                     >
                         {t.cancel}
                     </button>
 
-                    <div className="flex items-center gap-2">
-                        {/* Standard Projector Launch (Available to everyone) */}
-                        <button
-                            type="button"
-                            disabled={isGenerating || (startMode === 'library' && !loadedSheet)}
-                            onClick={() => handleLaunch('local')}
-                            className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-sm active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                        >
-                            {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-                            <span>{isTeacher ? (lang === 'sv' ? "Projektorläge" : "Projector Mode") : t.start}</span>
-                        </button>
-
-                        {/* 🟢 Live Digital Launch (Strictly for teachers & super_admins) */}
-                        {isTeacher && (
-                            <button
-                                type="button"
-                                disabled={isGenerating || (startMode === 'library' && !loadedSheet)}
-                                onClick={() => handleLaunch('live')}
-                                className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md shadow-rose-600/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                            >
-                                {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Monitor size={14} />}
-                                <span>{t.start_live}</span>
-                            </button>
-                        )}
-                    </div>
+                    <button
+                        type="button"
+                        disabled={isGenerating || (startMode === 'library' && !loadedSheet)}
+                        onClick={() => handleLaunch()}
+                        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md shadow-indigo-600/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                        {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+                        <span>{t.start}</span>
+                    </button>
                 </footer>
             </div>
         </div>

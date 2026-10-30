@@ -1,5 +1,5 @@
 // src/components/live/student/views/StudentActivityView.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import MathDisplay from '../../../shared/MathDisplay';
 import SmartMathInput from '../../../ui/SmartMathInput';
 import MathScratchpad from '../../../ui/MathScratchpad';
@@ -8,9 +8,10 @@ import PreferencesToggle from '../../../ui/PreferencesToggle';
 import VisualRenderer from '../../../visuals/VisualRenderer';
 import { supabase } from '../../../../lib/supabaseClient';
 import DynamicResponseInput from '../components/DynamicResponseInput';
+import StudentQuickPracticeDrawer from '../../../activities/shared/StudentQuickPracticeDrawer';
 import { 
     Send, CheckCircle2, Loader2, Trophy, 
-    Calculator, PenTool, LogOut, Check
+    Calculator, PenTool, LogOut, Check, Zap
 } from 'lucide-react';
 
 export default function StudentActivityView({
@@ -109,11 +110,30 @@ export default function StudentActivityView({
     const [localCanvas, setLocalCanvas] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // 🟢 Snabbräknaren: Sticky opt-in state across rounds
+    const [autoPracticeEnabled, setAutoPracticeEnabled] = useState(false);
+
+    // 🟢 Extract active topics from room packet/categories for Snabbräknaren
+    const sessionTopics = useMemo(() => {
+        // 1. Four Corners / Playlist packets
+        if (Array.isArray(liveActiveData?.packet)) {
+            return [...new Set(liveActiveData.packet.map(q => q.topicId).filter(Boolean))];
+        }
+        // 2. Category Clash / Board packets
+        if (liveActiveData?.board?.categories || liveActiveData?.settings?.categories) {
+            const cats = liveActiveData?.board?.categories || liveActiveData?.settings?.categories || [];
+            return [...new Set(cats.map(c => c.topic).filter(Boolean))];
+        }
+        // 3. Fallback to current question's topic
+        if (activeQuestion?.topicId) {
+            return [activeQuestion.topicId];
+        }
+        return ['basic_arithmetic'];
+    }, [liveActiveData, activeQuestion]);
+
     // 🟢 3. Reset student answer input when teacher rolls new numbers or switches tile
-    // 🟢 REPLACE WITH THIS UPDATED BLOCK:
     useEffect(() => {
-        // Whenever teacher picks a new round or rolls new numbers
-        const targetKey = isFourCorners ? `round_${activeQuestion?.roundIndex}` : activeTile;
+        const targetKey = isFourCorners ? `round_${activeQuestion?.roundIndex || 0}` : activeTile;
         
         if (targetKey) {
             setLocalAnswers(prev => ({ ...prev, [targetKey]: '' }));
@@ -128,11 +148,16 @@ export default function StudentActivityView({
         activeTile, 
         activeQuestion?.id, 
         activeQuestion?.roundIndex, 
-        activeQuestion?.regenVersion
+        activeQuestion?.regenVersion,
+        isFourCorners
     ]);
 
     const currentAnswer = localAnswers[activeTile] || '';
     const isCompleted = Boolean(localCompleted[activeTile]);
+
+    // 🟢 Target key for the currently active prompt
+    const activeTargetKey = isFourCorners ? `round_${activeQuestion?.roundIndex || 0}` : activeTile;
+    const hasAnsweredCurrent = Boolean(localCompleted[activeTargetKey]);
 
     // Render Data extraction
     const rd = activeQuestion?.resolvedData?.renderData || activeQuestion?.renderData || {};
@@ -174,6 +199,10 @@ export default function StudentActivityView({
 
             const { error } = await supabase.from('responses').insert([payload]);
             if (error && error.code !== '23505') throw error;
+
+            // 🟢 Record that current round is completed locally to trigger the drawer
+            const targetKey = `round_${activeQuestion?.roundIndex || 0}`;
+            setLocalCompleted(prev => ({ ...prev, [targetKey]: true }));
         } catch (err) {
             console.error("[StudentActivityView] Four Corners submit error:", err);
         } finally {
@@ -288,38 +317,62 @@ export default function StudentActivityView({
                 
                 {/* STATE 1: WAITING FOR TEACHER */}
                 {isWaitingForQuestion ? (
-                    <div className="w-full max-w-xl bg-slate-900/90 border border-slate-800 rounded-[2.5rem] p-8 sm:p-12 text-center shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-300">
-                        <div className="w-20 h-20 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl flex items-center justify-center text-amber-400 mb-6 shadow-inner">
-                            <Trophy size={40} />
-                        </div>
-                        
-                        <h2 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tight text-white mb-2">
-                            {lang === 'sv' ? "Väntar på nästa uppgift..." : "Waiting for next question..."}
-                        </h2>
-                        
-                        <p className="text-sm font-medium text-slate-400 mb-8 max-w-md">
-                            {lang === 'sv' 
-                                ? "Läraren förbereder nästa runda på storskärmen. Håll dig redo!" 
-                                : "The teacher is setting up the next round on the board. Get ready!"}
-                        </p>
-
-                        {teams.length > 0 && !isFourCorners && (
-                            <div className="w-full bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 space-y-2.5">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-1">
-                                    {lang === 'sv' ? "Aktuell Ställning" : "Current Standings"}
-                                </span>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {teams.map(t => (
-                                        <div key={t.id} className="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-slate-800">
-                                            <div className="flex items-center gap-2">
-                                                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: t.color }} />
-                                                <span className="text-xs font-bold text-slate-300">{t.name}</span>
-                                            </div>
-                                            <span className="text-xs font-black text-amber-300 font-mono">{t.score}p</span>
-                                        </div>
-                                    ))}
-                                </div>
+                    <div className="w-full max-w-xl flex flex-col items-center gap-4">
+                        <div className="w-full bg-slate-900/90 border border-slate-800 rounded-[2.5rem] p-8 sm:p-12 text-center shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-300">
+                            <div className="w-20 h-20 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl flex items-center justify-center text-amber-400 mb-6 shadow-inner">
+                                <Trophy size={40} />
                             </div>
+                            
+                            <h2 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tight text-white mb-2">
+                                {lang === 'sv' ? "Väntar på nästa uppgift..." : "Waiting for next question..."}
+                            </h2>
+                            
+                            <p className="text-sm font-medium text-slate-400 mb-6 max-w-md">
+                                {lang === 'sv' 
+                                    ? "Läraren förbereder nästa runda på storskärmen. Håll dig redo!" 
+                                    : "The teacher is setting up the next round on the board. Get ready!"}
+                            </p>
+
+                            {/* 🟢 Opt-In Trigger Button */}
+                            {!autoPracticeEnabled ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setAutoPracticeEnabled(true)}
+                                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-indigo-950/40 active:scale-95 transition-all cursor-pointer"
+                                >
+                                    <Zap size={16} className="fill-current" />
+                                    <span>{lang === 'sv' ? "Starta Snabbräknare (Medan du väntar)" : "Start Quick Practice (While waiting)"}</span>
+                                </button>
+                            ) : null}
+
+                            {teams.length > 0 && !isFourCorners && (
+                                <div className="w-full bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 space-y-2.5 mt-6">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-1">
+                                        {lang === 'sv' ? "Aktuell Ställning" : "Current Standings"}
+                                    </span>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {teams.map(t => (
+                                            <div key={t.id} className="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-slate-800">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: t.color }} />
+                                                    <span className="text-xs font-bold text-slate-300">{t.name}</span>
+                                                </div>
+                                                <span className="text-xs font-black text-amber-300 font-mono">{t.score}p</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 🟢 Render Drawer directly below the waiting card when opted in */}
+                        {autoPracticeEnabled && (
+                            <StudentQuickPracticeDrawer
+                                isOpen={isWaitingForQuestion}
+                                sessionTopics={sessionTopics}
+                                lang={lang}
+                                onClose={() => setAutoPracticeEnabled(false)}
+                            />
                         )}
                     </div>
                 ) : isFourCorners ? (
@@ -338,7 +391,6 @@ export default function StudentActivityView({
                                 }}
                             >
                                 <div className="space-y-4">
-                                    {/* Header badge */}
                                     <div className="flex items-center justify-between">
                                         <span className="badge-brand font-black text-xs px-3 py-1">
                                             {lang === 'sv' ? `Runda ${activeQuestion?.roundIndex || 1}` : `Round ${activeQuestion?.roundIndex || 1}`}
@@ -351,22 +403,14 @@ export default function StudentActivityView({
                                         )}
                                     </div>
 
-                                    {/* Question Prompt Description */}
                                     {effectiveShowText && rd.description && (
                                         <div className="text-xl sm:text-2xl font-bold leading-relaxed">
                                             <MathDisplay content={rd.description} />
                                         </div>
                                     )}
 
-                                    {/* Full-Scale Geometry / Diagram (No Tiny Clipping) */}
                                     {showVisual && hasVisualElement && (
-                                        <div 
-                                            className="w-full flex justify-center py-4 border rounded-2xl overflow-hidden shadow-inner"
-                                            style={{ 
-                                                backgroundColor: 'var(--bg-surface, #f8fafc)', 
-                                                borderColor: 'var(--border-main, #e2e8f0)' 
-                                            }}
-                                        >
+                                        <div className="whiteboard-protect w-full flex justify-center py-3 border border-slate-200 rounded-2xl overflow-hidden shadow-xs my-2">
                                             <VisualRenderer 
                                                 data={rd} 
                                                 isWordProblem={isWordProblem} 
@@ -374,7 +418,6 @@ export default function StudentActivityView({
                                         </div>
                                     )}
 
-                                    {/* Protected LaTeX Box (Hides on word problems by default) */}
                                     {effectiveShowLatex && rd.latex && (
                                         <div 
                                             className="text-3xl sm:text-4xl font-serif font-black p-6 rounded-2xl border text-center my-3 shadow-inner"
@@ -390,16 +433,63 @@ export default function StudentActivityView({
                                 </div>
                             </div>
 
-                            {/* RIGHT STAGE (5 Cols / ~42%): The 4 Tactile Quadrants (2x2 Grid) */}
+                            {/* RIGHT STAGE (5 Cols / ~42%): Either 4 Corners Input OR Snabbräknaren Drawer */}
                             <div className="lg:col-span-5 h-full flex flex-col min-h-[350px]">
-                                <DynamicResponseInput
-                                    question={activeQuestion}
-                                    activityMode="activity_four_corners"
-                                    revealedPhase={liveActiveData?.revealedPhase || 'commit'}
-                                    onSubmit={handleSendAnswer}
-                                    disabled={isSubmitting || isCompleted}
-                                    lang={lang}
-                                />
+                                {!hasAnsweredCurrent ? (
+                                    <DynamicResponseInput
+                                        question={activeQuestion}
+                                        activityMode="activity_four_corners"
+                                        revealedPhase={liveActiveData?.revealedPhase || 'commit'}
+                                        onSubmit={handleSendAnswer}
+                                        disabled={isSubmitting}
+                                        lang={lang}
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex flex-col gap-3 animate-in fade-in duration-300">
+                                        <div 
+                                            className="p-4 rounded-2xl border flex items-center justify-between shadow-sm"
+                                            style={{
+                                                backgroundColor: 'var(--bg-card, #ffffff)',
+                                                borderColor: 'var(--border-main, #e2e8f0)',
+                                                color: 'var(--text-main, #0f172a)'
+                                            }}
+                                        >
+                                            <div className="flex items-center gap-2.5">
+                                                <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+                                                <div>
+                                                    <p className="text-xs font-bold leading-tight">
+                                                        {lang === 'sv' ? "Ditt svar är sparat!" : "Your answer is saved!"}
+                                                    </p>
+                                                    <p className="text-[10px]" style={{ color: 'var(--text-muted, #64748b)' }}>
+                                                        {lang === 'sv' ? "Väntar på att alla ska svara..." : "Waiting for classmates..."}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {!autoPracticeEnabled && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setAutoPracticeEnabled(true)}
+                                                    className="btn-brand px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs cursor-pointer"
+                                                >
+                                                    <Zap size={12} className="fill-current" />
+                                                    <span>{lang === 'sv' ? "Räkna snabbt" : "Practice"}</span>
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {autoPracticeEnabled && (
+                                            <div className="flex-1 min-h-0">
+                                                <StudentQuickPracticeDrawer
+                                                    isOpen={hasAnsweredCurrent}
+                                                    sessionTopics={sessionTopics}
+                                                    lang={lang}
+                                                    onClose={() => setAutoPracticeEnabled(false)}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             
                         </div>
@@ -426,7 +516,7 @@ export default function StudentActivityView({
 
                             {/* Diagram / Visual Geometry */}
                             {showVisual && hasVisualElement && (
-                                <div className="w-full flex justify-center py-2 bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden drop-shadow-xs">
+                                <div className="whiteboard-protect w-full flex justify-center py-2 border border-slate-100 rounded-2xl overflow-hidden drop-shadow-xs">
                                     <VisualRenderer 
                                         data={rd} 
                                         isWordProblem={isWordProblem} 
@@ -480,101 +570,164 @@ export default function StudentActivityView({
                         </div>
 
                         {/* Solution & Input Pane (Right 5 Cols) */}
-                        <div className="lg:col-span-5 bg-white text-slate-900 rounded-[2rem] p-6 shadow-xl border border-slate-200 flex flex-col space-y-4">
-                            
-                            {/* Work Area Tabs */}
-                            {allowCanvas && allowScratchpad && (
-                                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 mb-2">
+                        <div 
+                            className="lg:col-span-5 rounded-[2rem] p-6 shadow-xl border flex flex-col space-y-4"
+                            style={{
+                                backgroundColor: 'var(--bg-card, #ffffff)',
+                                borderColor: 'var(--border-main, #e2e8f0)',
+                                color: 'var(--text-main, #0f172a)'
+                            }}
+                        >
+                            {!hasAnsweredCurrent ? (
+                                <>
+                                    {/* Work Area Tabs */}
+                                    {allowCanvas && allowScratchpad && (
+                                        <div 
+                                            className="flex p-1 rounded-xl border mb-2"
+                                            style={{
+                                                backgroundColor: 'var(--bg-surface, #f8fafc)',
+                                                borderColor: 'var(--border-main, #e2e8f0)'
+                                            }}
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={() => setActiveWorkTab('scratchpad')}
+                                                className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                                    activeWorkTab === 'scratchpad' 
+                                                        ? 'bg-[var(--bg-card,#ffffff)] shadow-xs text-[var(--text-main,#0f172a)]' 
+                                                        : 'text-[var(--text-muted,#64748b)]'
+                                                }`}
+                                            >
+                                                <Calculator size={13} />
+                                                <span>{lang === 'sv' ? "Kladd" : "Scratchpad"}</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setActiveWorkTab('canvas')}
+                                                className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                                    activeWorkTab === 'canvas' 
+                                                        ? 'bg-[var(--bg-card,#ffffff)] shadow-xs text-[var(--text-main,#0f172a)]' 
+                                                        : 'text-[var(--text-muted,#64748b)]'
+                                                }`}
+                                            >
+                                                <PenTool size={13} />
+                                                <span>{lang === 'sv' ? "Rita" : "Canvas"}</span>
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Workspaces */}
+                                    {allowCanvas && (activeWorkTab === 'canvas' || !allowScratchpad) && (
+                                        <div className="w-full h-48 relative border-2 border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-[#f9fbf7]">
+                                            <InteractiveCanvas
+                                                lang={lang}
+                                                elements={localCanvas[activeTile] || []}
+                                                setElements={(newEls) => setLocalCanvas(prev => ({
+                                                    ...prev,
+                                                    [activeTile]: typeof newEls === 'function' ? newEls(prev[activeTile] || []) : newEls
+                                                }))}
+                                                resolution={{ w: 1920, h: 1080 }}
+                                                toolbarMode="student"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {allowScratchpad && (activeWorkTab === 'scratchpad' || !allowCanvas) && (
+                                        <MathScratchpad
+                                            steps={localScratchpad[activeTile] || ['']}
+                                            onChange={(newSteps) => setLocalScratchpad(prev => ({ ...prev, [activeTile]: newSteps }))}
+                                            disabled={isSubmitting || isCompleted}
+                                            lang={lang}
+                                        />
+                                    )}
+
+                                    {/* Free-Response Answer Input */}
+                                    {!isMultipleChoice && (
+                                        <div className="space-y-1.5 pt-2">
+                                            <label className="text-xs font-bold" style={{ color: 'var(--text-muted, #64748b)' }}>
+                                                {lang === 'sv' ? "Ditt svar:" : "Your answer:"}
+                                            </label>
+                                            <SmartMathInput
+                                                value={currentAnswer}
+                                                onChange={(val) => setLocalAnswers(prev => ({ ...prev, [activeTile]: val }))}
+                                                onSubmit={() => handleTileSubmit()}
+                                                disabled={isSubmitting || isCompleted}
+                                                inputType={activeQuestion?.inputType || activeQuestion?.answerType || rd?.answerType}
+                                                renderData={rd}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Submit Button */}
                                     <button
                                         type="button"
-                                        onClick={() => setActiveWorkTab('scratchpad')}
-                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                                            activeWorkTab === 'scratchpad' ? 'bg-white shadow-xs text-slate-900' : 'text-slate-500'
-                                        }`}
+                                        onClick={() => handleTileSubmit()}
+                                        disabled={isSubmitting || !currentAnswer.trim() || isCompleted}
+                                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-30 active:scale-95 transition-all cursor-pointer"
                                     >
-                                        <Calculator size={13} />
-                                        <span>{lang === 'sv' ? "Kladd" : "Scratchpad"}</span>
+                                        {isSubmitting ? (
+                                            <Loader2 className="animate-spin" size={18} />
+                                        ) : isCompleted ? (
+                                            <>
+                                                <CheckCircle2 size={18} />
+                                                <span>{lang === 'sv' ? "Svar Inlämnat" : "Submitted"}</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send size={16} />
+                                                <span>
+                                                    {lang === 'sv' 
+                                                        ? `Skicka in för ${myTeam?.name || 'laget'}` 
+                                                        : `Submit for ${myTeam?.name || 'team'}`}
+                                                </span>
+                                            </>
+                                        )}
                                     </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setActiveWorkTab('canvas')}
-                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                                            activeWorkTab === 'canvas' ? 'bg-white shadow-xs text-slate-900' : 'text-slate-500'
-                                        }`}
+                                </>
+                            ) : (
+                                /* Answer Submitted: Confirmation Banner + Snabbräknaren Drawer */
+                                <div className="w-full flex flex-col gap-3 animate-in fade-in duration-300">
+                                    <div 
+                                        className="p-4 rounded-2xl border flex items-center justify-between shadow-xs"
+                                        style={{
+                                            backgroundColor: 'var(--bg-surface, #f8fafc)',
+                                            borderColor: 'var(--border-main, #e2e8f0)'
+                                        }}
                                     >
-                                        <PenTool size={13} />
-                                        <span>{lang === 'sv' ? "Rita" : "Canvas"}</span>
-                                    </button>
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+                                            <div>
+                                                <p className="text-xs font-bold text-inherit">
+                                                    {lang === 'sv' ? "Svar inskickat för brickan!" : "Answer submitted for this tile!"}
+                                                </p>
+                                                <p className="text-[10px]" style={{ color: 'var(--text-muted, #64748b)' }}>
+                                                    {lang === 'sv' ? "Väntar på att läraren stänger brickan..." : "Waiting for teacher to close tile..."}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {!autoPracticeEnabled && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setAutoPracticeEnabled(true)}
+                                                className="btn-brand px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs cursor-pointer"
+                                            >
+                                                <Zap size={12} className="fill-current" />
+                                                <span>{lang === 'sv' ? "Räkna snabbt" : "Practice"}</span>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {autoPracticeEnabled && (
+                                        <StudentQuickPracticeDrawer
+                                            isOpen={hasAnsweredCurrent}
+                                            sessionTopics={sessionTopics}
+                                            lang={lang}
+                                            onClose={() => setAutoPracticeEnabled(false)}
+                                        />
+                                    )}
                                 </div>
                             )}
-
-                            {/* Workspaces */}
-                            {allowCanvas && (activeWorkTab === 'canvas' || !allowScratchpad) && (
-                                <div className="w-full h-48 relative border-2 border-slate-200 rounded-2xl overflow-hidden bg-[#f9fbf7]">
-                                    <InteractiveCanvas
-                                        lang={lang}
-                                        elements={localCanvas[activeTile] || []}
-                                        setElements={(newEls) => setLocalCanvas(prev => ({
-                                            ...prev,
-                                            [activeTile]: typeof newEls === 'function' ? newEls(prev[activeTile] || []) : newEls
-                                        }))}
-                                        resolution={{ w: 1920, h: 1080 }}
-                                        toolbarMode="student"
-                                    />
-                                </div>
-                            )}
-
-                            {allowScratchpad && (activeWorkTab === 'scratchpad' || !allowCanvas) && (
-                                <MathScratchpad
-                                    steps={localScratchpad[activeTile] || ['']}
-                                    onChange={(newSteps) => setLocalScratchpad(prev => ({ ...prev, [activeTile]: newSteps }))}
-                                    disabled={isSubmitting || isCompleted}
-                                    lang={lang}
-                                />
-                            )}
-
-                            {/* Free-Response Answer Input */}
-                            {!isMultipleChoice && (
-                                <div className="space-y-1.5 pt-2">
-                                    <label className="text-xs font-bold text-slate-500">
-                                        {lang === 'sv' ? "Ditt svar:" : "Your answer:"}
-                                    </label>
-                                    <SmartMathInput
-                                        value={currentAnswer}
-                                        onChange={(val) => setLocalAnswers(prev => ({ ...prev, [activeTile]: val }))}
-                                        onSubmit={() => handleTileSubmit()}
-                                        disabled={isSubmitting || isCompleted}
-                                        inputType={activeQuestion?.inputType || activeQuestion?.answerType || rd?.answerType}
-                                        renderData={rd}
-                                    />
-                                </div>
-                            )}
-
-                            {/* Submit Button */}
-                            <button
-                                type="button"
-                                onClick={() => handleTileSubmit()}
-                                disabled={isSubmitting || !currentAnswer.trim() || isCompleted}
-                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-30 active:scale-95 transition-all cursor-pointer"
-                            >
-                                {isSubmitting ? (
-                                    <Loader2 className="animate-spin" size={18} />
-                                ) : isCompleted ? (
-                                    <>
-                                        <CheckCircle2 size={18} />
-                                        <span>{lang === 'sv' ? "Svar Inlämnat" : "Submitted"}</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Send size={16} />
-                                        <span>
-                                            {lang === 'sv' 
-                                                ? `Skicka in för ${myTeam?.name || 'laget'}` 
-                                                : `Submit for ${myTeam?.name || 'team'}`}
-                                        </span>
-                                    </>
-                                )}
-                            </button>
                         </div>
                     </div>
                 )}

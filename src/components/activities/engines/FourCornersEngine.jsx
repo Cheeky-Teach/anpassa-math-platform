@@ -3,19 +3,16 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
     Play, RefreshCcw, Sparkles, Edit3, Trash2, Plus, 
     ArrowLeft, ArrowRight, Eye, CheckCircle2, Users, Save,
-    ChevronRight, X, Loader2, Type, Calculator, Lightbulb, ChevronDown, ChevronUp
+    ChevronRight, X, Loader2, Type, Calculator, Lightbulb, ChevronDown, ChevronUp,
+    Monitor, Lock, Building2, Timer, Flame, Trophy, Zap, Award
 } from 'lucide-react';
-import { supabase } from '../../../lib/supabaseClient';
 import QuestionSummoner from '../../views/QuestionSummoner';
 import VisualRenderer from '../../visuals/VisualRenderer';
 import PreferencesToggle from '../../ui/PreferencesToggle';
 import { generateDistractors } from '../../../lib/distractorGenerator';
 import { extractDecodedAnswer } from '../../live/core/liveAnswerUtils.js';
-import { liveCreateRoom } from '../../live/core/liveCreateRoom.js';
-import { universalRegenerateQuestion, closeActiveRoom, universalRegenerateAll,
-    saveActivityToLibrary, broadcastRoomQuestionState
- } from '../../live/core/activityQuestionUtils.js';
-import { useLibrary } from '../../../hooks/useLibrary.js';
+import { universalRegenerateQuestion, universalRegenerateAll, saveActivityToLibrary } from '../../live/core/activityQuestionUtils.js';
+import { useActivityEngineSession } from '../hooks/useActivityEngineSession.js';
 
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
@@ -86,7 +83,30 @@ export default function FourCornersEngine({
             clue: "Ledtråd",
             show_clues: "Visa Ledtrådar",
             hide_clues: "Dölj Ledtrådar",
-            no_clues: "Inga ledtrådar för denna uppgift."
+            no_clues: "Inga ledtrådar för denna uppgift.",
+            name_placeholder: "Namnge aktiviteten...",
+            save_btn: "Spara",
+            saving_btn: "Sparar...",
+            save_success: "Sparades i biblioteket!",
+            save_tooltip: "Spara till biblioteket",
+            private_tooltip: "Bara jag (Privat)",
+            school_tooltip: "Min Skola",
+            start_live: "Starta Live",
+            start_live_tooltip: "Starta live-rum för nuvarande uppgifter",
+            formula_on: "Formel På",
+            formula_off: "Formel Av",
+            reroll_all_confirm: "Slumpa nya tal för alla frågor?",
+            reroll_all_btn: "Slumpa alla",
+            delete_tooltip: "Ta bort",
+            timer_off: "Timer Av",
+            add_10s: "+10s",
+            results_btn: "Resultat",
+            results_heading: "Topplista & Prestationer",
+            podium_heading: "Ledningen",
+            streak_heading: "Streak-mästare",
+            class_energy_heading: "Klassens Kraft",
+            points_word: "p",
+            in_a_row: "i rad!"
         },
         en: {
             title: "4 Corners",
@@ -123,62 +143,98 @@ export default function FourCornersEngine({
             clue: "Clue",
             show_clues: "Show Clues",
             hide_clues: "Hide Clues",
-            no_clues: "No clues available for this problem."
+            no_clues: "No clues available for this problem.",
+            name_placeholder: "Name the activity...",
+            save_btn: "Save",
+            saving_btn: "Saving...",
+            save_success: "Saved to library!",
+            save_tooltip: "Save to library",
+            private_tooltip: "Only me (Private)",
+            school_tooltip: "My School",
+            start_live: "Go Live",
+            start_live_tooltip: "Host live room for current tasks",
+            formula_on: "Formula On",
+            formula_off: "Formula Off",
+            reroll_all_confirm: "Re-roll numbers for all questions?",
+            reroll_all_btn: "Randomize all",
+            delete_tooltip: "Delete",
+            timer_off: "Timer Off",
+            add_10s: "+10s",
+            results_btn: "Results",
+            results_heading: "Leaderboard & Highlights",
+            podium_heading: "Podium",
+            streak_heading: "Streak Masters",
+            class_energy_heading: "Class Energy",
+            points_word: "pts",
+            in_a_row: "in a row!"
         }
     }[lang] || {};
 
-    // 🟢 1. Role Permissions & Unified Session Resolution
-    const userRole = String(profile?.role || '').toLowerCase();
-    const canHostLiveRoom = userRole === 'teacher' || userRole === 'super_admin';
-
-    const effectiveSession = session || initialConfig?.session || initialConfig?.room || null;
-    const effectiveLiveHost = Boolean(isLiveHost || effectiveSession?.id);
-    const effectiveClassCode = effectiveSession?.class_code || effectiveSession?.room_code || initialConfig?.room_code || '';
-    const effectiveRoomId = effectiveSession?.id || initialConfig?.roomId || null;
-
-    const deliveryMode = initialConfig?.settings?.deliveryMode || 
-                         initialConfig?.deliveryMode || 
-                         (effectiveLiveHost ? 'digital' : 'physical');
-
-    const isDigitalMode = effectiveLiveHost || (deliveryMode === 'digital' && canHostLiveRoom);
-
-    const [viewMode, setViewMode] = useState(effectiveSession?.active_question_data?.activeQuestion ? 'play' : 'curate');
+    // 1. Core State
+    const [viewMode, setViewMode] = useState(session?.active_question_data?.activeQuestion ? 'play' : 'curate');
     const [rounds, setRounds] = useState([]);
     const [activeRoundIndex, setActiveRoundIndex] = useState(0);
     const [revealedPhase, setRevealedPhase] = useState('commit');
-    const [liveVotes, setLiveVotes] = useState({ A: 0, B: 0, C: 0, D: 0 });
-    
-    // Live Room State
-    const [activeRoomId, setActiveRoomId] = useState(effectiveRoomId);
-    const [activeClassCode, setActiveClassCode] = useState(effectiveClassCode);
 
-    // 🟢 Sync state whenever effectiveSession updates
-    useEffect(() => {
-        if (effectiveRoomId && effectiveRoomId !== activeRoomId) {
-            setActiveRoomId(effectiveRoomId);
-            if (roomIdRef) roomIdRef.current = effectiveRoomId;
-        }
-        if (effectiveClassCode && effectiveClassCode !== activeClassCode) {
-            setActiveClassCode(effectiveClassCode);
-        }
-    }, [effectiveRoomId, effectiveClassCode]);
-
-    // Title State
+    // Title & Save State
     const defaultTitle = initialConfig?.title || 
                          sourcePacket?.title || 
                          (lang === 'sv' ? "4 Hörn Aktivitet" : "4 Corners Activity");
     const [activityTitle, setActivityTitle] = useState(defaultTitle);
     const [sheetId, setSheetId] = useState(initialConfig?.sheetId || sourcePacket?.id || null);
+    const [visibility, setVisibility] = useState(sourcePacket?.visibility || initialConfig?.savedSheet?.visibility || 'private');
 
-    // Clue Accordion state
+    // Timer Controls
+    const defaultDuration = initialConfig?.settings?.timerSeconds !== undefined ? initialConfig.settings.timerSeconds : 30;
+    const [timerDuration, setTimerDuration] = useState(defaultDuration);
+    const [timeLeft, setTimeLeft] = useState(defaultDuration);
+    const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+    // Clue Accordion
     const [showClues, setShowClues] = useState(false);
     const [revealedClueIndex, setRevealedClueIndex] = useState(0);
 
+    // Modals & UI States
     const [isSummonerOpen, setIsSummonerOpen] = useState(false);
     const [editingRound, setEditingRound] = useState(null);
     const [isReRolling, setIsReRolling] = useState(false);
     const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isResultsDrawerOpen, setIsResultsDrawerOpen] = useState(false);
+
+    // HUD cycling index (0: Streaks, 1: Podium, 2: Class Energy)
+    const [hudIndex, setHudIndex] = useState(0);
+
+    // 🟢 2. Unified Session Hook
+    const {
+        roomId,
+        classCode,
+        isLive,
+        canHostLiveRoom,
+        isGoingLive,
+        liveResponses,
+        handleGoLive,
+        handleCloseEngine,
+        broadcastState
+    } = useActivityEngineSession({
+        session,
+        initialConfig,
+        isLiveHost,
+        profile,
+        onClose,
+        mode: 'activity_four_corners',
+        gameKey: 'four_corners',
+        title: activityTitle,
+        lang,
+        getPacket: () => rounds,
+        getSettings: () => ({ questionCount: rounds.length, timerSeconds: timerDuration }),
+        getInitialBroadcastData: () => ({
+            activeTile: null,
+            activeQuestion: null,
+            revealedPhase: 'commit',
+            roundIndex: 0
+        })
+    });
 
     const CORNER_STYLES = {
         A: {
@@ -251,48 +307,6 @@ export default function FourCornersEngine({
         };
     };
 
-    // 🟢 Synchronous ref of room ID
-    const roomIdRef = useRef(effectiveRoomId);
-    useEffect(() => {
-        roomIdRef.current = effectiveRoomId;
-    }, [effectiveRoomId]);
-
-    const getEffectiveRoomId = () => {
-        return (
-            roomIdRef.current ||
-            activeRoomId ||
-            session?.id ||
-            session?.roomId ||
-            initialConfig?.session?.id ||
-            initialConfig?.roomId ||
-            initialConfig?.room?.id ||
-            null
-        );
-    };
-
-    // 🟢 Guaranteed Room Teardown on Close
-    const handleCloseEngine = async () => {
-        const targetRoomId = activeRoomId || effectiveRoomId || roomIdRef?.current;
-
-        if (effectiveLiveHost && targetRoomId) {
-            const shouldClose = window.confirm(
-                lang === 'sv' 
-                    ? "Vill du avsluta live-rummet för eleverna?" 
-                    : "Do you want to close the live room for students?"
-            );
-            if (shouldClose) {
-                await closeActiveRoom(targetRoomId);
-                setActiveRoomId(null);
-                setActiveClassCode('');
-            }
-        }
-
-        if (onClose) {
-            onClose();
-        }
-    };
-
-    // 🟢 3. Save to Library (Matches Category Clash)
     const handleSavePlaylist = async () => {
         if (rounds.length === 0) return;
         setIsSaving(true);
@@ -301,11 +315,12 @@ export default function FourCornersEngine({
                 sheetId,
                 title: activityTitle,
                 type: 'activity_four_corners',
+                visibility,
                 packet: rounds,
                 config: { questionCount: rounds.length }
             });
             setSheetId(saved.id);
-            alert(lang === 'sv' ? "Sparades i biblioteket!" : "Saved to library!");
+            alert(t.save_success);
         } catch (err) {
             console.error("Save failed:", err);
         } finally {
@@ -313,7 +328,6 @@ export default function FourCornersEngine({
         }
     };
 
-    // Hydrate initial questions
     useEffect(() => {
         const initialList = initialConfig?.initialQuestions || sourcePacket || [];
         if (initialList.length > 0) {
@@ -326,11 +340,109 @@ export default function FourCornersEngine({
     useEffect(() => {
         setShowClues(false);
         setRevealedClueIndex(0);
-    }, [activeRoundIndex, currentRound?.id]);
+        if (timerDuration > 0) {
+            setTimeLeft(timerDuration);
+            setIsTimerRunning(viewMode === 'play');
+        } else {
+            setIsTimerRunning(false);
+        }
+    }, [activeRoundIndex, currentRound?.id, viewMode]);
+
+    // 🟢 Countdown Timer Effect (Locks answers at zero, does NOT auto-advance)
+    useEffect(() => {
+        if (!isTimerRunning || timerDuration === 0 || revealedPhase !== 'commit') return;
+
+        if (timeLeft <= 0) {
+            setIsTimerRunning(false);
+            setPhaseAndBroadcast('distribution');
+            return;
+        }
+
+        const interval = setInterval(() => {
+            setTimeLeft(prev => prev - 1);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [isTimerRunning, timeLeft, timerDuration, revealedPhase]);
+
+    // 🟢 Bottom HUD Rotate Timer (Cycles every 4.5 seconds)
+    useEffect(() => {
+        if (viewMode !== 'play') return;
+        const interval = setInterval(() => {
+            setHudIndex(prev => (prev + 1) % 3);
+        }, 4500);
+        return () => clearInterval(interval);
+    }, [viewMode]);
+
+    // 🟢 Live Votes derived directly from hook's liveResponses stream
+    const liveVotes = useMemo(() => {
+        const tallies = { A: 0, B: 0, C: 0, D: 0 };
+        if (!currentRound) return tallies;
+
+        liveResponses
+            .filter(r => r.question_index === currentRound.roundIndex)
+            .forEach(r => {
+                const choice = r.answer?.toUpperCase();
+                if (tallies[choice] !== undefined) tallies[choice]++;
+            });
+
+        return tallies;
+    }, [liveResponses, currentRound]);
 
     const totalVotesSubmitted = useMemo(() => {
         return liveVotes.A + liveVotes.B + liveVotes.C + liveVotes.D;
     }, [liveVotes]);
+
+    // 🟢 Pedagogical Scoring: Flat Base (100p) + Streak Bonuses
+    const { leaderboard, streakList, totalClassScore } = useMemo(() => {
+        const studentMap = {};
+        const studentHistory = {};
+
+        liveResponses.forEach(res => {
+            const alias = res.student_alias || 'Elev';
+            if (!studentMap[alias]) {
+                studentMap[alias] = { alias, score: 0 };
+                studentHistory[alias] = [];
+            }
+            studentHistory[alias].push(res);
+        });
+
+        // Compute scores with streak bonuses: 1->100p, 2->125p, 3->150p, 4+->200p
+        Object.entries(studentHistory).forEach(([alias, history]) => {
+            let runningStreak = 0;
+            let total = 0;
+
+            history.forEach(ans => {
+                if (ans.is_correct) {
+                    runningStreak += 1;
+                    const bonus = runningStreak === 1 ? 0 : runningStreak === 2 ? 25 : runningStreak === 3 ? 50 : 100;
+                    total += 100 + bonus;
+                } else {
+                    runningStreak = 0;
+                }
+            });
+
+            studentMap[alias].score = total;
+            studentMap[alias].currentStreak = runningStreak;
+        });
+
+        const sorted = Object.values(studentMap).sort((a, b) => b.score - a.score);
+        const topPodium = sorted.slice(0, 5);
+
+        // Streaks for students not in 1st place
+        const activeStreaks = sorted
+            .filter(s => s.currentStreak >= 2)
+            .sort((a, b) => b.currentStreak - a.currentStreak)
+            .slice(0, 4);
+
+        const cumulativePoints = sorted.reduce((sum, s) => sum + s.score, 0);
+
+        return {
+            leaderboard: topPodium,
+            streakList: activeStreaks,
+            totalClassScore: cumulativePoints
+        };
+    }, [liveResponses]);
 
     const activeClues = useMemo(() => {
         const raw = currentRound?.renderData?.clues || 
@@ -343,27 +455,23 @@ export default function FourCornersEngine({
     }, [currentRound]);
 
     const broadcastRoomState = async (updatedRound, phase = 'commit') => {
-        const roomId = activeRoomId || effectiveRoomId;
-        if (!isDigitalMode || !roomId) return;
+        if (!isLive) return;
 
-        await broadcastRoomQuestionState({
-            roomId: roomId,
-            activeQuestionData: {
-                mode: 'activity_four_corners',
-                gameKey: 'four_corners',
-                activity_mode: 'activity_four_corners',
-                activeTile: updatedRound ? `round_${updatedRound.roundIndex}` : null,
-                activeQuestion: updatedRound,
-                revealedPhase: phase,
-                roundIndex: updatedRound?.roundIndex || 1,
-                updated_at: new Date().toISOString()
-            }
+        await broadcastState({
+            mode: 'activity_four_corners',
+            gameKey: 'four_corners',
+            activity_mode: 'activity_four_corners',
+            activeTile: updatedRound ? `round_${updatedRound.roundIndex}` : null,
+            activeQuestion: updatedRound,
+            revealedPhase: phase,
+            roundIndex: updatedRound?.roundIndex || 1,
+            timerSeconds: timerDuration,
+            updated_at: new Date().toISOString()
         });
     };
 
     const commitAndBroadcastRound = async (updatedRound, phase = 'commit') => {
         setRounds(prev => prev.map(r => r.id === updatedRound.id ? updatedRound : r));
-        setLiveVotes({ A: 0, B: 0, C: 0, D: 0 });
         setRevealedPhase(phase);
         await broadcastRoomState(updatedRound, phase);
     };
@@ -372,50 +480,6 @@ export default function FourCornersEngine({
         setRevealedPhase(phase);
         await broadcastRoomState(currentRound, phase);
     };
-
-    // 🟢 Realtime Listener guarded for digital mode
-    useEffect(() => {
-        const roomId = activeRoomId || effectiveRoomId;
-        if (!isDigitalMode || !roomId || !currentRound) return;
-
-        setLiveVotes({ A: 0, B: 0, C: 0, D: 0 });
-
-        const fetchExistingVotes = async () => {
-            const { data } = await supabase
-                .from('responses')
-                .select('answer')
-                .eq('room_id', roomId)
-                .eq('question_index', currentRound.roundIndex);
-
-            if (data && data.length > 0) {
-                const tallies = { A: 0, B: 0, C: 0, D: 0 };
-                data.forEach(r => {
-                    const ans = r.answer?.toUpperCase();
-                    if (tallies[ans] !== undefined) tallies[ans]++;
-                });
-                setLiveVotes(tallies);
-            }
-        };
-        fetchExistingVotes();
-
-        const channel = supabase.channel(`fc_live_${roomId}`)
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'responses',
-                filter: `room_id=eq.${roomId}`
-            }, (payload) => {
-                const choice = payload.new?.answer?.toUpperCase();
-                if (choice && ['A', 'B', 'C', 'D'].includes(choice)) {
-                    setLiveVotes(prev => ({ ...prev, [choice]: prev[choice] + 1 }));
-                }
-            })
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [isDigitalMode, activeRoomId, effectiveRoomId, activeRoundIndex, currentRound?.id]);
 
     const handleRerollDistractors = (roundId) => {
         setRounds(prev => prev.map(r => {
@@ -455,12 +519,11 @@ export default function FourCornersEngine({
             return;
         }
 
-        setLiveVotes({ A: 0, B: 0, C: 0, D: 0 });
         setIsReRolling(true);
 
         try {
             const freshRound = await universalRegenerateQuestion({
-                roomId: activeRoomId,
+                roomId: roomId,
                 questionIndex: round.roundIndex,
                 topicId: effectiveTopicId,
                 variationKey: round.variationKey || round.resolvedData?.variationKey || null,
@@ -489,18 +552,17 @@ export default function FourCornersEngine({
     };
 
     const handleRegenerateAll = async () => {
-        if (!window.confirm("Slumpa nya tal för alla frågor?")) return;
+        if (!window.confirm(t.reroll_all_confirm)) return;
         setIsRegeneratingAll(true);
         try {
             const refreshed = await universalRegenerateAll({
                 items: rounds,
-                roomId: activeRoomId,
+                roomId: roomId,
                 lang,
                 formatFn: formatToCornerRound,
                 onCustomFallback: handleRerollDistractors
             });
             setRounds(refreshed);
-            setLiveVotes({ A: 0, B: 0, C: 0, D: 0 });
         } finally {
             setIsRegeneratingAll(false);
         }
@@ -528,22 +590,8 @@ export default function FourCornersEngine({
                 className="px-6 py-3 flex items-center justify-between shrink-0 z-20 shadow-xs border-b transition-colors"
                 style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)' }}
             >
-                {/* LEFT: Room PIN + Branded Tag + Editable Title Box */}
+                {/* LEFT: Room PIN / Go Live Button + Title + Save */}
                 <div className="flex items-center gap-3">
-                    {isDigitalMode && (activeClassCode || effectiveClassCode) && (
-                        <div className="bg-rose-500/10 border-2 border-rose-500/40 px-3.5 py-1.5 rounded-2xl flex items-center gap-2.5 shadow-lg shadow-rose-950/20 shrink-0">
-                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
-                            <div className="flex flex-col">
-                                <span className="text-[8px] font-black uppercase tracking-widest text-rose-500 dark:text-rose-400 leading-none">
-                                    {t.room_pin}
-                                </span>
-                                <span className="text-xl sm:text-2xl font-mono font-black tracking-widest leading-tight" style={{ color: 'var(--text-main)' }}>
-                                    {activeClassCode || effectiveClassCode}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-
                     <span className="badge-brand font-black text-xs px-2.5 py-1 shrink-0">
                         {t.title}
                     </span>
@@ -560,35 +608,55 @@ export default function FourCornersEngine({
                             type="text"
                             value={activityTitle}
                             onChange={(e) => setActivityTitle(e.target.value)}
-                            placeholder={lang === 'sv' ? "Namnge aktiviteten..." : "Name the activity..."}
-                            className="text-xs sm:text-sm font-bold tracking-tight outline-none bg-transparent w-44 sm:w-64"
+                            placeholder={t.name_placeholder}
+                            className="text-xs sm:text-sm font-bold tracking-tight outline-none bg-transparent w-40 sm:w-56"
                             style={{ color: 'var(--text-main)' }}
                         />
-                        {rounds.length > 0 && (
+                        {rounds.length > 0 && !isLive && (
                             <button
                                 type="button"
                                 onClick={handleSavePlaylist}
                                 disabled={isSaving}
                                 className="ml-2 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-                                title={lang === 'sv' ? "Spara till biblioteket" : "Save to library"}
+                                title={t.save_tooltip}
                             >
                                 <Save size={12} className={isSaving ? "animate-spin" : ""} />
-                                <span>{isSaving ? (lang === 'sv' ? "Sparar..." : "Saving...") : (lang === 'sv' ? "Spara" : "Save")}</span>
+                                <span>{isSaving ? t.saving_btn : t.save_btn}</span>
                             </button>
                         )}
                     </div>
 
-                    {viewMode === 'play' && (
-                        <span className="text-xs font-semibold shrink-0 hidden md:inline-block" style={{ color: 'var(--text-muted)' }}>
-                            • {t.round} {activeRoundIndex + 1} {t.of} {rounds.length}
-                        </span>
+                    {!isLive && (
+                        <div 
+                            className="flex items-center gap-0.5 p-1 rounded-xl border shadow-xs"
+                            style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
+                        >
+                            <button
+                                type="button"
+                                onClick={() => setVisibility('private')}
+                                className={`p-1.5 rounded-lg text-xs font-black transition-colors cursor-pointer ${
+                                    visibility === 'private' ? 'bg-indigo-600 text-white shadow-xs' : 'opacity-60 hover:opacity-100'
+                                }`}
+                                title={t.private_tooltip}
+                            >
+                                <Lock size={13} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setVisibility('school')}
+                                className={`p-1.5 rounded-lg text-xs font-black transition-colors cursor-pointer ${
+                                    visibility === 'school' ? 'bg-indigo-600 text-white shadow-xs' : 'opacity-60 hover:opacity-100'
+                                }`}
+                                title={t.school_tooltip}
+                            >
+                                <Building2 size={13} />
+                            </button>
+                        </div>
                     )}
                 </div>
 
-                {/* CENTER: Controls & Preferences */}
+                {/* CENTER: Play Controls, Timer, Preferences */}
                 <div className="flex items-center gap-3">
-                    <PreferencesToggle />
-
                     {viewMode === 'curate' ? (
                         <button
                             onClick={() => {
@@ -604,6 +672,56 @@ export default function FourCornersEngine({
                         </button>
                     ) : (
                         <div className="flex items-center gap-2">
+                            {/* Runtime Timer Pill */}
+                            <div 
+                                className="flex items-center rounded-xl border px-2 py-1 gap-1.5 shadow-xs"
+                                style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => setIsTimerRunning(!isTimerRunning)}
+                                    className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                                        isTimerRunning ? 'text-amber-500 animate-pulse' : 'opacity-40'
+                                    }`}
+                                    title={isTimerRunning ? "Pausa timer" : "Starta timer"}
+                                >
+                                    <Timer size={14} />
+                                </button>
+
+                                <span className="font-mono text-xs font-black w-8 text-center">
+                                    {timerDuration === 0 ? "—" : `${timeLeft}s`}
+                                </span>
+
+                                {timerDuration > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setTimeLeft(prev => prev + 10)}
+                                        className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded-md hover:bg-black/10 dark:hover:bg-white/10"
+                                        title="+10 sekunder"
+                                    >
+                                        {t.add_10s}
+                                    </button>
+                                )}
+
+                                <select
+                                    value={timerDuration}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value, 10);
+                                        setTimerDuration(val);
+                                        setTimeLeft(val);
+                                        setIsTimerRunning(val > 0 && revealedPhase === 'commit');
+                                    }}
+                                    className="bg-transparent text-[10px] font-bold outline-none cursor-pointer border-l pl-1"
+                                    style={{ borderColor: 'var(--border-main)', color: 'var(--text-muted)' }}
+                                >
+                                    <option value={0} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>{t.timer_off}</option>
+                                    <option value={15} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>15s</option>
+                                    <option value={30} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>30s</option>
+                                    <option value={45} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>45s</option>
+                                    <option value={60} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>60s</option>
+                                </select>
+                            </div>
+
                             {currentRound?.renderData?.latex && (
                                 <button
                                     type="button"
@@ -620,7 +738,7 @@ export default function FourCornersEngine({
                                     style={!effectiveShowLatex ? { backgroundColor: 'var(--bg-surface)', color: 'var(--text-muted)' } : {}}
                                 >
                                     <Calculator size={14} />
-                                    <span>{effectiveShowLatex ? "Formel På" : "Formel Av"}</span>
+                                    <span>{effectiveShowLatex ? t.formula_on : t.formula_off}</span>
                                 </button>
                             )}
 
@@ -652,8 +770,35 @@ export default function FourCornersEngine({
                     )}
                 </div>
 
-                {/* RIGHT: Close Button */}
-                <div className="flex items-center">
+                {/* RIGHT: Live PIN / Go Live + Preferences + Close */}
+                <div className="flex items-center gap-3">
+                    <PreferencesToggle />
+
+                    {isLive && classCode ? (
+                        <div className="bg-rose-500/10 border-2 border-rose-500/40 px-3.5 py-1.5 rounded-2xl flex items-center gap-2.5 shadow-lg shadow-rose-950/20 shrink-0">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+                            <div className="flex flex-col">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-rose-500 dark:text-rose-400 leading-none">
+                                    {t.room_pin}
+                                </span>
+                                <span className="text-xl sm:text-2xl font-mono font-black tracking-widest leading-tight" style={{ color: 'var(--text-main)' }}>
+                                    {classCode}
+                                </span>
+                            </div>
+                        </div>
+                    ) : canHostLiveRoom ? (
+                        <button
+                            type="button"
+                            disabled={isGoingLive || rounds.length === 0}
+                            onClick={handleGoLive}
+                            className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-rose-950/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                            title={t.start_live_tooltip}
+                        >
+                            {isGoingLive ? <Loader2 size={13} className="animate-spin" /> : <Monitor size={13} />}
+                            <span>{t.start_live}</span>
+                        </button>
+                    ) : null}
+
                     <button 
                         onClick={handleCloseEngine} 
                         className="p-2 rounded-xl transition-colors cursor-pointer hover:bg-rose-500 hover:text-white"
@@ -727,10 +872,10 @@ export default function FourCornersEngine({
                                         disabled={isRegeneratingAll}
                                         className="px-3.5 py-2 border rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs transition-all hover:border-amber-400 hover:text-amber-500"
                                         style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', color: 'var(--text-main)' }}
-                                        title={lang === 'sv' ? "Slumpa nya tal för alla frågor" : "Randomize all numbers"}
+                                        title={t.reroll_all_confirm}
                                     >
                                         <RefreshCcw size={14} className={isRegeneratingAll ? "animate-spin text-amber-500" : ""} />
-                                        <span>{lang === 'sv' ? "Slumpa alla" : "Randomize all"}</span>
+                                        <span>{t.reroll_all_btn}</span>
                                     </button>
                                 )}
                                 <button
@@ -784,41 +929,6 @@ export default function FourCornersEngine({
                                             </div>
 
                                             <div className="flex items-center gap-1.5 shrink-0">
-                                                <button
-                                                    type="button"
-                                                    onClick={async () => {
-                                                        const nextWp = !round.wordProblem;
-                                                        const topic = round.topicId;
-                                                        if (topic && topic !== 'custom' && topic !== 'imported') {
-                                                            try {
-                                                                const url = `/api/question?topic=${topic}${round.variationKey ? `&variation=${round.variationKey}` : ''}&lang=${lang}&wordProblem=${nextWp}`;
-                                                                const res = await fetch(url);
-                                                                const data = await res.json();
-                                                                const formatted = formatToCornerRound(data, round.roundIndex);
-                                                                setRounds(prev => prev.map(r => r.id === round.id ? { ...formatted, id: round.id } : r));
-                                                            } catch (err) {
-                                                                console.error("Failed to toggle word problem:", err);
-                                                            }
-                                                        } else {
-                                                            setRounds(prev => prev.map(r => r.id === round.id ? {
-                                                                ...r,
-                                                                wordProblem: nextWp,
-                                                                showLatex: !nextWp,
-                                                                renderData: { ...r.renderData, isWordProblemApplied: nextWp }
-                                                            } : r));
-                                                        }
-                                                    }}
-                                                    className={`p-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${
-                                                        round.wordProblem 
-                                                            ? 'bg-amber-500/20 text-amber-500 border-amber-500/30' 
-                                                            : 'border-slate-200 dark:border-slate-800 hover:border-indigo-400'
-                                                    }`}
-                                                    style={!round.wordProblem ? { backgroundColor: 'var(--bg-surface)', color: 'var(--text-muted)' } : {}}
-                                                    title={lang === 'sv' ? "Växla mellan formel och textuppgift" : "Toggle word problem / formula"}
-                                                >
-                                                    <Type size={14} />
-                                                </button>
-
                                                 <button 
                                                     onClick={() => handleRerollDistractors(round.id)} 
                                                     className="p-2 border rounded-xl cursor-pointer transition-colors hover:text-indigo-500"
@@ -850,7 +960,7 @@ export default function FourCornersEngine({
                                                     onClick={() => setRounds(prev => prev.filter(r => r.id !== round.id))} 
                                                     className="p-2 border rounded-xl cursor-pointer transition-colors hover:text-rose-500"
                                                     style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)', color: 'var(--text-muted)' }}
-                                                    title="Ta bort"
+                                                    title={t.delete_tooltip}
                                                 >
                                                     <Trash2 size={15} />
                                                 </button>
@@ -865,8 +975,7 @@ export default function FourCornersEngine({
 
                                         {hasVisual && round.showVisual !== false && (
                                             <div 
-                                                className="w-full flex justify-center py-4 border rounded-2xl overflow-hidden mb-3"
-                                                style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
+                                                className="whiteboard-protect w-full flex justify-center py-4 border border-slate-200 rounded-2xl overflow-hidden mb-3 shadow-xs"
                                             >
                                                 <VisualRenderer data={rd} isWordProblem={round.wordProblem} />
                                             </div>
@@ -915,10 +1024,11 @@ export default function FourCornersEngine({
                     </div>
                 )}
 
-                {/* 2. PLAY MODE: Projector Stage with Left Clue Support */}
+                {/* 2. PLAY MODE: Projector Stage */}
                 {viewMode === 'play' && currentRound && (
                     <div className="h-full flex flex-col p-6 max-w-7xl mx-auto gap-4">
                         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
+                            {/* Left Prompt & Visual Card */}
                             <div 
                                 className="lg:col-span-7 border-2 rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-xl overflow-y-auto custom-scrollbar"
                                 style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)' }}
@@ -993,10 +1103,9 @@ export default function FourCornersEngine({
                                         </div>
                                     )}
 
-                                    {effectiveShowVisual && currentRound.renderData.geometry && (
+                                    {effectiveShowVisual && (currentRound.renderData?.geometry || currentRound.renderData?.graph || currentRound.renderData?.pattern || currentRound.renderData?.marbles || currentRound.renderData?.diagram) && (
                                         <div 
-                                            className="w-full flex justify-center py-4 border rounded-2xl overflow-hidden shadow-inner"
-                                            style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
+                                            className="whiteboard-protect w-full flex justify-center py-4 border border-slate-200 rounded-2xl overflow-hidden shadow-sm my-2"
                                         >
                                             <VisualRenderer 
                                                 data={currentRound.renderData} 
@@ -1016,6 +1125,7 @@ export default function FourCornersEngine({
                                 </div>
                             </div>
 
+                            {/* Right 4-Corner Quadrants */}
                             <div className="lg:col-span-5 grid grid-cols-2 grid-rows-2 gap-4 h-full">
                                 {['A', 'B', 'C', 'D'].map((quadId) => {
                                     const opt = currentRound.renderData.options?.find(o => o.id === quadId);
@@ -1073,10 +1183,12 @@ export default function FourCornersEngine({
                             </div>
                         </div>
 
+                        {/* 🟢 Footer with Center Rotating HUD Ticker */}
                         <footer 
                             className="h-16 border rounded-2xl px-6 flex items-center justify-between shrink-0 shadow-xs z-30"
                             style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)' }}
                         >
+                            {/* LEFT: Pager */}
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => {
@@ -1109,7 +1221,81 @@ export default function FourCornersEngine({
                                 </button>
                             </div>
 
+                            {/* CENTER: Subtle Rotating HUD Ticker */}
+                            {isLive && (
+                                <div className="hidden md:flex items-center justify-center flex-1 max-w-md mx-4 overflow-hidden h-9">
+                                    {/* Slide 0: STREAKS */}
+                                    {hudIndex === 0 && (
+                                        <div className="flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-300">
+                                            <Flame size={14} className="text-rose-500 animate-pulse shrink-0" />
+                                            {streakList.length === 0 ? (
+                                                <span className="text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>
+                                                    {lang === 'sv' ? "Inga aktiva streaks än — svara rätt för att synas!" : "No active streaks yet — answer correctly to appear!"}
+                                                </span>
+                                            ) : (
+                                                <div className="flex items-center gap-1.5 truncate">
+                                                    {streakList.map(st => (
+                                                        <span key={st.alias} className="px-2 py-0.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-500 text-[10px] font-black">
+                                                            {st.alias} ({st.currentStreak} {t.in_a_row})
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Slide 1: TOP PODIUM */}
+                                    {hudIndex === 1 && (
+                                        <div className="flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-300">
+                                            <Trophy size={14} className="text-amber-500 shrink-0" />
+                                            {leaderboard.length === 0 ? (
+                                                <span className="text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>
+                                                    {lang === 'sv' ? "Väntar på poäng..." : "Waiting for scores..."}
+                                                </span>
+                                            ) : (
+                                                <div className="flex items-center gap-1.5 truncate text-[11px] font-bold">
+                                                    {leaderboard.slice(0, 3).map((st, i) => (
+                                                        <span key={st.alias} className="flex items-center gap-1">
+                                                            <span className="text-amber-500 font-mono font-black">{i + 1}.</span>
+                                                            <span className="truncate max-w-[80px]">{st.alias}</span>
+                                                            <span className="opacity-60 font-mono">({st.score}p)</span>
+                                                            {i < 2 && <span className="opacity-30">•</span>}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Slide 2: KLASSENS KRAFT */}
+                                    {hudIndex === 2 && (
+                                        <div className="flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-300">
+                                            <Zap size={14} className="text-amber-400 shrink-0" />
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-indigo-400">
+                                                {t.class_energy_heading}:
+                                            </span>
+                                            <span className="text-xs font-mono font-black text-amber-400">
+                                                {totalClassScore} {t.points_word} {lang === 'sv' ? "samlat" : "earned"}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* RIGHT: Actions + Celebration Popover Button */}
                             <div className="flex items-center gap-3">
+                                {isLive && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsResultsDrawerOpen(!isResultsDrawerOpen)}
+                                        className="px-3 py-1.5 rounded-xl border text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer hover:border-amber-400"
+                                        style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)', color: 'var(--text-main)' }}
+                                    >
+                                        <Award size={14} className="text-amber-500" />
+                                        <span>{t.results_btn}</span>
+                                    </button>
+                                )}
+
                                 {revealedPhase === 'commit' && (
                                     <button
                                         onClick={() => setPhaseAndBroadcast('distribution')}
@@ -1147,6 +1333,91 @@ export default function FourCornersEngine({
                     </div>
                 )}
             </main>
+
+            {/* 🟢 Post-Round / Mid-Game Celebration Drawer */}
+            {isResultsDrawerOpen && (
+                <div className="fixed inset-0 z-[600] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-6 animate-in fade-in">
+                    <div 
+                        className="w-full max-w-md rounded-3xl border shadow-2xl p-6 flex flex-col gap-4 overflow-hidden"
+                        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', color: 'var(--text-main)' }}
+                    >
+                        <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--border-main)' }}>
+                            <div className="flex items-center gap-2">
+                                <Trophy size={18} className="text-amber-500" />
+                                <h3 className="text-sm font-black uppercase tracking-wider">{t.results_heading}</h3>
+                            </div>
+                            <button onClick={() => setIsResultsDrawerOpen(false)} className="p-1 cursor-pointer" style={{ color: 'var(--text-muted)' }}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1">
+                            {/* Podium */}
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider block mb-2" style={{ color: 'var(--text-muted)' }}>
+                                    {t.podium_heading}
+                                </span>
+                                <div className="space-y-1.5">
+                                    {leaderboard.length === 0 ? (
+                                        <p className="text-xs italic py-2" style={{ color: 'var(--text-muted)' }}>Inga svar registrerade än.</p>
+                                    ) : (
+                                        leaderboard.map((st, i) => (
+                                            <div 
+                                                key={st.alias} 
+                                                className="flex items-center justify-between p-2 rounded-xl border text-xs font-bold"
+                                                style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`w-5 h-5 rounded-md flex items-center justify-center font-mono font-black text-[10px] ${
+                                                        i === 0 ? 'bg-amber-500 text-slate-950' : i === 1 ? 'bg-slate-300 text-slate-950' : i === 2 ? 'bg-orange-600 text-white' : 'bg-black/10'
+                                                    }`}>
+                                                        {i + 1}
+                                                    </span>
+                                                    <span>{st.alias}</span>
+                                                </div>
+                                                <span className="font-mono text-amber-500">{st.score}p</span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Streaks */}
+                            {streakList.length > 0 && (
+                                <div>
+                                    <span className="text-[10px] font-black uppercase tracking-wider block mb-2" style={{ color: 'var(--text-muted)' }}>
+                                        {t.streak_heading}
+                                    </span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {streakList.map(st => (
+                                            <div 
+                                                key={st.alias} 
+                                                className="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-500 flex items-center gap-1.5 text-xs font-bold"
+                                            >
+                                                <Flame size={12} className="shrink-0" />
+                                                <span>{st.alias}</span>
+                                                <span className="font-mono font-black text-[10px]">({st.currentStreak} {t.in_a_row})</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Class Energy */}
+                            <div 
+                                className="p-3 rounded-2xl border flex items-center justify-between"
+                                style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Zap size={16} className="text-amber-400" />
+                                    <span className="text-xs font-black uppercase">{t.class_energy_heading}</span>
+                                </div>
+                                <span className="font-mono font-black text-amber-500">{totalClassScore} p</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* AD-HOC / CUSTOM QUESTION MODAL */}
             {editingRound && (

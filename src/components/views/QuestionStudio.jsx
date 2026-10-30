@@ -897,6 +897,9 @@ export default function QuestionStudio({
                   initialConfig={activeActivity.config}
                   savedBoard={activeActivity.savedBoard}
                   sourcePacket={activeActivity.sourcePacket || []}
+                  session={activeActivity.session || activeActivity.config?.session || null}
+                  isLiveHost={Boolean(activeActivity.isLiveHost || activeActivity.session)}
+                  profile={profile}
                   onClose={() => {
                       setActiveActivity(null);
                       fetchLibrary();

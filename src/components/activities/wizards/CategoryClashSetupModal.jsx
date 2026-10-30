@@ -1,8 +1,8 @@
 // src/components/activities/wizards/CategoryClashSetupModal.jsx
 import React, { useState, useMemo } from 'react';
 import { 
-    X, Grid, Sparkles, Trophy, Shuffle, Gauge, 
-    Play, Info, ChevronRight, HelpCircle, ArrowRight, Monitor
+    X, Grid, Trophy, Shuffle, 
+    Play, Info, HelpCircle, ArrowRight
 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../../constants/skillBuckets.js';
 import { extractSeedsFromPacket } from '../../../hooks/useGameQuestionPool.js';
@@ -17,16 +17,10 @@ export default function CategoryClashSetupModal({
     profile = null,
     lang = 'sv'
 }) {
-    // 🟢 Strict teacher / super_admin role checking
     const userRole = String(profile?.role || '').toLowerCase();
     const isTeacher = userRole === 'teacher' || userRole === 'super_admin';
     const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-    // Check if sourcePacket is actually a board structure or a questions array
-    const savedDimensions = sourcePacket?.dimensions || (Array.isArray(sourcePacket) ? null : null);
-    const savedCategories = sourcePacket?.categories || [];
-
-    // 🟢 1. Detect if loading a pre-saved board or template
     const activeBoardData = savedBoard?.packet || (sourcePacket?.dimensions ? sourcePacket : null);
     const existingDimensions = activeBoardData?.dimensions || { columns: 4, rows: 4 };
     const existingCategories = activeBoardData?.categories || [];
@@ -40,7 +34,7 @@ export default function CategoryClashSetupModal({
     const [globalMinLevel, setGlobalMinLevel] = useState(1);
     const [globalMaxLevel, setGlobalMaxLevel] = useState(4);
 
-    // 3. Per-Column Custom Ranges: initialize from saved categories if available
+    // 3. Per-Column Custom Ranges
     const [columnRanges, setColumnRanges] = useState(() => {
         const ranges = {};
         if (existingCategories.length > 0) {
@@ -56,9 +50,9 @@ export default function CategoryClashSetupModal({
     // 4. Intentional Level Inspector Modal state
     const [inspectedTopic, setInspectedTopic] = useState(null);
 
-    // 5. Teams & Points
+    // 5. Teams & Points (Defaulted to Solo: 1)
     const [pointScalePreset, setPointScalePreset] = useState('100_500');
-    const [teamCount, setTeamCount] = useState(existingTeams?.length || 2);
+    const [teamCount, setTeamCount] = useState(existingTeams?.length || 1);
     const [teamNames, setTeamNames] = useState(() => {
         if (existingTeams?.length > 0) {
             const names = {};
@@ -74,7 +68,7 @@ export default function CategoryClashSetupModal({
     });
     const teamColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b'];
 
-    // 6. Source packet integration: Handle both Array and Object tile structures
+    // 6. Source packet integration
     const rawTiles = useMemo(() => {
         const candidate = sourcePacket?.tiles || activeBoardData?.tiles || sourcePacket;
         if (Array.isArray(candidate)) return candidate;
@@ -84,9 +78,8 @@ export default function CategoryClashSetupModal({
 
     const seedInfo = useMemo(() => extractSeedsFromPacket(rawTiles || []), [rawTiles]);
     const hasSourcePacket = Boolean(rawTiles && rawTiles.length > 0);
-    const [sourceMode, setSourceMode] = useState(hasSourcePacket ? 'as_is' : 'procedural');
     const [wordProblems, setWordProblems] = useState(savedBoard?.config?.wordProblems || false);
-    // Index all topics and their variation milestones
+
     const allTopics = useMemo(() => {
         const list = [];
         for (const catKey in SKILL_BUCKETS) {
@@ -118,7 +111,6 @@ export default function CategoryClashSetupModal({
         return list;
     }, [lang]);
 
-    // Initial selected topics per column: prioritize saved board categories
     const [selectedTopics, setSelectedTopics] = useState(() => {
         if (existingCategories.length > 0) {
             return existingCategories.map(c => c.topic);
@@ -129,11 +121,10 @@ export default function CategoryClashSetupModal({
         return ['equations', 'fraction_arith', 'percent', 'geometry', 'statistics', 'pythagoras'];
     });
 
-    if (!isOpen) return null;
-
     const t = {
         sv: {
             title: "Konfigurera Poängjakten",
+            subtitle: "Poängjakten • Category Clash",
             game_desc_title: "Frågesportbräde med Automatisk Nivåtrappa",
             game_desc: "Välj ett nivåspann för varje ämne. Spelet fördelar automatiskt svårighetsgraden så att frågorna blir stegvis svårare för högre poäng.",
             grid_size: "Brädstorlek (Kolumner x Rader)",
@@ -143,13 +134,21 @@ export default function CategoryClashSetupModal({
             from_level: "Från:",
             to_level: "Till:",
             inspect_btn: "Visa nivåer",
+            level_word: "Nivå",
             point_scale: "Poängskala",
-            teams_title: "Lagindelning",
+            teams_title: "Spelläge & Gruppindelning",
+            solo: "Solo",
+            teams: "Lag",
+            randomize: "Slumpa",
             word_problems: "Aktivera textuppgifter / problemlösning",
-            cancel: "Avbryt"
+            cancel: "Avbryt",
+            open_board: "Öppna Spelplan",
+            level_overview_sub: "Nivåöversikt & Delmoment",
+            guide_tooltip: "Instruktioner & Spelguide"
         },
         en: {
             title: "Configure Category Clash",
+            subtitle: "Category Clash • Trivia Board",
             game_desc_title: "Trivia Board with Automatic Progression",
             game_desc: "Choose a level range for each category. The game automatically distributes tiers so higher points correspond to harder questions.",
             grid_size: "Grid Size (Columns x Rows)",
@@ -159,12 +158,21 @@ export default function CategoryClashSetupModal({
             from_level: "From:",
             to_level: "To:",
             inspect_btn: "View levels",
+            level_word: "Level",
             point_scale: "Point Scale",
-            teams_title: "Teams",
+            teams_title: "Game Mode & Teams",
+            solo: "Solo",
+            teams: "Teams",
+            randomize: "Randomize",
             word_problems: "Enable story problems & context",
-            cancel: "Cancel"
+            cancel: "Cancel",
+            open_board: "Open Game Board",
+            level_overview_sub: "Level Overview & Subtopics",
+            guide_tooltip: "Instructions & Game Guide"
         }
-    }[lang];
+    }[lang] || {};
+
+    if (!isOpen) return null;
 
     const calculatePointScale = () => {
         const base = pointScalePreset === '100_500' ? 100 : pointScalePreset === '10_50' ? 10 : 1;
@@ -218,7 +226,7 @@ export default function CategoryClashSetupModal({
         setColumnRanges({});
     };
 
-    const handleDoLaunch = (target) => {
+    const handleDoLaunch = () => {
         const activeCategories = Array.from({ length: columns }, (_, colIdx) => {
             const topicId = selectedTopics[colIdx] || allTopics[0]?.id || 'equations';
             const topicMeta = allTopics.find(t => t.id === topicId);
@@ -239,16 +247,16 @@ export default function CategoryClashSetupModal({
             };
         });
 
-        const activeTeams = Array.from({ length: teamCount }, (_, idx) => ({
-            id: `team_${idx}`,
-            name: teamNames[idx] || `Team ${idx + 1}`,
-            color: teamColors[idx],
-            score: 0
-        }));
+        const activeTeams = teamCount <= 1 
+            ? [] 
+            : Array.from({ length: teamCount }, (_, idx) => ({
+                id: `team_${idx}`,
+                name: teamNames[idx] || `Team ${idx + 1}`,
+                color: teamColors[idx],
+                score: 0
+            }));
 
-        // 🟢 Pass tiles and saved board structure directly into onLaunch
         onLaunch({
-            launchTarget: target, // 'local' | 'live'
             dimensions: { columns, rows },
             pointScale: calculatePointScale(),
             categories: activeCategories,
@@ -258,45 +266,69 @@ export default function CategoryClashSetupModal({
             tiles: rawTiles,
             savedBoard: savedBoard || null
         });
+        onClose();
     };
 
     return (
         <div className="fixed inset-0 z-[500] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in select-none">
-            <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden text-slate-800 relative">
-                
+            <div 
+                className="rounded-[2.5rem] shadow-2xl border w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden relative"
+                style={{
+                    backgroundColor: 'var(--bg-card)',
+                    borderColor: 'var(--border-main)',
+                    color: 'var(--text-main)'
+                }}
+            >
                 {/* Header */}
-                <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
+                <div 
+                    className="px-8 py-5 border-b flex items-center justify-between shrink-0"
+                    style={{
+                        backgroundColor: 'var(--bg-surface)',
+                        borderColor: 'var(--border-main)'
+                    }}
+                >
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/30">
                             <Grid size={22} />
                         </div>
                         <div>
-                            <h2 className="text-lg font-black uppercase tracking-wider text-slate-900">{t.title}</h2>
-                            <p className="text-xs font-bold text-slate-400">Poängjakten • Category Clash</p>
+                            <h2 className="text-lg font-black uppercase tracking-wider text-inherit">{t.title}</h2>
+                            <p className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>{t.subtitle}</p>
                         </div>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => setIsHelpOpen(true)}
-                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 border border-slate-700 transition-colors cursor-pointer"
-                        title={lang === 'sv' ? "Instruktioner & Spelguide" : "Instructions & Game Guide"}
-                    >
-                        <HelpCircle size={16} />
-                    </button>
-                    <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:bg-slate-200 transition-colors cursor-pointer">
-                        <X size={18} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setIsHelpOpen(true)}
+                            className="p-2 rounded-xl border transition-colors cursor-pointer hover:border-amber-400"
+                            style={{
+                                backgroundColor: 'var(--bg-card)',
+                                borderColor: 'var(--border-main)',
+                                color: 'var(--text-muted)'
+                            }}
+                            title={t.guide_tooltip}
+                        >
+                            <HelpCircle size={16} />
+                        </button>
+                        <button 
+                            onClick={onClose} 
+                            className="p-2 rounded-xl transition-colors cursor-pointer hover:bg-rose-500 hover:text-white"
+                            style={{ color: 'var(--text-muted)' }}
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Form Body */}
-                <form onSubmit={(e) => { e.preventDefault(); handleDoLaunch('local'); }} className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-6">
+                <form onSubmit={(e) => { e.preventDefault(); handleDoLaunch(); }} className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-6">
                     
                     {/* Visual Concept Banner */}
-                    <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 text-white rounded-3xl p-5 border border-indigo-800/60 shadow-md flex items-center gap-5">
-                        <div className="shrink-0 grid grid-cols-3 gap-1 bg-slate-950/60 p-2 rounded-xl border border-indigo-500/30 w-28 text-center font-mono">
-                            <div className="bg-indigo-600/40 text-indigo-300 text-[9px] py-1 rounded">Nivå 1</div>
-                            <div className="bg-indigo-600/60 text-indigo-200 text-[9px] py-1 rounded">Nivå 2</div>
-                            <div className="bg-indigo-600/90 text-amber-300 text-[9px] py-1 rounded font-black">Nivå 4</div>
+                    <div className="bg-slate-900 text-white rounded-3xl p-5 border border-slate-800 shadow-md flex items-center gap-5">
+                        <div className="shrink-0 grid grid-cols-3 gap-1 bg-slate-950 p-2 rounded-xl border border-slate-800 w-28 text-center font-mono">
+                            <div className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px] py-1 rounded font-bold">{t.level_word} 1</div>
+                            <div className="bg-indigo-500/30 text-indigo-200 border border-indigo-500/40 text-[9px] py-1 rounded font-bold">{t.level_word} 2</div>
+                            <div className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] py-1 rounded font-black">{t.level_word} 4</div>
                         </div>
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
@@ -305,7 +337,7 @@ export default function CategoryClashSetupModal({
                                     {t.game_desc_title}
                                 </h3>
                             </div>
-                            <p className="text-xs text-indigo-200/90 leading-relaxed font-medium">
+                            <p className="text-xs text-slate-300 leading-relaxed font-medium">
                                 {t.game_desc}
                             </p>
                         </div>
@@ -313,8 +345,11 @@ export default function CategoryClashSetupModal({
 
                     {/* Dimensions */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-                            <span className="text-[11px] font-bold text-slate-400 block mb-2">{t.cols_label}</span>
+                        <div 
+                            className="p-3.5 rounded-2xl border"
+                            style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
+                        >
+                            <span className="text-[11px] font-bold block mb-2" style={{ color: 'var(--text-muted)' }}>{t.cols_label}</span>
                             <div className="flex gap-1.5">
                                 {[3, 4, 5, 6].map(num => (
                                     <button
@@ -322,8 +357,11 @@ export default function CategoryClashSetupModal({
                                         type="button"
                                         onClick={() => setColumns(num)}
                                         className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                                            columns === num ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                                            columns === num 
+                                                ? 'bg-indigo-600 text-white shadow-sm' 
+                                                : 'border hover:border-indigo-400'
                                         }`}
+                                        style={columns !== num ? { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', color: 'var(--text-main)' } : {}}
                                     >
                                         {num}
                                     </button>
@@ -331,8 +369,11 @@ export default function CategoryClashSetupModal({
                             </div>
                         </div>
 
-                        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-                            <span className="text-[11px] font-bold text-slate-400 block mb-2">{t.rows_label}</span>
+                        <div 
+                            className="p-3.5 rounded-2xl border"
+                            style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
+                        >
+                            <span className="text-[11px] font-bold block mb-2" style={{ color: 'var(--text-muted)' }}>{t.rows_label}</span>
                             <div className="flex gap-1.5">
                                 {[3, 4, 5].map(num => (
                                     <button
@@ -340,8 +381,11 @@ export default function CategoryClashSetupModal({
                                         type="button"
                                         onClick={() => setRows(num)}
                                         className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                                            rows === num ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                                            rows === num 
+                                                ? 'bg-indigo-600 text-white shadow-sm' 
+                                                : 'border hover:border-indigo-400'
                                         }`}
+                                        style={rows !== num ? { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', color: 'var(--text-main)' } : {}}
                                     >
                                         {num}
                                     </button>
@@ -350,19 +394,19 @@ export default function CategoryClashSetupModal({
                         </div>
                     </div>
 
-                    {/* Categories with Clean From/To Selectors & Info Button */}
+                    {/* Categories & Difficulty Selector */}
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <label className="text-xs font-black uppercase tracking-wider text-slate-700 block">
+                            <label className="text-xs font-black uppercase tracking-wider block" style={{ color: 'var(--text-main)' }}>
                                 {t.categories_title}
                             </label>
                             <button
                                 type="button"
                                 onClick={handleRandomizeTopics}
-                                className="text-[11px] font-black uppercase tracking-wider text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                                className="text-[11px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-300 hover:underline flex items-center gap-1 cursor-pointer"
                             >
                                 <Shuffle size={12} />
-                                Slumpa
+                                {t.randomize}
                             </button>
                         </div>
 
@@ -377,67 +421,119 @@ export default function CategoryClashSetupModal({
                                 };
 
                                 return (
-                                    <div key={colIdx} className="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                        
+                                    <div 
+                                        key={colIdx} 
+                                        className="p-3 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                                        style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
+                                    >
                                         {/* Column Number & Topic Dropdown */}
                                         <div className="flex items-center gap-2 flex-1 min-w-0 w-full sm:w-auto">
-                                            <span className="w-7 h-7 rounded-xl bg-indigo-100 text-indigo-700 font-black text-xs flex items-center justify-center shrink-0">
+                                            {/* Column Number badge: high-contrast border and text */}
+                                            <span 
+                                                className="w-7 h-7 rounded-xl font-mono font-black text-xs flex items-center justify-center shrink-0 border"
+                                                style={{
+                                                    backgroundColor: 'var(--bg-card)',
+                                                    borderColor: 'var(--border-strong)',
+                                                    color: 'var(--text-main)'
+                                                }}
+                                            >
                                                 {colIdx + 1}
                                             </span>
                                             <select
                                                 value={currentTopicId}
                                                 onChange={(e) => handleTopicChange(colIdx, e.target.value)}
-                                                className="w-full bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-800 outline-none cursor-pointer truncate shadow-2xs"
+                                                className="w-full border px-3 py-1.5 rounded-xl text-xs font-bold outline-none cursor-pointer truncate shadow-xs focus:ring-2 focus:ring-indigo-500/40"
+                                                style={{ 
+                                                    backgroundColor: 'var(--bg-card)', 
+                                                    borderColor: 'var(--border-main)', 
+                                                    color: 'var(--text-main)' 
+                                                }}
                                             >
                                                 {allTopics.map(topic => (
-                                                    <option key={topic.id} value={topic.id}>
+                                                    <option 
+                                                        key={topic.id} 
+                                                        value={topic.id} 
+                                                        style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}
+                                                    >
                                                         {topic.categoryName} • {topic.name}
                                                     </option>
                                                 ))}
                                             </select>
                                         </div>
 
-                                        {/* Clean Predictable Min / Max Dropdowns + Dedicated Inspect Button */}
+                                        {/* Min / Max Range Pickers */}
                                         <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-                                            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
-                                                {/* Min Level Select */}
-                                                <div className="flex items-center gap-1">
-                                                    <span className="text-[10px] font-black uppercase text-slate-400">{t.from_level}</span>
+                                            <div 
+                                                className="flex items-center gap-2 px-3 py-1 rounded-xl border shadow-xs"
+                                                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)' }}
+                                            >
+                                                {/* FROM LEVEL */}
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[10px] font-black uppercase" style={{ color: 'var(--text-muted)' }}>
+                                                        {t.from_level}
+                                                    </span>
                                                     <select
                                                         value={currentRange.min}
                                                         onChange={(e) => updateColumnMin(colIdx, e.target.value, availableLevels[availableLevels.length - 1])}
-                                                        className="bg-slate-50 font-black text-indigo-700 text-xs px-1.5 py-1 rounded-lg border border-slate-200 outline-none cursor-pointer"
+                                                        className="font-black text-xs px-2 py-1 rounded-lg border outline-none cursor-pointer"
+                                                        style={{ 
+                                                            backgroundColor: 'var(--bg-surface)', 
+                                                            borderColor: 'var(--border-strong)',
+                                                            color: 'var(--text-main)'
+                                                        }}
                                                     >
                                                         {availableLevels.map(lvl => (
-                                                            <option key={lvl} value={lvl}>Nivå {lvl}</option>
+                                                            <option 
+                                                                key={lvl} 
+                                                                value={lvl} 
+                                                                style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}
+                                                            >
+                                                                {t.level_word} {lvl}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </div>
 
-                                                <ArrowRight size={12} className="text-slate-300" />
+                                                <ArrowRight size={13} style={{ color: 'var(--text-muted)' }} />
 
-                                                {/* Max Level Select */}
-                                                <div className="flex items-center gap-1">
-                                                    <span className="text-[10px] font-black uppercase text-slate-400">{t.to_level}</span>
+                                                {/* TO LEVEL */}
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[10px] font-black uppercase" style={{ color: 'var(--text-muted)' }}>
+                                                        {t.to_level}
+                                                    </span>
                                                     <select
                                                         value={currentRange.max}
                                                         onChange={(e) => updateColumnMax(colIdx, e.target.value, availableLevels[0])}
-                                                        className="bg-slate-50 font-black text-indigo-700 text-xs px-1.5 py-1 rounded-lg border border-slate-200 outline-none cursor-pointer"
+                                                        className="font-black text-xs px-2 py-1 rounded-lg border outline-none cursor-pointer"
+                                                        style={{ 
+                                                            backgroundColor: 'var(--bg-surface)', 
+                                                            borderColor: 'var(--border-strong)',
+                                                            color: 'var(--text-main)'
+                                                        }}
                                                     >
                                                         {availableLevels.map(lvl => (
-                                                            <option key={lvl} value={lvl} disabled={lvl < currentRange.min}>
-                                                                Nivå {lvl}
+                                                            <option 
+                                                                key={lvl} 
+                                                                value={lvl} 
+                                                                disabled={lvl < currentRange.min} 
+                                                                style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}
+                                                            >
+                                                                {t.level_word} {lvl}
                                                             </option>
                                                         ))}
                                                     </select>
                                                 </div>
                                             </div>
 
-                                            {/* Intentional Info Button */}
                                             <button
                                                 type="button"
                                                 onClick={() => setInspectedTopic(topicMeta)}
-                                                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors shadow-2xs cursor-pointer"
+                                                className="p-2 rounded-xl border transition-colors shadow-xs cursor-pointer hover:border-indigo-400"
+                                                style={{ 
+                                                    backgroundColor: 'var(--bg-card)', 
+                                                    borderColor: 'var(--border-main)', 
+                                                    color: 'var(--text-main)' 
+                                                }}
                                                 title={t.inspect_btn}
                                             >
                                                 <Info size={15} />
@@ -449,10 +545,10 @@ export default function CategoryClashSetupModal({
                         </div>
                     </div>
 
-                    {/* Teams & Point Tier Presets */}
+                    {/* Point Presets & Teams */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-xs font-black uppercase tracking-wider text-slate-500 block">
+                            <label className="text-xs font-black uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
                                 {t.point_scale}
                             </label>
                             <div className="flex gap-2">
@@ -466,8 +562,15 @@ export default function CategoryClashSetupModal({
                                         type="button"
                                         onClick={() => setPointScalePreset(p.key)}
                                         className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer border ${
-                                            pointScalePreset === p.key ? 'bg-amber-500 text-white border-amber-600' : 'bg-white text-slate-600 border-slate-200'
+                                            pointScalePreset === p.key 
+                                                ? 'bg-amber-500 text-slate-950 font-black border-amber-500 shadow-sm' 
+                                                : 'hover:border-amber-400'
                                         }`}
+                                        style={pointScalePreset !== p.key ? { 
+                                            backgroundColor: 'var(--bg-surface)', 
+                                            borderColor: 'var(--border-main)', 
+                                            color: 'var(--text-main)' 
+                                        } : {}}
                                     >
                                         {p.label}
                                     </button>
@@ -476,7 +579,7 @@ export default function CategoryClashSetupModal({
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-black uppercase tracking-wider text-slate-500 block">
+                            <label className="text-xs font-black uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
                                 {t.teams_title}
                             </label>
                             <div className="flex gap-2">
@@ -486,10 +589,17 @@ export default function CategoryClashSetupModal({
                                         type="button"
                                         onClick={() => setTeamCount(num)}
                                         className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${
-                                            teamCount === num ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'
+                                            teamCount === num 
+                                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
+                                                : 'hover:border-indigo-400'
                                         }`}
+                                        style={teamCount !== num ? { 
+                                            backgroundColor: 'var(--bg-surface)', 
+                                            borderColor: 'var(--border-main)', 
+                                            color: 'var(--text-main)' 
+                                        } : {}}
                                     >
-                                        {num} {num === 1 ? 'Solo' : 'Lag'}
+                                        {num} {num === 1 ? t.solo : t.teams}
                                     </button>
                                 ))}
                             </div>
@@ -497,49 +607,41 @@ export default function CategoryClashSetupModal({
                     </div>
 
                     {/* Word Problems Checkbox */}
-                    <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer">
+                    <label 
+                        className="flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-colors"
+                        style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
+                    >
                         <input
                             type="checkbox"
                             checked={wordProblems}
                             onChange={(e) => setWordProblems(e.target.checked)}
                             className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
                         />
-                        <span className="text-xs font-bold text-slate-700">{t.word_problems}</span>
+                        <span className="text-xs font-bold" style={{ color: 'var(--text-main)' }}>{t.word_problems}</span>
                     </label>
 
                     {/* Action Footer */}
-                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
+                    <div 
+                        className="pt-4 border-t flex items-center justify-between gap-3 shrink-0"
+                        style={{ borderColor: 'var(--border-main)' }}
+                    >
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 cursor-pointer"
+                            className="px-5 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                            style={{ color: 'var(--text-muted)' }}
                         >
                             {t.cancel}
                         </button>
 
-                        <div className="flex items-center gap-2">
-                            {/* Standard Projector/Solo Launch */}
-                            <button
-                                type="button"
-                                onClick={() => handleDoLaunch('local')}
-                                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
-                            >
-                                <Play size={14} />
-                                <span>{isTeacher ? (lang === 'sv' ? "Projektorläge" : "Projector Mode") : (lang === 'sv' ? "Spela" : "Play")}</span>
-                            </button>
-
-                            {/* 🟢 Live Room Launch (Strictly for teacher & super_admin) */}
-                            {isTeacher && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleDoLaunch('live')}
-                                    className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-md shadow-rose-600/20 active:scale-95 transition-all cursor-pointer"
-                                >
-                                    <Monitor size={14} />
-                                    <span>{lang === 'sv' ? "Starta Live-rum" : "Host Live Room"}</span>
-                                </button>
-                            )}
-                        </div>
+                        <button
+                            type="button"
+                            onClick={handleDoLaunch}
+                            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
+                        >
+                            <Play size={14} />
+                            <span>{t.open_board}</span>
+                        </button>
                     </div>
 
                 </form>
@@ -547,20 +649,34 @@ export default function CategoryClashSetupModal({
                 {/* Level Inspector Modal */}
                 {inspectedTopic && (
                     <div className="absolute inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-6 animate-in fade-in">
-                        <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh] overflow-hidden text-slate-800">
-                            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+                        <div 
+                            className="rounded-3xl border w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh] overflow-hidden"
+                            style={{ 
+                                backgroundColor: 'var(--bg-card)', 
+                                borderColor: 'var(--border-main)', 
+                                color: 'var(--text-main)' 
+                            }}
+                        >
+                            <div 
+                                className="px-6 py-4 border-b flex items-center justify-between"
+                                style={{ 
+                                    backgroundColor: 'var(--bg-surface)', 
+                                    borderColor: 'var(--border-main)' 
+                                }}
+                            >
                                 <div>
-                                    <h4 className="text-sm font-black uppercase tracking-wider text-slate-900">
+                                    <h4 className="text-sm font-black uppercase tracking-wider text-inherit">
                                         {inspectedTopic.name}
                                     </h4>
-                                    <span className="text-[11px] font-bold text-indigo-600">
-                                        Nivåöversikt & Delmoment
+                                    <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-300">
+                                        {t.level_overview_sub}
                                     </span>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => setInspectedTopic(null)}
-                                    className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-200 transition-colors cursor-pointer"
+                                    className="p-1.5 rounded-xl transition-colors cursor-pointer hover:bg-rose-500 hover:text-white"
+                                    style={{ color: 'var(--text-muted)' }}
                                 >
                                     <X size={16} />
                                 </button>
@@ -570,19 +686,26 @@ export default function CategoryClashSetupModal({
                                 {inspectedTopic.availableLevels.map(lvl => {
                                     const variations = inspectedTopic.levelMap?.[lvl] || [];
                                     return (
-                                        <div key={lvl} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                        <div 
+                                            key={lvl} 
+                                            className="p-3.5 rounded-2xl border space-y-1.5"
+                                            style={{ 
+                                                backgroundColor: 'var(--bg-surface)', 
+                                                borderColor: 'var(--border-main)' 
+                                            }}
+                                        >
                                             <div className="flex items-center gap-2">
                                                 <span className="px-2 py-0.5 rounded-md bg-indigo-600 text-white font-black text-[10px]">
-                                                    Nivå {lvl}
+                                                    {t.level_word} {lvl}
                                                 </span>
                                             </div>
                                             {variations.map(v => (
                                                 <div key={v.key} className="pl-1">
-                                                    <div className="text-xs font-bold text-slate-800">
+                                                    <div className="text-xs font-bold text-inherit">
                                                         {v.name?.[lang] || v.name?.sv || v.key}
                                                     </div>
                                                     {v.desc && (
-                                                        <p className="text-[11px] text-slate-500 italic">
+                                                        <p className="text-[11px] italic" style={{ color: 'var(--text-muted)' }}>
                                                             {v.desc?.[lang] || v.desc?.sv}
                                                         </p>
                                                     )}
@@ -595,7 +718,6 @@ export default function CategoryClashSetupModal({
                         </div>
                     </div>
                 )}
-
             </div>
             <CategoryClashHelpModal
                 isOpen={isHelpOpen}
