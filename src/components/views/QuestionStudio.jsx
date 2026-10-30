@@ -246,30 +246,56 @@ export default function QuestionStudio({
 
   const [showActivityHub, setShowActivityHub] = useState(false);
   const [activeActivity, setActiveActivity] = useState(null);
+  const [activeSetupModal, setActiveSetupModal] = useState(null); // { key, savedBoard, sourcePacket }
 
   // Universal Launch Handler
   const handleLaunchActivity = async (gameKey, config) => {
       const actDef = getActivityDefinition(gameKey);
       if (!actDef) return;
 
-      if (config.launchTarget === 'live') {
+      const isLiveLaunch = config.launchTarget === 'live' || 
+                           config.settings?.deliveryMode === 'digital' ||
+                           config.deliveryMode === 'digital';
+
+      if (isLiveLaunch) {
           try {
               const initialSettings = actDef.createInitialSettings 
                   ? actDef.createInitialSettings(config) 
-                  : config;
+                  : (config.settings || config);
+
+              const rawCandidates = config.initialQuestions || 
+                                    config.tiles || 
+                                    config.sourcePacket || 
+                                    config.savedBoard?.packet?.tiles || 
+                                    config.savedBoard?.packet || [];
+
+              const questions = Array.isArray(rawCandidates) 
+                  ? rawCandidates 
+                  : (typeof rawCandidates === 'object' ? Object.values(rawCandidates) : []);
 
               const roomData = await liveCreateRoom({
                   teacherId: profile?.id,
                   profile,
-                  title: `${actDef.title[lang] || actDef.title.sv} Live`,
-                  mode: actDef.modePrefix,
-                  packet: [],
-                  settings: initialSettings
+                  title: config.title || config.savedBoard?.title || `${actDef.title[lang] || actDef.title.sv} Live`,
+                  mode: actDef.modePrefix || config.type,
+                  packet: questions,
+                  settings: {
+                      ...initialSettings,
+                      deliveryMode: 'digital'
+                  }
               });
 
-              onDoNowGenerate(null, null, { 
-                  room: roomData, 
-                  packet: [] 
+              // 🟢 Crucial: set BOTH session and isLiveHost in activeActivity
+              setActiveActivity({
+                  key: gameKey,
+                  config: {
+                      ...config,
+                      session: roomData
+                  },
+                  savedBoard: config.savedBoard,
+                  sourcePacket: questions,
+                  session: roomData,
+                  isLiveHost: true
               });
           } catch (err) {
               alert((lang === 'sv' ? "Kunde inte starta live-aktivitet: " : "Failed to start live activity: ") + err.message);
@@ -277,8 +303,14 @@ export default function QuestionStudio({
       } else {
           setActiveActivity({
               key: gameKey,
-              config,
-              sourcePacket: packet
+              config: {
+                  ...config,
+                  session: null
+              },
+              savedBoard: config.savedBoard,
+              sourcePacket: config.initialQuestions || config.tiles || config.sourcePacket || config.savedBoard?.packet || [],
+              session: null,
+              isLiveHost: false
           });
       }
   };
@@ -320,16 +352,20 @@ export default function QuestionStudio({
   };
 
   const handleSelectSheet = (sheet) => {
-    // 🟢 1. If it's an activity, open via registry
+    // 🟢 1. If it's an activity, open its setup modal first
     if (sheet.type?.startsWith('activity')) {
         const actDef = getActivityDefinition(sheet.type);
         if (actDef) {
-            setActiveActivity({
+            const questions = Array.isArray(sheet.packet)
+                ? sheet.packet
+                : (sheet.packet?.tiles || sheet.packet?.livePacket || []);
+
+            setActiveSetupModal({
                 key: actDef.key,
-                savedBoard: sheet
+                savedBoard: sheet,
+                sourcePacket: questions
             });
         }
-        setShowLibraryModal(false);
         return;
     }
 
@@ -872,11 +908,12 @@ export default function QuestionStudio({
   }
 
   // 🟢 PRIORITY 2: Decoupled Library
+  // 🟢 PRIORITY 2: Decoupled Library
   if (!setupMode) {
       return (
           <>
               <SheetLibraryModal
-                  isOpen={true}
+                  isOpen={!activeActivity && !activeSetupModal}
                   profile={profile}
                   lang={lang}
                   onClose={onClose}
@@ -900,7 +937,15 @@ export default function QuestionStudio({
                       if (sheet.type?.startsWith('activity')) {
                           const actDef = getActivityDefinition(sheet.type);
                           if (actDef) {
-                              setActiveActivity({ key: actDef.key, savedBoard: sheet });
+                              const questions = Array.isArray(sheet.packet)
+                                  ? sheet.packet
+                                  : (sheet.packet?.tiles || sheet.packet?.livePacket || []);
+                              
+                              setActiveSetupModal({
+                                  key: actDef.key,
+                                  savedBoard: sheet,
+                                  sourcePacket: questions
+                              });
                           }
                           return;
                       }
@@ -920,7 +965,55 @@ export default function QuestionStudio({
                     profile={profile}
                     lang={lang}
                     onLaunchActivity={handleLaunchActivity}
-                />
+              />
+
+              {/* 🟢 Render Setup Modal when chosen from Library */}
+              {activeSetupModal && (() => {
+                  const def = getActivityDefinition(activeSetupModal.key);
+                  if (!def?.SetupModal) return null;
+                  const WizardModal = def.SetupModal;
+                  return (
+                      <WizardModal
+                          isOpen={true}
+                          onClose={() => setActiveSetupModal(null)}
+                          sourcePacket={activeSetupModal.sourcePacket || []}
+                          savedBoard={activeSetupModal.savedBoard || null}
+                          profile={profile}
+                          lang={lang}
+                          onLaunch={(config) => {
+                              setActiveSetupModal(null);
+                              handleLaunchActivity(activeSetupModal.key, {
+                                  ...config,
+                                  savedBoard: activeSetupModal.savedBoard,
+                                  title: activeSetupModal.savedBoard?.title || config.title,
+                                  sheetId: activeSetupModal.savedBoard?.id
+                              });
+                          }}
+                      />
+                  );
+              })()}
+
+              {/* 🟢 Render Engine when launched from Library */}
+              {activeActivity && (() => {
+                  const def = getActivityDefinition(activeActivity.key);
+                  if (!def?.TeacherEngine) return null;
+                  const Engine = def.TeacherEngine;
+                  return (
+                      <Engine
+                          initialConfig={activeActivity.config}
+                          savedBoard={activeActivity.savedBoard}
+                          sourcePacket={activeActivity.sourcePacket || []}
+                          session={activeActivity.session || activeActivity.config?.session || null}
+                          isLiveHost={Boolean(activeActivity.isLiveHost || activeActivity.session)}
+                          profile={profile}
+                          onClose={() => {
+                              setActiveActivity(null);
+                              fetchLibrary();
+                          }}
+                          lang={lang}
+                      />
+                  );
+              })()}
           </>
       );
   }
@@ -1655,6 +1748,32 @@ export default function QuestionStudio({
         />
 
         {/* 🟢 Dynamic Activity Engine Render */}
+        {/* 🟢 1. Pre-Flight Activity Setup Modal */}
+        {activeSetupModal && (() => {
+            const def = getActivityDefinition(activeSetupModal.key);
+            if (!def?.SetupModal) return null;
+            const WizardModal = def.SetupModal;
+            return (
+                <WizardModal
+                    isOpen={true}
+                    onClose={() => setActiveSetupModal(null)}
+                    sourcePacket={activeSetupModal.sourcePacket || []}
+                    profile={profile}
+                    lang={lang}
+                    onLaunch={(config) => {
+                        setActiveSetupModal(null);
+                        handleLaunchActivity(activeSetupModal.key, {
+                            ...config,
+                            savedBoard: activeSetupModal.savedBoard,
+                            title: activeSetupModal.savedBoard?.title || config.title,
+                            sheetId: activeSetupModal.savedBoard?.id
+                        });
+                    }}
+                />
+            );
+        })()}
+
+        {/* 🟢 2. Dynamic Activity Engine Render */}
         {activeActivity && (() => {
             const def = getActivityDefinition(activeActivity.key);
             if (!def?.TeacherEngine) return null;
@@ -1664,6 +1783,9 @@ export default function QuestionStudio({
                     initialConfig={activeActivity.config}
                     savedBoard={activeActivity.savedBoard}
                     sourcePacket={activeActivity.sourcePacket || packet || []}
+                    session={activeActivity.session || null}
+                    isLiveHost={Boolean(activeActivity.session)}
+                    profile={profile}
                     onClose={() => {
                         setActiveActivity(null);
                         fetchLibrary();

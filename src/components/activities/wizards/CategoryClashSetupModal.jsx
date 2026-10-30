@@ -13,6 +13,7 @@ export default function CategoryClashSetupModal({
     onClose,
     onLaunch,
     sourcePacket = null,
+    savedBoard = null,
     profile = null,
     lang = 'sv'
 }) {
@@ -21,37 +22,70 @@ export default function CategoryClashSetupModal({
     const isTeacher = userRole === 'teacher' || userRole === 'super_admin';
     const [isHelpOpen, setIsHelpOpen] = useState(false);
 
+    // Check if sourcePacket is actually a board structure or a questions array
+    const savedDimensions = sourcePacket?.dimensions || (Array.isArray(sourcePacket) ? null : null);
+    const savedCategories = sourcePacket?.categories || [];
+
+    // 🟢 1. Detect if loading a pre-saved board or template
+    const activeBoardData = savedBoard?.packet || (sourcePacket?.dimensions ? sourcePacket : null);
+    const existingDimensions = activeBoardData?.dimensions || { columns: 4, rows: 4 };
+    const existingCategories = activeBoardData?.categories || [];
+    const existingTeams = savedBoard?.config?.teams || activeBoardData?.teams;
+
     // 1. Grid Dimensions
-    const [columns, setColumns] = useState(4);
-    const [rows, setRows] = useState(4);
+    const [columns, setColumns] = useState(existingDimensions.columns || 4);
+    const [rows, setRows] = useState(existingDimensions.rows || 4);
 
     // 2. Global Defaults
     const [globalMinLevel, setGlobalMinLevel] = useState(1);
     const [globalMaxLevel, setGlobalMaxLevel] = useState(4);
 
-    // 3. Per-Column Custom Ranges: { [colIdx]: { min: number, max: number } }
-    const [columnRanges, setColumnRanges] = useState({});
+    // 3. Per-Column Custom Ranges: initialize from saved categories if available
+    const [columnRanges, setColumnRanges] = useState(() => {
+        const ranges = {};
+        if (existingCategories.length > 0) {
+            existingCategories.forEach((cat, idx) => {
+                if (cat.minLevel !== undefined && cat.maxLevel !== undefined) {
+                    ranges[idx] = { min: cat.minLevel, max: cat.maxLevel };
+                }
+            });
+        }
+        return ranges;
+    });
 
-    // 4. Intentional Level Inspector Modal state (null or { topicId, topicName, levelMap })
+    // 4. Intentional Level Inspector Modal state
     const [inspectedTopic, setInspectedTopic] = useState(null);
 
     // 5. Teams & Points
     const [pointScalePreset, setPointScalePreset] = useState('100_500');
-    const [teamCount, setTeamCount] = useState(2);
-    const [teamNames, setTeamNames] = useState({
-        0: lang === 'sv' ? 'Lag Röd' : 'Team Red',
-        1: lang === 'sv' ? 'Lag Blå' : 'Team Blue',
-        2: lang === 'sv' ? 'Lag Grön' : 'Team Green',
-        3: lang === 'sv' ? 'Lag Gul' : 'Team Yellow'
+    const [teamCount, setTeamCount] = useState(existingTeams?.length || 2);
+    const [teamNames, setTeamNames] = useState(() => {
+        if (existingTeams?.length > 0) {
+            const names = {};
+            existingTeams.forEach((tm, idx) => { names[idx] = tm.name; });
+            return names;
+        }
+        return {
+            0: lang === 'sv' ? 'Lag Röd' : 'Team Red',
+            1: lang === 'sv' ? 'Lag Blå' : 'Team Blue',
+            2: lang === 'sv' ? 'Lag Grön' : 'Team Green',
+            3: lang === 'sv' ? 'Lag Gul' : 'Team Yellow'
+        };
     });
     const teamColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b'];
 
-    // 6. Source packet integration
-    const seedInfo = useMemo(() => extractSeedsFromPacket(sourcePacket || []), [sourcePacket]);
-    const hasSourcePacket = Boolean(sourcePacket && sourcePacket.length > 0);
-    const [sourceMode, setSourceMode] = useState(hasSourcePacket ? 'as_seeds' : 'procedural');
-    const [wordProblems, setWordProblems] = useState(false);
+    // 6. Source packet integration: Handle both Array and Object tile structures
+    const rawTiles = useMemo(() => {
+        const candidate = sourcePacket?.tiles || activeBoardData?.tiles || sourcePacket;
+        if (Array.isArray(candidate)) return candidate;
+        if (candidate && typeof candidate === 'object') return Object.values(candidate);
+        return [];
+    }, [sourcePacket, activeBoardData]);
 
+    const seedInfo = useMemo(() => extractSeedsFromPacket(rawTiles || []), [rawTiles]);
+    const hasSourcePacket = Boolean(rawTiles && rawTiles.length > 0);
+    const [sourceMode, setSourceMode] = useState(hasSourcePacket ? 'as_is' : 'procedural');
+    const [wordProblems, setWordProblems] = useState(savedBoard?.config?.wordProblems || false);
     // Index all topics and their variation milestones
     const allTopics = useMemo(() => {
         const list = [];
@@ -84,8 +118,11 @@ export default function CategoryClashSetupModal({
         return list;
     }, [lang]);
 
-    // Initial selected topics per column
+    // Initial selected topics per column: prioritize saved board categories
     const [selectedTopics, setSelectedTopics] = useState(() => {
+        if (existingCategories.length > 0) {
+            return existingCategories.map(c => c.topic);
+        }
         if (hasSourcePacket && seedInfo.topics.length > 0) {
             return Array.from({ length: 6 }, (_, idx) => seedInfo.topics[idx % seedInfo.topics.length]);
         }
@@ -209,14 +246,17 @@ export default function CategoryClashSetupModal({
             score: 0
         }));
 
+        // 🟢 Pass tiles and saved board structure directly into onLaunch
         onLaunch({
-            launchTarget: target, // 🟢 'local' | 'live'
+            launchTarget: target, // 'local' | 'live'
             dimensions: { columns, rows },
             pointScale: calculatePointScale(),
             categories: activeCategories,
             teams: activeTeams,
             wordProblems,
-            sourceMode: hasSourcePacket ? sourceMode : 'procedural'
+            sourceMode: hasSourcePacket ? 'as_is' : 'procedural',
+            tiles: rawTiles,
+            savedBoard: savedBoard || null
         });
     };
 

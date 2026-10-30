@@ -11,6 +11,7 @@ import GameQuestionStageModal from '../../shared/GameQuestionStageModal.jsx';
 import MathDisplay from '../../shared/MathDisplay.jsx';
 import { supabase } from '../../../lib/supabaseClient.js';
 import CategoryClashHelpModal from '../shared/CategoryClashHelpModal.jsx';
+import { saveActivityToLibrary, broadcastRoomQuestionState, closeActiveRoom } from '../../live/core/activityQuestionUtils.js';
 
 // 🟢 Helper to parse embedded team from alias: "[team_0] Elev 1" -> { teamId: "team_0", displayName: "Elev 1" }
 const parseTeamId = (alias) => {
@@ -30,10 +31,16 @@ export default function CategoryClashEngine({
     onClose,
     lang = 'sv'
 }) {
-    // 1. Core State - Allow previewing/curating before activating questions
+    // 🟢 1. Resolve live session from either direct prop OR initialConfig
+    const effectiveSession = session || initialConfig?.session || initialConfig?.room || null;
+    const effectiveLiveHost = Boolean(isLiveHost || effectiveSession?.id);
+    const effectiveClassCode = effectiveSession?.class_code || effectiveSession?.room_code || initialConfig?.room_code || '';
+
+    // 2. Core State - Allow previewing/curating before activating questions
     const [mode, setMode] = useState(savedBoard ? 'play' : 'curate'); // 'curate' | 'play'
     const [curateView, setCurateView] = useState('grid'); // 'grid' | 'audit'
-    const [title, setTitle] = useState(savedBoard?.title || session?.title || (lang === 'sv' ? 'Poängjakten' : 'Category Clash'));
+    const [title, setTitle] = useState(savedBoard?.title || effectiveSession?.title || (lang === 'sv' ? 'Poängjakten' : 'Category Clash'));
+    
     const [visibility, setVisibility] = useState(savedBoard?.visibility || 'private');
     const [isSaving, setIsSaving] = useState(false);
     const [boardId, setBoardId] = useState(savedBoard?.id || null);
@@ -119,54 +126,50 @@ export default function CategoryClashEngine({
 
     // 🟢 Synchronize Live Room State to Supabase
     const broadcastRoomState = async (slotId, questionData, updatedTeams = teamsRef.current, updatedCleared = clearedTiles) => {
-        if (!isLiveHost || !session?.id) return;
+        const roomId = effectiveSession?.id;
+        if (!effectiveLiveHost || !roomId) return;
 
-        try {
-            await supabase
-                .from('rooms')
-                .update({
-                    active_question_data: {
-                        ...session.active_question_data,
-                        mode: 'activity_category_clash',
-                        gameKey: 'category_clash',
-                        activeTile: slotId,
-                        activeQuestion: questionData,
-                        points: slotId ? (pointScale[parseInt(slotId.split('_r')[1], 10)] || 100) : 0,
-                        teams: updatedTeams,
-                        board: {
-                            dimensions,
-                            pointScale,
-                            categories,
-                            clearedTiles: updatedCleared,
-                            tiles: pool
-                        }
-                    }
-                })
-                .eq('id', session.id);
-        } catch (err) {
-            console.error("[CategoryClashEngine] Sync error:", err);
-        }
+        await broadcastRoomQuestionState({
+            roomId: roomId,
+            activeQuestionData: {
+                ...(effectiveSession.active_question_data || {}),
+                mode: 'activity_category_clash',
+                gameKey: 'category_clash',
+                activeTile: slotId,
+                activeQuestion: questionData,
+                points: slotId ? (pointScale[parseInt(slotId.split('_r')[1], 10)] || 100) : 0,
+                teams: updatedTeams,
+                board: {
+                    dimensions,
+                    pointScale,
+                    categories,
+                    clearedTiles: updatedCleared,
+                    tiles: pool
+                }
+            }
+        });
     };
 
     // 🟢 Realtime Listener + AUTOMATIC TEAM SCORING
     useEffect(() => {
-        if (!isLiveHost || !session?.id) return;
+        const roomId = effectiveSession?.id;
+        if (!effectiveLiveHost || !roomId) return;
 
         const fetchInitialResponses = async () => {
             const { data } = await supabase
                 .from('responses')
                 .select('*')
-                .eq('room_id', session.id);
+                .eq('room_id', roomId);
             if (data) setLiveResponses(data);
         };
         fetchInitialResponses();
 
-        const channel = supabase.channel(`clash_live_${session.id}`)
+        const channel = supabase.channel(`clash_live_${roomId}`)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'responses',
-                filter: `room_id=eq.${session.id}`
+                filter: `room_id=eq.${roomId}`
             }, (payload) => {
                 const newResp = payload.new;
                 setLiveResponses(prev => [...prev, newResp]);
@@ -189,7 +192,7 @@ export default function CategoryClashEngine({
                 event: 'UPDATE',
                 schema: 'public',
                 table: 'responses',
-                filter: `room_id=eq.${session.id}`
+                filter: `room_id=eq.${roomId}`
             }, (payload) => {
                 setLiveResponses(prev => prev.map(r => r.id === payload.new.id ? payload.new : r));
             })
@@ -198,7 +201,7 @@ export default function CategoryClashEngine({
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [isLiveHost, session?.id, activePoints, activeSlotId, activeQuestion]);
+    }, [effectiveLiveHost, effectiveSession?.id, activePoints, activeSlotId, activeQuestion]);
 
     // 🟢 UN-CLEAR / REOPEN: Click a cleared tile to un-clear and play it again
     const handleTileClick = async (slotId) => {
@@ -355,18 +358,14 @@ export default function CategoryClashEngine({
     const handleSaveBoard = async () => {
         setIsSaving(true);
         try {
-            const { data: authData } = await supabase.auth.getUser();
-            const teacherId = authData?.user?.id;
-            if (!teacherId) throw new Error("Not authenticated");
-
             const tilesArray = Object.values(pool);
 
-            const payload = {
-                title: title.trim() || (lang === 'sv' ? 'Poängjakten' : 'Category Clash'),
+            const saved = await saveActivityToLibrary({
+                sheetId: boardId,
+                title,
                 type: 'activity_category_clash',
-                user_id: teacherId,
                 visibility,
-                auto_topics: categories.map(c => c.topic),
+                autoTopics: categories.map(c => c.topic),
                 packet: {
                     gameKey: 'category_clash',
                     dimensions,
@@ -380,17 +379,9 @@ export default function CategoryClashEngine({
                     wordProblems: initialConfig?.wordProblems || false,
                     startLevel: initialConfig?.startLevel || 1
                 }
-            };
+            });
 
-            let res;
-            if (boardId) {
-                res = await supabase.from('saved_sheets').update(payload).eq('id', boardId).select().single();
-            } else {
-                res = await supabase.from('saved_sheets').insert([payload]).select().single();
-            }
-
-            if (res.error) throw res.error;
-            setBoardId(res.data.id);
+            setBoardId(saved.id);
             alert(lang === 'sv' ? "Spelet har sparats i ditt bibliotek!" : "Game saved to your library!");
         } catch (err) {
             console.error("Save Game Error:", err);
@@ -413,6 +404,21 @@ export default function CategoryClashEngine({
 
     const currentSlotResponses = liveResponses.filter(r => r.question_index === targetNumericIndex);
 
+    const handleCloseEngine = async () => {
+        const roomId = effectiveSession?.id;
+        if (effectiveLiveHost && roomId) {
+            const shouldClose = window.confirm(
+                lang === 'sv' 
+                    ? "Vill du avsluta live-rummet för eleverna?" 
+                    : "Do you want to close the live room for students?"
+            );
+            if (shouldClose) {
+                await closeActiveRoom(roomId);
+            }
+        }
+        if (onClose) onClose();
+    };
+
     return (
         <div className="fixed inset-0 z-[500] bg-slate-950 flex flex-col font-sans select-none overflow-hidden animate-in fade-in">
 
@@ -421,7 +427,7 @@ export default function CategoryClashEngine({
                 
                 {/* Left: Title & Large Classroom-Legible Room PIN */}
                 <div className="flex items-center gap-4">
-                    {isLiveHost && session?.class_code ? (
+                    {effectiveLiveHost && effectiveClassCode ? (
                         <div className="bg-rose-500/10 border-2 border-rose-500/40 px-4 py-1.5 rounded-2xl flex items-center gap-3 shadow-lg shadow-rose-950/30">
                             <span className="w-3 h-3 rounded-full bg-rose-500 animate-pulse" />
                             <div className="flex flex-col">
@@ -429,7 +435,7 @@ export default function CategoryClashEngine({
                                     {lang === 'sv' ? "RUMSKOD" : "ROOM PIN"}
                                 </span>
                                 <span className="text-2xl sm:text-3xl font-mono font-black text-white tracking-widest leading-tight">
-                                    {session.class_code}
+                                    {effectiveClassCode}
                                 </span>
                             </div>
                         </div>
@@ -593,7 +599,7 @@ export default function CategoryClashEngine({
                     </button>
 
                     <button
-                        onClick={onClose}
+                        onClick={handleCloseEngine}
                         className="p-2 rounded-xl bg-slate-800 hover:bg-rose-500 hover:text-white text-slate-400 border border-slate-700 transition-colors cursor-pointer"
                     >
                         <X size={16} />

@@ -12,7 +12,9 @@ import PreferencesToggle from '../../ui/PreferencesToggle';
 import { generateDistractors } from '../../../lib/distractorGenerator';
 import { extractDecodedAnswer } from '../../live/core/liveAnswerUtils.js';
 import { liveCreateRoom } from '../../live/core/liveCreateRoom.js';
-import { universalRegenerateQuestion, closeActiveRoom } from '../../live/core/activityQuestionUtils.js';
+import { universalRegenerateQuestion, closeActiveRoom, universalRegenerateAll,
+    saveActivityToLibrary, broadcastRoomQuestionState
+ } from '../../live/core/activityQuestionUtils.js';
 import { useLibrary } from '../../../hooks/useLibrary.js';
 
 const MathDisplay = ({ content, className = "" }) => {
@@ -125,25 +127,47 @@ export default function FourCornersEngine({
         }
     }[lang] || {};
 
-    const [viewMode, setViewMode] = useState(session?.active_question_data?.activeQuestion ? 'play' : 'curate');
+    // 🟢 1. Role Permissions & Unified Session Resolution
+    const userRole = String(profile?.role || '').toLowerCase();
+    const canHostLiveRoom = userRole === 'teacher' || userRole === 'super_admin';
+
+    const effectiveSession = session || initialConfig?.session || initialConfig?.room || null;
+    const effectiveLiveHost = Boolean(isLiveHost || effectiveSession?.id);
+    const effectiveClassCode = effectiveSession?.class_code || effectiveSession?.room_code || initialConfig?.room_code || '';
+    const effectiveRoomId = effectiveSession?.id || initialConfig?.roomId || null;
+
+    const deliveryMode = initialConfig?.settings?.deliveryMode || 
+                         initialConfig?.deliveryMode || 
+                         (effectiveLiveHost ? 'digital' : 'physical');
+
+    const isDigitalMode = effectiveLiveHost || (deliveryMode === 'digital' && canHostLiveRoom);
+
+    const [viewMode, setViewMode] = useState(effectiveSession?.active_question_data?.activeQuestion ? 'play' : 'curate');
     const [rounds, setRounds] = useState([]);
     const [activeRoundIndex, setActiveRoundIndex] = useState(0);
     const [revealedPhase, setRevealedPhase] = useState('commit');
     const [liveVotes, setLiveVotes] = useState({ A: 0, B: 0, C: 0, D: 0 });
     
     // Live Room State
-    const [activeRoomId, setActiveRoomId] = useState(session?.id || initialConfig?.session?.id || null);
-    const [activeClassCode, setActiveClassCode] = useState(
-        session?.class_code || session?.room_code || 
-        initialConfig?.session?.class_code || initialConfig?.session?.room_code || ''
-    );
+    const [activeRoomId, setActiveRoomId] = useState(effectiveRoomId);
+    const [activeClassCode, setActiveClassCode] = useState(effectiveClassCode);
 
-    // Title State (at the component level)
+    // 🟢 Sync state whenever effectiveSession updates
+    useEffect(() => {
+        if (effectiveRoomId && effectiveRoomId !== activeRoomId) {
+            setActiveRoomId(effectiveRoomId);
+            if (roomIdRef) roomIdRef.current = effectiveRoomId;
+        }
+        if (effectiveClassCode && effectiveClassCode !== activeClassCode) {
+            setActiveClassCode(effectiveClassCode);
+        }
+    }, [effectiveRoomId, effectiveClassCode]);
+
+    // Title State
     const defaultTitle = initialConfig?.title || 
                          sourcePacket?.title || 
                          (lang === 'sv' ? "4 Hörn Aktivitet" : "4 Corners Activity");
     const [activityTitle, setActivityTitle] = useState(defaultTitle);
-    const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [sheetId, setSheetId] = useState(initialConfig?.sheetId || sourcePacket?.id || null);
 
     // Clue Accordion state
@@ -154,16 +178,7 @@ export default function FourCornersEngine({
     const [editingRound, setEditingRound] = useState(null);
     const [isReRolling, setIsReRolling] = useState(false);
     const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
-
-    const { saveWorksheet, saveToLibrary } = useLibrary();
-    const saveFn = saveWorksheet || saveToLibrary;
     const [isSaving, setIsSaving] = useState(false);
-
-    const deliveryMode = initialConfig?.settings?.deliveryMode || 
-                        initialConfig?.deliveryMode || 
-                        (session ? 'digital' : 'physical');
-
-    const isDigitalMode = deliveryMode === 'digital' || Boolean(session);
 
     const CORNER_STYLES = {
         A: {
@@ -236,54 +251,11 @@ export default function FourCornersEngine({
         };
     };
 
-    // 🟢 Keep synchronous ref of room ID so teardown never misses it
-    const roomIdRef = useRef(session?.id || initialConfig?.session?.id || null);
-    const isCreatingRoomRef = useRef(false);
-
-    // 1. Authorized Room Initializer (Strict Deduplication)
-    // 🟢 1. Single-Point Live Room Provisioning (ONLY if digital delivery is selected)
+    // 🟢 Synchronous ref of room ID
+    const roomIdRef = useRef(effectiveRoomId);
     useEffect(() => {
-        // If teacher chose Physical Movement (Projector), DO NOT create a live room
-        if (!isDigitalMode) return;
-
-        const existingSession = session || initialConfig?.session || initialConfig?.room;
-        const existingId = existingSession?.id || activeRoomId || roomIdRef.current;
-        const existingCode = existingSession?.class_code || existingSession?.room_code || activeClassCode;
-
-        // If a room was already provided or created, adopt it
-        if (existingId) {
-            roomIdRef.current = existingId;
-            if (!activeRoomId) setActiveRoomId(existingId);
-            if (existingCode && !activeClassCode) setActiveClassCode(existingCode);
-            return;
-        }
-
-        if (isCreatingRoomRef.current) return;
-        isCreatingRoomRef.current = true;
-
-        const initAuthorizedRoom = async () => {
-            try {
-                const newRoom = await liveCreateRoom({
-                    title: activityTitle || "4 Hörn Live",
-                    mode: 'activity_four_corners',
-                    profile,
-                    packet: rounds
-                });
-
-                if (newRoom) {
-                    roomIdRef.current = newRoom.id;
-                    setActiveRoomId(newRoom.id);
-                    setActiveClassCode(newRoom.class_code || newRoom.room_code);
-                }
-            } catch (err) {
-                console.error("[FourCornersEngine] Could not create authorized room:", err);
-            } finally {
-                isCreatingRoomRef.current = false;
-            }
-        };
-
-        initAuthorizedRoom();
-    }, [session, initialConfig, isDigitalMode]);
+        roomIdRef.current = effectiveRoomId;
+    }, [effectiveRoomId]);
 
     const getEffectiveRoomId = () => {
         return (
@@ -298,14 +270,21 @@ export default function FourCornersEngine({
         );
     };
 
-    // 🟢 2. Guaranteed Room Teardown on Close
+    // 🟢 Guaranteed Room Teardown on Close
     const handleCloseEngine = async () => {
-        const targetRoomId = getEffectiveRoomId();
+        const targetRoomId = activeRoomId || effectiveRoomId || roomIdRef?.current;
 
-        if (targetRoomId) {
-            await closeActiveRoom(targetRoomId);
-            setActiveRoomId(null);
-            setActiveClassCode('');
+        if (effectiveLiveHost && targetRoomId) {
+            const shouldClose = window.confirm(
+                lang === 'sv' 
+                    ? "Vill du avsluta live-rummet för eleverna?" 
+                    : "Do you want to close the live room for students?"
+            );
+            if (shouldClose) {
+                await closeActiveRoom(targetRoomId);
+                setActiveRoomId(null);
+                setActiveClassCode('');
+            }
         }
 
         if (onClose) {
@@ -313,53 +292,22 @@ export default function FourCornersEngine({
         }
     };
 
-    // 🟢 3. Save to Library with dedicated table handling
+    // 🟢 3. Save to Library (Matches Category Clash)
     const handleSavePlaylist = async () => {
         if (rounds.length === 0) return;
-
-        const finalTitle = activityTitle.trim() || (lang === 'sv' ? "4 Hörn Aktivitet" : "4 Corners Activity");
         setIsSaving(true);
-
         try {
-            const { data: authData } = await supabase.auth.getUser();
-            const teacherId = authData?.user?.id;
-            if (!teacherId) throw new Error("Not authenticated");
-
-            const payload = {
-                title: finalTitle,
+            const saved = await saveActivityToLibrary({
+                sheetId,
+                title: activityTitle,
                 type: 'activity_four_corners',
-                user_id: teacherId,
-                packet: rounds.map(r => ({
-                    id: r.id,
-                    topicId: r.topicId,
-                    variationKey: r.variationKey,
-                    name: r.name,
-                    wordProblem: r.wordProblem,
-                    showText: r.showText !== false,
-                    showLatex: r.showLatex !== false,
-                    showVisual: r.showVisual !== false,
-                    renderData: r.renderData,
-                    responseSpec: r.responseSpec
-                })),
-                config: {
-                    questionCount: rounds.length
-                }
-            };
-
-            let res;
-            if (sheetId) {
-                res = await supabase.from('saved_sheets').update(payload).eq('id', sheetId).select().single();
-            } else {
-                res = await supabase.from('saved_sheets').insert([payload]).select().single();
-            }
-
-            if (res.error) throw res.error;
-            if (res.data?.id) setSheetId(res.data.id);
-
-            alert(lang === 'sv' ? "Aktiviteten har sparats i ditt bibliotek!" : "Activity saved to your library!");
+                packet: rounds,
+                config: { questionCount: rounds.length }
+            });
+            setSheetId(saved.id);
+            alert(lang === 'sv' ? "Sparades i biblioteket!" : "Saved to library!");
         } catch (err) {
-            console.error("[FourCornersEngine] Save failed:", err);
-            alert(lang === 'sv' ? "Kunde inte spara aktiviteten." : "Failed to save activity.");
+            console.error("Save failed:", err);
         } finally {
             setIsSaving(false);
         }
@@ -395,27 +343,22 @@ export default function FourCornersEngine({
     }, [currentRound]);
 
     const broadcastRoomState = async (updatedRound, phase = 'commit') => {
-        if (!isDigitalMode || !activeRoomId) return; // 🟢 Skip Supabase sync in projector mode
+        const roomId = activeRoomId || effectiveRoomId;
+        if (!isDigitalMode || !roomId) return;
 
-        try {
-            await supabase
-                .from('rooms')
-                .update({
-                    active_question_data: {
-                        mode: 'activity_four_corners',
-                        gameKey: 'four_corners',
-                        activity_mode: 'activity_four_corners',
-                        activeTile: updatedRound ? `round_${updatedRound.roundIndex}` : null,
-                        activeQuestion: updatedRound,
-                        revealedPhase: phase,
-                        roundIndex: updatedRound?.roundIndex || 1,
-                        updated_at: new Date().toISOString()
-                    }
-                })
-                .eq('id', activeRoomId);
-        } catch (err) {
-            console.error("[FourCornersEngine] Broadcast error:", err);
-        }
+        await broadcastRoomQuestionState({
+            roomId: roomId,
+            activeQuestionData: {
+                mode: 'activity_four_corners',
+                gameKey: 'four_corners',
+                activity_mode: 'activity_four_corners',
+                activeTile: updatedRound ? `round_${updatedRound.roundIndex}` : null,
+                activeQuestion: updatedRound,
+                revealedPhase: phase,
+                roundIndex: updatedRound?.roundIndex || 1,
+                updated_at: new Date().toISOString()
+            }
+        });
     };
 
     const commitAndBroadcastRound = async (updatedRound, phase = 'commit') => {
@@ -430,9 +373,10 @@ export default function FourCornersEngine({
         await broadcastRoomState(currentRound, phase);
     };
 
-    // 🟢 Update line 294:
+    // 🟢 Realtime Listener guarded for digital mode
     useEffect(() => {
-        if (!isDigitalMode || !activeRoomId || !currentRound) return;
+        const roomId = activeRoomId || effectiveRoomId;
+        if (!isDigitalMode || !roomId || !currentRound) return;
 
         setLiveVotes({ A: 0, B: 0, C: 0, D: 0 });
 
@@ -440,7 +384,7 @@ export default function FourCornersEngine({
             const { data } = await supabase
                 .from('responses')
                 .select('answer')
-                .eq('room_id', activeRoomId)
+                .eq('room_id', roomId)
                 .eq('question_index', currentRound.roundIndex);
 
             if (data && data.length > 0) {
@@ -454,12 +398,12 @@ export default function FourCornersEngine({
         };
         fetchExistingVotes();
 
-        const channel = supabase.channel(`fc_live_${activeRoomId}`)
+        const channel = supabase.channel(`fc_live_${roomId}`)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'responses',
-                filter: `room_id=eq.${activeRoomId}`
+                filter: `room_id=eq.${roomId}`
             }, (payload) => {
                 const choice = payload.new?.answer?.toUpperCase();
                 if (choice && ['A', 'B', 'C', 'D'].includes(choice)) {
@@ -471,7 +415,7 @@ export default function FourCornersEngine({
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [isDigitalMode, activeRoomId, activeRoundIndex, currentRound?.id]); // 🟢 Added isDigitalMode
+    }, [isDigitalMode, activeRoomId, effectiveRoomId, activeRoundIndex, currentRound?.id]);
 
     const handleRerollDistractors = (roundId) => {
         setRounds(prev => prev.map(r => {
@@ -545,59 +489,18 @@ export default function FourCornersEngine({
     };
 
     const handleRegenerateAll = async () => {
-        const confirmMsg = lang === 'sv' 
-            ? "Slumpa nya tal för alla frågor i listan?" 
-            : "Re-roll numbers for all questions in the list?";
-        if (!window.confirm(confirmMsg)) return;
-
+        if (!window.confirm("Slumpa nya tal för alla frågor?")) return;
         setIsRegeneratingAll(true);
         try {
-            const updatedPromises = rounds.map(async (round, idx) => {
-                const effectiveTopicId = round.topicId !== 'imported' && round.topicId !== 'custom' 
-                    ? round.topicId 
-                    : (round.resolvedData?.topicId || round.renderData?.topicId || null);
-
-                if (!effectiveTopicId || effectiveTopicId === 'custom') {
-                    const cleanRenderData = { ...round.renderData, options: null };
-                    const freshOptions = generateDistractors({
-                        correctAnswer: round.responseSpec.answer || cleanRenderData.answer,
-                        topicId: round.topicId,
-                        renderData: cleanRenderData,
-                        raw: round
-                    });
-                    return {
-                        ...round,
-                        renderData: { ...round.renderData, options: freshOptions },
-                        responseSpec: { ...round.responseSpec, options: freshOptions }
-                    };
-                }
-
-                try {
-                    const fresh = await universalRegenerateQuestion({
-                        roomId: activeRoomId,
-                        questionIndex: idx + 1,
-                        topicId: effectiveTopicId,
-                        variationKey: round.variationKey || round.resolvedData?.variationKey || null,
-                        wordProblem: round.wordProblem,
-                        lang,
-                        formatFn: formatToCornerRound
-                    });
-
-                    return fresh ? { ...fresh, id: round.id, name: round.name, topicId: effectiveTopicId } : round;
-                } catch {
-                    return round;
-                }
+            const refreshed = await universalRegenerateAll({
+                items: rounds,
+                roomId: activeRoomId,
+                lang,
+                formatFn: formatToCornerRound,
+                onCustomFallback: handleRerollDistractors
             });
-
-            const refreshed = await Promise.all(updatedPromises);
             setRounds(refreshed);
             setLiveVotes({ A: 0, B: 0, C: 0, D: 0 });
-
-            if (viewMode === 'play' && refreshed.length > 0) {
-                await commitAndBroadcastRound(refreshed[activeRoundIndex], 'commit');
-            }
-        } catch (err) {
-            console.error("[FourCornersEngine] Error regenerating all:", err);
         } finally {
             setIsRegeneratingAll(false);
         }
@@ -625,9 +528,9 @@ export default function FourCornersEngine({
                 className="px-6 py-3 flex items-center justify-between shrink-0 z-20 shadow-xs border-b transition-colors"
                 style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)' }}
             >
-                {/* LEFT: Room PIN + Branded Tag + Editable Title Box + Save Button */}
+                {/* LEFT: Room PIN + Branded Tag + Editable Title Box */}
                 <div className="flex items-center gap-3">
-                    {activeClassCode && (
+                    {isDigitalMode && (activeClassCode || effectiveClassCode) && (
                         <div className="bg-rose-500/10 border-2 border-rose-500/40 px-3.5 py-1.5 rounded-2xl flex items-center gap-2.5 shadow-lg shadow-rose-950/20 shrink-0">
                             <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
                             <div className="flex flex-col">
@@ -635,7 +538,7 @@ export default function FourCornersEngine({
                                     {t.room_pin}
                                 </span>
                                 <span className="text-xl sm:text-2xl font-mono font-black tracking-widest leading-tight" style={{ color: 'var(--text-main)' }}>
-                                    {activeClassCode}
+                                    {activeClassCode || effectiveClassCode}
                                 </span>
                             </div>
                         </div>
@@ -645,7 +548,6 @@ export default function FourCornersEngine({
                         {t.title}
                     </span>
 
-                    {/* Dedicated Title Input */}
                     <div 
                         className="flex items-center rounded-xl border px-2.5 py-1 shadow-xs transition-all focus-within:ring-2 focus-within:ring-indigo-500/40"
                         style={{ 
@@ -750,7 +652,7 @@ export default function FourCornersEngine({
                     )}
                 </div>
 
-                {/* RIGHT: Close Button (Triggers Room Teardown) */}
+                {/* RIGHT: Close Button */}
                 <div className="flex items-center">
                     <button 
                         onClick={handleCloseEngine} 

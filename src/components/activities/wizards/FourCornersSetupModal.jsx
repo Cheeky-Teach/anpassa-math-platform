@@ -1,8 +1,8 @@
 // src/components/activities/wizards/FourCornersSetupModal.jsx
 import React, { useState, useMemo } from 'react';
 import { 
-    X, Sparkles, FileText, Zap, Check, 
-    ArrowRight, Loader2, Search, RefreshCcw, Layers
+    X, Sparkles, FileText, Zap, Check, Monitor,
+    ArrowRight, Loader2, Search, RefreshCcw, Layers, Play
 } from 'lucide-react';
 import { useLibrary } from '../../../hooks/useLibrary';
 import { generateDistractors } from '../../../lib/distractorGenerator';
@@ -16,6 +16,10 @@ export default function FourCornersSetupModal({
     profile = null,
     lang = 'sv'
 }) {
+    // 🟢 Strict teacher / super_admin role check (Identical to Category Clash)
+    const userRole = String(profile?.role || '').toLowerCase();
+    const isTeacher = userRole === 'teacher' || userRole === 'super_admin';
+
     const t = {
         sv: {
             title: "Konfigurera 4 Hörn",
@@ -49,6 +53,7 @@ export default function FourCornersSetupModal({
             score_solo: "Solo-poäng till varje elev",
             cancel: "Avbryt",
             start: "Starta Omgång",
+            start_live: "Starta Live-rum",
             preparing: "Förbereder frågor..."
         },
         en: {
@@ -82,22 +87,19 @@ export default function FourCornersSetupModal({
             score_formative: "Formative (No scores)",
             score_solo: "Solo points to each student",
             cancel: "Cancel",
-            start: "Launch Activity",
+            start: "Play (Projector)",
+            start_live: "Host Live Room",
             preparing: "Preparing questions..."
         }
     }[lang] || {};
 
-    const canHostLive = profile?.role === 'teacher' || profile?.role === 'super_admin';
     const hasSourcePacket = Array.isArray(sourcePacket) && sourcePacket.length > 0;
-    
-    // Ingest user's saved library directly via hook
     const { savedSheets, isLoading: isLoadingLibrary } = useLibrary(profile, lang);
 
     const [startMode, setStartMode] = useState(hasSourcePacket ? 'library' : 'quick');
     const [selectedSheetId, setSelectedSheetId] = useState(hasSourcePacket ? 'active_source_packet' : null);
     const [searchTerm, setSearchTerm] = useState('');
     
-    // Loaded sheet state
     const [loadedSheet, setLoadedSheet] = useState(hasSourcePacket ? {
         id: 'active_source_packet',
         title: lang === 'sv' ? "Aktivt Material" : "Current Resource",
@@ -111,7 +113,6 @@ export default function FourCornersSetupModal({
     const [scoringMode, setScoringMode] = useState('formative');
     const [isGenerating, setIsGenerating] = useState(false);
 
-    // Filter sheets to boards and worksheets
     const eligibleSheets = useMemo(() => {
         return (savedSheets || []).filter(sheet => {
             const matchesSearch = (sheet.title || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -137,7 +138,7 @@ export default function FourCornersSetupModal({
         setQuestionCount(questions.length > 0 ? questions.length : 8);
     };
 
-    const handleLaunch = async () => {
+    const handleLaunch = async (forcedTarget = null) => {
         setIsGenerating(true);
         try {
             let preparedQuestions = [];
@@ -150,12 +151,11 @@ export default function FourCornersSetupModal({
                         const rd = raw.renderData || raw.resolvedData?.renderData || raw.data?.renderData || raw;
                         const resolved = raw.resolvedData || raw;
                         
-                        // Safely extract decoded answer using liveAnswerUtils
                         const answer = extractDecodedAnswer(resolved) || 
-                                    extractDecodedAnswer(rd) || 
-                                    raw.answer || 
-                                    rd.answer || 
-                                    '';
+                                       extractDecodedAnswer(rd) || 
+                                       raw.answer || 
+                                       rd.answer || 
+                                       '';
 
                         const options = (rd.options && rd.options.length >= 4)
                             ? rd.options
@@ -164,7 +164,7 @@ export default function FourCornersSetupModal({
                                 topicId: raw.topicId || resolved.topicId || '',
                                 renderData: rd,
                                 resolvedData: resolved,
-                                raw: raw // 🟢 Pass raw object for deep inspection
+                                raw: raw
                             });
 
                         return {
@@ -213,10 +213,16 @@ export default function FourCornersSetupModal({
                 }
             }
 
+            // Determine effective mode: enforce 'physical' if not authorized
+            const effectiveDelivery = (forcedTarget === 'live' || deliveryMode === 'digital') && isTeacher
+                ? 'digital'
+                : 'physical';
+
             onLaunch({
+                launchTarget: forcedTarget || (deliveryMode === 'digital' ? 'live' : 'local'), // 🟢 Added launchTarget
                 initialQuestions: preparedQuestions,
                 settings: {
-                    deliveryMode, // 'physical' or 'digital'
+                    deliveryMode: effectiveDelivery,
                     timerSeconds,
                     scoringMode,
                     questionCount
@@ -293,11 +299,9 @@ export default function FourCornersSetupModal({
                             </button>
                         </div>
 
-                        {/* Inline Library Selector (Eliminates Modal Stacking) */}
+                        {/* Inline Library Selector */}
                         {startMode === 'library' && (
                             <div className="mt-3 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3 animate-in fade-in">
-                                
-                                {/* Search Bar */}
                                 <div className="relative">
                                     <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
                                     <input
@@ -309,7 +313,6 @@ export default function FourCornersSetupModal({
                                     />
                                 </div>
 
-                                {/* Scrollable List of User Sheets */}
                                 <div className="max-h-44 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
                                     {hasSourcePacket && (
                                         <div 
@@ -330,7 +333,7 @@ export default function FourCornersSetupModal({
                                         >
                                             <div className="flex items-center gap-2 truncate">
                                                 <Layers size={14} className={selectedSheetId === 'active_source_packet' ? 'text-white' : 'text-indigo-500'} />
-                                                <span className="truncate">{lang === 'sv' ? "Nuvarande arbetsblad / board" : "Current worksheet / board"}</span>
+                                                <span className="truncate">{lang === 'sv' ? "Nuvarande material" : "Current resource"}</span>
                                             </div>
                                             <span className="text-[10px] opacity-80 shrink-0 font-mono">({sourcePacket.length} {t.questions_count})</span>
                                         </div>
@@ -371,7 +374,6 @@ export default function FourCornersSetupModal({
                                     )}
                                 </div>
 
-                                {/* Strategy Toggle when a sheet is chosen */}
                                 {loadedSheet && (
                                     <div className="pt-3 border-t border-slate-200 dark:border-slate-700/60">
                                         <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-2">
@@ -445,7 +447,7 @@ export default function FourCornersSetupModal({
                         </div>
                     </div>
 
-                    {/* 3. CLASSROOM DELIVERY */}
+                    {/* 3. CLASSROOM DELIVERY (Restricted to Teacher/Super_Admin) */}
                     <div>
                         <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider block mb-2">
                             {t.delivery_label}
@@ -466,14 +468,27 @@ export default function FourCornersSetupModal({
 
                             <button
                                 type="button"
-                                onClick={() => setDeliveryMode('digital')}
-                                className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                                    deliveryMode === 'digital'
-                                        ? 'border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/30 ring-1 ring-indigo-200 dark:ring-indigo-800'
-                                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
+                                disabled={!isTeacher}
+                                onClick={() => {
+                                    if (isTeacher) setDeliveryMode('digital');
+                                }}
+                                className={`p-3 rounded-2xl border-2 text-left transition-all ${
+                                    !isTeacher
+                                        ? 'opacity-40 cursor-not-allowed border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/40'
+                                        : deliveryMode === 'digital'
+                                            ? 'border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/30 ring-1 ring-indigo-200 dark:ring-indigo-800 cursor-pointer'
+                                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 cursor-pointer'
                                 }`}
+                                title={!isTeacher ? (lang === 'sv' ? "Endast tillgängligt för lärare" : "Teacher-only feature") : ""}
                             >
-                                <div className="text-xs font-black">{t.del_dig}</div>
+                                <div className="text-xs font-black flex items-center justify-between">
+                                    <span>{t.del_dig}</span>
+                                    {!isTeacher && (
+                                        <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold">
+                                            {lang === 'sv' ? "Lärare" : "Teacher"}
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{t.del_dig_sub}</div>
                             </button>
                         </div>
@@ -514,7 +529,7 @@ export default function FourCornersSetupModal({
                     </div>
                 </div>
 
-                {/* Footer */}
+                {/* Footer with Category Clash-style dual buttons for teachers */}
                 <footer className="p-4 px-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 shrink-0">
                     <button
                         type="button"
@@ -524,24 +539,31 @@ export default function FourCornersSetupModal({
                         {t.cancel}
                     </button>
 
-                    <button
-                        type="button"
-                        disabled={isGenerating || (startMode === 'library' && !loadedSheet)}
-                        onClick={handleLaunch}
-                        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md shadow-indigo-600/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                    >
-                        {isGenerating ? (
-                            <>
-                                <Loader2 size={15} className="animate-spin" />
-                                <span>{t.preparing}</span>
-                            </>
-                        ) : (
-                            <>
-                                <span>{t.start}</span>
-                                <ArrowRight size={15} />
-                            </>
+                    <div className="flex items-center gap-2">
+                        {/* Standard Projector Launch (Available to everyone) */}
+                        <button
+                            type="button"
+                            disabled={isGenerating || (startMode === 'library' && !loadedSheet)}
+                            onClick={() => handleLaunch('local')}
+                            className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-sm active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                        >
+                            {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+                            <span>{isTeacher ? (lang === 'sv' ? "Projektorläge" : "Projector Mode") : t.start}</span>
+                        </button>
+
+                        {/* 🟢 Live Digital Launch (Strictly for teachers & super_admins) */}
+                        {isTeacher && (
+                            <button
+                                type="button"
+                                disabled={isGenerating || (startMode === 'library' && !loadedSheet)}
+                                onClick={() => handleLaunch('live')}
+                                className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md shadow-rose-600/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                            >
+                                {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Monitor size={14} />}
+                                <span>{t.start_live}</span>
+                            </button>
                         )}
-                    </button>
+                    </div>
                 </footer>
             </div>
         </div>

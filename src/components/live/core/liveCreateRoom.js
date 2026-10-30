@@ -13,12 +13,11 @@ export function generateRoomCode() {
 export async function liveCreateRoom({
     teacherId,
     profile = null,
-    title = "Live Lektion",
+    title = "Live Session",
     mode = 'worksheet',
     packet = [],
     slides = null,
-    settings = {},
-    activeSheetId = null
+    settings = {}
 }) {
     // 1. Resolve User
     const { data: authData } = await supabase.auth.getUser();
@@ -41,9 +40,11 @@ export async function liveCreateRoom({
         role = profileData?.role;
     }
 
-    const isTeacher = ['teacher', 'super_admin'].includes(String(role).toLowerCase());
+    const normalizedRole = String(role || '').toLowerCase();
+    const isAuthorized = ['teacher', 'super_admin'].includes(normalizedRole);
 
-    if (!isTeacher) {
+    if (!isAuthorized) {
+        console.warn(`[liveCreateRoom] Access denied for role: ${role}`);
         throw new Error("Behörighet saknas. Endast lärare kan skapa live-rum.");
     }
 
@@ -69,14 +70,12 @@ export async function liveCreateRoom({
         settings: effectiveSettings
     };
 
+    // 🟢 Matches Supabase rooms schema exactly
     const roomPayload = {
         teacher_id: resolvedTeacherId,
         class_code: classCode,
         status: 'active',
         title: title || "Live Session",
-        active_worksheet_id: activeSheetId || null,
-        current_slide_index: 0,
-        current_question_index: 0,
         active_question_data: activeQuestionData
     };
 
