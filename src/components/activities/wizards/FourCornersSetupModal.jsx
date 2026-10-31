@@ -4,7 +4,7 @@ import {
     X, FileText, Zap, Loader2, Search, Layers, Play
 } from 'lucide-react';
 import { useLibrary } from '../../../hooks/useLibrary';
-import { generateDistractors } from '../../../lib/distractorGenerator';
+import { generateDistractors, normalizeQuestionOptions } from '../../../lib/distractorGenerator';
 import { extractDecodedAnswer } from '../../live/core/liveAnswerUtils';
 
 export default function FourCornersSetupModal({
@@ -148,8 +148,9 @@ export default function FourCornersSetupModal({
                                        rd.answer || 
                                        '';
 
-                        const options = (rd.options && rd.options.length >= 4)
-                            ? rd.options
+                        const existingOptions = rd.options || raw.options || resolved.options;
+                        const options = Array.isArray(existingOptions) && existingOptions.length >= 2
+                            ? normalizeQuestionOptions(existingOptions, answer)
                             : generateDistractors({
                                 correctAnswer: answer,
                                 topicId: raw.topicId || resolved.topicId || '',
@@ -184,7 +185,10 @@ export default function FourCornersSetupModal({
                             const data = await res.json();
                             const rd = data.renderData || {};
                             const answer = data.answer || rd.answer || '';
-                            const options = generateDistractors({ correctAnswer: answer, topicId: seed.topicId, renderData: rd });
+                            const existingOptions = data.options || rd.options;
+                            const options = Array.isArray(existingOptions) && existingOptions.length >= 2
+                                ? normalizeQuestionOptions(existingOptions, answer)
+                                : generateDistractors({ correctAnswer: answer, topicId: seed.topicId, renderData: rd });
                             return {
                                 id: crypto.randomUUID(),
                                 roundIndex: idx + 1,

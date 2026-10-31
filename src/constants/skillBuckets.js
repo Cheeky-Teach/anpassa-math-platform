@@ -245,7 +245,7 @@ export const SKILL_BUCKETS = {
             extractorPattern: /^(?<m>-?\d+)\s*;\s*(?<k>[\d.-]+)/
           },
 
-          // LEVEL 2: Positiv lutning (k-värde)
+          // LEVEL 2: Lutning (k-värde)
           { 
             key: 'slope_pos_int', 
             level: 2,
@@ -264,11 +264,9 @@ export const SKILL_BUCKETS = {
             contextType: 'graph_slope_pos',
             extractorPattern: /^(?<dy>\d+)\s*;\s*(?<dx>\d+)\s*;\s*(?<kDisplay>[^;]+)/
           },
-
-          // LEVEL 3: Negativ lutning (k-värde)
           { 
             key: 'slope_neg_int', 
-            level: 3,
+            level: 2,
             name: { sv: 'Negativ lutning (Heltal)', en: 'Negative Slope (Int)' }, 
             desc: { sv: 'Beräkna k-värdet för en fallande rät linje', en: 'Calculate the k-value for a falling straight line' },
             tags: ['word_problem_ready'],
@@ -277,7 +275,7 @@ export const SKILL_BUCKETS = {
           },
           { 
             key: 'slope_neg_frac', 
-            level: 3,
+            level: 2,
             name: { sv: 'Negativ lutning (Bråk)', en: 'Negative Slope (Frac)' }, 
             desc: { sv: 'Bestäm fallande lutning som ett bråk', en: 'Determine falling slope as a fraction' },
             tags: ['word_problem_ready'],
@@ -285,7 +283,27 @@ export const SKILL_BUCKETS = {
             extractorPattern: /^(?<dy>-?\d+)\s*;\s*(?<dx>\d+)\s*;\s*(?<kDisplay>[^;]+)/
           },
 
-          // LEVEL 4: Linjens Ekvation
+          // LEVEL 3: Värdetabell & Funktionsmaskiner (Nytt)
+          {
+            key: 'table_to_function',
+            level: 3,
+            name: { sv: 'Tabell till formel', en: 'Table to Formula' },
+            desc: { sv: 'Bestäm y = kx + m utifrån en värdetabell', en: 'Determine y = kx + m from a table of values' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_equation',
+            extractorPattern: /^(?<k>-?\d+)\s*;\s*(?<m>-?\d+)\s*;\s*(?<eq>[^;]+)/
+          },
+          {
+            key: 'table_fill_function',
+            level: 3,
+            name: { sv: 'Fyll i värdetabell', en: 'Complete Table' },
+            desc: { sv: 'Beräkna saknat y-värde i tabell givet formeln', en: 'Calculate missing y in a table given the formula' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_eval',
+            extractorPattern: /^(?<k>-?\d+)\s*;\s*(?<m>-?\d+)\s*;\s*(?<x>-?\d+)\s*;\s*(?<y>-?\d+)/
+          },
+
+          // LEVEL 4: Linjens Ekvation & Grafavläsning
           { 
             key: 'eq_standard', 
             level: 4,
@@ -312,9 +330,66 @@ export const SKILL_BUCKETS = {
             tags: ['word_problem_ready'],
             contextType: 'graph_equation',
             extractorPattern: /^(?<k>-?\d+)\s*;\s*(?<m>-?\d+)\s*;\s*(?<eq>[^;]+)/
+          },
+          {
+            key: 'graph_eval_point',
+            level: 4,
+            name: { sv: 'Läs av punkt på graf', en: 'Read point from graph' },
+            desc: { sv: 'Hitta y-värdet för ett givet x på linjen', en: 'Find y-value for a given x on the line' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_eval',
+            extractorPattern: /^(?<k>-?\d+)\s*;\s*(?<m>-?\d+)\s*;\s*(?<x>-?\d+)\s*;\s*(?<y>-?\d+)/
+          },
+
+          // LEVEL 5: Koordinater & Resonemang (Nytt)
+          {
+            key: 'point_on_line',
+            level: 5,
+            name: { sv: 'Ligger punkten på linjen?', en: 'Is Point on Line?' },
+            desc: { sv: 'Verifiera om en punkt uppfyller ekvationen (Ja/Nej)', en: 'Check if a coordinate satisfies the equation (Yes/No)' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_point_check',
+            extractorPattern: /^(?<k>-?\d+)\s*;\s*(?<m>-?\d+)\s*;\s*(?<x>-?\d+)\s*;\s*(?<y>-?\d+)\s*;\s*(?<isMatch>0|1)/
+          },
+          {
+            key: 'parallel_lines_id',
+            level: 5,
+            name: { sv: 'Parallella linjer', en: 'Parallel Lines' },
+            desc: { sv: 'Hitta linjen med identiskt k-värde', en: 'Identify line with matching slope' },
+            contextType: 'graph_parallel_check',
+            extractorPattern: /^(?<k>-?\d+)\s*;\s*(?<m>-?\d+)\s*;\s*(?<parallelEq>[^;]+)/
+          },
+          // LEVEL 6: Verkliga Sammanhang & Skalade Axlar
+          { 
+            key: 'scaled_intercept', 
+            level: 6,
+            name: { sv: 'Startvärde (Skalad axel)', en: 'Initial Value (Scaled)' }, 
+            desc: { sv: 'Avläs m-värde på axlar med stora tal (t.ex. kr, km)', en: 'Read m-value on scaled axes' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_intercept_m',
+            extractorPattern: /^(?<m>-?\d+)\s*;\s*(?<k>[\d.-]+)/
+          },
+          { 
+            key: 'scaled_slope', 
+            level: 6,
+            name: { sv: 'Lutning / Enhetspris', en: 'Slope / Unit Rate' }, 
+            desc: { sv: 'Beräkna k-värde på axlar med anpassade skalsteg', en: 'Calculate rate of change on scaled axes' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_slope_pos',
+            extractorPattern: /^(?<k>-?\d+)\s*;\s*(?<dx>\d+)\s*;\s*(?<kDisplay>[^;]+)/
+          },
+          { 
+            key: 'scaled_equation', 
+            level: 6,
+            name: { sv: 'Linjens ekvation (Verklig skala)', en: 'Line Equation (Scaled)' }, 
+            desc: { sv: 'Bestäm y = kx + m på grafer med verkliga enheter', en: 'Determine y = kx + m on real-world graphs' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_equation',
+            extractorPattern: /^(?<k>-?\d+)\s*;\s*(?<m>-?\d+)\s*;\s*(?<eq>[^;]+)/
           }
         ]
       },
+      
     }
   },
 

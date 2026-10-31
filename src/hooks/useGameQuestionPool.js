@@ -93,6 +93,11 @@ export function useGameQuestionPool({ lang = 'sv' } = {}) {
                 // Calculate the stepped difficulty for each row in this column
                 const columnLevels = interpolateLevelRange(minLevel, maxLevel, rows);
 
+                // 🟢 Check if this specific column has wordProblems configured, otherwise fallback to global
+                const colWordProblem = catObj?.wordProblems !== undefined 
+                    ? Boolean(catObj.wordProblems) 
+                    : Boolean(wordProblems);
+
                 for (let r = 0; r < rows; r++) {
                     const slotId = `c${c}_r${r}`;
                     const targetLevel = columnLevels[r];
@@ -101,7 +106,7 @@ export function useGameQuestionPool({ lang = 'sv' } = {}) {
                         slotId,
                         topic: topicId,
                         level: targetLevel,
-                        wordProblem: wordProblems,
+                        wordProblem: colWordProblem,
                         minLevel,
                         maxLevel
                     });
@@ -121,7 +126,7 @@ export function useGameQuestionPool({ lang = 'sv' } = {}) {
                     level: req.level,
                     minLevel: req.minLevel,
                     maxLevel: req.maxLevel,
-                    wordProblem: wordProblems
+                    wordProblem: req.wordProblem
                 };
             });
 

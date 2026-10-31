@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Zap, X, CheckCircle2, XCircle, Loader2, Sparkles } from 'lucide-react';
 import MathDisplay from '../../shared/MathDisplay.jsx';
 import VisualRenderer from '../../visuals/VisualRenderer.jsx';
-import { generateDistractors } from '../../../lib/distractorGenerator.js';
+import { generateDistractors, normalizeQuestionOptions } from '../../../lib/distractorGenerator.js';
 import { extractDecodedAnswer } from '../../live/core/liveAnswerUtils.js';
 
 export default function StudentQuickPracticeDrawer({
@@ -91,8 +91,9 @@ export default function StudentQuickPracticeDrawer({
             const latexContent = rd.latex || data.latex || resolved.latex || null;
 
             // Generate or normalize options
-            let options = (rd.options && rd.options.length >= 4)
-                ? rd.options
+            const existingOptions = rd.options || data.options || resolved.options;
+            const normalizedOptions = Array.isArray(existingOptions) && existingOptions.length >= 2
+                ? normalizeQuestionOptions(existingOptions, correctAnswer)
                 : generateDistractors({
                     correctAnswer,
                     topicId: targetTopic,
@@ -100,19 +101,6 @@ export default function StudentQuickPracticeDrawer({
                     resolvedData: resolved,
                     raw: data
                 });
-
-            const normalizedOptions = options.slice(0, 4).map((opt, idx) => {
-                const label = typeof opt === 'object' ? (opt.label || opt.text || '') : String(opt);
-                const isCorrect = typeof opt === 'object' && opt.isCorrect !== undefined
-                    ? opt.isCorrect
-                    : String(label).trim().toLowerCase() === String(correctAnswer).trim().toLowerCase();
-
-                return {
-                    id: String.fromCharCode(65 + idx),
-                    label,
-                    isCorrect
-                };
-            });
 
             return {
                 id: data.id || crypto.randomUUID(),

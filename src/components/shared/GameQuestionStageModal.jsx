@@ -32,6 +32,7 @@ export default function GameQuestionStageModal({
     activeTeamId = null,
     onAwardPoints = null,
     onRegenerate = null,
+    onToggleWordProblem,
     lang = 'sv',
     allowHints = true,
     showPointsAwarding = true,
@@ -208,6 +209,36 @@ export default function GameQuestionStageModal({
                             >
                                 <RefreshCcw size={13} className={isRegenerating ? "animate-spin text-amber-400" : ""} />
                                 <span className="hidden lg:inline">{lang === 'sv' ? "Slumpa nya siffror" : "Roll new numbers"}</span>
+                            </button>
+                        )}
+
+                        {onToggleWordProblem && (
+                            <button
+                                type="button"
+                                onClick={onToggleWordProblem}
+                                disabled={isRegenerating}
+                                className={`px-3 py-1.5 rounded-xl border text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 ${
+                                    isWordProblem
+                                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 hover:bg-amber-500/30'
+                                        : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white hover:border-slate-600'
+                                }`}
+                                title={
+                                    isWordProblem
+                                        ? (lang === 'sv' ? "Växla till rent matematiskt tal" : "Switch to formula")
+                                        : (lang === 'sv' ? "Växla till textuppgift" : "Switch to word problem")
+                                }
+                            >
+                                {isWordProblem ? (
+                                    <>
+                                        <Calculator size={13} />
+                                        <span className="hidden lg:inline">{lang === 'sv' ? "Gör till tal" : "Formula"}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Type size={13} />
+                                        <span className="hidden lg:inline">{lang === 'sv' ? "Gör till text" : "Story"}</span>
+                                    </>
+                                )}
                             </button>
                         )}
 

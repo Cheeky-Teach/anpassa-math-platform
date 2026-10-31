@@ -463,10 +463,10 @@ export default function CategoryClashEngine({
         }
     };
     
-    const handleRegenerateSlot = async (slotId) => {
+    const handleRegenerateSlot = async (slotId, overrideWordProblem = undefined) => {
         if (!slotId) return;
 
-        const freshQuestion = await regenerateSlot(slotId);
+        const freshQuestion = await regenerateSlot(slotId, overrideWordProblem);
         if (!freshQuestion) return;
 
         const newRegenVersion = Date.now();
@@ -479,6 +479,43 @@ export default function CategoryClashEngine({
 
         if (isLive && roomId) {
             await broadcastRoomState(slotId, itemToBroadcast);
+        }
+    };
+
+    const handleToggleSlotWordProblem = async (slotId) => {
+        const targetId = slotId || activeSlotId;
+        if (!targetId) return;
+
+        const current = pool[targetId];
+        if (!current) return;
+
+        const isCurrentlyWp = Boolean(
+            current.wordProblem || 
+            current.renderData?.isWordProblemApplied ||
+            current.resolvedData?.metadata?.isWordProblemApplied
+        );
+
+        const nextWpState = !isCurrentlyWp;
+
+        // Regenerate slot with the inverted wordProblem flag
+        const freshQuestion = await regenerateSlot(targetId, nextWpState);
+        if (!freshQuestion) return;
+
+        const newRegenVersion = Date.now();
+        const itemToBroadcast = {
+            ...freshQuestion,
+            wordProblem: nextWpState,
+            renderData: {
+                ...freshQuestion.renderData,
+                isWordProblemApplied: nextWpState
+            },
+            regenVersion: newRegenVersion
+        };
+
+        updateSlotManually(targetId, itemToBroadcast);
+
+        if (isLive && roomId) {
+            await broadcastRoomState(targetId, itemToBroadcast);
         }
     };
 
@@ -894,6 +931,23 @@ export default function CategoryClashEngine({
                                                                     <RefreshCcw size={12} />
                                                                 </button>
                                                                 <button
+                                                                    onClick={async () => {
+                                                                        const isCurrentlyWp = Boolean(
+                                                                            tileQuestion.wordProblem || 
+                                                                            tileQuestion.renderData?.isWordProblemApplied
+                                                                        );
+                                                                        await handleRegenerateSlot(slotId, !isCurrentlyWp);
+                                                                    }}
+                                                                    className={`p-1.5 rounded-lg border text-[10px] transition-all cursor-pointer ${
+                                                                        tileQuestion?.wordProblem 
+                                                                            ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' 
+                                                                            : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                                                                    }`}
+                                                                    title={tileQuestion?.wordProblem ? "Gör om till vanligt tal" : "Gör om till textuppgift"}
+                                                                >
+                                                                    <Type size={12} />
+                                                                </button>
+                                                                <button
                                                                     onClick={() => handleTileClick(slotId)}
                                                                     className="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-[10px] font-black uppercase transition-all cursor-pointer"
                                                                 >
@@ -929,19 +983,42 @@ export default function CategoryClashEngine({
                                     gridTemplateRows: `auto repeat(${dimensions.rows}, minmax(0, 1fr))`
                                 }}
                             >
-                                {categories.slice(0, dimensions.columns).map((cat, colIdx) => (
-                                    <div 
-                                        key={cat.id || colIdx}
-                                        className="bg-indigo-950/80 border-2 border-indigo-700/60 rounded-2xl p-2.5 sm:p-3 flex flex-col items-center justify-center text-center shadow-lg min-h-[50px]"
-                                    >
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
-                                            {t.category_prefix} {colIdx + 1}
-                                        </span>
-                                        <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wider line-clamp-1">
-                                            {cat.name}
-                                        </span>
-                                    </div>
-                                ))}
+                                {categories.slice(0, dimensions.columns).map((cat, colIdx) => {
+                                    // Check if all tiles in this column share the same mode
+                                    const colTiles = Array.from({ length: dimensions.rows }).map((_, r) => pool[`c${colIdx}_r${r}`]);
+                                    const allWordProblems = colTiles.length > 0 && colTiles.every(t => t?.wordProblem || t?.renderData?.isWordProblemApplied);
+                                    const allMathProblems = colTiles.length > 0 && colTiles.every(t => !t?.wordProblem && !t?.renderData?.isWordProblemApplied);
+
+                                    return (
+                                        <div 
+                                            key={cat.id || colIdx}
+                                            className="bg-indigo-950/80 border-2 border-indigo-700/60 rounded-2xl p-2.5 sm:p-3 flex flex-col items-center justify-center text-center shadow-lg min-h-[50px] relative"
+                                        >
+                                            <div className="flex items-center gap-1.5 mb-0.5">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
+                                                    {t.category_prefix} {colIdx + 1}
+                                                </span>
+                                                {/* Category Mode Pill */}
+                                                {allWordProblems ? (
+                                                    <span className="px-1.5 py-0.2 rounded-md bg-amber-500/20 border border-amber-500/40 text-[9px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-0.5">
+                                                        <Type size={9} /> {lang === 'sv' ? "Text" : "Story"}
+                                                    </span>
+                                                ) : allMathProblems ? (
+                                                    <span className="px-1.5 py-0.2 rounded-md bg-indigo-500/20 border border-indigo-500/40 text-[9px] font-black uppercase tracking-wider text-indigo-300 flex items-center gap-0.5">
+                                                        <Calculator size={9} /> {lang === 'sv' ? "Tal" : "Math"}
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-1.5 py-0.2 rounded-md bg-slate-800 border border-slate-700 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                                                        {lang === 'sv' ? "Blandat" : "Mixed"}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wider line-clamp-1">
+                                                {cat.name}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
 
                                 {Array.from({ length: dimensions.rows }).map((_, rowIdx) => (
                                     <React.Fragment key={rowIdx}>
@@ -966,6 +1043,27 @@ export default function CategoryClashEngine({
                                                 >
                                                     {mode === 'curate' && tileQuestion && (
                                                         <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            {/* Toggle Math <-> Story for this exact tile */}
+                                                            <button
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    const isCurrentlyWp = Boolean(
+                                                                        tileQuestion.wordProblem || 
+                                                                        tileQuestion.renderData?.isWordProblemApplied
+                                                                    );
+                                                                    await handleRegenerateSlot(slotId, !isCurrentlyWp);
+                                                                }}
+                                                                className={`p-1 rounded-lg border cursor-pointer transition-colors ${
+                                                                    tileQuestion.wordProblem || tileQuestion.renderData?.isWordProblemApplied
+                                                                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 hover:bg-amber-500/40' 
+                                                                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                                                                }`}
+                                                                title={tileQuestion.wordProblem ? "Gör om till vanligt tal" : "Gör om till textuppgift"}
+                                                            >
+                                                                <Type size={11} />
+                                                            </button>
+
+                                                            {/* Existing Re-roll numbers button */}
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -984,9 +1082,14 @@ export default function CategoryClashEngine({
                                                     </span>
 
                                                     {mode === 'curate' && tileQuestion && (
-                                                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider mt-1">
-                                                            {t.level_prefix} {tileQuestion.level || (rowIdx + 1)}
-                                                        </span>
+                                                        <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider mt-1">
+                                                            <span className="text-slate-500">
+                                                                {t.level_prefix} {tileQuestion.level || (rowIdx + 1)}
+                                                            </span>
+                                                            {(tileQuestion.wordProblem || tileQuestion.renderData?.isWordProblemApplied) && (
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="Textuppgift" />
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </div>
                                             );
@@ -1181,6 +1284,7 @@ export default function CategoryClashEngine({
                 teams={teams}
                 onAwardPoints={handleAwardPoints}
                 onRegenerate={() => handleRegenerateSlot(activeSlotId)}
+                onToggleWordProblem={() => handleToggleSlotWordProblem(activeSlotId)}
                 lang={lang}
                 showPointsAwarding={Boolean(mode === 'play' || isLive) && teams.length > 0}
                 isLive={isLive && mode === 'play'}

@@ -268,11 +268,12 @@ export const LEVEL_DESCRIPTIONS = {
     },
     // FIXED: linear_graph -> graphs
     graphs: {
-        1: { sv: "Hitta m-värdet", en: "Find m-value" },
-        2: { sv: "Hitta k-värdet (Positiv)", en: "Find k-value (Positive)" },
-        3: { sv: "Hitta k-värdet (Negativ)", en: "Find k-value (Negative)" },
-        4: { sv: "Bestäm funktionen (y=kx+m)", en: "Determine Function" },
-        5: { sv: "Blandat", en: "Mixed" }
+        1: { sv: "Hitta m-värdet (Starttal)", en: "Find m-value (Intercept)" },
+        2: { sv: "Lutning & Trappsteg (k-värde)", en: "Slope & Rate of Change (k-value)" },
+        3: { sv: "Värdetabell & Funktioner", en: "Tables & Functions" },
+        4: { sv: "Linjens ekvation & Grafer", en: "Line Equation & Graph Reading" },
+        5: { sv: "Koordinater & Parallella linjer", en: "Coordinates & Parallel Lines" },
+        6: { sv: "Blandade Linjära Funktioner", en: "Mixed Linear Functions" }
     },
     geometry: {
         1: { sv: "Omkrets (Rektangel)", en: "Perimeter (Rectangle)" },

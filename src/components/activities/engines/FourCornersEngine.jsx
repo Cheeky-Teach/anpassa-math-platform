@@ -9,7 +9,7 @@ import {
 import QuestionSummoner from '../../views/QuestionSummoner';
 import VisualRenderer from '../../visuals/VisualRenderer';
 import PreferencesToggle from '../../ui/PreferencesToggle';
-import { generateDistractors } from '../../../lib/distractorGenerator';
+import { generateDistractors, normalizeQuestionOptions } from '../../../lib/distractorGenerator';
 import { extractDecodedAnswer } from '../../live/core/liveAnswerUtils.js';
 import { universalRegenerateQuestion, universalRegenerateAll, saveActivityToLibrary } from '../../live/core/activityQuestionUtils.js';
 import { useActivityEngineSession } from '../hooks/useActivityEngineSession.js';
@@ -276,8 +276,9 @@ export default function FourCornersEngine({
                               rd.answer || 
                               '';
 
-        const options = (rd.options && rd.options.length >= 4)
-            ? rd.options
+        const rawOptions = rd.options || raw.options || resolved.options;
+        const options = Array.isArray(rawOptions) && rawOptions.length >= 2
+            ? normalizeQuestionOptions(rawOptions, correctAnswer)
             : generateDistractors({
                 correctAnswer,
                 topicId: raw.topicId || resolved.topicId || '',
@@ -1127,8 +1128,8 @@ export default function FourCornersEngine({
 
                             {/* Right 4-Corner Quadrants */}
                             <div className="lg:col-span-5 grid grid-cols-2 grid-rows-2 gap-4 h-full">
-                                {['A', 'B', 'C', 'D'].map((quadId) => {
-                                    const opt = currentRound.renderData.options?.find(o => o.id === quadId);
+                                {(currentRound.renderData.options || []).map((opt) => {
+                                    const quadId = opt.id;
                                     const style = CORNER_STYLES[quadId];
                                     const votes = liveVotes[quadId] || 0;
                                     const pct = totalVotesSubmitted > 0 ? Math.round((votes / totalVotesSubmitted) * 100) : 0;

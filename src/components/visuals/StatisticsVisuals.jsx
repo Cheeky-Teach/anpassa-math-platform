@@ -6,38 +6,62 @@ import React from 'react';
  */
 export const FrequencyTable = ({ data, width = "100%", height = "auto" }) => {
     if (!data?.headers || !data?.rows) return null;
-    const { headers, rows } = data;
+    const { headers, rows, orientation = 'vertical' } = data;
+    const isHorizontal = orientation === 'horizontal';
     
-    // Adjust row padding based on data density to maintain professional look
+    // Adjust row padding based on data density
     const isLargeTable = rows.length > 5;
     
     return (
         <div 
-            className="flex justify-center items-center overflow-hidden p-1"
+            className="flex justify-center items-center overflow-hidden p-1 max-w-full"
             style={{ width, height }}
         >
-            <div className="border border-slate-200 rounded-md bg-white w-full overflow-hidden shadow-sm">
+            <div className="border border-slate-200 rounded-md bg-white w-full overflow-x-auto shadow-sm">
                 <table className="w-full table-auto border-collapse">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                        <tr>
-                            {headers.map((h, i) => (
-                                <th key={i} className="px-2 py-1.5 text-[9px] sm:text-xs font-black uppercase text-slate-500 text-center tracking-tighter">
-                                    {h}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                        {rows.map((row, rI) => (
-                            <tr key={rI} className="bg-white">
-                                {row.map((cell, cI) => (
-                                    <td key={cI} className={`px-2 ${isLargeTable ? 'py-0.5' : 'py-1.5'} text-center font-mono font-bold text-slate-700 text-[10px] sm:text-sm whitespace-nowrap`}>
-                                        {cell}
-                                    </td>
+                    {!isHorizontal ? (
+                        /* Standard Vertical Table (x on left col, y on right col) */
+                        <>
+                            <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    {headers.map((h, i) => (
+                                        <th key={i} className="px-3 py-1.5 text-[9px] sm:text-xs font-black uppercase text-slate-500 text-center tracking-tighter">
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {rows.map((row, rI) => (
+                                    <tr key={rI} className="bg-white hover:bg-slate-50/50">
+                                        {row.map((cell, cI) => (
+                                            <td key={cI} className={`px-3 ${isLargeTable ? 'py-0.5' : 'py-1.5'} text-center font-mono font-bold text-slate-700 text-[10px] sm:text-sm whitespace-nowrap`}>
+                                                {cell}
+                                            </td>
+                                        ))}
+                                    </tr>
                                 ))}
-                            </tr>
-                        ))}
-                    </tbody>
+                            </tbody>
+                        </>
+                    ) : (
+                        /* Horizontal Table (Row 1: x header + x values, Row 2: y header + y values) */
+                        <tbody className="divide-y divide-slate-200">
+                            {headers.map((headerText, hIdx) => (
+                                <tr key={hIdx} className={hIdx === 0 ? "bg-slate-50/40" : "bg-white"}>
+                                    {/* Left Header Column */}
+                                    <th className="px-3 py-2 text-[9px] sm:text-xs font-black uppercase text-slate-500 text-center tracking-tighter border-r border-slate-200 bg-slate-50 whitespace-nowrap">
+                                        {headerText}
+                                    </th>
+                                    {/* Values across columns for this header */}
+                                    {rows.map((row, rIdx) => (
+                                        <td key={rIdx} className="px-3 py-1.5 text-center font-mono font-bold text-slate-700 text-[10px] sm:text-sm whitespace-nowrap">
+                                            {row[hIdx]}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    )}
                 </table>
             </div>
         </div>

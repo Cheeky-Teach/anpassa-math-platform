@@ -1,10 +1,10 @@
 // src/components/activities/wizards/CategoryClashSetupModal.jsx
 import React, { useState, useMemo } from 'react';
 import { 
-    X, Grid, Trophy, Shuffle, 
+    X, Grid, Trophy, Shuffle, Calculator, Type,
     Play, Info, HelpCircle, ArrowRight
 } from 'lucide-react';
-import { SKILL_BUCKETS } from '../../../constants/skillBuckets.js';
+import { SKILL_BUCKETS, isTopicWordProblemReady } from '../../../constants/skillBuckets.js';
 import { extractSeedsFromPacket } from '../../../hooks/useGameQuestionPool.js';
 import CategoryClashHelpModal from '../shared/CategoryClashHelpModal.jsx';
 
@@ -47,6 +47,17 @@ export default function CategoryClashSetupModal({
         return ranges;
     });
 
+    // 3b. Per-Column Question Mode (Math vs Story)
+    const [columnModes, setColumnModes] = useState(() => {
+        const modes = {};
+        if (existingCategories.length > 0) {
+            existingCategories.forEach((cat, idx) => {
+                modes[idx] = cat.wordProblems ? 'story' : 'math';
+            });
+        }
+        return modes;
+    });
+
     // 4. Intentional Level Inspector Modal state
     const [inspectedTopic, setInspectedTopic] = useState(null);
 
@@ -78,7 +89,6 @@ export default function CategoryClashSetupModal({
 
     const seedInfo = useMemo(() => extractSeedsFromPacket(rawTiles || []), [rawTiles]);
     const hasSourcePacket = Boolean(rawTiles && rawTiles.length > 0);
-    const [wordProblems, setWordProblems] = useState(savedBoard?.config?.wordProblems || false);
 
     const allTopics = useMemo(() => {
         const list = [];
@@ -243,7 +253,8 @@ export default function CategoryClashSetupModal({
                 topic: topicId,
                 name: topicMeta ? topicMeta.name : topicId.replace(/_/g, ' '),
                 minLevel: safeMin,
-                maxLevel: safeMax
+                maxLevel: safeMax,
+                wordProblems: (columnModes[colIdx] || 'math') === 'story'
             };
         });
 
@@ -261,7 +272,6 @@ export default function CategoryClashSetupModal({
             pointScale: calculatePointScale(),
             categories: activeCategories,
             teams: activeTeams,
-            wordProblems,
             sourceMode: hasSourcePacket ? 'as_is' : 'procedural',
             tiles: rawTiles,
             savedBoard: savedBoard || null
@@ -525,6 +535,44 @@ export default function CategoryClashSetupModal({
                                                 </div>
                                             </div>
 
+                                            {/* Math vs Story Mode Toggle per Column */}
+                                            <div 
+                                                className="flex items-center p-0.5 rounded-xl border shadow-xs"
+                                                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)' }}
+                                            >
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setColumnModes(prev => ({ ...prev, [colIdx]: 'math' }))}
+                                                    className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
+                                                        (columnModes[colIdx] || 'math') === 'math'
+                                                            ? 'bg-indigo-600 text-white shadow-xs'
+                                                            : 'opacity-60 hover:opacity-100'
+                                                    }`}
+                                                    style={(columnModes[colIdx] || 'math') !== 'math' ? { color: 'var(--text-main)' } : {}}
+                                                    title="Vanligt tal / formel"
+                                                >
+                                                    <Calculator size={11} />
+                                                    <span>Tal</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    disabled={!isTopicWordProblemReady(currentTopicId)}
+                                                    onClick={() => setColumnModes(prev => ({ ...prev, [colIdx]: 'story' }))}
+                                                    className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 ${
+                                                        columnModes[colIdx] === 'story'
+                                                            ? 'bg-amber-500 text-slate-950 font-black shadow-xs cursor-pointer'
+                                                            : isTopicWordProblemReady(currentTopicId)
+                                                                ? 'opacity-60 hover:opacity-100 cursor-pointer'
+                                                                : 'opacity-25 cursor-not-allowed'
+                                                    }`}
+                                                    style={columnModes[colIdx] !== 'story' ? { color: 'var(--text-main)' } : {}}
+                                                    title={!isTopicWordProblemReady(currentTopicId) ? "Inga textuppgifter tillgängliga för detta område" : "Textuppgift / vardagsproblem"}
+                                                >
+                                                    <Type size={11} />
+                                                    <span>Text</span>
+                                                </button>
+                                            </div>
+
                                             <button
                                                 type="button"
                                                 onClick={() => setInspectedTopic(topicMeta)}
@@ -605,20 +653,6 @@ export default function CategoryClashSetupModal({
                             </div>
                         </div>
                     </div>
-
-                    {/* Word Problems Checkbox */}
-                    <label 
-                        className="flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-colors"
-                        style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
-                    >
-                        <input
-                            type="checkbox"
-                            checked={wordProblems}
-                            onChange={(e) => setWordProblems(e.target.checked)}
-                            className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
-                        />
-                        <span className="text-xs font-bold" style={{ color: 'var(--text-main)' }}>{t.word_problems}</span>
-                    </label>
 
                     {/* Action Footer */}
                     <div 
