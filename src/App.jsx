@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, createContext, Suspense } from 'react';
 import { supabase } from './lib/supabaseClient';
-import { BarChart3, AlertCircle, ChevronLeft, Lock, Mail } from 'lucide-react';
+import { BarChart3, AlertCircle, ChevronLeft, Lock, Mail, RefreshCw, Home } from 'lucide-react';
 
 // Views
 import LandingView from './components/views/LandingView';
@@ -52,7 +52,7 @@ const safeTrack = (eventName, data) => {
 import PreferencesToggle from './components/ui/PreferencesToggle';
 import SessionManager from './components/SessionManager';
 
-//user counter/gatekeeper and student gateway
+// user counter/gatekeeper and student gateway
 import StudentGateway from './components/views/StudentGateway';
 import GhostRadioGatekeeper from './components/GhostRadioGatekeeper';
 
@@ -60,16 +60,40 @@ import GhostRadioGatekeeper from './components/GhostRadioGatekeeper';
 import { CONTENT_MAP } from './constants/content_map';
 import { checkDetourTrigger, checkDetourCompletion } from './core/rules/ProgressionEngine';
 
-
 export const PreferencesContext = createContext();
 
-// --- RESPONSIVE FLEX WRAPPER ---
-// Relies on CSS REM scaling in theme.css for sizing, while using flexbox 
-// min-h-0 to ensure child elements can shrink safely without causing vertical overflow.
 const ResponsiveWrapper = ({ children, forceConstrain = false }) => {
     return (
         <div className={`w-full flex flex-col flex-1 ${forceConstrain ? 'overflow-hidden min-h-0 h-full' : ''}`}>
             {children}
+        </div>
+    );
+};
+
+// 🟢 Fail-safe Rescue UI if an unhydrated or crashed view tries to render
+const SessionRescueCard = ({ lang = 'sv', onGoHome }) => {
+    return (
+        <div className="min-h-[80vh] flex items-center justify-center p-6 text-center select-none animate-in fade-in">
+            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl p-10 border border-slate-200 dark:border-slate-800 flex flex-col items-center">
+                <div className="w-14 h-14 bg-amber-50 dark:bg-amber-950/40 text-amber-500 rounded-2xl flex items-center justify-center mb-4">
+                    <AlertCircle size={28} />
+                </div>
+                <h3 className="text-xl font-black uppercase tracking-tight text-slate-800 dark:text-slate-100 mb-2">
+                    {lang === 'sv' ? "Sessionen avbröts" : "Session Interrupted"}
+                </h3>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+                    {lang === 'sv' 
+                        ? "Sidan laddades om eller förlorade kontakten med rummet. Ingen fara, du kan hoppa direkt tillbaka till översikten." 
+                        : "The page reloaded or lost connection with the active room. You can safely return to your dashboard."}
+                </p>
+                <button
+                    onClick={onGoHome}
+                    className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer"
+                >
+                    <Home size={15} />
+                    <span>{lang === 'sv' ? "Tillbaka till Översikten" : "Back to Dashboard"}</span>
+                </button>
+            </div>
         </div>
     );
 };
@@ -84,7 +108,7 @@ function App() {
 
     const [showExpired, setShowExpired] = useState(false);
 
-    //  GLOBAL PREFERENCES STATE (Defaults to Dark & Swedish)
+    // GLOBAL PREFERENCES STATE (Defaults to Dark & Swedish)
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'sv');
     const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'dark');
     const [sandboxLab, setSandboxLab] = useState('fractions');
@@ -97,8 +121,6 @@ function App() {
     const [pendingDetour, setPendingDetour] = useState(null);
 
     const [activeBucket, setActiveBucket] = useState(null);
-
-
 
     // React to theme changes
     useEffect(() => {
@@ -143,7 +165,7 @@ function App() {
 
     const [activeUnitStepId, setActiveUnitStepId] = useState(null);
 
-    // ---  DETOUR / PREREQUISITE STATE ---
+    // --- DETOUR / PREREQUISITE STATE ---
     const [isDetourActive, setIsDetourActive] = useState(false);
     const [originalTask, setOriginalTask] = useState(null);
 
@@ -176,7 +198,7 @@ function App() {
 
     // --- 9. PRACTICE LAB PRE CONFIGS ---
     const [pendingLabConfig, setPendingLabConfig] = useState(null);
-    const [labConfig, setLabConfig] = useState(null); // The active "Source of Truth"
+    const [labConfig, setLabConfig] = useState(null);
 
     const ui = UI_TEXT[lang];
 
@@ -201,7 +223,6 @@ function App() {
         if (question) setQuestionStartTime(Date.now());
     }, [question]);
 
-    // --- HELPERS ---
     const formatTime = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
 
     const updateStats = (type) => {
@@ -223,11 +244,8 @@ function App() {
     const handleKick = async (alias) => {
         if (!activeRoom?.id) return;
         try {
-            // 1. Delete their existing responses from the database
             await supabase.from('responses').delete().eq('room_id', activeRoom.id).eq('student_alias', alias);
             
-            // 2. Add them to the room's blacklist array
-            // Note: Ensure you have a 'kicked_students' column (type: text[]) in your 'rooms' table
             const currentKicked = activeRoom.kicked_students || [];
             const { error } = await supabase
                 .from('rooms')
@@ -235,8 +253,6 @@ function App() {
                 .eq('id', activeRoom.id);
             
             if (error) throw error;
-
-            // Update local state so the teacher's UI knows who is kicked
             setActiveRoom(prev => ({ ...prev, kicked_students: [...currentKicked, alias] }));
         } catch (err) {
             console.error("Error kicking student:", err);
@@ -255,7 +271,6 @@ function App() {
             if (error) throw error;
             setActiveRoom(prev => ({ ...prev, status: 'closed' }));
             setView('dashboard');
-            
         } catch (err) {
             console.error("Error ending session:", err);
             alert(lang === 'sv' ? "Kunde inte avsluta sessionen." : "Could not end session.");
@@ -265,23 +280,19 @@ function App() {
     // --- WORD PROBLEM TOGGLE ---
     useEffect(() => {
         if (view === 'practice' && topic && level && question) {
-            // Re-fetch with force=true to reload the active item instantly
             fetchQuestion(topic, level, lang, true);
         }
     }, [useWordProblems]);
 
-    // --- REFINED STUDENT REAL-TIME KICK LISTENER ---
+    // --- STUDENT REAL-TIME KICK LISTENER ---
     useEffect(() => {
-        // We only need this if we are currently a student in a live session
         if (view === 'live_session' && activeRoom?.id && studentAlias) {
             const channel = supabase.channel(`room_kick_global`)
                 .on('postgres_changes', { 
                     event: 'DELETE', 
                     schema: 'public', 
-                    table: 'responses'
+                    table: 'responses' 
                 }, (payload) => {
-                    // Because of how some DBs handle DELETE, we check the 'old' record
-                    // handleKick in App.jsx targets room_id and student_alias
                     if (
                         payload.old && 
                         payload.old.student_alias === studentAlias && 
@@ -297,19 +308,58 @@ function App() {
         }
     }, [view, activeRoom?.id, studentAlias, lang]);
 
-    // --- SMART NAVIGATION ENGINE (URL Deep-linking and NP-Lab config) ---
+    // 🟢 RECOVERY ENGINE: Safe Room Rehydration from URL
+    const hydrateLiveSessionByCode = async (code, currentUserId) => {
+        if (!code) return false;
+        try {
+            let query = supabase.from('rooms').select('*').eq('class_code', code);
+            if (currentUserId) {
+                query = query.eq('teacher_id', currentUserId);
+            }
+            const { data: room, error } = await query.single();
+            if (error || !room) return false;
+
+            setActiveRoom(room);
+            if (room.active_question_data?.packet) {
+                setSavedPacket(room.active_question_data.packet);
+            }
+            if (room.title) {
+                setSheetTitle(room.title);
+            }
+            return true;
+        } catch (err) {
+            console.warn("Could not hydrate room from code:", err);
+            return false;
+        }
+    };
+
+    // --- SMART NAVIGATION ENGINE (URL Deep-linking & Recovery) ---
     useEffect(() => {
-        const handleUrlNavigation = () => {
+        const handleUrlNavigation = async () => {
             const path = window.location.pathname.replace('/', '');
             const params = new URLSearchParams(window.location.search);
             
-            // 1. Capture Practice Lab Configs (Buffered)
+            // 1. Practice Lab Configs
             if (params.has('config')) {
                 setPendingLabConfig(params.get('config'));
             }
 
-            // 2. Standard deep-linking logic
-            // FIX: Map the short URL path 'lab' to the internal view 'practice_lab'
+            // 2. Room Recovery on Refresh
+            const roomCode = params.get('room');
+            if (roomCode) {
+                const { data: { user } } = await supabase.auth.getUser();
+                const restored = await hydrateLiveSessionByCode(roomCode, user?.id);
+                if (restored) {
+                    if (path === 'live_session') {
+                        setView('live_session');
+                        return;
+                    }
+                    setView('teacher_live');
+                    return;
+                }
+            }
+
+            // 3. Standard deep-linking logic
             if (path === 'lab') {
                 setView('practice_lab');
             } else if (path) {
@@ -326,16 +376,21 @@ function App() {
         return () => window.removeEventListener('popstate', handleUrlNavigation);
     }, []);
 
+    // 🟢 DYNAMIC BROWSER URL SYNC (Preserves active room parameter on live views)
     useEffect(() => {
         const baseUrl = `/${view === 'landing' ? '' : view}`;
-        const queryParams = (view === 'practice' && topic) 
-            ? `?topic=${topic}&level=${level}` 
-            : "";
+        let queryParams = "";
+
+        if (view === 'practice' && topic) {
+            queryParams = `?topic=${topic}&level=${level}`;
+        } else if ((view === 'teacher_live' || view === 'live_session') && activeRoom?.class_code) {
+            queryParams = `?room=${activeRoom.class_code}`;
+        }
         
         if (window.location.pathname + window.location.search !== baseUrl + queryParams) {
             window.history.pushState({ view, topic, level }, "", baseUrl + queryParams);
         }
-    }, [view, topic, level]);
+    }, [view, topic, level, activeRoom?.class_code]);
 
     // --- WINDOW FOCUS ENGINE ---
     useEffect(() => {
@@ -403,11 +458,10 @@ function App() {
 
     // --- AUTH EFFECTS ---
     useEffect(() => {
-        // Initial Session Check
         supabase.auth.getSession().then(({ data: { session: s } }) => {
             setSession(s);
             if (s) {
-                currentUserRef.current = s.user.id; // Set initial ref
+                currentUserRef.current = s.user.id;
                 fetchProfile(s.user.id);
             }
             else setLoadingProfile(false);
@@ -417,13 +471,12 @@ function App() {
             setSession(s);
 
             if (s) {
-                //  FIXED: Use the Ref to check if it's the same user, bypassing the stale closure!
                 const isSameUser = currentUserRef.current === s.user.id;
                 currentUserRef.current = s.user.id; 
                 
                 if (event === 'PASSWORD_RECOVERY') {
                     setView('profile');
-                    fetchProfile(s.user.id); // Not silent for recovery
+                    fetchProfile(s.user.id);
                 } else {
                     fetchProfile(s.user.id, isSameUser); 
                 }
@@ -452,7 +505,6 @@ function App() {
             const isExpired = data?.subscription_status === 'expired' || 
                              (data?.subscription_end_date && new Date(data.subscription_end_date) < new Date());
 
-            //  TRAP EXPIRED USERS
             if (isExpired && data?.role === 'teacher') {
                 setShowExpired(true);
                 return;
@@ -463,7 +515,6 @@ function App() {
                 if (isSetupIncomplete) return 'auth';
                 if (pendingLabConfig) return 'practice_lab';
                 
-                // If they logged in on a guest page, respect their deep link!
                 if (currentView === 'landing' || currentView === 'auth') {
                     if (topic && level) return 'practice';
                     return 'dashboard';
@@ -489,9 +540,7 @@ function App() {
                         .from('teacher_buckets')
                         .select('*')
                         .eq('teacher_id', activeClass.id)
-                        // Only fetch buckets that haven't expired
                         .gt('expires_at', now) 
-                        // Note: is_visible = true is automatically enforced by the RLS policy we wrote
                         .order('created_at', { ascending: false });
                     
                     if (error) throw error;
@@ -520,17 +569,19 @@ function App() {
         setView('practice_lab');
     };
 
-    const goHome = () => { 
+    const goHome = (clearBucket = false) => { 
         setStreak(0); 
         setView('dashboard'); 
         setQuestion(null); 
         setTimerSettings(prev => ({ ...prev, isActive: false })); 
-        setActiveBucket(null); 
+        if (clearBucket) {
+            setActiveBucket(null);
+        }
         setIsDetourActive(false); 
         setOriginalTask(null);
         setSandboxLab('fractions');
-        setActiveUnitStepId(null); // 🟢 Reset
-        setPendingLabConfig(null);  // 🟢 Reset
+        setActiveUnitStepId(null);
+        setPendingLabConfig(null);
     };
 
     const quitPractice = () => { 
@@ -540,10 +591,9 @@ function App() {
         setTimerSettings(prev => ({ ...prev, isActive: false })); 
         setIsDetourActive(false); 
         setOriginalTask(null);
-        setActiveUnitStepId(null); // 🟢 Reset
+        setActiveUnitStepId(null);
     };
 
-    // 🟢 Mark a step complete in the student's active unit progress store
     const markUnitStepComplete = (stepIdentifier) => {
         if (!activeBucket || activeBucket === 'FREE_PLAY') return;
         const studentId = profile?.id || 'guest_student';
@@ -562,7 +612,6 @@ function App() {
         }
     };
 
-    // --- SUBMIT LOGIC W/ PROGRESSION ENGINE ---
     const handleSubmit = async (e, directInput) => {
         if (e) e.preventDefault();
         if (feedback === 'correct') return;
@@ -581,7 +630,6 @@ function App() {
             });
             const result = await res.json();
 
-            // Save to local accumulator
             const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
             savePracticeEntry(topic, level, result.correct, revealedClues.length, timeSpent);
             
@@ -592,7 +640,6 @@ function App() {
                     setStreak(result.newStreak); setTotalCorrect(prev => prev + 1);
                     updateStats(helpUsed ? 'correctHelp' : 'correctNoHelp');
 
-                    // --- DETOUR COMPLETION CHECK ---
                     if (isDetourActive && checkDetourCompletion(result.newStreak)) {
                         setFeedback('correct');
                         setTimeout(() => {
@@ -607,11 +654,8 @@ function App() {
                         return;
                     }
 
-                    // Show the Choice Modal / Unit Progression
                     if (result.levelUp) {
                         setFeedback('correct');
-                        
-                        // 🟢 Record practice level step completion for active units
                         if (activeBucket && activeBucket !== 'FREE_PLAY') {
                             const stepId = `step_prac_${topic}_${level}`;
                             markUnitStepComplete(stepId);
@@ -625,7 +669,6 @@ function App() {
                 }
                 setFeedback('correct');
             } else {
-                // Track history immediately for engine evaluation
                 const newHistoryEntry = { topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() };
                 const updatedHistory = [newHistoryEntry, ...history];
                 setHistory(updatedHistory);
@@ -637,17 +680,14 @@ function App() {
                 }
                 setFeedback('incorrect'); setStreak(0);
 
-                // --- DETOUR TRIGGER CHECK ---
                 if (!isDetourActive) {
                     const detourCheck = checkDetourTrigger(updatedHistory, topic, level, CONTENT_MAP);
                     if (detourCheck.shouldDetour) {
                         setTimeout(() => {
-                            // 1. Save the recommendation to state, but DON'T execute it yet
                             setPendingDetour({
                                 topic: detourCheck.detourTopic,
                                 level: detourCheck.detourLevel
                             });
-                            // 2. Just open the choice modal
                             setIsDetourModalOpen(true);
                         }, 1500);
                     }
@@ -678,7 +718,6 @@ function App() {
     };
 
     const handleChangeLevel = (delta) => {
-        // Dynamically check the maximum level available for the current topic
         const maxLevel = Object.keys(LEVEL_DESCRIPTIONS[topic] || {}).length || 9;
         const newLvl = Math.max(1, Math.min(level + delta, maxLevel));
         
@@ -694,11 +733,8 @@ function App() {
         try {
             const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}&wordProblem=${useWordProblems}${force ? `&force=true&t=${Date.now()}` : ''}`);
             
-            // ADD THIS GUARD TO DETECT BACKEND CRASHES IMMEDIATELY
             if (!res.ok) {
                 console.error(`Backend returned status ${res.status}`);
-                const text = await res.text();
-                console.error("Server Error Payload:", text);
                 setQuestion(null);
                 return;
             }
@@ -706,7 +742,7 @@ function App() {
             const data = await res.json();
             setQuestion(data);
         } catch (e) { 
-            console.error("CRITICAL CLIENT FETCH ERROR:", e); // <-- Uncover the swallowed error
+            console.error("CRITICAL CLIENT FETCH ERROR:", e);
             setQuestion(null); 
         } finally { setLoading(false); }
     };
@@ -788,18 +824,14 @@ function App() {
         return () => clearInterval(interval);
     }, [timerSettings.isActive, timerSettings.remaining, view, isFocused]);
 
-    // ---  DEEP LINK AUTO-FETCHER ---
-    // If the user lands directly on a practice URL (or is routed here after auth), automatically load the question.
     useEffect(() => {
         if (view === 'practice' && topic && level && !question && !loading) {
             fetchQuestion(topic, level, lang);
         }
     }, [view, topic, level, lang]);
 
-    // --- VIEW ORCHESTRATION ---
     if (loadingProfile) return <div className="h-screen flex items-center justify-center bg-[#f9fbf7]"><div className="animate-spin h-10 w-10 border-4 border-emerald-600 border-t-transparent rounded-full" /></div>;
 
-    // ---  EXPIRED GATEWAY UI ---
     if (showExpired) {
         return (
             <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 font-sans text-center">
@@ -850,7 +882,6 @@ function App() {
                         setActiveClass(data.class);
                         setProfile({ role: 'student', subscription_status: 'active' }); 
                         
-                        //  ROUTING PRIORITY: Lab Config -> Deep Link -> Dashboard
                         if (pendingLabConfig) {
                             setView('practice_lab');
                         } else if (topic && level) {
@@ -871,7 +902,6 @@ function App() {
         );
     }
 
-    // --- DYNAMIC HEADER CONTEXT (For Practice View) ---
     let activeCategoryLabel = '';
     let activeTopicLabel = '';
     let activeThemeColor = 'emerald'; 
@@ -895,23 +925,16 @@ function App() {
         }
     }
 
-    // --- EVALUATE ACTIVE STUDENT SESSION ---
-    // If they are a standard student, track using activeClass code. 
-    // If they are a live-room student, track using activeRoom code.
     const activeStudentCode = (profile?.role === 'student' && activeClass?.class_code) 
         ? activeClass.class_code 
         : (view === 'live_session' && studentAlias && activeRoom?.class_code) 
             ? activeRoom.class_code 
             : null;
-        
 
     return (
-        //  WRAP IN CONTEXT PROVIDER
         <PreferencesContext.Provider value={{ theme, toggleTheme, lang, toggleLang }}>
-            {/*  ADDED .layout-app TO APPLY THEME BG */}
             <div className="layout-app min-h-screen flex flex-col font-sans transition-colors duration-500">
                 
-                {/*  PHASE 4: GLOBAL SESSION MANAGER */}
                 {activeStudentCode && (
                     <SessionManager teacherCode={activeStudentCode} lang={lang} />
                 )}
@@ -931,12 +954,19 @@ function App() {
                 />            
                 {(view === 'dashboard' || view === 'practice' || view === 'times_table') && (
                 <header className="sticky top-0 z-10 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
-                    {/*  Reduced y-axis padding to py-1 to slim down the global header */}
                     <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 py-1 flex flex-row items-center justify-between relative">
-                        {/* 1. LEFT SIDE: Logo or Back Button */}
                         <div className="flex-1 flex justify-start">
                             {view === 'practice' || view === 'times_table' ? (
-                                <button onClick={goHome} className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-xs uppercase tracking-widest transition-all group shrink-0">
+                                <button 
+                                    onClick={() => {
+                                        if (view === 'practice') {
+                                            quitPractice();
+                                        } else {
+                                            goHome(false);
+                                        }
+                                    }} 
+                                    className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-xs uppercase tracking-widest transition-all group shrink-0"
+                                >
                                     <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center shadow-sm border border-[var(--border-main)] group-hover:shadow-md">
                                         <ChevronLeft size={16}/>
                                     </div>
@@ -949,7 +979,6 @@ function App() {
                             )}
                         </div>
 
-                        {/* 2. CENTER SIDE: Active Context (Only in Practice Mode) */}
                         {view === 'practice' && (
                             <div className={`theme-${activeThemeColor} absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none text-center w-full max-w-[200px] sm:max-w-[300px]`}>
                                 <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--brand-text)] opacity-80 truncate w-full">
@@ -961,7 +990,6 @@ function App() {
                             </div>
                         )}
                         
-                        {/* 3. RIGHT SIDE: Tools & Stats */}
                         <div className="flex-1 flex flex-row items-center gap-2 sm:gap-4 justify-end flex-wrap sm:flex-nowrap">
                             <PreferencesToggle />
                             
@@ -978,7 +1006,6 @@ function App() {
             <div className="flex-1 flex flex-col relative overflow-x-hidden">
                 {view === 'dashboard' ? (
                     <ResponsiveWrapper>
-                        {/* Show Gateway ONLY if student hasn't selected a bucket yet */}
                         {profile?.role === 'student' && !activeBucket ? (
                             <GhostRadioGatekeeper 
                                 classCode={activeClass?.class_code} 
@@ -994,10 +1021,10 @@ function App() {
                                         classCode={activeClass?.class_code}
                                         buckets={studentBuckets}
                                         onSelectFreePlay={() => {
-                                            setActiveBucket('FREE_PLAY'); // Bypass gateway for full curriculum
+                                            setActiveBucket('FREE_PLAY');
                                         }}
                                         onSelectBucket={(bucket) => {
-                                            setActiveBucket(bucket); // Lock dashboard to this bucket
+                                            setActiveBucket(bucket);
                                         }}
                                         onLeave={handleStudentExitLive}
                                         lang={lang}
@@ -1025,13 +1052,11 @@ function App() {
                                     setSandboxLab('fractions');
                                     setView('sandbox');
                                 }}
-                                
                                 onWhiteboardOpen={() => {
                                     setSavedPacket([]); 
                                     setSheetTitle(lang === 'sv' ? 'Presentationstavla' : 'Presentation Board');
                                     setView('presentation');
                                 }}
-
                                 onRelaunch={handleRelaunchSession} 
                                 onViewReport={handleViewArchiveReport} 
                                 onEdit={handleEditArchivedPacket}
@@ -1066,7 +1091,7 @@ function App() {
                         onBack={() => setView('dashboard')} 
                     />
                 ) : view === 'practice' ? (
-                        <ResponsiveWrapper>
+                    <ResponsiveWrapper>
                         <PracticeView
                             lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} 
                             handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip}
@@ -1083,31 +1108,34 @@ function App() {
                             isDetourActive={isDetourActive}
                             onAdvanceUnitStep={quitPractice}
                         />
-                        </ResponsiveWrapper>
+                    </ResponsiveWrapper>
                 ) : view === 'question_studio' ? (
                     <ResponsiveWrapper forceConstrain={true}>
-                    <QuestionStudio profile={profile} ui={ui} lang={lang} initialPacket={savedPacket} setInitialPacket={setSavedPacket} sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} studioMode={studioMode} setStudioMode={setStudioMode} includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey} answerKeyStyle={answerKeyStyle} setAnswerKeyStyle={setAnswerKeyStyle} onClose={() => setView('dashboard')} 
-                        onWorksheetGenerate={(p) => { 
-                            setSavedPacket(p); 
-                            setView('print');
-                            
-                            safeTrack('Worksheet_Generated', { size: p.length.toString() });
-                            saveFeatureState('worksheet_export', { count: 1, avg_size: p.length });
-                        }}
-                        onDoNowGenerate={(conf, pack, liveData) => { 
-                            if (liveData?.room) { 
-                                setActiveRoom(liveData.room); 
-                                setSavedPacket(liveData.packet); 
-                                setView('teacher_live'); 
-                            } else if (pack) { 
-                                setSavedPacket(pack); 
-                                if (conf?.title) setSheetTitle(conf.title); 
-                                setView('do_now'); 
-                                
-                                safeTrack('DoNow_Generated', { size: pack.length.toString() });
-                                saveFeatureState('donow_generation', { count: 1, size: pack.length });
-                            } 
-                        }} />
+                        <QuestionStudio 
+                            profile={profile} ui={ui} lang={lang} initialPacket={savedPacket} setInitialPacket={setSavedPacket} 
+                            sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} studioMode={studioMode} setStudioMode={setStudioMode} 
+                            includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey} answerKeyStyle={answerKeyStyle} 
+                            setAnswerKeyStyle={setAnswerKeyStyle} onClose={() => setView('dashboard')} 
+                            onWorksheetGenerate={(p) => { 
+                                setSavedPacket(p); 
+                                setView('print');
+                                safeTrack('Worksheet_Generated', { size: p.length.toString() });
+                                saveFeatureState('worksheet_export', { count: 1, avg_size: p.length });
+                            }}
+                            onDoNowGenerate={(conf, pack, liveData) => { 
+                                if (liveData?.room) { 
+                                    setActiveRoom(liveData.room); 
+                                    setSavedPacket(liveData.packet); 
+                                    setView('teacher_live'); 
+                                } else if (pack) { 
+                                    setSavedPacket(pack); 
+                                    if (conf?.title) setSheetTitle(conf.title); 
+                                    setView('do_now'); 
+                                    safeTrack('DoNow_Generated', { size: pack.length.toString() });
+                                    saveFeatureState('donow_generation', { count: 1, size: pack.length });
+                                } 
+                            }} 
+                        />
                     </ResponsiveWrapper>
                 ) : view === 'print' ? (
                     <PrintView packet={savedPacket} title={sheetTitle} lang={lang} onBack={() => setView('question_studio')} includeAnswerKey={includeAnswerKey} answerKeyStyle={answerKeyStyle} />
@@ -1119,8 +1147,8 @@ function App() {
                             configCode={pendingLabConfig} 
                             profile={profile}
                             lang={lang}
-                            activeBucket={activeBucket} // Pass active bucket
-                            activeUnitStepId={activeUnitStepId} // Pass active step id
+                            activeBucket={activeBucket}
+                            activeUnitStepId={activeUnitStepId}
                             onBack={() => {
                                 setPendingLabConfig(null);
                                 setActiveUnitStepId(null);
@@ -1170,42 +1198,38 @@ function App() {
                         }} 
                         lang={lang} 
                     />
-                ) : null}
+                ) : (
+                    /* 🟢 RESCUE BRANCH: Replaces terminal ": null" to catch unhydrated or crashed states */
+                    <SessionRescueCard 
+                        lang={lang} 
+                        onGoHome={goHome} 
+                    />
+                )}
             </div>
+
             <DetourModal 
                 isOpen={isDetourModalOpen} 
                 lang={lang}
                 onAskCoach={() => {
                     setIsDetourModalOpen(false);
-                    setPendingDetour(null); // Clear the pending drop
-                    
-                    // Reset history so the engine doesn't instantly re-trigger the detour on the next mistake
+                    setPendingDetour(null);
                     setHistory([]); 
-                    
-                    // Open your coach modal (ensure you have this state/component defined in App.jsx)
-                    // setIsCoachModalOpen(true); 
                 }}
                 onAcceptDetour={() => {
                     setIsDetourModalOpen(false);
-                    
                     if (pendingDetour) {
-                        // NOW we actually execute the drop!
                         setOriginalTask({ topic, level });
                         setIsDetourActive(true);
                         setTopic(pendingDetour.topic);
                         setLevel(pendingDetour.level);
                         setStreak(0);
-                        
-                        // Clear their history so they get a fresh start on the lower level
                         setHistory([]); 
-                        
-                        // Fetch the new, easier question
                         fetchQuestion(pendingDetour.topic, pendingDetour.level, lang);
                         setPendingDetour(null);
                     }
                 }} 
             />
-            {/* Safely render Vercel Analytics in the background */}
+            
             <Suspense fallback={null}>
                 <IsolatedTracker />
             </Suspense>

@@ -119,7 +119,7 @@ const Dashboard = ({
     const [activeTab, setActiveTab] = useState('curriculum'); 
     const [archivedSessions, setArchivedSessions] = useState([]);
     const [isLoadingArchive, setIsLoadingArchive] = useState(false);
-    const [activeSession, setActiveSession] = useState(null);
+    const [activeSessions, setActiveSessions] = useState([]);
     const [showUpdateLog, setShowUpdateLog] = useState(false);
     const [showCapacityModal, setShowCapacityModal] = useState(false);
     const [activeInstructionModal, setActiveInstructionModal] = useState(null);
@@ -141,7 +141,11 @@ const Dashboard = ({
             accuracy_label: "Träffsäkerhet", edit_btn: "Öppna i Studio",
             type_donow: "Do Now Grid", type_worksheet: "Arbetsblad",
             times_table_title: "Tabeller", times_table_desc: "Multiplikation",
-            news_title: "Senaste uppdatering", view_all: "Visa logg"
+            news_title: "Senaste uppdatering", view_all: "Visa logg",
+            active_sessions_count: (count) => `${count} pågående lektioner`,
+            click_to_resume: "Klicka för att återuppta",
+            untitled_session: "Namnlös lektion",
+            pin_label: "PIN"
         },
         en: {
             tools_section: "Tools", class_code_label: "Your Class Code", connected_code_label: "Connected to code",
@@ -158,7 +162,11 @@ const Dashboard = ({
             accuracy_label: "Accuracy", edit_btn: "Open in Studio",
             type_donow: "Do Now Grid", type_worksheet: "Worksheet",
             times_table_title: "Tables", times_table_desc: "Multiplication",
-            news_title: "Latest Update", view_all: "View log"
+            news_title: "Latest Update", view_all: "View log",
+            active_sessions_count: (count) => `${count} active sessions`,
+            click_to_resume: "Click to resume",
+            untitled_session: "Untitled session",
+            pin_label: "PIN"
         }
     };
 
@@ -313,10 +321,8 @@ const Dashboard = ({
                 .select('*')
                 .eq('teacher_id', profile.id)
                 .eq('status', 'active')
-                .order('created_at', { ascending: false })
-                .limit(1);
-            if (data && data.length > 0) setActiveSession(data[0]);
-            else setActiveSession(null);
+                .order('created_at', { ascending: false });
+            setActiveSessions(data || []);
         } catch (err) { console.error("Session Check Failed:", err); }
     };
 
@@ -562,23 +568,69 @@ const Dashboard = ({
                 {/* ========================================================= */}
                 <main className="w-full min-w-0 flex flex-col">
                     
-                    {/* --- ACTIVE SESSION RESUME BANNER --- */}
-                    {activeSession && ['teacher', 'super_admin'].includes(userRole) && (
-                        <div className="theme-rose mb-6 p-5 bg-[var(--brand-solid)] rounded-[var(--radius-card)] shadow-2xl shadow-[var(--brand-solid)]/20 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-white rounded-[var(--radius-btn)] flex items-center justify-center shadow-sm">
-                                    <PlayCircle size={24} className="text-[var(--brand-solid)]" />
+                    {/* --- ACTIVE SESSION RESUME BANNER (Adaptive 1 or Multi-Room) --- */}
+                    {activeSessions.length > 0 && ['teacher', 'super_admin'].includes(userRole) && (
+                        <div className="theme-rose mb-6 p-4 sm:p-5 bg-[var(--brand-solid)] rounded-[var(--radius-card)] shadow-2xl shadow-[var(--brand-solid)]/20 flex flex-col gap-3 animate-in slide-in-from-top-4 duration-500 text-white">
+                            
+                            {/* Banner Top Header Strip */}
+                            <div className="flex items-center justify-between border-b border-white/15 pb-2.5">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+                                    <h3 className="text-xs sm:text-sm font-black uppercase italic tracking-wider text-white">
+                                        {activeSessions.length === 1 
+                                            ? t.resume_h 
+                                            : t.active_sessions_count(activeSessions.length)}
+                                    </h3>
                                 </div>
-                                <div>
-                                    <h3 className="text-lg font-black uppercase italic tracking-tighter text-white leading-none mb-1">{t.resume_h}</h3>
-                                    <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest leading-none">
-                                        {activeSession.title} — Kod: <span className="font-black text-white">{activeSession.class_code}</span>
-                                    </p>
-                                </div>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-white/80 bg-black/20 px-2 py-0.5 rounded-md">
+                                    {t.click_to_resume}
+                                </span>
                             </div>
-                            <button onClick={() => onRelaunch(activeSession)} className="w-full sm:w-auto px-6 py-3 bg-white text-[var(--brand-solid)] hover:bg-slate-50 rounded-[var(--radius-btn)] font-black uppercase tracking-widest shadow-md active:scale-95 text-[10px] transition-all">
-                                {t.resume_btn}
-                            </button>
+
+                            {/* Active Rooms Grid / List */}
+                            <div className={`grid gap-2.5 ${activeSessions.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                                {activeSessions.map((sessionItem) => {
+                                    const modeLabel = sessionItem.active_question_data?.mode 
+                                        ? String(sessionItem.active_question_data.mode).replace(/^activity_/, '').replace(/_/g, ' ') 
+                                        : null;
+
+                                    return (
+                                        <div 
+                                            key={sessionItem.id} 
+                                            className="bg-black/15 hover:bg-black/25 border border-white/10 rounded-[var(--radius-btn)] p-3 flex items-center justify-between gap-3 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                <div className="w-8 h-8 rounded-lg bg-white text-[var(--brand-solid)] flex items-center justify-center shrink-0 shadow-xs font-black">
+                                                    <PlayCircle size={18} />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2 truncate">
+                                                        <span className="font-black text-xs text-white truncate">
+                                                            {sessionItem.title || t.untitled_session}
+                                                        </span>
+                                                        {modeLabel && (
+                                                            <span className="text-[9px] font-bold uppercase tracking-wider bg-white/20 text-white px-1.5 py-0.2 rounded shrink-0">
+                                                                {modeLabel}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] font-bold text-white/80 tracking-wider font-mono">
+                                                        {t.pin_label}: <span className="text-white font-black underline tracking-widest">{sessionItem.class_code}</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <button 
+                                                onClick={() => onRelaunch(sessionItem)} 
+                                                className="shrink-0 px-4 py-2 bg-white text-[var(--brand-solid)] hover:bg-slate-100 rounded-lg font-black uppercase tracking-wider text-[10px] shadow-sm active:scale-95 transition-all cursor-pointer"
+                                            >
+                                                {t.resume_btn}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
                         </div>
                     )}
 

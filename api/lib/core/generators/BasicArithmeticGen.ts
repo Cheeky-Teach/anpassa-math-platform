@@ -131,9 +131,15 @@ export class BasicArithmeticGen {
         const v = variationKey || this.getVariation(pool, options);
 
         if (v === 'add_std_vertical' || v === 'add_std_horizontal') {
-            const a = MathUtils.randomInt(10, 200);
-            const b = MathUtils.randomInt(10, 200);
+            let a = MathUtils.randomInt(10, 200);
+            let b = MathUtils.randomInt(10, 200);
             const isVertical = v === 'add_std_vertical';
+
+            // Guard: in vertical addition, always put the larger/longer number on top
+            if (isVertical && a < b) {
+                [a, b] = [b, a];
+            }
+
             const ans = a + b;
             
             // Extract place values for step-by-step visual distribution strategy
@@ -346,8 +352,9 @@ export class BasicArithmeticGen {
         const op = v === 'dec_add_vertical' ? '+' : '-';
         const a = MathUtils.randomInt(10, 500) / 10;
         const b = MathUtils.randomInt(10, 500) / 100;
-        const val1 = op === '+' ? a : Math.max(a, b);
-        const val2 = op === '+' ? b : Math.min(a, b);
+        // Guard: Always place the larger number first (on top in vertical alignment)
+        const val1 = Math.max(a, b);
+        const val2 = Math.min(a, b);
         const ans = Math.round((op === '+' ? val1 + val2 : val1 - val2) * 100) / 100;
 
         //  Added the missing formatted string declarations!
