@@ -55,7 +55,7 @@ export const CATEGORIES = {
         id: 'statistics',
         label: { sv: "Sannolikhet & Statistik", en: "Probability & Statistics" },
         color: "cyan", 
-        levels: 6,
+        levels: 7,
         topics: [
              { id: 'probability', label: { sv: "Sannolikhet", en: "Probability" } },
              { id: 'statistics', label: { sv: "Statistik", en: "Statistics" } },
@@ -230,14 +230,14 @@ export const LEVEL_DESCRIPTIONS = {
         5: { sv: "Hitta helheten (100%)", en: "Find Whole" },
         6: { sv: "Verklig Förändring", en: "Real World Change" }
     },
-    probability: { 
-        1: { sv: "Visuell Sannolikhet", en: "Visual Probability" },
-        2: { sv: "Tärning & Slump", en: "Dice & Chance" },
-        3: { sv: "Sannolikhet som Procent", en: "Probability as Percent" },
-        4: { sv: "Träddiagram", en: "Probability Trees" },
-        5: { sv: "Oberoende Händelser", en: "Independent Events" },
-        6: { sv: "Kombinatorik", en: "Combinatorics" },
-        7: { sv: "Kombinatorik (Svår)", en: "Combinatorics (Hard)" }
+    probability: {
+        1: { sv: "Sannolikhetsskalan & Visuella utfall", en: "Probability Scale & Visual Outcomes" },
+        2: { sv: "De tre uttrycksformerna (Bråk, Decimal, %)", en: "The Three Forms (Fraction, Decimal, %)" },
+        3: { sv: "Likformiga utfall (Tärning & Kortlek)", en: "Uniform Outcomes (Dice & Card Deck)" },
+        4: { sv: "Komplementhändelse (INTE och ELLER)", en: "Complementary Events (NOT and OR)" },
+        5: { sv: "Kombinatorik & Multiplikationsprincipen", en: "Combinatorics & Multiplication Principle" },
+        6: { sv: "Flerstegsförsök – Med återläggning", en: "Multi-Stage – With Replacement" },
+        7: { sv: "Flerstegsförsök – Utan återläggning & Träd", en: "Multi-Stage – Without Replacement & Trees" }
     },
     statistics: { 
         1: { sv: "Typvärde & Variationsbredd", en: "Mode & Range" },

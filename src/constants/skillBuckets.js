@@ -1784,75 +1784,178 @@ export const SKILL_BUCKETS = {
       probability: {
         name: { sv: 'Sannolikhet', en: 'Probability' },
         variations: [
-          // LEVEL 1: Visualiseringar & Komplement (Visuals & Complements)
+          // LEVEL 1: Sannolikhetsskalan & Visuella Modeller (Bråk)
           { 
-            key: 'visual_calc', 
-            level: 1,
-            name: { sv: 'Beräkna Sannolikhet', en: 'Calculate Probability' }, 
-            desc: { sv: 'Gynsamma / Möjliga', en: 'Favorable / Possible' }, 
+            key: 'prob_scale_vocab', 
+            level: 1, 
+            name: { sv: 'Sannolikhetsskalan', en: 'Probability Scale' }, 
+            desc: { sv: 'Omöjligt, hälften/hälften eller säkert', en: 'Impossible, even chance, or certain' } 
+          },
+          { 
+            key: 'prob_visual_spinner', 
+            level: 1, 
+            name: { sv: 'Lyckohjul (Bråk)', en: 'Spinner (Fraction)' }, 
+            desc: { sv: 'Beräkna andel av fält i enklaste form', en: 'Calculate slice probability in simplest form' } 
+          },
+          { 
+            key: 'prob_visual_marbles', 
+            level: 1, 
+            name: { sv: 'Kulor i skål (Bråk)', en: 'Marbles in Bowl (Fraction)' }, 
+            desc: { sv: 'Beräkna sannolikhet för färg i enklaste form', en: 'Calculate marble probability in simplest form' },
             tags: ['word_problem_ready'],
             contextType: 'discrete_pool',
-            extractorPattern: /^(?:\\frac\{(?<match>\d+)\}\{(?<total>\d+)\}|(?<match>\d+)\s*\/\s*(?<total>\d+))/
+            extractorPattern: /^(?<match>\d+)\s*;\s*(?<total>\d+)$/
           },
-          { key: 'visual_not', level: 1, name: { sv: 'Komplementhändelse', en: 'Complementary event' }, desc: { sv: 'Sannolikheten för "Inte"', en: 'Probability of "Not"' } },
-          { key: 'visual_or', level: 1, name: { sv: 'Bild: Eller', en: 'Visual: Or' }, desc: { sv: 'Sannolikheten för A eller B', en: 'Probability of A or B' } },
-          { key: 'visual_spinner', level: 1, name: { sv: 'Lyckohjul', en: 'Lucky wheel' }, desc: { sv: 'Sektorernas andel', en: 'Sector share' } },
-          { 
-            key: 'comp_multi', 
-            level: 1, 
-            name: { sv: 'Komplementhändelse', en: 'Complementary Event' }, 
-            desc: { sv: 'Sannolikhet för komplement', en: 'Complement probability' }, 
-            tags: ['word_problem_ready'], 
-            contextType: 'prob_complement_pct', 
-            extractorPattern: /^(?<pWin>\d+)\s*;\s*(?<pLose>\d+)/ 
-          },
-          { key: 'comp_at_least', level: 1, name: { sv: 'Minst en', en: 'At least one' }, desc: { sv: 'Sannolikhet via komplement', en: 'Probability via complement' } },
-          { key: 'comp_lie', level: 1, name: { sv: 'Hitta felet: Komplement', en: 'Find error: Complement' }, desc: { sv: 'Analysera påståenden', en: 'Analyze statements' } },
 
-          // LEVEL 2: Grupper & Tärningar (Groups & Dice)
-          { key: 'dice_single', level: 2, name: { sv: 'Tärning: Enstaka tal', en: 'Dice: Single number' }, desc: { sv: 'Ex: Få en 5:a', en: 'Ex: Rolling a 5' } },
+          // LEVEL 2: De Tre Uttrycksformerna (Bråk ↔ Decimal ↔ Procent)
           { 
-            key: 'dice_parity', 
+            key: 'prob_rep_to_percent', 
             level: 2, 
+            name: { sv: 'Uttryck i procent', en: 'Express as Percent' }, 
+            desc: { sv: 'Omvandla bråk till procent', en: 'Convert fraction probability to percent' } 
+          },
+          { 
+            key: 'prob_rep_to_decimal', 
+            level: 2, 
+            name: { sv: 'Uttryck i decimalform', en: 'Express as Decimal' }, 
+            desc: { sv: 'Omvandla bråk till decimaltal', en: 'Convert fraction probability to decimal' } 
+          },
+          { 
+            key: 'prob_rep_to_fraction', 
+            level: 2, 
+            name: { sv: 'Uttryck som förkortat bråk', en: 'Express as Simplest Fraction' }, 
+            desc: { sv: 'Omvandla procent till förkortat bråk', en: 'Convert percent to simplest fraction' } 
+          },
+
+          // LEVEL 3: Likformiga Slumpförsök (Tärning & 52-Korts Kortlek)
+          { 
+            key: 'prob_dice_single', 
+            level: 3, 
+            name: { sv: 'Tärning: Enskild siffra', en: 'Dice: Single Number' }, 
+            desc: { sv: 'Sannolikhet att slå ett specifikt tal', en: 'Probability of rolling a specific number' } 
+          },
+          { 
+            key: 'prob_dice_parity', 
+            level: 3, 
             name: { sv: 'Tärning: Jämnt/Udda', en: 'Dice: Even/Odd' }, 
-            desc: { sv: 'Sannolikhet för paritet', en: 'Probability of parity' }, 
-            tags: ['word_problem_ready'], 
-            contextType: 'prob_dice_parity', 
-            extractorPattern: /^parity\s*;\s*(?<label>[^;]+)\s*;\s*(?<match>\d+)\s*;\s*(?<total>\d+)/ 
+            desc: { sv: 'Sannolikhet för paritet i enklaste form', en: 'Probability of parity in simplest form' },
+            tags: ['word_problem_ready'],
+            contextType: 'prob_dice_parity',
+            extractorPattern: /^(?<label>[^;]+)$/
           },
-          { key: 'dice_range', level: 2, name: { sv: 'Tärning: Intervall', en: 'Dice: Range' }, desc: { sv: 'Större/Mindre än n', en: 'Greater/Smaller than n' } },
           { 
-            key: 'group_ratio', 
-            level: 2, 
-            name: { sv: 'Förhållanden', en: 'Ratios' }, 
-            desc: { sv: 'Andelar från förhållanden', en: 'Fractions from ratios' }, 
-            tags: ['word_problem_ready'], 
-            contextType: 'prob_group_ratio', 
-            extractorPattern: /^(?<r1>\d+)\s*;\s*(?<r2>\d+)\s*;\s*(?<total>\d+)/ 
+            key: 'prob_dice_threshold', 
+            level: 3, 
+            name: { sv: 'Tärning: Större/Mindre än', en: 'Dice: Greater/Less Than' }, 
+            desc: { sv: 'Intervallutfall på tärning', en: 'Range outcomes on a standard die' } 
           },
-          { key: 'group_ternary', level: 2, name: { sv: 'Tre grupper', en: 'Three groups' }, desc: { sv: 'Hitta restens chans', en: 'Find rest\'s chance' } },
+          { 
+            key: 'prob_cards_suit', 
+            level: 3, 
+            name: { sv: 'Kortlek: Färg', en: 'Cards: Suit' }, 
+            desc: { sv: 'Hjärter, spader, ruter eller klöver', en: 'Hearts, spades, diamonds, or clubs' } 
+          },
+          { 
+            key: 'prob_cards_face', 
+            level: 3, 
+            name: { sv: 'Kortlek: Klädda kort', en: 'Cards: Face Cards' }, 
+            desc: { sv: 'Knekt, dam eller kung ur 52 kort', en: 'Jack, Queen, or King from 52 cards' } 
+          },
+          { 
+            key: 'prob_cards_rank', 
+            level: 3, 
+            name: { sv: 'Kortlek: Valör', en: 'Cards: Rank' }, 
+            desc: { sv: 'Ess, kungar, sjuor etc.', en: 'Aces, Kings, 7s, etc.' } 
+          },
 
-          // LEVEL 3: Koncept & Logik (Concepts & Logic)
-          { key: 'concept_likelihood', level: 3, name: { sv: 'Begrepp: Chans', en: 'Concept: Chance' }, desc: { sv: 'Säkert / Omöjligt', en: 'Certain / Impossible' } },
-          { key: 'concept_compare', level: 3, name: { sv: 'Jämför chans', en: 'Compare chance' }, desc: { sv: 'Vilken är mest sannolik?', en: 'Which is most likely?' } },
-          { key: 'concept_validity', level: 3, name: { sv: 'Giltig sannolikhet', en: 'Valid probability' }, desc: { sv: 'Mellan 0 och 1 (0% till 100%)', en: 'Between 0 and 1 (0% to 100%)' } },
+          // LEVEL 4: Komplementhändelse & Disjunkta Utfall (INTE och ELLER)
+          { 
+            key: 'prob_comp_lottery', 
+            level: 4, 
+            name: { sv: 'Komplement: Lotteri', en: 'Complement: Lottery' }, 
+            desc: { sv: 'Sannolikheten att INTE vinna (100% - P)', en: 'Probability of NOT winning (100% - P)' },
+            tags: ['word_problem_ready'],
+            contextType: 'prob_complement_pct',
+            extractorPattern: /^(?<pWin>\d+)$/
+          },
+          { 
+            key: 'prob_comp_cards_dice', 
+            level: 4, 
+            name: { sv: 'Komplement: Tärning & Kort', en: 'Complement: Dice & Cards' }, 
+            desc: { sv: 'Sannolikheten att INTE få ett utfall (1 - P)', en: 'Probability of NOT getting an outcome (1 - P)' } 
+          },
+          { 
+            key: 'prob_or_disjoint', 
+            level: 4, 
+            name: { sv: 'Disjunkta utfall (ELLER)', en: 'Disjoint Events (OR)' }, 
+            desc: { sv: 'P(A eller B) = P(A) + P(B)', en: 'P(A or B) = P(A) + P(B)' } 
+          },
+          { 
+            key: 'prob_ternary_remainder', 
+            level: 4, 
+            name: { sv: 'Resten av gruppen', en: 'Remainder of Group' }, 
+            desc: { sv: 'Beräkna sannolikhet för den tredje dolda gruppen', en: 'Calculate probability for third remaining group' } 
+          },
 
-          // LEVEL 5: Träddiagram (Probability Trees)
-          { key: 'tree_calc', level: 5, name: { sv: 'Sannolikhetsträd', en: 'Probability tree' }, desc: { sv: 'Dragning utan återläggning', en: 'Pick w/o replacement' } },
-          { key: 'tree_missing', level: 5, name: { sv: 'Träddiagram: Saknad', en: 'Tree diagram: Missing' }, desc: { sv: 'Fyll i saknad gren', en: 'Fill in missing branch' } },
+          // LEVEL 5: Kombinatorik & Multiplikationsprincipen (Träd & Vägval)
+          { 
+            key: 'prob_comb_multiplication', 
+            level: 5, 
+            name: { sv: 'Multiplikationsprincipen', en: 'Multiplication Principle' }, 
+            desc: { sv: 'Menyer, outfits och kombinationer', en: 'Menus, outfits, and combinations' },
+            tags: ['word_problem_ready'],
+            contextType: 'prob_combinatorics',
+            extractorPattern: /^(?<c1>\d+)\s*;\s*(?<c2>\d+)\s*;\s*(?<c3>\d+)$/
+          },
+          { 
+            key: 'prob_comb_pathways', 
+            level: 5, 
+            name: { sv: 'Räkna vägar (Nätverk)', en: 'Pathways (Network)' }, 
+            desc: { sv: 'Vägar från A till B med avspärrningar', en: 'Routes from A to B with blocked segments' } 
+          },
 
-          // LEVEL 6: Händelsekedjor (Event Chains)
-          { key: 'chain_any_order', level: 6, name: { sv: 'Oberoende ordning', en: 'Independent order' }, desc: { sv: 'En av varje färg', en: 'One of each color' } },
-          { key: 'chain_fixed_order', level: 6, name: { sv: 'Bestämd ordning', en: 'Fixed order' }, desc: { sv: 'Sannolikhet i en specifik följd', en: 'Probability in a specific sequence' } },
+          // LEVEL 6: Flerstegsförsök – Med återläggning (Oberoende Händelser)
+          { 
+            key: 'prob_indep_coins', 
+            level: 6, 
+            name: { sv: 'Flera myntkast', en: 'Multiple Coin Tosses' }, 
+            desc: { sv: 'Oberoende kast i följd', en: 'Independent consecutive tosses' } 
+          },
+          { 
+            key: 'prob_indep_dice_sum', 
+            level: 6, 
+            name: { sv: 'Kasta två tärningar (Summa)', en: 'Two Dice (Sum)' }, 
+            desc: { sv: 'Sannolikhet för en viss summa av 36 utfall', en: 'Probability of a specific sum out of 36 outcomes' } 
+          },
+          { 
+            key: 'prob_indep_with_replacement', 
+            level: 6, 
+            name: { sv: 'Med återläggning', en: 'With Replacement' }, 
+            desc: { sv: 'Dragning där totalen förblir densamma', en: 'Draws where the total remains unchanged' } 
+          },
 
-          // LEVEL 7: Kombinatorik (Combinatorics)
-          { key: 'comb_constraint', level: 7, name: { sv: 'Kombinatorik: Outfits', en: 'Combinatorics: Outfits' }, desc: { sv: 'Multiplikationsprincipen', en: 'Multiplication principle' } },
-          { key: 'comb_handshake', level: 7, name: { sv: 'Handskakningar', en: 'Handshakes' }, desc: { sv: 'Alla hälsar på alla', en: 'Everyone greets everyone' } },
-
-          // LEVEL 8: Avancerade Vägar (Complex Pathways)
-          { key: 'pathways_basic', level: 8, name: { sv: 'Räkna Vägar', en: 'Count paths' }, desc: { sv: 'A till B nätverk', en: 'A to B network' } },
-          { key: 'pathways_blocked', level: 8, name: { sv: 'Räkna vägar (Hinder)', en: 'Count paths (Blocked)' }, desc: { sv: 'Vägar förbi hinder', en: 'Paths bypassing obstacles' } },
-          { key: 'pathways_prob', level: 8, name: { sv: 'Sannolikhet för väg', en: 'Path probability' }, desc: { sv: 'Sannolikhet att nå specifikt mål', en: 'Probability to reach specific goal' } }
+          // LEVEL 7: Flerstegsförsök – Utan återläggning & Sammansatta Grenar
+          { 
+            key: 'prob_dep_tree_branch', 
+            level: 7, 
+            name: { sv: 'Utan återläggning (Trädgren)', en: 'Without Replacement (Branch)' }, 
+            desc: { sv: 'Nämnaren minskar med 1 vid andra draget', en: 'Denominator reduces by 1 on the second draw' },
+            tags: ['word_problem_ready'],
+            contextType: 'prob_two_stage_dependent',
+            extractorPattern: /^(?<r>\d+)\s*;\s*(?<b>\d+)\s*;\s*(?<total>\d+)$/
+          },
+          { 
+            key: 'prob_dep_one_of_each', 
+            level: 7, 
+            name: { sv: 'En av varje färg', en: 'One of Each Kind' }, 
+            desc: { sv: 'Addera båda gynnsamma ordningarna P(A,B) + P(B,A)', en: 'Sum both favorable orders P(A,B) + P(B,A)' } 
+          },
+          { 
+            key: 'prob_dep_at_least_one', 
+            level: 7, 
+            name: { sv: 'Minst en (Komplement)', en: 'At Least One (Complement)' }, 
+            desc: { sv: 'Problemlösning via 1 - P(ingen)', en: 'Problem solving via 1 - P(none)' } 
+          }
         ]
       }
     }

@@ -761,7 +761,7 @@ const Dashboard = ({
                                             onClick={onBackToGateway}
                                             className="w-full sm:w-auto px-4 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-[var(--border-strong)] cursor-pointer"
                                         >
-                                            <ChevronLeft size={16}/> {lang === 'sv' ? "Byt Enhet" : "Change Unit"}
+                                            <ChevronLeft size={16}/> {lang === 'sv' ? "Byt Område" : "Change Unit"}
                                         </button>
                                     </div>
 
