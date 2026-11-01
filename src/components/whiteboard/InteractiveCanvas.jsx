@@ -2,10 +2,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Toolbar from './Toolbar';
 import WhiteboardDrawer from './WhiteboardDrawer';
-import { Trash2, CopyPlus, ClipboardCopy, Download, Move } from 'lucide-react';
+import { Trash2, Copy, Move } from 'lucide-react';
 import 'mathlive';
 import { getToolDefinition } from './tools/registry';
-import { copyObjectToClipboard, downloadObjectAsPng } from './utils/whiteboardExportHelper';
+
 
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
@@ -775,6 +775,7 @@ const handleSpawnFromDrawer = (type, payload = {}) => {
             <g className="ui-ignore pointer-events-auto">
                 {/* Visual Selection Outline */}
                 <rect 
+                    data-ui="true"
                     x={el.x - 4} 
                     y={el.y - 4} 
                     width={objWidth + 8} 
@@ -809,27 +810,7 @@ const handleSpawnFromDrawer = (type, payload = {}) => {
                             className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-pointer pointer-events-auto" 
                             title={lang === 'sv' ? 'Kopiera' : 'Copy'}
                         >
-                            <CopyPlus size={20}/>
-                        </button>
-                        <button 
-                            onClick={async () => {
-                                const success = await copyObjectToClipboard(svgRef.current, elements, selectedIds);
-                                if (success) {
-                                    alert(lang === 'sv' ? 'Bild kopierad! Klistra in (Ctrl+V) i Word eller Google Slides.' : 'Image copied! Paste (Ctrl+V) in Word or Slides.');
-                                }
-                            }} 
-                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-emerald-600 cursor-pointer pointer-events-auto transition-colors" 
-                            title={lang === 'sv' ? 'Kopiera bild till urklipp (för Word/Slides)' : 'Copy image to clipboard (for Word/Slides)'}
-                        >
-                            <ClipboardCopy size={20} className="text-emerald-600" />
-                        </button>
-
-                        <button 
-                            onClick={() => downloadObjectAsPng(svgRef.current, elements, selectedIds.length > 0 ? selectedIds : [el.id])} 
-                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-10 h-10 flex items-center justify-center hover:!bg-slate-50 hover:!text-blue-600 cursor-pointer pointer-events-auto transition-colors" 
-                            title={lang === 'sv' ? 'Ladda ner som bildfil (.png)' : 'Download image (.png)'}
-                        >
-                            <Download size={20} className="text-blue-600" />
+                            <Copy size={20}/>
                         </button>
 
                         <div className="w-px h-5 bg-slate-200 mx-0.5" />
