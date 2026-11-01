@@ -463,8 +463,12 @@ html {
   }
 }
 
-/* Enable KaTeX font scaling via parent utility classes */
-.math-content.text-base .katex { font-size: 1rem !important; }
-.math-content.text-lg .katex   { font-size: 1.15rem !important; }
-.math-content.text-xl .katex   { font-size: 1.35rem !important; }
-.math-content.text-2xl .katex  { font-size: 1.6rem !important; }
+/* Enable KaTeX font scaling for both inline and display math */
+.math-content .katex {
+  font-size: 1em !important;
+}
+
+.math-content .katex-display > .katex {
+  font-size: 1em !important;
+  text-align: center;
+}

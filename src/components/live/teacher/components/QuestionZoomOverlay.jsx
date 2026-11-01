@@ -62,16 +62,16 @@ export default function QuestionZoomOverlay({
     const hasDiagram = question.resolvedData?.renderData && (question.resolvedData.renderData.graph || question.resolvedData.renderData.geometry || question.resolvedData.renderData.pattern);
 
     return (
-        <div className="fixed inset-0 z-[300] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center no-print animate-in fade-in duration-200">
-            <div className="bg-[var(--bg-canvas,#020617)] text-[var(--text-main,#f8fafc)] w-full h-full flex flex-col overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 z-[300] bg-slate-950/80 backdrop-blur-xl flex items-center justify-center no-print animate-in fade-in duration-200">
+            <div className="bg-[var(--bg-canvas)] text-[var(--text-main)] w-full h-full flex flex-col overflow-hidden shadow-2xl">
                 
                 {/* Top Header Bar */}
-                <div className="px-6 py-3 border-b border-[var(--border-main,#1e293b)] flex justify-between items-center bg-[var(--bg-card,#0f172a)] shrink-0">
+                <div className="px-6 py-3 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-card)] shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 px-4 py-1.5 rounded-xl font-black italic text-xs tracking-tighter uppercase">
+                        <div className="bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 px-4 py-1.5 rounded-xl font-black italic text-xs tracking-tighter uppercase">
                             {lang === 'sv' ? "Uppgift" : "Question"} {zoomIndex + 1}
                         </div>
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                        <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest ml-1">
                             {questionResponses.length}/{students.length} {lang === 'sv' ? "Svar" : "Answers"}
                         </div>
                     </div>
@@ -82,7 +82,7 @@ export default function QuestionZoomOverlay({
                                 type="button"
                                 onClick={() => setIsComparing(!isComparing)}
                                 className={`px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2 mr-2 cursor-pointer ${
-                                    isComparing ? 'bg-amber-500 text-amber-950 border border-amber-600' : 'bg-amber-100 text-amber-700 border border-amber-300 hover:bg-amber-200'
+                                    isComparing ? 'bg-amber-500 text-amber-950 border border-amber-600' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700 hover:bg-amber-200'
                                 }`}
                             >
                                 <Star size={14} className={isComparing ? 'fill-amber-950' : 'fill-amber-500'} />
@@ -90,6 +90,7 @@ export default function QuestionZoomOverlay({
                             </button>
                         )}
 
+                        {/* Regenerate Button */}
                         <button
                             type="button"
                             disabled={isRegenerating}
@@ -100,7 +101,7 @@ export default function QuestionZoomOverlay({
                                     setIsRegenerating(false);
                                 }
                             }}
-                            className="bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                            className="bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-indigo-600 dark:text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
                         >
                             {isRegenerating ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
                             <span className="hidden sm:inline">{lang === 'sv' ? "Generera om" : "Regenerate"}</span>
@@ -118,39 +119,50 @@ export default function QuestionZoomOverlay({
                             </button>
                         )}
 
+                        {/* Facit / Key Button */}
                         <button
                             type="button"
                             onClick={() => setShowActualAnswers(!showActualAnswers)}
-                            className={`p-1.5 rounded-lg border transition-all shadow-sm cursor-pointer ${showActualAnswers ? 'bg-amber-500 text-slate-900 border-amber-500' : 'bg-slate-800 text-slate-300 border-slate-700'}`}
+                            className={`p-1.5 rounded-lg border transition-all shadow-sm cursor-pointer ${
+                                showActualAnswers 
+                                    ? 'bg-amber-500 text-slate-900 border-amber-500 font-black' 
+                                    : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-main)] hover:text-[var(--text-main)]'
+                            }`}
                         >
                             <span className="text-[10px] font-black uppercase px-1">{lang === 'sv' ? "Facit" : "Key"}</span>
                         </button>
 
-                        <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700 mx-2">
+                        {/* Navigation Stepper */}
+                        <div className="flex items-center gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] mx-2">
                             <button
                                 type="button"
                                 onClick={() => onNavigateZoom(Math.max(0, zoomIndex - 1))}
                                 disabled={zoomIndex === 0}
-                                className="p-1 text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer"
-                            ><ChevronLeft size={18} /></button>
+                                className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] disabled:opacity-20 cursor-pointer"
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
                             <button
                                 type="button"
                                 onClick={() => onNavigateZoom(Math.min(livePacket.length - 1, zoomIndex + 1))}
                                 disabled={zoomIndex === livePacket.length - 1}
-                                className="p-1 text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer"
-                            ><ChevronRight size={18} /></button>
+                                className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] disabled:opacity-20 cursor-pointer"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
                         </div>
 
-                        <button onClick={onClose} className="p-1.5 hover:bg-rose-500 text-slate-400 hover:text-white rounded-xl transition-all cursor-pointer">
+                        {/* Close Button */}
+                        <button onClick={onClose} className="p-1.5 hover:bg-rose-500 text-[var(--text-muted)] hover:text-white rounded-xl transition-all cursor-pointer">
                             <X size={24}/>
                         </button>
                     </div>
                 </div>
 
                 {/* Main Content Area */}
-                <div className="px-8 py-4 bg-slate-50 border-b border-slate-200 shrink-0 relative text-slate-900">
+                <div className="px-8 py-4 bg-[var(--bg-surface)] border-b border-[var(--border-main)] shrink-0 relative text-[var(--text-main)]">
                     {showActualAnswers && (
-                        <div className="absolute top-1/2 -translate-y-1/2 right-6 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2 rounded-xl text-lg font-black shadow-sm flex items-center gap-2">
+                        <div className="absolute top-1/2 -translate-y-1/2 right-6 bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl text-lg font-black shadow-sm flex items-center gap-2">
                             <span className="opacity-60 uppercase text-[12px] tracking-widest">{lang === 'sv' ? "Facit" : "Key"}</span>
                             <span>{extractDecodedAnswer(question.resolvedData) || '-'}</span>
                         </div>
@@ -158,14 +170,14 @@ export default function QuestionZoomOverlay({
                     <div className="text-lg font-bold leading-snug text-center max-w-4xl mx-auto">
                         <MathDisplay content={question.resolvedData?.renderData?.description || question.text} />
                         {question.resolvedData?.renderData?.latex && (
-                            <div className="mt-2 text-2xl text-indigo-700 font-serif pt-2">
+                            <div className="mt-2 text-2xl text-[var(--brand-solid)] font-serif pt-2">
                                 <MathDisplay content={`$$${question.resolvedData.renderData.latex}$$`} />
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* 🟢 RESTORED: Dual-Pane Layout */}
+                {/* Dual-Pane Layout */}
                 <div className="flex-1 flex overflow-hidden w-full">
                     
                     {/* Left Pane: Diagram & Stats */}
@@ -173,7 +185,7 @@ export default function QuestionZoomOverlay({
                         <div className="w-64 sm:w-80 p-6 flex flex-col border-r border-[var(--border-main)] overflow-y-auto shrink-0 bg-[var(--bg-card)] shadow-inner z-10">
                             
                             {hasDiagram && (
-                                <div className="flex justify-center scale-90 origin-top mt-2 mb-6 bg-slate-50/50 p-4 rounded-xl border border-slate-200">
+                                <div className="flex justify-center scale-90 origin-top mt-2 mb-6 bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--border-main)]">
                                     <VisualRenderer 
                                         data={question.resolvedData.renderData} 
                                         isWordProblem={!!question.selectedStoryIndex} 
@@ -238,17 +250,17 @@ export default function QuestionZoomOverlay({
                                         <button 
                                             type="button"
                                             onClick={(e) => { e.stopPropagation(); toggleStar(r.student_alias); }}
-                                            className={`absolute -top-3 -right-3 p-2 bg-white rounded-full border shadow-sm hover:scale-110 transition-all cursor-pointer ${
-                                                starredStudents.includes(r.student_alias) ? 'border-amber-200 opacity-100' : 'border-slate-200 opacity-0 group-hover/card:opacity-100'
+                                            className={`absolute -top-3 -right-3 p-2 bg-[var(--bg-card)] rounded-full border shadow-sm hover:scale-110 transition-all cursor-pointer ${
+                                                starredStudents.includes(r.student_alias) ? 'border-amber-400 opacity-100' : 'border-[var(--border-main)] opacity-0 group-hover/card:opacity-100'
                                             }`}
                                         >
-                                            <Star size={16} className={starredStudents.includes(r.student_alias) ? 'fill-amber-400 text-amber-500' : 'text-slate-300'} />
+                                            <Star size={16} className={starredStudents.includes(r.student_alias) ? 'fill-amber-400 text-amber-500' : 'text-[var(--text-muted)]'} />
                                         </button>
 
                                         <div className="flex justify-between items-center mb-3 border-b border-[var(--border-main)] pb-3">
                                             <span className="font-black text-sm text-[var(--text-main)]">{isAnonymous ? `Elev ${i + 1}` : r.student_alias}</span>
                                             <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
-                                                r.answerType === 'free_text' ? 'bg-blue-100 text-blue-700' : r.is_correct ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                                                r.answerType === 'free_text' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300' : r.is_correct ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
                                             }`}>
                                                 {r.answerType === 'free_text' ? 'Text' : r.answer}
                                             </span>
@@ -265,7 +277,7 @@ export default function QuestionZoomOverlay({
                                 ))}
                             
                             {questionResponses.length === 0 && (
-                                <div className="col-span-full py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                                <div className="col-span-full py-12 text-center text-[var(--text-muted)] font-bold uppercase tracking-widest text-xs">
                                     {lang === 'sv' ? "Inga lösningar inskickade än." : "No answers submitted yet."}
                                 </div>
                             )}
