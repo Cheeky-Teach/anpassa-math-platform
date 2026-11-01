@@ -18,26 +18,32 @@ export const FractionShapesTool = {
     type: 'fraction_shapes',
     hasOptions: true,
 
-    createDefault: (id, color = '#3b82f6', type = 'frac_rect') => ({
-        id,
-        type,
-        x: 550,
-        y: 260,
-        width: type.includes('rect') ? 380 : 260,
-        height: type.includes('rect') ? 140 : 260,
-        divisions: 4,
-        subDivisions: 1, // Horizontal rows for area-model multiplication
-        sliceColors: {},
-        activeColor: color,
-        showLabel: true,
-        showBrackets: false, // Division measurement brackets
-        labelFormat: 'fraction', // 'fraction' | 'percent' | 'decimal' | 'equation'
-        labelScale: 'medium',    // 'small' | 'medium' | 'large'
-        stroke: '#0f172a',
-        strokeWidth: 3,
-        rotation: 0,
-        opacity: 1
-    }),
+    // src/components/whiteboard/tools/geometry/FractionShapesTool.jsx
+    createDefault: (id, color = '#3b82f6', payload = {}) => {
+        const shapeType = payload.type || 'frac_rect';
+        const isRect = shapeType.includes('rect');
+
+        return {
+            id,
+            type: shapeType,
+            x: 550,
+            y: 260,
+            width: isRect ? 380 : 260,
+            height: isRect ? 140 : 260,
+            divisions: 4,
+            subDivisions: 1,
+            sliceColors: {},
+            activeColor: color,
+            showLabel: true,
+            showBrackets: false,
+            labelFormat: 'fraction',
+            labelScale: 'medium',
+            stroke: '#0f172a',
+            strokeWidth: 3,
+            rotation: 0,
+            opacity: 1
+        };
+    },
 
     renderContextMenu: ({ el, setElements, lang = 'sv', t }) => {
         const numDivisions = Math.max(1, Number(el.divisions) || 1);

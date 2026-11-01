@@ -4,8 +4,9 @@ import {
     PenTool, Highlighter, Minus, Palette, Trash2, 
     Hash, MousePointer2, Timer, Undo2, Redo2, 
     FileText, ChevronDown, ChevronUp, Grid3X3, Watch,
-    MessageCircle, Eraser, Layers, Shapes, PieChart, LineChart
+    MessageCircle, Eraser
 } from 'lucide-react';
+import { CATEGORY_DEFINITIONS } from './tools/registry';
 
 const Toolbar = ({ 
     lang = 'sv', activeTool, setActiveTool, color, setColor, 
@@ -30,14 +31,12 @@ const Toolbar = ({
         sv: {
             undo: "Ångra", redo: "Gör om", select: "Markera / Flytta",
             pen: "Penna", highlighter: "Överstruken", line: "Linje", math: "LaTeX", richText: "Text", timer: "Timer", realClock: "Klocka",
-            color: "Välj färg", bg: "Ändra bakgrund", clear: "Rensa allt", volume_cue: "Arbetsro", eraser: "Suddgummi",
-            bin_algebra: "Algebra", bin_shapes: "Figurer", bin_fractions: "Bråk", bin_data: "Verktyg"
+            color: "Välj färg", bg: "Ändra bakgrund", clear: "Rensa allt", volume_cue: "Arbetsro", eraser: "Suddgummi"
         },
         en: {
             undo: "Undo", redo: "Redo", select: "Select / Move",
             pen: "Pen", highlighter: "Highlighter", line: "Line", math: "Math Box", richText: "Text (Wordpad)", timer: "Timer", realClock: "Real Clock",
-            color: "Choose Color", bg: "Toggle Background", clear: "Clear All", volume_cue: "Work Mode", eraser: "Eraser",
-            bin_algebra: "Algebra", bin_shapes: "Shapes", bin_fractions: "Fractions", bin_data: "Tools"
+            color: "Choose Color", bg: "Toggle Background", clear: "Clear All", volume_cue: "Work Mode", eraser: "Eraser"
         }
     }[lang] || {};
 
@@ -45,7 +44,7 @@ const Toolbar = ({
         if (allowedTools && Array.isArray(allowedTools)) {
             return allowedTools.includes(toolId);
         }
-        if (mode === 'all') return true;
+        if (mode === 'all' || mode === 'sandbox' || mode === 'teacher') return true;
 
         if (mode === 'fractions') {
             return ['select', 'pen', 'highlighter', 'eraser', 'drawer_fractions', 'color_picker', 'clear_all'].includes(toolId);
@@ -61,7 +60,9 @@ const Toolbar = ({
 
         if (mode === 'student') {
             const baseStudent = ['select', 'pen', 'highlighter', 'eraser', 'line', 'color_picker', 'clear_all'];
-            return [...baseStudent, 'drawer_algebra', 'drawer_shapes', 'drawer_fractions', 'drawer_data'].includes(toolId);
+            // 🟢 All registered drawer categories are automatically allowed for students
+            const allCategoryDrawers = Object.keys(CATEGORY_DEFINITIONS).map(id => `drawer_${id}`);
+            return [...baseStudent, ...allCategoryDrawers].includes(toolId);
         }
 
         return true;
@@ -113,7 +114,7 @@ const Toolbar = ({
         );
     };
 
-    const DrawerButton = ({ id, drawerKey, icon: Icon, label, activeBg, hoverBorder }) => {
+    const DrawerButton = ({ drawerKey, icon: Icon, label, activeBg }) => {
         const isOpen = activeDrawer === drawerKey;
         return (
             <button
@@ -129,7 +130,7 @@ const Toolbar = ({
                 className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-black transition-all cursor-pointer shrink-0 ui-ignore pointer-events-auto ${
                     isOpen 
                         ? `${activeBg} text-white shadow-md scale-105 border-transparent` 
-                        : `bg-white text-slate-700 border-slate-200 ${hoverBorder}`
+                        : `bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50`
                 }`}
                 title={label}
             >
@@ -142,7 +143,11 @@ const Toolbar = ({
     const Divider = () => <div className="hidden sm:block w-px h-6 bg-slate-200 mx-1 shrink-0" />;
 
     const showWriting = ['pen', 'eraser', 'highlighter', 'line', 'math', 'richText', 'timer', 'realClock', 'volume_cue'].some(isToolVisible);
-    const showDrawers = ['drawer_algebra', 'drawer_shapes', 'drawer_fractions', 'drawer_data'].some(isToolVisible);
+    
+    // Dynamic list of active categories
+    const visibleCategories = Object.values(CATEGORY_DEFINITIONS).filter(cat => 
+        isToolVisible(`drawer_${cat.id}`)
+    );
 
     return (
         <div 
@@ -190,7 +195,7 @@ const Toolbar = ({
                 {showWriting && (
                     <>
                         <Divider />
-                        {/* Core Writing & Time Tools */}
+                        {/* Writing & Annotation Tools */}
                         <div className="flex items-center gap-1">
                             {isToolVisible('pen') && <ToolButton id="pen" icon={PenTool} category="writing" label={t.pen} />}
                             {isToolVisible('eraser') && <ToolButton id="eraser" icon={Eraser} category="writing" label={t.eraser} />}
@@ -205,51 +210,20 @@ const Toolbar = ({
                     </>
                 )}
 
-                {showDrawers && (
+                {visibleCategories.length > 0 && (
                     <>
                         <Divider />
-                        {/* Drawer Bins */}
+                        {/* Dynamic Drawer Category Trays */}
                         <div className="flex items-center gap-1.5">
-                            {isToolVisible('drawer_algebra') && (
+                            {visibleCategories.map(cat => (
                                 <DrawerButton 
-                                    id="drawer_algebra" 
-                                    drawerKey="algebra" 
-                                    icon={Layers} 
-                                    label={t.bin_algebra} 
-                                    activeBg="bg-indigo-600"
-                                    hoverBorder="hover:border-indigo-300 hover:bg-indigo-50"
+                                    key={cat.id}
+                                    drawerKey={cat.id} 
+                                    icon={cat.icon} 
+                                    label={cat.label[lang] || cat.label.sv} 
+                                    activeBg={cat.activeBg}
                                 />
-                            )}
-                            {isToolVisible('drawer_shapes') && (
-                                <DrawerButton 
-                                    id="drawer_shapes" 
-                                    drawerKey="shapes" 
-                                    icon={Shapes} 
-                                    label={t.bin_shapes} 
-                                    activeBg="bg-emerald-600"
-                                    hoverBorder="hover:border-emerald-300 hover:bg-emerald-50"
-                                />
-                            )}
-                            {isToolVisible('drawer_fractions') && (
-                                <DrawerButton 
-                                    id="drawer_fractions" 
-                                    drawerKey="fractions" 
-                                    icon={PieChart} 
-                                    label={t.bin_fractions} 
-                                    activeBg="bg-amber-500"
-                                    hoverBorder="hover:border-amber-300 hover:bg-amber-50"
-                                />
-                            )}
-                            {isToolVisible('drawer_data') && (
-                                <DrawerButton 
-                                    id="drawer_data" 
-                                    drawerKey="data" 
-                                    icon={LineChart} 
-                                    label={t.bin_data} 
-                                    activeBg="bg-blue-600"
-                                    hoverBorder="hover:border-blue-300 hover:bg-blue-50"
-                                />
-                            )}
+                            ))}
                         </div>
                     </>
                 )}

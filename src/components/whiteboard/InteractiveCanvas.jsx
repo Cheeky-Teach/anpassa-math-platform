@@ -2,10 +2,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Toolbar from './Toolbar';
 import WhiteboardDrawer from './WhiteboardDrawer';
-import { Trash2, Copy, Move } from 'lucide-react';
+import { Trash2, CopyPlus, ClipboardCopy, Download, Move } from 'lucide-react';
 import 'mathlive';
 import { getToolDefinition } from './tools/registry';
-import AlgebraTileTool from './tools/manipulatives/AlgebraTileTool';
+import { copyObjectToClipboard, downloadObjectAsPng } from './utils/whiteboardExportHelper';
 
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
@@ -17,7 +17,9 @@ const MathDisplay = ({ content, className = "" }) => {
                 delimiters: [
                     { left: '$$', right: '$$', display: true },
                     { left: '$', right: '$', display: false }
-                ], throwOnError: false, trust: true
+                ], 
+                throwOnError: false, 
+                trust: true
             });
         }
     }, [content]);
@@ -25,24 +27,24 @@ const MathDisplay = ({ content, className = "" }) => {
 };
 
 export default function InteractiveCanvas({ 
-        lang = 'sv', 
-        bgType, 
-        onToggleBg, 
-        elements = [], 
-        setElements = () => {},
-        isOverlay = false,
-        onCustomClear = null,
-        livePacket = [], 
-        clueProgress = {}, 
-        resolution = { w: 1920, h: 1080 },
-        toolbarMode = 'all', 
-        allowedTools = null, 
-        readOnly = false,
-        activeDrawer: controlledActiveDrawer, 
-        onToggleDrawer: controlledOnToggleDrawer,
-        showDividingLine = false,
-        renderDrawer = true
-    }) {
+    lang = 'sv', 
+    bgType: controlledBgType, 
+    onToggleBg: controlledOnToggleBg,
+    elements = [], 
+    setElements = () => {},
+    isOverlay = false,
+    onCustomClear = null,
+    livePacket = [], 
+    clueProgress = {}, 
+    resolution = { w: 1920, h: 1080 },
+    toolbarMode = 'all', 
+    allowedTools = null, 
+    readOnly = false,
+    activeDrawer: controlledActiveDrawer, 
+    onToggleDrawer: controlledOnToggleDrawer,
+    showDividingLine = false,
+    renderDrawer = true
+}) {
     const t = {
         sv: {
             stepX: "Steg X:", stepY: "Steg Y:", quad1: "1:a Kvadr.", addRow: "+ Rad", remRow: "- Rad",
@@ -75,7 +77,12 @@ export default function InteractiveCanvas({
     const [editingId, setEditingId] = useState(null);
     const [interactionMode, setInteractionMode] = useState(null);
 
-    // 🟢 When in overlay mode, pass clicks through to the slide unless an active drawing/erasing tool is in use
+    const [internalBgType, setInternalBgType] = useState('blank');
+    const bgType = controlledBgType !== undefined ? controlledBgType : internalBgType;
+    const onToggleBg = controlledOnToggleBg || (() => {
+        setInternalBgType(prev => prev === 'blank' ? 'grid' : 'blank');
+    });
+
     const isDrawingTool = activeTool !== 'select';
     const shouldInterceptEvents = !isOverlay || isDrawingTool;
     const elementPointerClass = (!isOverlay || isDrawingTool || selectedIds.length > 0) ? 'pointer-events-auto' : 'pointer-events-none';
@@ -85,8 +92,9 @@ export default function InteractiveCanvas({
     const svgRef = useRef(null);
     const activePathRef = useRef(null);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const interactionModeRef = useRef(null);
 
-    // 1. Single Master Timer & Clock Interval
+    // 1. Master Timer & Clock Interval
     useEffect(() => {
         if (readOnly || typeof setElements !== 'function') return;
         const interval = setInterval(() => {
@@ -95,11 +103,9 @@ export default function InteractiveCanvas({
                 if (!Array.isArray(prev) || !prev.some(el => el.type === 'timer' && el.isRunning)) return prev;
                 return prev.map(el => {
                     if (el.type === 'timer' && el.isRunning) {
-                        // Stopwatch mode: count upwards
                         if (el.timerMode === 'stopwatch') {
                             return { ...el, timeLeft: (el.timeLeft || 0) + 1 };
                         }
-                        // Timer mode: count down to 0
                         if (el.timeLeft > 0) {
                             const nextTime = el.timeLeft - 1;
                             return { ...el, timeLeft: nextTime, isRunning: nextTime > 0 };
@@ -112,81 +118,56 @@ export default function InteractiveCanvas({
         return () => clearInterval(interval);
     }, [readOnly, setElements]);
 
-    // 2. Safe Auto-Spawn for Stamp / Interactive Tools
-    // 2. Safe Auto-Spawn for Widget & Stamp Tools
-    useEffect(() => {
-        // Tools that must remain active strictly for drawing or typing modes:
-        const drawingTools = [
-            'select', 'pen', 'highlighter', 'eraser', 'line', 
-            'rect', 'circle', 'triangle'
-        ];
-
-        if (drawingTools.includes(activeTool) || activeTool.startsWith('3d_')) {
-            return;
-        }
-
-        // Instantly spawn widgets/tools upon selection, then reset tool to 'select'
-        if (activeTool && activeTool !== 'select') {
-            const newId = `el_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-
-            if (activeTool === 'timer') {
-                setElements(prev => [...prev, {
-                    id: newId, type: 'timer', x: 600, y: 250, width: 220, height: 140,
-                    timeLeft: 300, initialTime: 300, isRunning: false, stroke: color, rotation: 0, opacity: 1
-                }]);
-                setSelectedIds([newId]);
-                setActiveTool('select');
-                return;
-            }
-
-            if (activeTool === 'realClock') {
-                setElements(prev => [...prev, {
-                    id: newId, type: 'realClock', x: 650, y: 250, width: 200, height: 200,
-                    stroke: color, rotation: 0, opacity: 1, clockType: 'analog'
-                }]);
-                setSelectedIds([newId]);
-                setActiveTool('select');
-                return;
-            }
-
-
-            if (activeTool === 'calculator') {
-                setElements(prev => [...prev, {
-                    id: newId, type: 'calculator', x: 600, y: 180, width: 280, height: 480,
-                    expression: "", result: "", ans: "", calcMode: "LTR", stroke: color, rotation: 0, opacity: 1
-                }]);
-                setSelectedIds([newId]);
-                setActiveTool('select');
-                return;
-            }
-
-            const registeredTool = getToolDefinition(activeTool);
-            if (registeredTool && typeof registeredTool.createDefault === 'function') {
-                const newEl = registeredTool.createDefault(newId, color, activeTool);
-                setElements(prev => [...prev, newEl]);
-                setSelectedIds([newId]);
-                setActiveTool('select');
-            }
-        }
-    }, [activeTool, color, setElements, lang]);
 
     const isElementInBox = (el, box) => {
-        const minX = Math.min(box.startX, box.currentX);
-        const maxX = Math.max(box.startX, box.currentX);
-        const minY = Math.min(box.startY, box.currentY);
-        const maxY = Math.max(box.startY, box.currentY);
+        if (!el || !box) return false;
 
-        const elX = Number(el.x) || (el.points ? Math.min(...el.points.map(p => p.x)) : 0);
-        const elY = Number(el.y) || (el.points ? Math.min(...el.points.map(p => p.y)) : 0);
-        const elW = Number(el.width) || (el.isRotated ? el.height : 60);
-        const elH = Number(el.height) || (el.isRotated ? el.width : 60);
+        const boxLeft = Math.min(box.startX, box.currentX);
+        const boxRight = Math.max(box.startX, box.currentX);
+        const boxTop = Math.min(box.startY, box.currentY);
+        const boxBottom = Math.max(box.startY, box.currentY);
 
-        return (
-            elX + elW >= minX &&
-            elX <= maxX &&
-            elY + elH >= minY &&
-            elY <= maxY
+        // 1. Freehand paths
+        if (el.type === 'path' && Array.isArray(el.points) && el.points.length > 0) {
+            return el.points.some(p => p.x >= boxLeft && p.x <= boxRight && p.y >= boxTop && p.y <= boxBottom);
+        }
+
+        // 2. Lines
+        if (el.type === 'line') {
+            const x1 = el.x1 ?? el.x ?? 0;
+            const y1 = el.y1 ?? el.y ?? 0;
+            const x2 = el.x2 ?? 0;
+            const y2 = el.y2 ?? 0;
+            const lineMinX = Math.min(x1, x2);
+            const lineMaxX = Math.max(x1, x2);
+            const lineMinY = Math.min(y1, y2);
+            const lineMaxY = Math.max(y1, y2);
+            return !(lineMaxX < boxLeft || lineMinX > boxRight || lineMaxY < boxTop || lineMinY > boxBottom);
+        }
+
+        // 3. All dimensional objects (counters, shapes, tiles, widgets)
+        const elX = Number(el.x) || 0;
+        const elY = Number(el.y) || 0;
+        
+        // Integer counter fallback is 64x64; general fallback is 60x60
+        const defaultDim = el.type === 'integer_counter' ? 64 : 60;
+        const elW = Number(el.width) || (el.isRotated ? Number(el.height) || defaultDim : defaultDim);
+        const elH = Number(el.height) || (el.isRotated ? Number(el.width) || defaultDim : defaultDim);
+
+        const elLeft = elX;
+        const elRight = elX + elW;
+        const elTop = elY;
+        const elBottom = elY + elH;
+
+        // AABB Collision Detection (Axis-Aligned Bounding Box)
+        const intersects = !(
+            elRight < boxLeft ||
+            elLeft > boxRight ||
+            elBottom < boxTop ||
+            elTop > boxBottom
         );
+
+        return intersects;
     };
 
     // 3. Keyboard Shortcuts
@@ -306,161 +287,62 @@ export default function InteractiveCanvas({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedIds, elements, setElements]);
 
-        useEffect(() => {
-        if (isOverlay) return; // 🟢 Don't intercept global deselects when acting as a transparent slide overlay
-            const handleGlobalDeselect = (e) => {
-                const isInput = e.target.tagName?.toLowerCase() === 'input' || e.target.tagName?.toLowerCase() === 'textarea';
-                if (e.target.closest('.ui-ignore') || e.target.closest('[contenteditable="true"]') || isInput) return;
-                
-                const targetNode = e.target.closest('[data-id]');
-                if (targetNode) return;
-
-                const hitElement = [...elements].reverse().find(el => isPointInElement(e.clientX, e.clientY, el));
-                if (hitElement && editingId === hitElement.id) {
-                    return;
-                }
-
-                if (activeTool === 'select' && !selectionBoxRef.current) {
-                    setSelectedIds([]);
-                    setEditingId(null);
-                    setInteractionMode(null);
-                    setIsDrawing(false);
-                }
-            };
-
-        window.addEventListener('pointerdown', handleGlobalDeselect);
-        return () => window.removeEventListener('pointerdown', handleGlobalDeselect);
-    }, [activeTool, elements, editingId]);
-
-
-    // 4. Fixed Drawer Tool Handler (Switches mode for tools, spawns objects for manipulatives)
-    const handleSpawnFromDrawer = (type, payload = {}) => {
-        // If it is a drawing/writing tool or mode, ACTIVATE IT in state and close the drawer
-        const toolModes = ['pen', 'highlighter', 'eraser', 'line', 'select', 'richText', 'workMode'];
-        if (toolModes.includes(type)) {
-            setActiveTool(type);
-            handleToggleDrawer(null);
-            return;
-        }
-
-        const id = `el_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-        // 🟢 1. Timer Tool Spawn
-        if (type === 'timer') {
-            setElements(prev => [...prev, {
-                id,
-                type: 'timer',
-                x: 600,
-                y: 250,
-                width: 220,
-                height: 140,
-                timeLeft: 300, // 5 minutes default
-                initialTime: 300,
-                isRunning: false,
-                stroke: color,
-                rotation: 0,
-                opacity: 1
-            }]);
-            setSelectedIds([id]);
-            return;
-        }
-
-        // 🟢 2. Real-Time Clock Tool Spawn
-        if (type === 'realClock') {
-            setElements(prev => [...prev, {
-                id,
-                type: 'realClock',
-                x: 650,
-                y: 250,
-                width: 200,
-                height: 200,
-                stroke: color,
-                rotation: 0,
-                opacity: 1
-            }]);
-            setSelectedIds([id]);
-            return;
-        }
-
-        if (type === 'calculator') {
-            const newEl = {
-                id,
-                type: 'calculator',
-                x: 600,
-                y: 180,
-                width: 280,
-                height: 480,
-                expression: "",
-                result: "",
-                ans: "",
-                calcMode: "LTR",
-                stroke: color,
-                rotation: 0,
-                opacity: 1
-            };
-            setElements(prev => [...prev, newEl]);
-            setSelectedIds([id]);
-            return;
-        }
-
-        if (type === 'algebra_tile') {
-            const { kind, sign, side = 'VL' } = payload;
-            const sideTiles = elements.filter(el => {
-                if (el.type !== 'algebra_tile') return false;
-                return side === 'HL' ? el.x >= 960 : el.x < 960;
-            });
-            const col = sideTiles.length % 5;
-            const row = Math.floor(sideTiles.length / 5);
-            const targetBaseX = side === 'HL' ? 1150 : 380;
-            const spawnX = targetBaseX + col * 70;
-            const spawnY = 280 + row * 70;
-
-            const newTile = AlgebraTileTool.create(spawnX, spawnY, kind, sign);
-            setElements(prev => [...prev, newTile]);
-            return;
-        }
-
-        if (type.startsWith('3d_')) {
-            const shapeName = type.replace('3d_', '');
-            setElements(prev => [...prev, {
-                id,
-                type: 'shapes_3d',
-                shape3D: shapeName,
-                x: 650,
-                y: 300,
-                width: 220,
-                height: 220,
-                stroke: '#0284c7',
-                strokeWidth: 3,
-                fill: 'rgba(2, 132, 199, 0.08)',
-                showInternal: true,
-                rotation: 0,
-                opacity: 1
-            }]);
-            return;
-        }
-
-        const registered = getToolDefinition(type);
-            if (registered && typeof registered.createDefault === 'function') {
-                setElements(prev => [...prev, registered.createDefault(id, color, type)]);
+    useEffect(() => {
+        if (isOverlay) return;
+        const handleGlobalDeselect = (e) => {
+            const isInput = e.target.tagName?.toLowerCase() === 'input' || e.target.tagName?.toLowerCase() === 'textarea';
+            if (
+                e.target.closest('.ui-ignore') || 
+                e.target.closest('[data-whiteboard-interactive="true"]') ||
+                e.target.closest('[data-interactive="true"]') ||
+                e.target.closest('[contenteditable="true"]') || 
+                isInput
+            ) return;
+            
+            // 🟢 If clicking inside the whiteboard SVG canvas, let handlePointerDown / handlePointerUp 
+            // handle selection and box-selection! Do NOT reset here!
+            if (svgRef.current && svgRef.current.contains(e.target)) {
                 return;
             }
 
-        const isShape = ['rect', 'circle', 'triangle'].includes(type);
-        setElements(prev => [...prev, {
-            id,
-            type,
-            x: 600,
-            y: 300,
-            width: isShape ? 200 : 300,
-            height: isShape ? 200 : 250,
-            stroke: color,
-            strokeWidth: 3,
-            fill: isShape ? `${color}15` : 'none',
-            rotation: 0,
-            opacity: 1,
-            ...(type === 'triangle' ? { triangleType: 'right' } : {})
-        }]);
-    };
+            const targetNode = e.target.closest('[data-id]');
+            if (targetNode) return;
+
+            if (activeTool === 'select' && !selectionBoxRef.current) {
+                setSelectedIds([]);
+                setEditingId(null);
+                setInteractionMode(null);
+                setIsDrawing(false);
+            }
+        };
+
+        window.addEventListener('pointerdown', handleGlobalDeselect);
+        return () => window.removeEventListener('pointerdown', handleGlobalDeselect);
+    }, [activeTool, elements, editingId, isOverlay]);
+
+    // 4. Decoupled Drawer Tool Spawner
+    // src/components/whiteboard/InteractiveCanvas.jsx
+    // src/components/whiteboard/InteractiveCanvas.jsx
+const handleSpawnFromDrawer = (type, payload = {}) => {
+    // Non-element canvas mode switches (pen, eraser, etc.)
+    const toolModes = ['pen', 'highlighter', 'eraser', 'line', 'select'];
+    if (toolModes.includes(type)) {
+        setActiveTool(type);
+        handleToggleDrawer(null);
+        return;
+    }
+
+    const toolDef = getToolDefinition(type);
+    if (!toolDef || typeof toolDef.createDefault !== 'function') return;
+
+    const id = `el_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    
+    // Transparent pass-through: Canvas does not know or care what tool or payload this is
+    const newElement = toolDef.createDefault(id, color, { type, ...payload });
+    
+    setElements(prev => [...prev, newElement]);
+    setSelectedIds([id]);
+};
 
     const getSmoothPathData = (points) => {
         if (!points || points.length === 0) return '';
@@ -552,55 +434,61 @@ export default function InteractiveCanvas({
     };
 
     const isPointInElement = (x, y, el) => {
+        if (!el) return false;
         const padding = 16;
 
-        if (el.type === 'path' && el.points?.length > 0) {
+        // 1. Freehand Path Hit-Test
+        if (el.type === 'path' && Array.isArray(el.points) && el.points.length > 0) {
             return el.points.some(p => Math.abs(x - p.x) < (padding + 8) && Math.abs(y - p.y) < (padding + 8));
         }
 
-        const w = Number(el.width) || 0;
-        const h = Number(el.height) || 0;
+        // 2. Line Hit-Test
+        if (el.type === 'line') {
+            const x1 = el.x1 ?? el.x ?? 0;
+            const y1 = el.y1 ?? el.y ?? 0;
+            const x2 = el.x2 ?? 0;
+            const y2 = el.y2 ?? 0;
+            const dist = Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / 
+                         (Math.hypot(x2 - x1, y2 - y1) || 1);
+            return dist < (padding + 8);
+        }
+
+        const w = Number(el.width) || 64;
+        const h = Number(el.height) || 64;
         const r = w / 2;
 
-        const bounds = [
-            'rect', 'coord', 't_chart', 'tchart', 'triangle', 
-            'ruler', 'shapes_3d', 'math', 'richText', 'calculator', 
-            'dynamicClues', 'volume_cue', 'polygon',
-            'algebra_tile', 'frac_rect', 'angle_arc'];
-        if (bounds.some(b => el.type.includes(b))) {
-            return (
-                x >= el.x - padding && 
-                x <= el.x + w + padding && 
-                y >= el.y - padding && 
-                y <= el.y + h + padding
-            );
+        // 3. Radial Hit-Test for circular tools
+        const isCircular = el.type === 'circle' || el.type === 'spinner' || el.type === 'frac_circle';
+        if (isCircular) {
+            return Math.hypot(x - (el.x + r), y - (el.y + r)) <= (r + padding);
         }
 
-        if (el.type.includes('circle') || ['spinner', 'node', 'protractor', 'clock', 'timer', 'realClock'].includes(el.type)) {
-            return Math.sqrt((x - (el.x + r)) ** 2 + (y - (el.y + r)) ** 2) <= (r + padding); 
-        }
-
-        if (el.type === 'line') {
-            const x1 = el.x1 ?? el.x;
-            const y1 = el.y1 ?? el.y;
-            const dist = Math.abs((el.y2 - y1) * x - (el.x2 - x1) * y + el.x2 * y1 - el.y2 * x1) / 
-                         Math.sqrt((el.y2 - y1) ** 2 + (el.x2 - x1) ** 2);
-            return dist < (padding + 8); 
-        }
-
-        return false;
+        // 4. Universal Bounding Box (Agnostic fallback for all dimensional tools)
+        return (
+            x >= el.x - padding &&
+            x <= el.x + w + padding &&
+            y >= el.y - padding &&
+            y <= el.y + h + padding
+        );
     };
 
     const handlePointerDown = (e) => {
         if (e.cancelable && activeTool !== 'select') e.preventDefault();
         
         const isInput = e.target.tagName?.toLowerCase() === 'input' || e.target.tagName?.toLowerCase() === 'textarea';
+        
+        // 🟢 UNIVERSAL INTERACTIVE GUARD: Let children handle their own clicks/state
         if (
             e.target.closest('.ui-ignore') || 
-            e.target.closest('[contenteditable="true"]') || 
-            e.target.closest('.interactive-slice') || 
+            e.target.closest('[data-whiteboard-interactive="true"]') ||
+            e.target.closest('[data-interactive="true"]') ||
+            e.target.closest('.interactive-slice') ||
             e.target.closest('.dice-die') ||
-            isInput) return;
+            e.target.closest('[contenteditable="true"]') || 
+            isInput
+        ) {
+            return;
+        }
         
         if (svgRef.current && typeof svgRef.current.setPointerCapture === 'function') {
             try { svgRef.current.setPointerCapture(e.pointerId); } catch (err) {}
@@ -609,11 +497,6 @@ export default function InteractiveCanvas({
 
         const { x, y } = getCoordinates(e, false);
         dragCoordRef.current = { x, y };
-
-        // 🟢 If clicking directly on a clickable slice or tool action, let the tool handle it
-        if (e.target.closest('.interactive-slice') || e.target.closest('.ui-ignore')) {
-            return;
-        }
 
         const targetNode = e.target.closest('[data-id]');
         const hitId = targetNode ? targetNode.getAttribute('data-id') : null;
@@ -635,13 +518,18 @@ export default function InteractiveCanvas({
                     setSelectedIds([hit.id]);
                 }
                 
+                interactionModeRef.current = 'moving';
                 setInteractionMode('moving');
                 setIsDrawing(true);
             } else {
+                // Clicked empty canvas: clear selection unless holding shift
                 if (!e.shiftKey) setSelectedIds([]);
+                
                 const initialBox = { startX: x, startY: y, currentX: x, currentY: y };
                 selectionBoxRef.current = initialBox;
                 setSelectionBox(initialBox);
+                
+                interactionModeRef.current = 'box-selecting';
                 setInteractionMode('box-selecting');
                 setIsDrawing(true);
             }
@@ -697,20 +585,22 @@ export default function InteractiveCanvas({
     const handlePointerMove = (e) => {
         if (!isDrawing) return;
         const raw = getCoordinates(e, false);
+        const currentMode = interactionModeRef.current || interactionMode;
 
-        if (interactionMode === 'erasing' && activeTool === 'eraser') {
+        if (currentMode === 'erasing' && activeTool === 'eraser') {
             setElements(prev => prev.filter(el => !isStrokeIntersecting(raw, el, 20)));
             return;
         }
 
-        if (interactionMode === 'box-selecting' && selectionBoxRef.current) {
+        // 🟢 Box-Selecting: update marquee coordinates immediately
+        if (currentMode === 'box-selecting' && selectionBoxRef.current) {
             const updatedBox = { ...selectionBoxRef.current, currentX: raw.x, currentY: raw.y };
             selectionBoxRef.current = updatedBox;
             setSelectionBox(updatedBox);
             return;
         }
 
-        if (interactionMode === 'moving' && selectedIds.length > 0) {
+        if (currentMode === 'moving' && selectedIds.length > 0) {
             const dx = raw.x - dragCoordRef.current.x;
             const dy = raw.y - dragCoordRef.current.y;
             dragCoordRef.current = { x: raw.x, y: raw.y };
@@ -782,44 +672,61 @@ export default function InteractiveCanvas({
         }
         if (!isDrawing) return;
 
-        // 🟢 Reset states unconditionally on mouse up
-        setIsDrawing(false); 
-        setInteractionMode(null);
-        selectionBoxRef.current = null;
-        setSelectionBox(null);
+        const currentMode = interactionModeRef.current || interactionMode;
+        const rawCoords = e ? getCoordinates(e, false) : null;
 
-        if (interactionMode === 'box-selecting' && selectionBoxRef.current) {
-            const box = selectionBoxRef.current;
+        setIsDrawing(false);
+        interactionModeRef.current = null;
+        setInteractionMode(null);
+
+        // 🟢 Box-Selecting Finalization
+        if (currentMode === 'box-selecting' && selectionBoxRef.current) {
+            const rawBox = selectionBoxRef.current;
+            // Use current mouse release position if available for accurate boundary
+            const box = rawCoords 
+                ? { ...rawBox, currentX: rawCoords.x, currentY: rawCoords.y }
+                : rawBox;
+
             const minW = Math.abs(box.currentX - box.startX);
             const minH = Math.abs(box.currentY - box.startY);
 
             if (minW > 4 || minH > 4) {
-                const found = elements.filter(el => !el.isPermanent && isElementInBox(el, box));
-                setSelectedIds(found.map(el => el.id));
+                // Read from latest elements array
+                const found = (elements || []).filter(el => !el.isPermanent && isElementInBox(el, box));
+                const foundIds = found.map(el => el.id);
+
+                if (e?.shiftKey) {
+                    // Holding shift adds to existing selection
+                    setSelectedIds(prev => Array.from(new Set([...prev, ...foundIds])));
+                } else {
+                    setSelectedIds(foundIds);
+                }
+            } else if (!e?.shiftKey) {
+                // If it was just a tiny click with no drag, clear selection
+                setSelectedIds([]);
             }
+
             selectionBoxRef.current = null;
             setSelectionBox(null);
         }
 
-        if (interactionMode === 'moving' && selectedIds.length > 0) {
+        // Snap algorithm for moving a single counter/tile
+        if (currentMode === 'moving' && selectedIds.length === 1) {
             setElements(prev => {
                 let workingSet = [...prev];
-                selectedIds.forEach(id => {
-                    const target = workingSet.find(item => item.id === id);
-                    if (target?.type === 'algebra_tile') {
-                        const toolDef = getToolDefinition(target.type);
-                        if (toolDef && typeof toolDef.snapToNearest === 'function') {
-                            const snapped = toolDef.snapToNearest(target, workingSet, 35);
-                            workingSet = workingSet.map(item => item.id === id ? { ...item, ...snapped } : item);
-                        }
+                const targetId = selectedIds[0];
+                const target = workingSet.find(item => item.id === targetId);
+                if (target) {
+                    const toolDef = getToolDefinition(target.type);
+                    const snapFn = toolDef?.snapToNearest || toolDef?.snapAlgorithm;
+                    if (typeof snapFn === 'function') {
+                        const snapped = snapFn(target, workingSet, 35);
+                        workingSet = workingSet.map(item => item.id === targetId ? { ...item, ...snapped } : item);
                     }
-                });
+                }
                 return workingSet;
             });
         }
-
-        setIsDrawing(false); 
-        setInteractionMode(null);
 
         if ((activeTool === 'pen' || activeTool === 'highlighter') && activePathRef.current) {
             const finalPath = activePathRef.current; 
@@ -851,12 +758,11 @@ export default function InteractiveCanvas({
         const { canRotate = true } = typeof radius === 'object' ? radius : options;
         const actualRadius = typeof radius === 'number' ? radius : 0;
 
-        const isC = ['circle', 'frac_circle', 'spinner', 'node', 'clock', 'timer', 'realClock'].includes(el.type);
+        const isC = ['circle', 'frac_circle', 'spinner', 'node', 'clock', 'timer', 'realClock', 'integer_counter'].includes(el.type);
         const isP = el.type === 'protractor';
         const objHeight = isP ? actualRadius : (isC ? actualRadius * 2 : (Number(el.height) || 200));
         const objWidth = isC || isP ? actualRadius * 2 : (Number(el.width) || 200);
         
-        const padding = 16;
         const topY = el.y - 56;
         const botY = el.y + objHeight + 14;
         const cx = (isC || isP) ? el.x + actualRadius : el.x + objWidth / 2;
@@ -867,8 +773,7 @@ export default function InteractiveCanvas({
 
         return (
             <g className="ui-ignore pointer-events-auto">
-
-                {/* 2. Visual Selection Outline */}
+                {/* Visual Selection Outline */}
                 <rect 
                     x={el.x - 4} 
                     y={el.y - 4} 
@@ -882,7 +787,7 @@ export default function InteractiveCanvas({
                     className="pointer-events-none" 
                 />
                 
-                {/* 3. Top-Left System Actions (Move, Copy, Delete) */}
+                {/* System Actions (Move, Copy, Delete) */}
                 <foreignObject x={el.x} y={topY - 10} width={260} height={70} className="overflow-visible pointer-events-auto">
                     <div className="flex gap-2 items-center bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border-2 border-slate-200 shadow-xl w-max">
                         <button 
@@ -904,8 +809,30 @@ export default function InteractiveCanvas({
                             className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-pointer pointer-events-auto" 
                             title={lang === 'sv' ? 'Kopiera' : 'Copy'}
                         >
-                            <Copy size={20}/>
+                            <CopyPlus size={20}/>
                         </button>
+                        <button 
+                            onClick={async () => {
+                                const success = await copyObjectToClipboard(svgRef.current, elements, selectedIds);
+                                if (success) {
+                                    alert(lang === 'sv' ? 'Bild kopierad! Klistra in (Ctrl+V) i Word eller Google Slides.' : 'Image copied! Paste (Ctrl+V) in Word or Slides.');
+                                }
+                            }} 
+                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-emerald-600 cursor-pointer pointer-events-auto transition-colors" 
+                            title={lang === 'sv' ? 'Kopiera bild till urklipp (för Word/Slides)' : 'Copy image to clipboard (for Word/Slides)'}
+                        >
+                            <ClipboardCopy size={20} className="text-emerald-600" />
+                        </button>
+
+                        <button 
+                            onClick={() => downloadObjectAsPng(svgRef.current, elements, selectedIds.length > 0 ? selectedIds : [el.id])} 
+                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-10 h-10 flex items-center justify-center hover:!bg-slate-50 hover:!text-blue-600 cursor-pointer pointer-events-auto transition-colors" 
+                            title={lang === 'sv' ? 'Ladda ner som bildfil (.png)' : 'Download image (.png)'}
+                        >
+                            <Download size={20} className="text-blue-600" />
+                        </button>
+
+                        <div className="w-px h-5 bg-slate-200 mx-0.5" />
                         <button 
                             onClick={() => deleteElement(el.id)} 
                             className="!bg-white !text-rose-500 border border-rose-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-rose-50 cursor-pointer pointer-events-auto" 
@@ -916,11 +843,12 @@ export default function InteractiveCanvas({
                     </div>
                 </foreignObject>
 
-                {/* 4. Bottom Context Menu */}
+                {/* Custom Context Menu */}
                 {hasCustomContextMenu && (
                     <foreignObject x={el.x} y={botY + 6} width={1200} height={100} className="overflow-visible pointer-events-auto">
                         <div 
                             onPointerDown={(e) => e.stopPropagation()} 
+                            data-whiteboard-interactive="true"
                             className="flex items-center gap-4 !bg-white !text-slate-900 px-5 py-3 rounded-2xl border-2 border-slate-200/90 shadow-2xl pointer-events-auto text-3xl font-bold font-sans w-max select-none"
                             style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
                         >
@@ -936,13 +864,25 @@ export default function InteractiveCanvas({
                     </foreignObject>
                 )}
 
-                {/* 5. Adjustment Handles */}
-                {/* 🟢 Rotation handle renders only if canRotate is true */}
+                {/* Rotation Handle */}
                 {canRotate && el.type !== 'volume_cue' && (
-                    <circle cx={cx} cy={el.y - 14} r={8} fill="white" stroke="#3b82f6" strokeWidth="2" className="cursor-alias" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('rotating'); setIsDrawing(true);}} />
+                    <circle 
+                        cx={cx} 
+                        cy={el.y - 14} 
+                        r={8} 
+                        fill="white" 
+                        stroke="#3b82f6" 
+                        strokeWidth="2" 
+                        className="cursor-alias" 
+                        onPointerDown={(e) => {
+                            e.stopPropagation(); 
+                            setInteractionMode('rotating'); 
+                            setIsDrawing(true);
+                        }} 
+                    />
                 )}
                 
-                {/* 🟢 Resize Handle (Bottom-Right) remains active */}
+                {/* Resize Handle */}
                 <rect 
                     x={rigX - 9} 
                     y={el.y + objHeight - 9} 
@@ -953,7 +893,11 @@ export default function InteractiveCanvas({
                     stroke="#3b82f6" 
                     strokeWidth={2} 
                     className="cursor-nwse-resize" 
-                    onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('resizing'); setIsDrawing(true);}} 
+                    onPointerDown={(e) => {
+                        e.stopPropagation(); 
+                        setInteractionMode('resizing'); 
+                        setIsDrawing(true);
+                    }} 
                 />
             </g>
         );
@@ -976,6 +920,7 @@ export default function InteractiveCanvas({
                 MathDisplay,
                 transform,
                 isSelected,
+                selectedIds,
                 showUI,
                 renderHandles,
                 setElements,
@@ -984,7 +929,7 @@ export default function InteractiveCanvas({
                 setIsDrawing,
                 isDrawing,
                 getCoordinates,
-                editingId,              
+                editingId,               
                 setEditingId,
                 setDragOffset: (pos) => { dragCoordRef.current = pos; },
                 onUpdate: (updated) => setElements(prev => prev.map(item => item.id === el.id ? updated : item))
@@ -1000,39 +945,6 @@ export default function InteractiveCanvas({
             return (
                 <g key={el.id} data-id={el.id} className={elementPointerClass}>
                     {renderedContent}
-                </g>
-            );
-        }
-
-        // 🟢 Dedicated Angle Geometry Stamped Object
-        if (el.type === 'angle_arc') {
-            const rad = el.radius || 50;
-            const aRad = ((el.angle || 45) * Math.PI) / 180;
-            const arcEndX = el.x + rad * Math.cos(-aRad);
-            const arcEndY = el.y + rad * Math.sin(-aRad);
-            const midAngle = -aRad / 2;
-            const labelDist = rad + 24;
-            const labelX = el.x + labelDist * Math.cos(midAngle);
-            const labelY = el.y + labelDist * Math.sin(midAngle);
-
-            return (
-                <g key={el.id} data-id={el.id} className="pointer-events-auto cursor-move">
-                    {/* Base Ray */}
-                    <line x1={el.x} y1={el.y} x2={el.x + el.rayLength} y2={el.y} stroke={el.stroke || '#0f172a'} strokeWidth={3.5} strokeLinecap="round" />
-                    {/* Angled Ray */}
-                    <line x1={el.x} y1={el.y} x2={el.x + el.rayLength * Math.cos(-aRad)} y2={el.y + el.rayLength * Math.sin(-aRad)} stroke={el.stroke || '#0f172a'} strokeWidth={3.5} strokeLinecap="round" />
-                    {/* Vertex Dot */}
-                    <circle cx={el.x} cy={el.y} r={4.5} fill={el.stroke || '#0f172a'} />
-                    {/* Angle Arc Indicator */}
-                    <path d={`M ${el.x + rad} ${el.y} A ${rad} ${rad} 0 0 0 ${arcEndX} ${arcEndY}`} fill="none" stroke={el.arcColor || '#3b82f6'} strokeWidth={2.5} />
-                    {/* Angle Label Pill */}
-                    <g transform={`translate(${labelX}, ${labelY})`}>
-                        <rect x={-20} y={-14} width={40} height={28} rx={10} fill="#ffffff" stroke="#cbd5e1" strokeWidth={1.5} filter="drop-shadow(0 2px 6px rgba(0,0,0,0.08))" />
-                        <text x={0} y={1} textAnchor="middle" dominantBaseline="central" fontSize={el.label === 'x' ? 16 : 13} fontWeight="900" fill={el.label === 'x' ? '#6366f1' : '#0f172a'} fontStyle={el.label === 'x' ? 'italic' : 'normal'} fontFamily="system-ui, sans-serif">
-                            {el.label}
-                        </text>
-                    </g>
-                    {showUI && !el.isPermanent && renderHandles(el)}
                 </g>
             );
         }
@@ -1084,8 +996,92 @@ export default function InteractiveCanvas({
                     activeTool === 'select' ? 'cursor-default' : 'cursor-crosshair'
                 }`}
                 onPointerDown={readOnly || !shouldInterceptEvents ? undefined : handlePointerDown}
+                onPointerMove={readOnly || !shouldInterceptEvents ? undefined : handlePointerMove}
+                onPointerUp={readOnly || !shouldInterceptEvents ? undefined : handlePointerUp}
             >
+                {/* 🟢 SVG Grid Background Pattern Definitions */}
+                <defs>
+                    <pattern id="whiteboard-small-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#a7adb4" strokeWidth="0.75" opacity="0.6" />
+                    </pattern>
+                    <pattern id="whiteboard-grid" width="100" height="100" patternUnits="userSpaceOnUse">
+                        <rect width="100" height="100" fill="url(#whiteboard-small-grid)" />
+                        <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#676969" strokeWidth="2" opacity="0.8" />
+                    </pattern>
+                </defs>
+
+                {/* 🟢 Render Base Color & Dynamic Grid Layer */}
+                <rect 
+                    x="0" 
+                    y="0" 
+                    width={resolution.w} 
+                    height={resolution.h} 
+                    fill="#f8fafc" 
+                    className="pointer-events-none" 
+                />
+                
+                {bgType === 'grid' && (
+                    <rect 
+                        x="0" 
+                        y="0" 
+                        width={resolution.w} 
+                        height={resolution.h} 
+                        fill="url(#whiteboard-grid)" 
+                        className="pointer-events-none" 
+                    />
+                )}
+
                 {Array.isArray(elements) && elements.map(renderElement)}
+
+                {/* Multi-Selection Group Outline */}
+                {selectedIds.length > 1 && (() => {
+                    const selectedElements = elements.filter(el => selectedIds.includes(el.id));
+                    if (selectedElements.length <= 1) return null;
+
+                    const minX = Math.min(...selectedElements.map(el => Number(el.x) || 0));
+                    const maxX = Math.max(...selectedElements.map(el => (Number(el.x) || 0) + (Number(el.width) || 64)));
+                    const minY = Math.min(...selectedElements.map(el => Number(el.y) || 0));
+                    const maxY = Math.max(...selectedElements.map(el => (Number(el.y) || 0) + (Number(el.height) || 64)));
+
+                    const padding = 12;
+
+                    return (
+                        <g className="pointer-events-none">
+                            <rect
+                                x={minX - padding}
+                                y={minY - padding}
+                                width={maxX - minX + padding * 2}
+                                height={maxY - minY + padding * 2}
+                                fill="none"
+                                stroke="#6366f1"
+                                strokeWidth={2}
+                                strokeDasharray="6 4"
+                                rx={16}
+                                opacity={0.8}
+                            />
+                            <rect
+                                x={minX - padding}
+                                y={minY - padding - 22}
+                                width={70}
+                                height={18}
+                                rx={6}
+                                fill="#6366f1"
+                            />
+                            <text
+                                x={minX - padding + 35}
+                                y={minY - padding - 10}
+                                textAnchor="middle"
+                                dominantBaseline="central"
+                                fill="#ffffff"
+                                fontSize={10}
+                                fontWeight="900"
+                                fontFamily="sans-serif"
+                            >
+                                {selectedElements.length} {lang === 'sv' ? "valda" : "selected"}
+                            </text>
+                        </g>
+                    );
+                })()}
 
                 {selectionBox && (
                     <rect
@@ -1115,7 +1111,7 @@ export default function InteractiveCanvas({
                 )}
             </svg>
             
-            {/* Unified Toolbar (Only actual buttons intercept clicks, not empty margins) */}
+            {/* Unified Toolbar */}
             {toolbarMode !== 'none' && !readOnly && (
                 <div className="pointer-events-none [&_button]:pointer-events-auto [&_input]:pointer-events-auto [&_.ui-ignore]:pointer-events-auto">
                     <Toolbar 
@@ -1146,6 +1142,8 @@ export default function InteractiveCanvas({
                         onSpawn={handleSpawnFromDrawer}
                         lang={lang}
                         showDividingLine={showDividingLine}
+                        elements={elements}
+                        setElements={setElements}
                     />
                 </div>
             )}

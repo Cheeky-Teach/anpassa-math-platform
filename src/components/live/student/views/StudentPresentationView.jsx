@@ -10,6 +10,7 @@ import MathScratchpad from '../../../ui/MathScratchpad';
 import MathDisplay from '../../../shared/MathDisplay';
 import { syncProgress } from '../../../../lib/progressSync';
 import { supabase } from '../../../../lib/supabaseClient';
+import { CATEGORY_DEFINITIONS } from '../../../whiteboard/tools/registry';
 
 export default function StudentPresentationView({
     engine,
@@ -230,10 +231,12 @@ export default function StudentPresentationView({
                                     : newEls
                             })),
                             toolbarMode: "student",
-                            // 🟢 Parity: Restored dynamic mathematical tool drawer allowlist
+                            // 🟢 Automatically inherits all registered categories from registry.js
                             allowedTools: [
                                 'select', 'pen', 'highlighter', 'eraser', 'line', 'color_picker', 'clear_all',
-                                ...(slideDrawer ? [`drawer_${slideDrawer}`] : ['drawer_algebra', 'drawer_shapes', 'drawer_fractions', 'drawer_data'])
+                                ...(slideDrawer 
+                                    ? [`drawer_${slideDrawer}`] 
+                                    : Object.keys(CATEGORY_DEFINITIONS).map(id => `drawer_${id}`))
                             ],
                             readOnly: !!completedSlide[activeSlideIndex]
                         }}

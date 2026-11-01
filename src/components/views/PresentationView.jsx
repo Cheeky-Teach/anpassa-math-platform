@@ -16,9 +16,6 @@ import MyCoachModal from '../modals/MyCoachModal';
 import PreferencesToggle from '../ui/PreferencesToggle';
 import LiveLaunchModal from '../modals/LiveLaunchModal';
 import WhiteboardDrawer from '../whiteboard/WhiteboardDrawer';
-import AlgebraTileTool from '../whiteboard/tools/manipulatives/AlgebraTileTool';
-import FractionShapesTool from '../whiteboard/tools/geometry/FractionShapesTool';
-import CoordinatePlaneTool from '../whiteboard/tools/analysis/CoordinatePlaneTool';
 import { HelpCircle } from 'lucide-react';
 import PresentationTutorialModal from '../modals/PresentationTutorialModal';
 import { getToolDefinition } from '../whiteboard/tools/registry';
@@ -109,64 +106,21 @@ export default function PresentationView({
     };
 
     const handleUniversalSpawn = (type, payload = {}) => {
-        const id = Date.now().toString();
-
-        if (type === 'calculator') {
-            updateCurrentSlideElements(prev => [...prev, {
-                id, type: 'calculator', x: 600, y: 180, width: 280, height: 480, expression: "", result: "", ans: "", calcMode: "LTR", stroke: '#06b6d4', rotation: 0, opacity: 1
-            }]);
+        const toolModes = ['pen', 'highlighter', 'eraser', 'line', 'select'];
+        if (toolModes.includes(type)) {
             return;
         }
 
-        if (type === 'algebra_tile') {
-            const { kind, sign, side } = payload;
-            const currentSlideElements = slides[activeSlideIndex]?.elements || [];
-            const sideTiles = currentSlideElements.filter(el => {
-                if (el.type !== 'algebra_tile') return false;
-                return side === 'HL' ? el.x >= 960 : el.x < 960;
-            });
+        const toolDef = getToolDefinition(type);
+        if (!toolDef || typeof toolDef.createDefault !== 'function') return;
 
-            const col = sideTiles.length % 5;
-            const row = Math.floor(sideTiles.length / 5);
-            const targetBaseX = side === 'HL' ? 1150 : 380;
-            const spawnX = targetBaseX + col * 70;
-            const spawnY = 280 + row * 70;
+        // Guaranteed unique ID with high-entropy timestamp + random salt
+        const id = `el_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-            const newTile = AlgebraTileTool.create(spawnX, spawnY, kind, sign);
-            updateCurrentSlideElements(prev => [...prev, newTile]);
-            return;
-        }
+        // Pass-through: guarantees payload contains the tool/shape type
+        const newEl = toolDef.createDefault(id, '#06b6d4', { type, ...payload });
 
-        if (type.startsWith('3d_')) {
-            const shapeName = type.replace('3d_', '');
-            updateCurrentSlideElements(prev => [...prev, {
-                id, type: 'shapes_3d', shape3D: shapeName, x: 600, y: 300, width: 220, height: 220, stroke: '#0284c7', strokeWidth: 3, fill: 'rgba(2, 132, 199, 0.08)', showInternal: true, rotation: 0, opacity: 1
-            }]);
-            return;
-        }
-
-        if (['frac_rect', 'frac_circle', 'spinner'].includes(type)) {
-            const newEl = FractionShapesTool.createDefault(id, '#06b6d4', type);
-            updateCurrentSlideElements(prev => [...prev, newEl]);
-            return;
-        }
-
-        if (type === 'coord') {
-            const newEl = CoordinatePlaneTool.createDefault(id, '#06b6d4');
-            updateCurrentSlideElements(prev => [...prev, newEl]);
-            return;
-        }
-
-        const registered = getToolDefinition(type);
-        if (registered && typeof registered.createDefault === 'function') {
-            updateCurrentSlideElements(prev => [...prev, registered.createDefault(id, '#06b6d4', type)]);
-            return;
-        }
-
-        const isShape = ['rect', 'circle', 'triangle'].includes(type);
-        updateCurrentSlideElements(prev => [...prev, {
-            id, type, x: 600, y: 300, width: isShape ? 200 : 300, height: isShape ? 200 : 250, stroke: '#06b6d4', strokeWidth: 3, fill: isShape ? 'rgba(6, 182, 212, 0.08)' : 'none', rotation: 0, opacity: 1, ...(type === 'triangle' ? { triangleType: 'right' } : {})
-        }]);
+        updateCurrentSlideElements(prev => [...prev, newEl]);
     };
 
     const [draggedSlideIndex, setDraggedSlideIndex] = useState(null);
@@ -1467,6 +1421,8 @@ export default function PresentationView({
                         onSpawn={handleUniversalSpawn}
                         lang={lang}
                         showDividingLine={true}
+                        elements={slides[activeSlideIndex]?.elements || []}
+                        setElements={updateCurrentSlideElements}
                     />
                 </main>
 

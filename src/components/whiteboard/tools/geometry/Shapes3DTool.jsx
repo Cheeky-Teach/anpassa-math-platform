@@ -21,10 +21,10 @@ export const Shapes3DTool = {
     type: 'shapes_3d',
     hasOptions: true,
 
-    createDefault: (id, color = '#0284c7', shape3D = 'cube') => ({
+    createDefault: (id, color = '#0284c7', payload = {}) => ({
         id,
         type: 'shapes_3d',
-        shape3D,
+        shape3D: payload.shape3D || 'cube',
         x: 550,
         y: 220,
         width: 280,

@@ -55,9 +55,9 @@ export const BasicShapesTool = {
     type: 'basic_shapes',
     hasOptions: true,
 
-    createDefault: (id, color = '#0f172a', shapeType = 'polygon') => ({
+    createDefault: (id, color = '#0f172a', payload = {}) => ({
         id,
-        type: shapeType,
+        type: payload.type || 'polygon',
         x: 550,
         y: 240,
         width: 340,
@@ -304,22 +304,20 @@ export const BasicShapesTool = {
                 key={el.id} 
                 data-id={el.id} 
                 transform={`translate(${el.x}, ${el.y}) rotate(${el.rotation || 0}, ${w / 2}, ${h / 2})`}
-                className="select-none"
+                className="select-none cursor-move"
+                style={{ pointerEvents: 'auto' }}
+                onPointerDown={(e) => {
+                    if (e.target.closest('input') || e.target.closest('button')) return;
+                    if (setSelectedId) setSelectedId(el.id);
+                    if (setInteractionMode) setInteractionMode('moving');
+                    if (setIsDrawing) setIsDrawing(true);
+                    if (getCoordinates && setDragOffset) {
+                        setDragOffset(getCoordinates(e, false));
+                    }
+                }}
             >
                 {/* 1. Tactile Tray Drag Handle */}
-                <g 
-                    className="cursor-move group"
-                    style={{ pointerEvents: 'auto' }}
-                    onPointerDown={(e) => {
-                        e.stopPropagation();
-                        if (setSelectedId) setSelectedId(el.id);
-                        if (setInteractionMode) setInteractionMode('moving');
-                        if (setIsDrawing) setIsDrawing(true);
-                        if (getCoordinates && setDragOffset) {
-                            setDragOffset(getCoordinates(e, false));
-                        }
-                    }}
-                >
+                <g className="cursor-move group" style={{ pointerEvents: 'auto' }}>
                     <rect 
                         x={w / 2 - 40} 
                         y={-28} 
@@ -334,7 +332,7 @@ export const BasicShapesTool = {
                     <GripHorizontal size={14} className="text-slate-400 group-hover:text-indigo-500 transition-colors" x={w / 2 - 7} y={-23} />
                 </g>
 
-                {/* 2. Shape Geometry Rendering */}
+                {/* 2. Shape Geometry Rendering (Clickable Area) */}
                 {el.type === 'circle' ? (
                     <circle 
                         cx={w / 2} 
@@ -345,6 +343,7 @@ export const BasicShapesTool = {
                         stroke={strokeColor} 
                         strokeWidth={strokeW} 
                         filter="drop-shadow(0 6px 16px rgba(15, 23, 42, 0.08))"
+                        style={{ pointerEvents: 'all' }}
                     />
                 ) : (
                     <polygon 
@@ -356,6 +355,7 @@ export const BasicShapesTool = {
                         strokeLinejoin="round" 
                         strokeLinecap="round" 
                         filter="drop-shadow(0 6px 16px rgba(15, 23, 42, 0.08))"
+                        style={{ pointerEvents: 'all' }}
                     />
                 )}
 

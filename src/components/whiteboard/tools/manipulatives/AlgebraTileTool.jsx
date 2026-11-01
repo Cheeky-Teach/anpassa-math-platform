@@ -35,24 +35,35 @@ export const TILE_CONFIGS = {
   }
 };
 
+// src/components/whiteboard/tools/manipulatives/AlgebraTileTool.jsx
 export const AlgebraTileTool = {
   type: 'algebra_tile',
 
-  create(x = 500, y = 300, kind = 'x', sign = 1) {
-    const safeKind = TILE_CONFIGS[kind] ? kind : 'x';
-    const cfg = TILE_CONFIGS[safeKind];
-    return {
-      id: `tile_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      type: 'algebra_tile',
-      tileKind: safeKind,
-      sign: sign >= 0 ? 1 : -1,
-      x: Math.round(Number(x) || 500),
-      y: Math.round(Number(y) || 300),
-      width: cfg.width,
-      height: cfg.height,
-      isRotated: false
-    };
+  // Standard unified interface for registry and drawers
+  createDefault: (id, color = '#1d4ed8', payload = {}) => {
+      const kind = payload.kind || 'x';
+      const sign = Number(payload.sign) || 1;
+      const cfg = TILE_CONFIGS[kind] || TILE_CONFIGS['x'];
+
+      return {
+          id,
+          type: 'algebra_tile',
+          tileKind: cfg === TILE_CONFIGS[kind] ? kind : 'x',
+          sign: sign >= 0 ? 1 : -1,
+          x: Math.round(Number(payload.x ?? (payload.side === 'HL' ? 1150 : 420))),
+          y: Math.round(Number(payload.y ?? 350)),
+          width: cfg.width,
+          height: cfg.height,
+          isRotated: false
+      };
   },
+
+  // Retain legacy create method for backwards compatibility
+  create(x = 500, y = 300, kind = 'x', sign = 1) {
+    return this.createDefault(`tile_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, '#1d4ed8', { x, y, kind, sign });
+  },
+
+  // ... rest of AlgebraTileTool (snapToNearest, render) remains unchanged
 
   // Magnetic proximity snapping algorithm
   snapToNearest(target, allElements, threshold = 35) {
