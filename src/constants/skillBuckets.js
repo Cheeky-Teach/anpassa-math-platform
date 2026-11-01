@@ -1420,60 +1420,155 @@ export const SKILL_BUCKETS = {
       pythagoras: {
         name: { sv: 'Pythagoras Sats', en: 'Pythagorean Theorem' },
         variations: [
-          // LEVEL 1: Kvadrater & Rötter (Squares & Roots)
-          { key: 'sqrt_calc', level: 1, name: { sv: 'Kvadratrot', en: 'Square root' }, desc: { sv: 'Beräkning', en: 'Calculation' } },
-          { key: 'square_calc', level: 1, name: { sv: 'Kvadrat', en: 'Square' }, desc: { sv: 'Tal i kvadrat', en: 'Number squared' } },
-          { key: 'missing_square', level: 1, name: { sv: 'Invers kvadrat', en: 'Inverse square' }, desc: { sv: 'x^2 = a', en: 'x^2 = a' } },
-          { key: 'sqrt_estimation', level: 1, name: { sv: 'Uppskatta rot', en: 'Estimate root' }, desc: { sv: 'Ja/Nej frågor', en: 'Yes/No questions' } },
-
-          // LEVEL 2: Hypotenusan (The Hypotenuse)
+          // LEVEL 1: Begrepp & Uppställning (Concept & Setup)
           { 
-            key: 'hyp_visual', 
+            key: 'pyth_identify_hypotenuse', 
+            level: 1, 
+            name: { sv: 'Identifiera Hypotenusan', en: 'Identify Hypotenuse' }, 
+            desc: { sv: 'Vilken sida står mittemot den räta vinkeln?', en: 'Which side is opposite the right angle?' } 
+          },
+          { 
+            key: 'pyth_area_proof', 
+            level: 1, 
+            name: { sv: 'Area: Kvadrat på sidorna', en: 'Area: Squares on Sides' }, 
+            desc: { sv: 'Sambandet A + B = C för kvadrater på sidorna', en: 'The relation A + B = C for squares on sides' } 
+          },
+          { 
+            key: 'pyth_correct_setup', 
+            level: 1, 
+            name: { sv: 'Rätt Ekvationsuppställning', en: 'Correct Equation Setup' }, 
+            desc: { sv: 'Välj rätt formel: a² + b² = c²', en: 'Choose correct formula: a² + b² = c²' } 
+          },
+          { 
+            key: 'pyth_spot_error', 
+            level: 1, 
+            name: { sv: 'Hitta felet: Uppställning', en: 'Find error: Setup' }, 
+            desc: { sv: 'Analysera felaktiga antaganden om hypotenusan', en: 'Analyze false assumptions about the hypotenuse' } 
+          },
+
+          // LEVEL 2: Beräkna Hypotenusan (Find Hypotenuse)
+          { 
+            key: 'pyth_hyp_calc', 
             level: 2,
-            name: { sv: 'Beräkna hypotenusa', en: 'Calculate hypotenuse' }, 
-            desc: { sv: 'Sök den längsta sidan utifrån kateterna', en: 'Find longest side given the two legs' },
+            name: { sv: 'Beräkna hypotenusa (Heltal)', en: 'Calculate Hypotenuse (Int)' }, 
+            desc: { sv: 'Klassiska heltalslösningar (t.ex. 3, 4 -> 5)', en: 'Pythagorean triples (e.g. 3, 4 -> 5)' },
             tags: ['word_problem_ready'],
             contextType: 'pyth_hypotenuse',
-            extractorPattern: /^(?<a>\d+)\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)/
+            extractorPattern: /^(?<a>\d+)\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)$/
           },
-          { key: 'hyp_equation', level: 2, name: { sv: 'Ekvation: Hypotenusa', en: 'Equation: Hypotenuse' }, desc: { sv: 'Rätt uppställning', en: 'Correct setup' } },
-          { key: 'hyp_error', level: 2, name: { sv: 'Hitta felet: Hypotenusa', en: 'Find error: Hypotenuse' }, desc: { sv: 'Identifiera felaktig uppställning', en: 'Identify incorrect setup' } },
-
-          // LEVEL 3: Kateterna (The Legs)
           { 
-            key: 'leg_visual', 
+            key: 'pyth_hyp_decimal', 
+            level: 2,
+            name: { sv: 'Beräkna hypotenusa (Avrundat)', en: 'Calculate Hypotenuse (Dec)' }, 
+            desc: { sv: 'Dra roten ur och avrunda till en decimal', en: 'Take square root and round to 1 decimal' },
+            tags: ['word_problem_ready'],
+            contextType: 'pyth_hypotenuse',
+            extractorPattern: /^(?<a>[\d.,]+)\s*;\s*(?<b>[\d.,]+)\s*;\s*(?<c>[\d.,]+)$/
+          },
+          { 
+            key: 'pyth_hyp_equation_solve', 
+            level: 2, 
+            name: { sv: 'Lös ut c²', en: 'Solve for c²' }, 
+            desc: { sv: 'Beräkna c² innan rotutdragning', en: 'Calculate c² before taking the root' } 
+          },
+
+          // LEVEL 3: Beräkna Kateten (Find Leg)
+          { 
+            key: 'pyth_leg_calc', 
             level: 3,
-            name: { sv: 'Beräkna katet', en: 'Calculate leg' }, 
-            desc: { sv: 'Hitta en kort sida med subtraktion', en: 'Find a shorter side using subtraction' },
+            name: { sv: 'Beräkna katet (Heltal)', en: 'Calculate Leg (Int)' }, 
+            desc: { sv: 'Subtrahera a² = c² - b²', en: 'Subtract a² = c² - b²' },
             tags: ['word_problem_ready'],
             contextType: 'pyth_leg',
-            extractorPattern: /^(?<a>\d+)\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)/
+            extractorPattern: /^(?<a>\d+)\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)$/
           },
-          { key: 'leg_concept', level: 3, name: { sv: 'Koncept: Katet', en: 'Concept: Leg' }, desc: { sv: 'Subtraktion krävs', en: 'Subtraction required' } },
-          { key: 'leg_text', level: 3, name: { sv: 'Textproblem: Katet', en: 'Word problem: Leg' }, desc: { sv: 'Hitta katet i text', en: 'Find leg in text context' } },
-
-          // LEVEL 4: Tillämpningar (Applications)
-          { key: 'app_ladder', level: 4, name: { sv: 'Problem: Stegen', en: 'Problem: The Ladder' }, desc: { sv: 'Lutande stege', en: 'Leaning ladder' } },
           { 
-            key: 'app_diagonal', 
-            level: 4,
-            name: { sv: 'Rektangelns diagonal', en: 'Rectangle diagonal' }, 
-            desc: { sv: 'Räkna ut sträckan tvärs över en rektangel', en: 'Calculate path across a rectangle' },
+            key: 'pyth_leg_decimal', 
+            level: 3,
+            name: { sv: 'Beräkna katet (Avrundat)', en: 'Calculate Leg (Dec)' }, 
+            desc: { sv: 'Beräkna saknad katet med avrundning', en: 'Calculate missing leg with rounding' },
+            tags: ['word_problem_ready'],
+            contextType: 'pyth_leg',
+            extractorPattern: /^(?<a>[\d.,]+)\s*;\s*(?<b>[\d.,]+)\s*;\s*(?<c>[\d.,]+)$/
+          },
+          { 
+            key: 'pyth_leg_trap', 
+            level: 3, 
+            name: { sv: 'Hitta felet: Katet', en: 'Find error: Leg' }, 
+            desc: { sv: 'Vanligt misstag: addera istället för subtrahera', en: 'Common mistake: adding instead of subtracting' } 
+          },
+
+          // LEVEL 4: Omvända Pythagoras sats (The Converse Theorem)
+          { 
+            key: 'pyth_converse_check', 
+            level: 4, 
+            name: { sv: 'Är triangeln rätvinklig?', en: 'Is the Triangle Right-Angled?' }, 
+            desc: { sv: 'Stämmer a² + b² = c²? (Ja / Nej)', en: 'Does a² + b² = c² hold? (Yes / No)' } 
+          },
+          { 
+            key: 'pyth_carpenter_rule', 
+            level: 4, 
+            name: { sv: 'Snickarmetoden (3-4-5)', en: 'Carpenter Rule (3-4-5)' }, 
+            desc: { sv: 'Praktisk rätvinkelkontroll med multiplar av 3-4-5', en: 'Practical right-angle check with 3-4-5 multiples' } 
+          },
+          { 
+            key: 'pyth_converse_which_is_right', 
+            level: 4, 
+            name: { sv: 'Vilken vinkel är 90°?', en: 'Which Angle is 90°?' }, 
+            desc: { sv: 'Avgör vilken vinkel som är rät utifrån sidlängderna', en: 'Determine which angle is 90° from side lengths' } 
+          },
+
+          // LEVEL 5: Koordinatsystem och Avstånd (Coordinates & Distance)
+          { 
+            key: 'pyth_coord_dist_int', 
+            level: 5,
+            name: { sv: 'Avstånd i koordinatsystem (Heltal)', en: 'Distance in Grid (Int)' }, 
+            desc: { sv: 'Beräkna sträckan mellan två punkter via dx och dy', en: 'Calculate distance between points using dx and dy' },
+            tags: ['word_problem_ready'],
+            contextType: 'pyth_coord_dist',
+            extractorPattern: /^\((?<x1>-?\d+),(?<y1>-?\d+)\);\((?<x2>-?\d+),(?<y2>-?\d+)\);(?<d>\d+)$/
+          },
+          { 
+            key: 'pyth_coord_dist_dec', 
+            level: 5,
+            name: { sv: 'Avstånd i koordinatsystem (Decimal)', en: 'Distance in Grid (Dec)' }, 
+            desc: { sv: 'Avstånd mellan två godtyckliga koordinater', en: 'Distance between arbitrary coordinates' },
+            tags: ['word_problem_ready'],
+            contextType: 'pyth_coord_dist',
+            extractorPattern: /^\((?<x1>-?\d+),(?<y1>-?\d+)\);\((?<x2>-?\d+),(?<y2>-?\d+)\);(?<d>[\d.,]+)$/
+          },
+          { 
+            key: 'pyth_coord_find_delta', 
+            level: 5, 
+            name: { sv: 'Skapa kateterna (Δx och Δy)', en: 'Find Legs (Δx and Δy)' }, 
+            desc: { sv: 'Bestäm bas och höjd utifrån punkternas koordinater', en: 'Determine base and height from coordinates' } 
+          },
+
+          // LEVEL 6: Sammansatta Figurer & Rymddiagonaler (Composite & 3D)
+          { 
+            key: 'pyth_isosceles_height', 
+            level: 6,
+            name: { sv: 'Likbent triangel: Höjd & Area', en: 'Isosceles Triangle: Height & Area' }, 
+            desc: { sv: 'Dela basen mitt itu för att hitta höjden och beräkna arean', en: 'Split base in half to find height and calculate area' },
+            tags: ['word_problem_ready'],
+            contextType: 'pyth_isosceles',
+            extractorPattern: /^(?<b>\d+)\s*;\s*(?<s>\d+)\s*;\s*(?<h>\d+)\s*;\s*(?<area>\d+)$/
+          },
+          { 
+            key: 'pyth_rect_diagonal', 
+            level: 6,
+            name: { sv: 'Rektangelns Diagonal', en: 'Rectangle Diagonal' }, 
+            desc: { sv: 'Beräkna diagonalen tvärs över en rektangel', en: 'Calculate path across a rectangle' },
             tags: ['word_problem_ready'],
             contextType: 'pyth_diagonal',
-            extractorPattern: /^(?<a>\d+)\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)/
+            extractorPattern: /^(?<a>\d+)\s*;\s*(?<b>\d+)\s*;\s*(?<c>[\d.,]+)$/
           },
-          { key: 'app_displacement', level: 4, name: { sv: 'Fågelvägen', en: 'Displacement' }, desc: { sv: 'Avstånd mellan punkter', en: 'Distance between points' } },
-          { key: 'app_guy_wire', level: 4, name: { sv: 'Problem: Vajer', en: 'Problem: Guy wire' }, desc: { sv: 'Stödvajer till mast', en: 'Support wire to a mast' } },
-          { key: 'app_coords', level: 4, name: { sv: 'Koordinater', en: 'Coordinates' }, desc: { sv: 'Avstånd i koordinatsystem', en: 'Distance in coordinate system' } },
-
-          // LEVEL 5: Omvända Pythagoras sats (The Converse)
-          { key: 'conv_check', level: 5, name: { sv: 'Rätvinklig?', en: 'Right-angled?' }, desc: { sv: 'Kontrollera satsen', en: 'Check the theorem' } },
-          { key: 'conv_missing', level: 5, name: { sv: 'Hitta saknad vinkel', en: 'Find missing angle' }, desc: { sv: 'Använd satsen baklänges', en: 'Use theorem backwards' } },
-          { key: 'conv_trap', level: 5, name: { sv: 'Logisk fälla', en: 'Logic trap' }, desc: { sv: 'Synvilla vs matematik', en: 'Optical illusion vs math' } },
-
-          // LEVEL 6: Blandade & Avancerade problem (Advanced Mixed)
-          { key: 'advanced_mixed', level: 6, name: { sv: 'Blandade problem', en: 'Mixed problems' }, desc: { sv: 'Blandade svåra problem', en: 'Mixed advanced problems' } }
+          { 
+            key: 'pyth_3d_box_diagonal', 
+            level: 6, 
+            name: { sv: 'Rymddiagonal i rätblock', en: '3D Space Diagonal (Cuboid)' }, 
+            desc: { sv: 'Beräkna rymddiagonalen d = √(l² + b² + h²)', en: 'Calculate space diagonal d = √(l² + b² + h²)' } 
+          }
         ]
       },
       similarity: {

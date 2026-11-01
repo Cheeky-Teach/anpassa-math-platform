@@ -1,21 +1,24 @@
+// src/components/visuals/VolumeVisualization.jsx
 import React, { useRef, useEffect, useState } from 'react';
 
 /**
- * VolumeVisualization - Refactored to be fully responsive to its parent container.
+ * VolumeVisualization - Responsive 3D Geometry Renderer
+ * Auto-scales all shapes and external brackets safely within the canvas bounds.
  */
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
-    // Handle container resizing
     useEffect(() => {
         if (!containerRef.current) return;
 
         const resizeObserver = new ResizeObserver((entries) => {
             for (let entry of entries) {
                 const { width, height } = entry.contentRect;
-                setDimensions({ width, height });
+                if (width > 0 && height > 0) {
+                    setDimensions({ width, height });
+                }
             }
         });
 
@@ -25,295 +28,469 @@ export const VolumeVisualization = ({ data }) => {
 
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas || !data || dimensions.width === 0) return;
+        if (!canvas || !data || dimensions.width === 0 || dimensions.height === 0) return;
         const ctx = canvas.getContext('2d');
-        
-        const w = canvas.width;
-        const h = canvas.height;
+
+        const dpr = window.devicePixelRatio || 2;
+        canvas.width = dimensions.width * dpr;
+        canvas.height = dimensions.height * dpr;
+
+        ctx.resetTransform?.();
+        ctx.scale(dpr, dpr);
+
+        const w = dimensions.width;
+        const h = dimensions.height;
         const cx = w / 2;
         const cy = h / 2;
 
         ctx.clearRect(0, 0, w, h);
-        ctx.strokeStyle = '#1f2937'; 
-        ctx.fillStyle = '#f3f4f6';
-        ctx.lineWidth = 5; 
-        ctx.lineJoin = 'round'; 
 
-        const fontSize = 40; 
-        ctx.font = `bold ${fontSize}px Inter, system-ui, sans-serif`; 
-        ctx.textAlign = "center"; 
-        ctx.textBaseline = "middle";
+        const STROKE_COLOR = '#1e293b';
+        const STROKE_WIDTH = 2.5;
+        const FILL_TINT = 'rgba(99, 102, 241, 0.08)';
+        const GUIDE_COLOR = '#94a3b8';
 
-        const drawLabel = (text, x, y, color='#be123c') => { 
+        ctx.strokeStyle = STROKE_COLOR;
+        ctx.fillStyle = FILL_TINT;
+        ctx.lineWidth = STROKE_WIDTH;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        const fontSize = 14;
+        ctx.font = `800 ${fontSize}px Nunito, system-ui, -apple-system, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const drawLabel = (text, x, y, color = '#0f172a', haloColor = '#ffffff', align = 'center') => {
             if (text === undefined || text === null) return;
             const labelStr = String(text);
-            ctx.save(); 
-            const m = ctx.measureText(labelStr);
-            const pW = 10;
-            const pH = 6;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'; 
-            ctx.beginPath();
-            if (ctx.roundRect) {
-                ctx.roundRect(x - m.width/2 - pW, y - fontSize/2 - pH, m.width + (pW * 2), fontSize + (pH * 2), 8);
-                ctx.fill();
-            } else {
-                ctx.fillRect(x - m.width/2 - pW, y - fontSize/2 - pH, m.width + (pW * 2), fontSize + (pH * 2));
-            }
-            ctx.strokeStyle = '#e5e7eb';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            ctx.fillStyle = color; 
-            ctx.fillText(labelStr, x, y); 
-            ctx.restore(); 
+            ctx.save();
+            ctx.textAlign = align;
+            ctx.textBaseline = 'middle';
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = haloColor;
+            ctx.strokeText(labelStr, x, y);
+            ctx.fillStyle = color;
+            ctx.fillText(labelStr, x, y);
+            ctx.restore();
         };
 
-        const drawDashed = (x1, y1, x2, y2) => { 
-            ctx.save(); 
-            ctx.setLineDash([10, 10]); 
-            ctx.beginPath(); 
-            ctx.moveTo(x1, y1); 
-            ctx.lineTo(x2, y2); 
-            ctx.stroke(); 
-            ctx.restore(); 
+        const drawDashed = (x1, y1, x2, y2, color = GUIDE_COLOR) => {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.75;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.restore();
         };
 
         const labels = data.labels || {};
         const type = (data.type || '').toLowerCase();
 
-        // --- PYRAMID LOGIC: Support square bases by default ---
-        const valW = parseInt(labels.w || labels.s || labels.b) || 10;
-        const valH = parseInt(labels.h) || 10;
-        // Depth falls back to width if not explicitly provided (Square base)
-        const valD = parseInt(labels.d || labels.l) || valW; 
-        const rawD = parseInt(labels.d);
-        const valR = parseInt(labels.r) || (rawD ? rawD / 2 : 5);
+        const valW = parseFloat(labels.w || labels.s || labels.b) || 10;
+        const valH = parseFloat(labels.h) || 10;
+        const valD = parseFloat(labels.d || labels.l) || valW;
+        const rawD = parseFloat(labels.d);
+        const valR = parseFloat(labels.r) || (rawD ? rawD / 2 : 5);
 
-        let logicalW = 10, logicalH = 10;
+        const hasRightHeightIndicator = ['cylinder', 'silo', 'cone', 'ice_cream', 'pyramid'].includes(type) && labels.h;
+
+        // 1. Calculate true total unit footprint (including base ellipses and depth slant)
+        let totalUnitW = 10;
+        let totalUnitH = 10;
+
         if (type === 'cuboid') {
-            logicalW = valW + (valD * 0.8); logicalH = valH + (valD * 0.8);
+            totalUnitW = valW + (valD * 0.55);
+            totalUnitH = (valH * 0.85) + (valD * 0.55);
         } else if (type === 'triangular_prism') {
-            logicalW = valW + (valD * 0.8); logicalH = valH + (valD * 0.8);
+            totalUnitW = valW + (valD * 0.7);
+            totalUnitH = valH;
         } else if (type === 'pyramid') {
-            logicalW = valW + (valD * 0.7); logicalH = valH + (valD * 0.7);
+            totalUnitW = valW + (valD * 0.5);
+            totalUnitH = valH + (valD * 0.3);
         } else if (type === 'sphere') {
-            logicalW = valR * 2.6; logicalH = valR * 2.6;
+            totalUnitW = valR * 2;
+            totalUnitH = valR * 2;
+        } else if (type === 'ice_cream') {
+            // Cone height + Hemisphere scoop height (r) + bottom apex buffer
+            totalUnitW = valR * 2;
+            totalUnitH = valH + valR + (valR * 0.35);
+        } else if (type === 'silo') {
+            // Cylinder height + Top Dome (r) + base ellipse
+            totalUnitW = valR * 2;
+            totalUnitH = valH + valR + (valR * 0.65);
         } else {
-            logicalW = valR * 4; // Expanded for height indicator
-            logicalH = valH + (valR * 1.1);
+            // Standard cylinder, cone
+            totalUnitW = valR * 2;
+            totalUnitH = valH + (valR * 0.65);
         }
 
-        const scale = (Math.min(w, h) * 0.72) / Math.max(logicalW, logicalH);
-        const labelGap = 50; 
+        // 2. Safe Margins: reserve explicit pixels for top/bottom labels and right-hand indicators
+        const padTop = (type === 'cuboid' || type === 'ice_cream' || type === 'silo') ? 34 : 24;
+        const padBottom = 28;
+        const padLeft = type === 'triangular_prism' ? 44 : 20;
+        const padRight = hasRightHeightIndicator ? 58 : (type === 'cuboid' ? 36 : 20);
 
-        // --- DRAWING FUNCTIONS ---
+        const maxAvailableW = Math.max(50, w - (padLeft + padRight));
+        const maxAvailableH = Math.max(50, h - (padTop + padBottom));
+
+        // Strict uniform scale so shapes never exceed canvas boundaries
+        const scale = Math.min(
+            maxAvailableW / Math.max(totalUnitW, 1),
+            maxAvailableH / Math.max(totalUnitH, 1)
+        );
+
+        // Center calculation with directional padding offset
+        const effectiveCx = (padLeft + (w - padRight)) / 2;
+        const effectiveCy = (padTop + (h - padBottom)) / 2;
+        const labelGap = 15;
+
+        // --- CUBOID ---
         if (type === 'cuboid') {
-            const dw = valW * scale; 
-            const dh = valH * scale * 0.8; 
-            const dd = valD * scale * 0.5;
-            const x0 = cx - (dw + dd) / 2; 
-            const y0 = cy + (dh - dd) / 2 + 20;
+            const dw = valW * scale;
+            const dh = valH * scale * 0.85;
+            const dd = valD * scale * 0.45;
+
+            // Center the full 3D envelope horizontally
+            const x0 = effectiveCx - (dw + dd) / 2;
+
+            // SHIFT LOWER: y0 is pushed down so the highest rear point (y0 - dh - dd)
+            // is symmetric around effectiveCy, giving full breathing room from the top border
+            const y0 = effectiveCy + (dh + dd) / 2;
+
+            // Rear dashed edges
             drawDashed(x0 + dd, y0 - dd, x0 + dd, y0 - dh - dd);
             drawDashed(x0, y0, x0 + dd, y0 - dd);
             drawDashed(x0 + dd, y0 - dd, x0 + dw + dd, y0 - dd);
+
+            // Front face
+            ctx.fillRect(x0, y0 - dh, dw, dh);
             ctx.strokeRect(x0, y0 - dh, dw, dh);
+
+            // Top face
             ctx.beginPath();
-            ctx.moveTo(x0, y0 - dh); ctx.lineTo(x0 + dd, y0 - dh - dd);
-            ctx.lineTo(x0 + dw + dd, y0 - dh - dd); ctx.lineTo(x0 + dw, y0 - dh);
-            ctx.moveTo(x0 + dw + dd, y0 - dh - dd); ctx.lineTo(x0 + dw + dd, y0 - dd);
-            ctx.lineTo(x0 + dw, y0);
+            ctx.moveTo(x0, y0 - dh);
+            ctx.lineTo(x0 + dd, y0 - dh - dd);
+            ctx.lineTo(x0 + dw + dd, y0 - dh - dd);
+            ctx.lineTo(x0 + dw, y0 - dh);
+            ctx.closePath();
+            ctx.fill();
             ctx.stroke();
-            drawLabel(labels.w, x0 + dw/2, y0 + labelGap);
-            drawLabel(labels.h, x0 - labelGap - 10, y0 - dh/2);
-            drawLabel(labels.d, x0 + dw + dd + 10, y0 - dh/20 - dd/8);
-        } 
+
+            // Right face
+            ctx.beginPath();
+            ctx.moveTo(x0 + dw, y0 - dh);
+            ctx.lineTo(x0 + dw + dd, y0 - dh - dd);
+            ctx.lineTo(x0 + dw + dd, y0 - dd);
+            ctx.lineTo(x0 + dw, y0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Labels
+            drawLabel(labels.w, x0 + dw / 2, y0 + labelGap);
+            drawLabel(labels.h, x0 - labelGap, y0 - dh / 2);
+            drawLabel(labels.d, x0 + dw + dd / 2 + 12, y0 - dd / 2 + 6);
+
+            if (labels.d && labels.d !== valD.toString()) {
+                // 3D Space diagonal from rear-bottom-left (x0 + dd, y0 - dd) to front-top-right (x0 + dw, y0 - dh)
+                const pStartX = x0 + dd;
+                const pStartY = y0 - dd;
+                const pEndX = x0 + dw;
+                const pEndY = y0 - dh;
+
+                // Draw prominent diagonal line through the prism interior
+                ctx.save();
+                ctx.strokeStyle = '#4f46e5';
+                ctx.lineWidth = 2.2;
+                ctx.setLineDash([5, 4]);
+                ctx.beginPath();
+                ctx.moveTo(pStartX, pStartY);
+                ctx.lineTo(pEndX, pEndY);
+                ctx.stroke();
+                ctx.restore();
+
+                // End point dots
+                ctx.beginPath();
+                ctx.arc(pStartX, pStartY, 3.5, 0, 2 * Math.PI);
+                ctx.arc(pEndX, pEndY, 3.5, 0, 2 * Math.PI);
+                ctx.fillStyle = '#4f46e5';
+                ctx.fill();
+
+                // Diagonal label placed near the center with white halo
+                drawLabel(`d`, (pStartX + pEndX) / 2 - 10, (pStartY + pEndY) / 2 - 10, '#4f46e5', '#ffffff');
+            }
+        }
+        // --- TRIANGULAR PRISM ---
         else if (type === 'triangular_prism') {
-            const b = valW * scale; 
-            const hTri = valH * scale; 
+            const b = valW * scale;
+            const hTri = valH * scale;
             const l = valD * scale * 0.7;
-            // Shift the starting X coordinate to the right to accommodate the left-side label (60)
-            const x0 = cx - (b + l) / 2 + 60; 
-            const y0 = cy + (hTri / 2);
+            const x0 = effectiveCx - (b + l) / 2;
+            const y0 = effectiveCy + (hTri / 2);
             const apexY = y0 - hTri;
 
-            // 1. Draw the Prism Shape
             ctx.beginPath();
-            ctx.moveTo(x0, y0); ctx.lineTo(x0 + b, y0); ctx.lineTo(x0 + b/2, apexY); ctx.closePath(); ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x0 + b/2, apexY); ctx.lineTo(x0 + b/2 + l, apexY - l*0.2);
-            ctx.lineTo(x0 + b + l, y0 - l*0.2); ctx.lineTo(x0 + b, y0);
-            ctx.moveTo(x0 + b/2 + l, apexY - l*0.2); ctx.lineTo(x0 + b + l, y0 - l*0.2);
+            ctx.moveTo(x0 + b / 2, apexY);
+            ctx.lineTo(x0 + b / 2 + l, apexY - l * 0.2);
+            ctx.lineTo(x0 + b + l, y0 - l * 0.2);
+            ctx.lineTo(x0 + b, y0);
+            ctx.closePath();
+            ctx.fill();
             ctx.stroke();
 
-            // 2. Internal Support Line
-            drawDashed(x0 + b/2, y0, x0 + b/2, apexY);
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.lineTo(x0 + b, y0);
+            ctx.lineTo(x0 + b / 2, apexY);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
 
-            // --- 3. NEW: External Height Indicator (Side Line) ---
-            const hIndX = x0 - labelGap; // Position indicator to the left of the prism
-            ctx.save();
-            ctx.lineWidth = 2;
-            // Horizontal connectors
+            drawDashed(x0 + b / 2, y0, x0 + b / 2, apexY);
+
+            // Left External Height Indicator
+            const hIndX = x0 - labelGap;
             drawDashed(x0, y0, hIndX, y0);
-            drawDashed(x0 + b/2, apexY, hIndX, apexY);
-            // Vertical indicator line
+            drawDashed(x0 + b / 2, apexY, hIndX, apexY);
             ctx.beginPath();
-            ctx.moveTo(hIndX, y0); ctx.lineTo(hIndX, apexY);
+            ctx.moveTo(hIndX, y0);
+            ctx.lineTo(hIndX, apexY);
             ctx.stroke();
-            // End caps (ticks)
             ctx.beginPath();
-            ctx.moveTo(hIndX - 10, y0); ctx.lineTo(hIndX + 10, y0);
-            ctx.moveTo(hIndX - 10, apexY); ctx.lineTo(hIndX + 10, apexY);
+            ctx.moveTo(hIndX - 4, y0); ctx.lineTo(hIndX + 4, y0);
+            ctx.moveTo(hIndX - 4, apexY); ctx.lineTo(hIndX + 4, apexY);
             ctx.stroke();
-            ctx.restore();
 
-            // 4. Labels with "h =" prefix
             const hLabel = labels.h ? `h = ${labels.h}` : `h`;
-            drawLabel(hLabel, hIndX - 45, (y0 + apexY) / 2); // Place label to the left of indicator
-            drawLabel(labels.b, x0 + b/2, y0 + labelGap);
-            drawLabel(labels.l, x0 + b + l/2 + 25, y0 - l*0.1);
+            drawLabel(hLabel, hIndX - 6, (y0 + apexY) / 2, '#0f172a', '#ffffff', 'right');
+            drawLabel(labels.b, x0 + b / 2, y0 + labelGap);
+            drawLabel(labels.l, x0 + b + l / 2 + 14, y0 - l * 0.1);
         }
+        // --- PYRAMID ---
         else if (type === 'pyramid') {
-            const pw = valW * scale; const ph = valH * scale; 
+            const pw = valW * scale;
+            const ph = valH * scale;
             const pd = valD * scale * 0.5;
-            const x0 = cx - (pw + pd)/2; const y0 = cy + (ph/2);
-            const apex = { x: x0 + pw/2 + pd/2, y: y0 - pd/2 - ph };
-            const baseY = y0 - pd/2; // Center of the base depth
+            const x0 = effectiveCx - (pw + pd) / 2;
+            const y0 = effectiveCy + (ph / 2);
+            const apex = { x: x0 + pw / 2 + pd / 2, y: y0 - pd / 2 - ph };
+            const baseY = y0 - pd / 2;
 
-            ctx.beginPath();
-            ctx.moveTo(x0, y0); ctx.lineTo(x0 + pw, y0); ctx.lineTo(x0 + pw + pd, y0 - pd);
-            ctx.stroke();
             drawDashed(x0, y0, x0 + pd, y0 - pd);
             drawDashed(x0 + pd, y0 - pd, x0 + pw + pd, y0 - pd);
-            ctx.beginPath();
-            ctx.moveTo(x0, y0); ctx.lineTo(apex.x, apex.y);
-            ctx.lineTo(x0 + pw, y0); ctx.lineTo(apex.x, apex.y);
-            ctx.lineTo(x0 + pw + pd, y0 - pd);
-            ctx.stroke();
             drawDashed(x0 + pd, y0 - pd, apex.x, apex.y);
-            
-            // Internal height line
             drawDashed(apex.x, baseY, apex.x, apex.y);
 
-            // --- NEW: External Height Indicator for Pyramid ---
-            const hIndX = apex.x + labelGap + 20;
-            ctx.save();
-            ctx.lineWidth = 2;
-            drawDashed(apex.x, apex.y, hIndX, apex.y);
-            drawDashed(apex.x, baseY, hIndX, baseY);
             ctx.beginPath();
-            ctx.moveTo(hIndX, apex.y); ctx.lineTo(hIndX, baseY);
+            ctx.moveTo(x0, y0);
+            ctx.lineTo(x0 + pw, y0);
+            ctx.lineTo(x0 + pw + pd, y0 - pd);
             ctx.stroke();
-            // Ticks
-            ctx.beginPath();
-            ctx.moveTo(hIndX - 10, apex.y); ctx.lineTo(hIndX + 10, apex.y);
-            ctx.moveTo(hIndX - 10, baseY); ctx.lineTo(hIndX + 10, baseY);
-            ctx.stroke();
-            ctx.restore();
 
-            const hLabel = labels.h ? `h = ${labels.h}` : `h`;
-            drawLabel(hLabel, hIndX + 85, (apex.y + baseY) / 2);
-            drawLabel(labels.w || labels.s, x0 + pw/2, y0 + labelGap);
-            if (valW !== valD) drawLabel(labels.d, x0 + pw + pd/2 + 10, y0 - pd/2 + 10);
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.lineTo(apex.x, apex.y);
+            ctx.lineTo(x0 + pw, y0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x0 + pw, y0);
+            ctx.lineTo(apex.x, apex.y);
+            ctx.lineTo(x0 + pw + pd, y0 - pd);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            if (labels.h) {
+                const hIndX = apex.x + pw / 2 + 14;
+                drawDashed(apex.x, apex.y, hIndX, apex.y);
+                drawDashed(apex.x, baseY, hIndX, baseY);
+                ctx.beginPath();
+                ctx.moveTo(hIndX, apex.y);
+                ctx.lineTo(hIndX, baseY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(hIndX - 4, apex.y); ctx.lineTo(hIndX + 4, apex.y);
+                ctx.moveTo(hIndX - 4, baseY); ctx.lineTo(hIndX + 4, baseY);
+                ctx.stroke();
+
+                drawLabel(`h = ${labels.h}`, hIndX + 6, (apex.y + baseY) / 2, '#0f172a', '#ffffff', 'left');
+            }
+
+            drawLabel(labels.w || labels.s, x0 + pw / 2, y0 + labelGap);
+            if (valW !== valD) drawLabel(labels.d, x0 + pw + pd / 2 + 12, y0 - pd / 2 + 4);
         }
+        // --- CYLINDER, CONE, SPHERE ---
         else {
             const r = valR * scale;
             const vh = valH * scale;
 
             const drawCircleBase = (x, y, rad, isDashed = false) => {
                 ctx.beginPath();
-                ctx.ellipse(x, y, rad, rad/3, 0, 0, Math.PI, false);
+                ctx.ellipse(x, y, rad, rad / 3.2, 0, 0, Math.PI, false);
                 ctx.stroke();
                 if (isDashed) {
-                    ctx.save(); ctx.setLineDash([8,8]);
-                    ctx.beginPath(); ctx.ellipse(x, y, rad, rad/3, 0, Math.PI, 2*Math.PI, false);
-                    ctx.stroke(); ctx.restore();
+                    ctx.save();
+                    ctx.strokeStyle = GUIDE_COLOR;
+                    ctx.lineWidth = 1.75;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.ellipse(x, y, rad, rad / 3.2, 0, Math.PI, 2 * Math.PI, false);
+                    ctx.stroke();
+                    ctx.restore();
                 } else {
-                    ctx.beginPath(); ctx.ellipse(x, y, rad, rad/3, 0, Math.PI, 2*Math.PI, false);
+                    ctx.beginPath();
+                    ctx.ellipse(x, y, rad, rad / 3.2, 0, Math.PI, 2 * Math.PI, false);
                     ctx.stroke();
                 }
             };
 
             const drawRadiusOrDiameter = (x, y, rad, isCone = false) => {
                 const isDiam = data.show === 'diameter';
-                const labelText = isDiam ? (labels.d ? `d = ${labels.d}` : `d = ${valR * 2}`) : (labels.r ? `r = ${labels.r}` : `r = ${valR}`);
-                // Move label below cone base if needed
-                const labelYOffset = isCone ? (rad/9 + labelGap) : -labelGap;
-                
+                const labelText = isDiam
+                    ? (labels.d ? `d = ${labels.d}` : `d = ${valR * 2}`)
+                    : (labels.r ? `r = ${labels.r}` : `r = ${valR}`);
+                const labelYOffset = isCone ? (rad / 3.2 + labelGap + 2) : -(rad / 3.2 + labelGap);
+
                 if (isDiam) {
                     drawDashed(x - rad, y, x + rad, y);
                     drawLabel(labelText, x, y + labelYOffset);
                 } else {
-                    ctx.beginPath(); ctx.arc(x, y, 6, 0, 2*Math.PI); ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3.5, 0, 2 * Math.PI);
+                    ctx.fillStyle = STROKE_COLOR;
+                    ctx.fill();
                     drawDashed(x, y, x + rad, y);
-                    drawLabel(labelText, x + rad/2, y + labelYOffset);
+                    drawLabel(labelText, x + rad / 2, y + labelYOffset);
                 }
             };
 
             if (type === 'cylinder' || type === 'silo') {
-                const yTop = cy - vh/2; const yBot = cy + vh/2;
-                drawCircleBase(cx, yTop, r, false);
-                drawCircleBase(cx, yBot, r, true);
-                ctx.beginPath();
-                ctx.moveTo(cx - r, yTop); ctx.lineTo(cx - r, yBot);
-                ctx.moveTo(cx + r, yTop); ctx.lineTo(cx + r, yBot);
-                ctx.stroke();
-                if (type === 'silo') { ctx.beginPath(); ctx.arc(cx, yTop, r, Math.PI, 0); ctx.stroke(); }
-                drawRadiusOrDiameter(cx, yTop, r);
+                const yTop = effectiveCy - vh / 2;
+                const yBot = effectiveCy + vh / 2;
 
-                // --- NEW: Height Indicator Line for Cylinder ---
-                const hIndX = cx + r + labelGap;
-                ctx.save();
-                ctx.lineWidth = 2;
-                drawDashed(cx, yTop, hIndX, yTop);
-                drawDashed(cx, yBot, hIndX, yBot);
                 ctx.beginPath();
-                ctx.moveTo(hIndX, yTop); ctx.lineTo(hIndX, yBot);
-                ctx.stroke();
-                // Ticks
-                ctx.beginPath();
-                ctx.moveTo(hIndX - 10, yTop); ctx.lineTo(hIndX + 10, yTop);
-                ctx.moveTo(hIndX - 10, yBot); ctx.lineTo(hIndX + 10, yBot);
-                ctx.stroke();
-                ctx.restore();
+                ctx.ellipse(effectiveCx, yTop, r, r / 3.2, 0, 0, Math.PI * 2);
+                ctx.rect(effectiveCx - r, yTop, r * 2, yBot - yTop);
+                ctx.fill();
 
-                const hLabel = labels.h ? `h = ${labels.h}` : `h`;
-                drawLabel(hLabel, hIndX + 25, cy);
+                drawCircleBase(effectiveCx, yTop, r, false);
+                drawCircleBase(effectiveCx, yBot, r, true);
+                ctx.beginPath();
+                ctx.moveTo(effectiveCx - r, yTop);
+                ctx.lineTo(effectiveCx - r, yBot);
+                ctx.moveTo(effectiveCx + r, yTop);
+                ctx.lineTo(effectiveCx + r, yBot);
+                ctx.stroke();
+
+                if (type === 'silo') {
+                    ctx.beginPath();
+                    ctx.arc(effectiveCx, yTop, r, Math.PI, 0);
+                    ctx.stroke();
+                }
+                drawRadiusOrDiameter(effectiveCx, yTop, r);
+
+                if (labels.h) {
+                    const hIndX = effectiveCx + r + 14;
+                    drawDashed(effectiveCx, yTop, hIndX, yTop);
+                    drawDashed(effectiveCx, yBot, hIndX, yBot);
+                    ctx.beginPath();
+                    ctx.moveTo(hIndX, yTop);
+                    ctx.lineTo(hIndX, yBot);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(hIndX - 4, yTop); ctx.lineTo(hIndX + 4, yTop);
+                    ctx.moveTo(hIndX - 4, yBot); ctx.lineTo(hIndX + 4, yBot);
+                    ctx.stroke();
+
+                    drawLabel(`h = ${labels.h}`, hIndX + 6, effectiveCy, '#0f172a', '#ffffff', 'left');
+                }
             }
             else if (type === 'cone' || type === 'ice_cream') {
-                // Manually move the starting point up by half the height to center the cone
-                const yBase = type === 'cone' ? cy + vh/2 : cy - (vh / 2); 
-                const apexY = type === 'cone' ? yBase - vh : yBase + vh;
-                drawCircleBase(cx, yBase, r, type === 'cone');
-                ctx.beginPath();
-                ctx.moveTo(cx - r, yBase); ctx.lineTo(cx, apexY); ctx.lineTo(cx + r, yBase);
-                ctx.stroke();
-                if (type === 'ice_cream') { ctx.beginPath(); ctx.arc(cx, yBase, r, Math.PI, 0); ctx.stroke(); }
+                const isIceCream = type === 'ice_cream';
                 
-                // Radius underneath
-                drawRadiusOrDiameter(cx, yBase, r, true);
+                // For ice cream: total visual height is cone height (vh) + scoop radius (r)
+                // Anchor effectiveCy to the center of the ENTIRE composite figure
+                const totalH = isIceCream ? (vh + r) : vh;
+                
+                // Cone rim position (mouth of the cone)
+                const yBase = isIceCream 
+                    ? effectiveCy - (totalH / 2) + r 
+                    : effectiveCy + (vh / 2);
+                    
+                // Cone point/apex position
+                const apexY = isIceCream 
+                    ? yBase + vh 
+                    : yBase - vh;
 
-                // --- NEW: Height Indicator Line for Cones ---
-                const hIndicatorX = cx + r + labelGap;
-                ctx.save();
-                ctx.lineWidth = 2;
-                drawDashed(cx, apexY, hIndicatorX, apexY);
-                drawDashed(cx, yBase, hIndicatorX, yBase);
+                // 1. Fill & Stroke Cone Body
                 ctx.beginPath();
-                ctx.moveTo(hIndicatorX, apexY); ctx.lineTo(hIndicatorX, yBase);
+                ctx.moveTo(effectiveCx - r, yBase);
+                ctx.lineTo(effectiveCx, apexY);
+                ctx.lineTo(effectiveCx + r, yBase);
+                ctx.closePath();
+                ctx.fill();
+
+                // 2. Base Ellipse at the Cone Mouth
+                drawCircleBase(effectiveCx, yBase, r, !isIceCream);
+                
+                ctx.beginPath();
+                ctx.moveTo(effectiveCx - r, yBase);
+                ctx.lineTo(effectiveCx, apexY);
+                ctx.lineTo(effectiveCx + r, yBase);
                 ctx.stroke();
-                // End caps
+
+                // 3. Draw Ice Cream Scoop (Hemisphere Dome on Top)
+                if (isIceCream) {
+                    ctx.beginPath();
+                    // Semicircular dome curving over the top from left rim to right rim
+                    ctx.arc(effectiveCx, yBase, r, Math.PI, 0, false);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                // 4. Radius / Diameter Label
+                drawRadiusOrDiameter(effectiveCx, yBase, r, !isIceCream);
+
+                // 5. Height Indicator Bracket (measures the cone portion specifically)
+                if (labels.h) {
+                    const hIndicatorX = effectiveCx + r + 14;
+                    drawDashed(effectiveCx, apexY, hIndicatorX, apexY);
+                    drawDashed(effectiveCx, yBase, hIndicatorX, yBase);
+                    ctx.beginPath();
+                    ctx.moveTo(hIndicatorX, apexY);
+                    ctx.lineTo(hIndicatorX, yBase);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(hIndicatorX - 4, apexY); ctx.lineTo(hIndicatorX + 4, apexY);
+                    ctx.moveTo(hIndicatorX - 4, yBase); ctx.lineTo(hIndicatorX + 4, yBase);
+                    ctx.stroke();
+
+                    drawLabel(`h = ${labels.h}`, hIndicatorX + 6, (yBase + apexY) / 2, '#0f172a', '#ffffff', 'left');
+                }
+            }
+            else if (type === 'sphere') {
                 ctx.beginPath();
-                ctx.moveTo(hIndicatorX - 10, apexY); ctx.lineTo(hIndicatorX + 10, apexY);
-                ctx.moveTo(hIndicatorX - 10, yBase); ctx.lineTo(hIndicatorX + 10, yBase);
+                ctx.arc(effectiveCx, effectiveCy, r, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.save();
+                ctx.strokeStyle = GUIDE_COLOR;
+                ctx.lineWidth = 1.75;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.ellipse(effectiveCx, effectiveCy, r, r / 3.2, 0, 0, 2 * Math.PI);
                 ctx.stroke();
                 ctx.restore();
 
-                const hLabel = labels.h ? `h = ${labels.h}` : `h`;
-                drawLabel(hLabel, hIndicatorX + 80, (yBase + apexY)/2);
-            }
-            else if (type === 'sphere') {
-                ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2*Math.PI); ctx.stroke();
-                ctx.beginPath(); ctx.ellipse(cx, cy, r, r/3, 0, 0, 2*Math.PI); ctx.stroke();
-                drawRadiusOrDiameter(cx, cy, r);
+                drawRadiusOrDiameter(effectiveCx, effectiveCy, r);
             }
         }
     }, [data, dimensions]);
@@ -321,12 +498,10 @@ export const VolumeVisualization = ({ data }) => {
     return (
         <div 
             ref={containerRef} 
-            className="flex justify-center items-center w-full h-full p-4 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+            className="flex justify-center items-center w-full h-full p-0 bg-transparent overflow-hidden"
         >
             <canvas 
                 ref={canvasRef} 
-                width={dimensions.width * 2} 
-                height={dimensions.height * 2} 
                 style={{ width: '100%', height: '100%', display: 'block' }}
                 className="object-contain"
             />

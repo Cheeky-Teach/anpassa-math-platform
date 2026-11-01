@@ -83,20 +83,28 @@ export const GeometryVisual = ({ data }) => {
 
     // Safely reads from either the legacy root object or the clean modern nested geometry configuration
     const shapeType = data.type;
-    if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle', 'semicircle', 'quarter_circle', 'composite'].includes(shapeType)) {
+    if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle', 'semicircle', 'quarter_circle', 'composite', 'pythagoras_proof'].includes(shapeType)) {
         const activeDims = data.dims || data;
         const activeLabels = data.labels || (data.dims && data.dims.labels);
 
         return (
-            <svg width="300" height="250" viewBox="0 0 300 250" className="my-2 w-full max-w-[300px] mx-auto">
-                <RenderShape 
-                    type={shapeType} 
-                    subtype={data.subtype || activeDims.subtype}
-                    dims={activeDims}
-                    labels={activeLabels} 
-                    areaText={data.areaText} 
-                />
-            </svg>
+            <div className="w-full flex items-center justify-center p-1">
+                <div className="relative w-full max-w-[260px] aspect-[4/3] flex items-center justify-center">
+                    <svg 
+                        viewBox="0 0 300 250" 
+                        preserveAspectRatio="xMidYMid meet"
+                        className="w-full h-full block overflow-visible drop-shadow-sm"
+                    >
+                        <RenderShape 
+                            type={shapeType} 
+                            subtype={data.subtype || activeDims.subtype}
+                            dims={activeDims}
+                            labels={activeLabels} 
+                            areaText={data.areaText} 
+                        />
+                    </svg>
+                </div>
+            </div>
         );
     }
     

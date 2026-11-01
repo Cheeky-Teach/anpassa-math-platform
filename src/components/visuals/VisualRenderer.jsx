@@ -52,20 +52,21 @@ export default function VisualRenderer({ data, width, height, isWordProblem }) {
         const volumeTypes = ['cuboid', 'cylinder', 'cone', 'sphere', 'hemisphere', 'pyramid', 'triangular_prism', 'silo', 'ice_cream', 'volume'];
         if (volumeTypes.includes(geom.type)) {
             return (
-                <div style={{ 
-                    width: width || 350, 
-                    height: height || 250, 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    alignItems: 'center',
-                    margin: 'auto'
-                }}>
+                <div className="w-full max-w-[260px] aspect-[4/3] flex items-center justify-center mx-auto">
                     <VolumeVisualization data={geom} />
                 </div>
             );
         }
         
         return <GeometryVisual data={geom} width={width} height={height} />;
+    }
+
+    if (data?.graph) {
+        return (
+            <div className="w-full max-w-[340px] mx-auto flex items-center justify-center">
+                <GraphCanvas data={data.graph} />
+            </div>
+        );
     }
     
     return null;

@@ -315,12 +315,12 @@ export const LEVEL_DESCRIPTIONS = {
         4: { sv: "Blandad (1-3)", en: "Mixed (1-3)" }
     },
     pythagoras: {
-        1: { sv: "Kvadrater & Rötter", en: "Squares & Roots" },
-        2: { sv: "Hitta Hypotenusan", en: "Find Hypotenuse" },
-        3: { sv: "Hitta Kateten", en: "Find Leg" },
-        4: { sv: "Problemlösning", en: "Word Problems" },
-        5: { sv: "Är den rätvinklig?", en: "Is it Right-Angled?" },
-        6: { sv: "Blandad (1-5)", en: "Mixed (1-5)" }
+        1: { sv: "Begrepp & Uppställning", en: "Concept & Setup" },
+        2: { sv: "Beräkna Hypotenusan", en: "Find Hypotenuse" },
+        3: { sv: "Beräkna Kateten", en: "Find Leg" },
+        4: { sv: "Är den rätvinklig? (Omvänd sats)", en: "Is it Right-Angled? (Converse)" },
+        5: { sv: "Avstånd i Koordinatsystem", en: "Distance in Coordinates" },
+        6: { sv: "Sammansatt & Rymddiagonal", en: "Composite & 3D Diagonals" }
     },
     patterns: { 
         1: { sv: "Hitta nästa tal & Skillnad", en: "Next Number & Difference" },

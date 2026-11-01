@@ -153,6 +153,63 @@ export const GraphCanvas = ({ data, width: customWidth, height: customHeight }) 
         });
 
         ctx.restore();
+
+        // 7. Draw Finite Segments & Orthogonal Legs (for Distance / Pythagoras)
+        if (data.segments && data.segments.length > 0) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(padLeft, padTop, plotW, plotH);
+            ctx.clip();
+
+            data.segments.forEach(seg => {
+                ctx.save();
+                ctx.strokeStyle = seg.color || '#2563eb';
+                ctx.lineWidth = seg.width || 2.5;
+                if (seg.dashed) {
+                    ctx.setLineDash([4, 4]);
+                }
+                ctx.beginPath();
+                ctx.moveTo(toX(seg.x1), toY(seg.y1));
+                ctx.lineTo(toX(seg.x2), toY(seg.y2));
+                ctx.stroke();
+                ctx.restore();
+            });
+
+            ctx.restore();
+        }
+
+        // 8. Draw Explicit Points & Text Badges
+        if (data.points && data.points.length > 0) {
+            data.points.forEach(pt => {
+                const px = toX(pt.x);
+                const py = toY(pt.y);
+
+                // Dot
+                ctx.beginPath();
+                ctx.arc(px, py, pt.radius || 4.5, 0, 2 * Math.PI);
+                ctx.fillStyle = pt.color || '#0f172a';
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+
+                // Optional Coordinate Label
+                if (pt.label) {
+                    ctx.save();
+                    ctx.font = 'bold 10px Inter, sans-serif';
+                    ctx.textAlign = pt.align || 'center';
+                    const textYOffset = pt.yOffset !== undefined ? pt.yOffset : -10;
+                    
+                    // Protective white halo
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.strokeText(pt.label, px, py + textYOffset);
+                    ctx.fillStyle = pt.color || '#0f172a';
+                    ctx.fillText(pt.label, px, py + textYOffset);
+                    ctx.restore();
+                }
+            });
+        }
     }, [data]);
 
     return (
