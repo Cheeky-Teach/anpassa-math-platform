@@ -439,3 +439,32 @@ html {
   mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
   mask-size: 40px;
 }
+/* src/styles/theme.css */
+
+/* 1. Tighten KaTeX vertical margins in worksheets and studio */
+.math-content .katex-display {
+  margin: 0.25em 0 !important;
+}
+
+/* 2. Enhanced Rutnät Work Area Grid (High-Contrast for Print & Projectors) */
+.worksheet-grid-bg {
+  background-image: 
+    linear-gradient(to right, #94a3b8 1px, transparent 1px), 
+    linear-gradient(to bottom, #94a3b8 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+@media print {
+  .worksheet-grid-bg {
+    background-image: 
+      linear-gradient(to right, #64748b 1px, transparent 1px), 
+      linear-gradient(to bottom, #64748b 1px, transparent 1px) !important;
+    background-size: 30px 30px !important;
+  }
+}
+
+/* Enable KaTeX font scaling via parent utility classes */
+.math-content.text-base .katex { font-size: 1rem !important; }
+.math-content.text-lg .katex   { font-size: 1.15rem !important; }
+.math-content.text-xl .katex   { font-size: 1.35rem !important; }
+.math-content.text-2xl .katex  { font-size: 1.6rem !important; }

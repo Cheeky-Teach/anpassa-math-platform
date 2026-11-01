@@ -24,7 +24,7 @@ import { getActivityDefinition } from '../activities/registry/activityRegistry.j
 import '../../styles/theme.css'; 
 import PreferencesToggle from '../ui/PreferencesToggle';
 
-const MathDisplay = ({ content, className = "" }) => {
+const MathDisplay = ({ content, className = "", style = {} }) => {
     const containerRef = useRef(null);
     useEffect(() => {
         if (!content || !containerRef.current) return;
@@ -45,7 +45,13 @@ const MathDisplay = ({ content, className = "" }) => {
         const timer = setTimeout(renderMath, 30);
         return () => clearTimeout(timer);
     }, [content]);
-    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
+    return (
+        <div 
+            ref={containerRef} 
+            style={style} 
+            className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} 
+        />
+    );
 };
 
 const compileAnchoredStory = (item, lang = 'sv', includeLatex = false) => {
@@ -154,6 +160,16 @@ export default function QuestionStudio({
       trash_empty: "Papperskorgen är tom.", no_files: "Inga filer hittades här.",
       restore: "Återställ", hard_delete: "Radera permanent", duplicate_btn: "Duplicera",
       duplicate_success: "Kopia skapad!", rename_folder: "Byt namn på mapp", rename_folder_title: "Ändra mappnamn",
+      add_qty: "Lägg till", rows_label: "Rader:", toggle_grid: "Växla Rutnät / Blank",
+      toggle_work_area: "Växla rutnät/tom yta",
+      preset_compact: "Tät (Prov)", preset_standard: "Standard", preset_spacious: "Rymlig",
+      style_open: "Öppen", style_framed: "Inramad",
+      density_and_style: "Täthet & Stil", presets_heading: "Snabbmallar",
+      font_size_heading: "Textstorlek", framing_heading: "Inramning",
+      sheet_default_title: "Matematik",
+      err_create_folder: "Kunde inte skapa mapp: ",
+      err_move_file: "Kunde inte flytta filen: ",
+      err_copy: "Kunde inte kopiera."
     },
     en: {
       studio: "Question Studio", library_title: "Library", donow_title: "Do Now Grid", worksheet_title: "Worksheet",
@@ -183,6 +199,16 @@ export default function QuestionStudio({
       trash_empty: "Trash is empty.", no_files: "No files found here.",
       restore: "Restore", hard_delete: "Delete permanently",
       duplicate_btn: "Duplicate", duplicate_success: "Copy created!", rename_folder: "Rename folder", rename_folder_title: "Rename folder",
+      add_qty: "Add", rows_label: "Rows:", toggle_grid: "Toggle Grid / Blank",
+      toggle_work_area: "Toggle grid / blank space",
+      preset_compact: "Compact (Exam)", preset_standard: "Standard", preset_spacious: "Spacious",
+      style_open: "Open", style_framed: "Framed",
+      density_and_style: "Density & Style", presets_heading: "Presets",
+      font_size_heading: "Font Size", framing_heading: "Borders",
+      sheet_default_title: "Mathematics",
+      err_create_folder: "Could not create folder: ",
+      err_move_file: "Could not move file: ",
+      err_copy: "Failed to copy."
     }
   }[lang];
 
@@ -198,9 +224,10 @@ export default function QuestionStudio({
   const [isLibraryLoading, setIsLibraryLoading] = useState(false);
   const [canvasMode, setCanvasMode] = useState('studio'); 
   const [globalLatexSize, setGlobalLatexSize] = useState('md');
-  const [workspaceHeight, setWorkspaceHeight] = useState(3);
+  const [workspaceHeight, setWorkspaceHeight] = useState(0);
   const [workspaceStyle, setWorkspaceStyle] = useState('blank');
   const [layoutStyle, setLayoutStyle] = useState('open');
+  const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState(false);
   const [selectedTopicId, setSelectedTopicId] = useState('basic_arithmetic');
   const [packet, setPacket] = useState(initialPacket || []);
   const [isSaved, setIsSaved] = useState(true);
@@ -246,7 +273,7 @@ export default function QuestionStudio({
 
   const [showActivityHub, setShowActivityHub] = useState(false);
   const [activeActivity, setActiveActivity] = useState(null);
-  const [activeSetupModal, setActiveSetupModal] = useState(null); // { key, savedBoard, sourcePacket }
+  const [activeSetupModal, setActiveSetupModal] = useState(null);
 
   // Universal Launch Handler
   const handleLaunchActivity = async (gameKey, config) => {
@@ -285,7 +312,6 @@ export default function QuestionStudio({
                   }
               });
 
-              // 🟢 Crucial: set BOTH session and isLiveHost in activeActivity
               setActiveActivity({
                   key: gameKey,
                   config: {
@@ -352,7 +378,6 @@ export default function QuestionStudio({
   };
 
   const handleSelectSheet = (sheet) => {
-    // 🟢 1. If it's an activity, open its setup modal first
     if (sheet.type?.startsWith('activity')) {
         const actDef = getActivityDefinition(sheet.type);
         if (actDef) {
@@ -395,6 +420,16 @@ export default function QuestionStudio({
   useEffect(() => { setStudioMode(setupMode); }, [setupMode]);
   useEffect(() => { fetchLibrary(); }, [setupMode, libraryTab, isTrashView]);
 
+  useEffect(() => {
+      if (Array.isArray(initialPacket) && initialPacket.length > 0) {
+          const first = initialPacket[0];
+          if (first._workspaceHeight !== undefined) setWorkspaceHeight(first._workspaceHeight);
+          if (first._workspaceStyle !== undefined) setWorkspaceStyle(first._workspaceStyle);
+          if (first._layoutStyle !== undefined) setLayoutStyle(first._layoutStyle);
+          if (first._globalLatexSize !== undefined) setGlobalLatexSize(first._globalLatexSize);
+      }
+  }, [initialPacket]);
+
   const getTopicLabel = (topicId) => {
       if (!topicId || topicId === 'all') return lang === 'sv' ? "Alla ämnen" : "All topics";
       if (topicId === 'patterns' || topicId === 'pattern') {
@@ -403,7 +438,7 @@ export default function QuestionStudio({
       for (const catKey in SKILL_BUCKETS) {
           const category = SKILL_BUCKETS[catKey];
           if (category.topics && category.topics[topicId]) {
-              return category.topics[topicId].name[lang] || category.topics[topicId].name.sv || topicId;
+              return category.topics[topicId].name[lang] || category.topics[topicId].name.en || category.topics[topicId].name.sv || topicId;
           }
       }
       return topicId.charAt(0).toUpperCase() + topicId.slice(1).replace('_', ' ');
@@ -547,7 +582,7 @@ export default function QuestionStudio({
           const { error } = await supabase.from('folders').insert([{ user_id: user.id, name: newFolderName }]);
           if (error) throw error;
           setNewFolderName(''); setShowFolderModal(false); fetchLibrary();
-      } catch (err) { alert("Kunde inte skapa mapp: " + err.message); }
+      } catch (err) { alert(t.err_create_folder + err.message); }
   };
 
   const handleRenameFolder = async () => {
@@ -573,7 +608,7 @@ export default function QuestionStudio({
           const { error } = await supabase.from('saved_sheets').update({ folder_id: targetFolderId }).eq('id', sheetId);
           if (error) throw error;
           setShowMoveModal(null); fetchLibrary();
-      } catch (err) { alert("Kunde inte flytta filen: " + err.message); }
+      } catch (err) { alert(t.err_move_file + err.message); }
   };
 
   const handleDeleteFolder = async (folderId) => {
@@ -643,7 +678,7 @@ export default function QuestionStudio({
         const { error } = await supabase.rpc('clone_worksheet', { target_id: sheetId, new_user_id: user.id });
         if (error) throw error;
         alert(t.clone_success); setLibraryTab('private'); fetchLibrary();
-    } catch (err) { alert("Kunde inte kopiera."); }
+    } catch (err) { alert(t.err_copy); }
   };
 
   const loadBoard = (sheet) => {
@@ -712,9 +747,21 @@ export default function QuestionStudio({
           workspace_height: workspaceHeight
       });
       const printPacket = packet.map(item => ({
-          ...item, _globalLatexSize: globalLatexSize, _workspaceHeight: workspaceHeight, _workspaceStyle: workspaceStyle, _layoutStyle: layoutStyle
+          ...item,
+          _globalLatexSize: item.localLatexSize || globalLatexSize,
+          _workspaceHeight: item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight,
+          _workspaceStyle: item.localWorkspaceStyle !== undefined ? item.localWorkspaceStyle : workspaceStyle,
+          _layoutStyle: layoutStyle
       }));
-      onWorksheetGenerate(printPacket, { title: sheetTitle, globalLatexSize, workspaceHeight, workspaceStyle, layoutStyle, includeAnswerKey, answerKeyStyle }); 
+      onWorksheetGenerate(printPacket, { 
+          title: sheetTitle, 
+          globalLatexSize, 
+          workspaceHeight, 
+          workspaceStyle, 
+          layoutStyle, 
+          includeAnswerKey, 
+          answerKeyStyle 
+      }); 
   };
   
   const handleLaunchLive = () => {
@@ -737,7 +784,7 @@ export default function QuestionStudio({
             const roomData = await liveCreateRoom({
                 teacherId: profile?.id,
                 profile,
-                title: sheetTitle || (setupMode === 'donow' ? "Do Now Grid" : "Arbetsblad Live"),
+                title: sheetTitle || (setupMode === 'donow' ? "Do Now Grid" : (lang === 'sv' ? "Arbetsblad Live" : "Worksheet Live")),
                 mode: setupMode || 'worksheet',
                 packet: packet,
                 settings: {
@@ -773,12 +820,12 @@ export default function QuestionStudio({
             const data = await res.json();
             const isFirstInBatch = i === 0;
             newItems.push({ 
-                id: crypto.randomUUID(), topicId: selectedTopicId, variationKey: variation.key, name: variation.name[lang] || variation.name.sv, 
+                id: crypto.randomUUID(), topicId: selectedTopicId, variationKey: variation.key, name: variation.name[lang] || variation.name.en || variation.name.sv, 
                 columnSpan: useWordProblems ? 6 : (isFirstInBatch ? 6 : 2), resolvedData: data, instructionMode: useWordProblems ? 'inline' : (isFirstInBatch ? 'header' : 'hidden'),
                 showLatex: !useWordProblems, showVisual: !useWordProblems, selectedStoryIndex: useWordProblems ? 0 : null
             });
         }
-        if (setupMode === 'donow' && packet.length + newItems.length > 6) { alert("Do Now max 6."); return; }
+        if (setupMode === 'donow' && packet.length + newItems.length > 6) { alert(lang === 'sv' ? "Do Now max 6." : "Do Now max 6 questions."); return; }
         setPacket(prev => [...prev, ...newItems]); setPendingQuantity(1);
     } catch (err) { alert(err.message); } finally { setIsPreviewLoading(false); }
   };
@@ -819,7 +866,7 @@ export default function QuestionStudio({
 
   const updatePacketItem = (id, key, val) => { setPacket(packet.map(p => p.id === id ? { ...p, [key]: val } : p)); setIsSaved(false); };
   
-  const allTopics = Object.values(SKILL_BUCKETS).flatMap(cat => Object.entries(cat.topics).map(([id, data]) => ({ id, categoryName: cat.name[lang], categoryId: cat.id, ...data })));
+  const allTopics = Object.values(SKILL_BUCKETS).flatMap(cat => Object.entries(cat.topics).map(([id, data]) => ({ id, categoryName: cat.name[lang] || cat.name.en || cat.name.sv, categoryId: cat.id, ...data })));
   const currentTopic = allTopics.find(tp => tp.id === selectedTopicId) || allTopics[0];
   const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
   
@@ -863,7 +910,6 @@ export default function QuestionStudio({
   // =========================================================================
   // SETUP MODE (CLOUD DRIVE LAYOUT)
   // =========================================================================
-  // 🟢 PRIORITY 1: Presentation Mode
   if (showPresentation) {
       return (
           <PresentationView 
@@ -887,7 +933,6 @@ export default function QuestionStudio({
       );
   }
 
-  // 🟢 PRIORITY 1.5: Dynamic Activity Engine (via Registry)
   if (activeActivity) {
       const def = getActivityDefinition(activeActivity.key);
       if (def?.TeacherEngine) {
@@ -910,8 +955,6 @@ export default function QuestionStudio({
       }
   }
 
-  // 🟢 PRIORITY 2: Decoupled Library
-  // 🟢 PRIORITY 2: Decoupled Library
   if (!setupMode) {
       return (
           <>
@@ -970,7 +1013,6 @@ export default function QuestionStudio({
                     onLaunchActivity={handleLaunchActivity}
               />
 
-              {/* 🟢 Render Setup Modal when chosen from Library */}
               {activeSetupModal && (() => {
                   const def = getActivityDefinition(activeSetupModal.key);
                   if (!def?.SetupModal) return null;
@@ -996,7 +1038,6 @@ export default function QuestionStudio({
                   );
               })()}
 
-              {/* 🟢 Render Engine when launched from Library */}
               {activeActivity && (() => {
                   const def = getActivityDefinition(activeActivity.key);
                   if (!def?.TeacherEngine) return null;
@@ -1154,11 +1195,11 @@ export default function QuestionStudio({
                     </div>
                     {Object.values(SKILL_BUCKETS).map(cat => (
                         <div key={cat.id}>
-                            <h3 className="text-[12px] font-black uppercase tracking-widest text-[var(--brand-solid)] mb-3 ml-2">{cat.name[lang]}</h3>
+                            <h3 className="text-[12px] font-black uppercase tracking-widest text-[var(--brand-solid)] mb-3 ml-2">{cat.name[lang] || cat.name.en || cat.name.sv}</h3>
                             <div className="space-y-1">
                                 {Object.entries(cat.topics).map(([id, data]) => (
                                     <button key={id} onClick={() => setSelectedTopicId(id)} className={`w-full text-left px-3 py-1.5 text-sm rounded-[var(--radius-btn)] transition-all ${selectedTopicId === id ? 'bg-indigo-600 text-white font-bold shadow-md' : 'text-[var(--text-main)] hover:bg-[var(--bg-surface)]'}`}>
-                                        {data.name[lang]}
+                                        {data.name[lang] || data.name.en || data.name.sv}
                                     </button>
                                 ))}
                             </div>
@@ -1172,7 +1213,7 @@ export default function QuestionStudio({
         {/* PANE 2: Variations */}
         <div className="w-[300px] bg-[var(--bg-surface)]/80 backdrop-blur-sm border-r border-[var(--border-main)] flex flex-col shrink-0 min-h-0 h-full">
             <div className="p-3 border-b border-[var(--border-main)] bg-[var(--bg-card)] shrink-0 shadow-sm space-y-2">
-                <h1 className="text-sm font-black text-[var(--text-main)] uppercase italic truncate leading-none">{currentTopic?.name[lang]}</h1>
+                <h1 className="text-sm font-black text-[var(--text-main)] uppercase italic truncate leading-none">{currentTopic?.name[lang] || currentTopic?.name.en || currentTopic?.name.sv}</h1>
                 
                 <div className="flex items-center justify-between bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-strong)] shadow-inner">
                     <span className="text-[11px] font-black uppercase text-[var(--text-main)] ml-1.5 tracking-tight">{t.hide_extra}</span>
@@ -1231,13 +1272,13 @@ export default function QuestionStudio({
                                 >
                                     <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.bg}`} />
                                     <div className="flex justify-between items-start mb-1">
-                                        <h4 className="font-black text-[11px] uppercase tracking-tight text-[var(--text-main)] leading-tight pr-2">{v.name[lang]}</h4>
+                                        <h4 className="font-black text-[11px] uppercase tracking-tight text-[var(--text-main)] leading-tight pr-2">{v.name[lang] || v.name.en || v.name.sv}</h4>
                                         <div className={`shrink-0 px-1.5 py-0.5 rounded border ${styles.border} ${styles.bg} ${styles.text} text-[7px] font-black uppercase flex items-center gap-0.5`}>
                                             {styles.icon} {styles.label}
                                         </div>
                                     </div>
                                     
-                                    <p className="text-[9px] font-medium text-[var(--text-muted)] line-clamp-1 mb-2 italic leading-tight">{v.desc[lang]}</p>
+                                    <p className="text-[9px] font-medium text-[var(--text-muted)] line-clamp-1 mb-2 italic leading-tight">{v.desc[lang] || v.desc.en || v.desc.sv}</p>
                                     
                                     <div className="flex items-center gap-1.5">
                                         <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5">
@@ -1250,7 +1291,7 @@ export default function QuestionStudio({
                                             onClick={(e) => { e.stopPropagation(); addToPacket(v, pendingQuantity); }} 
                                             className={`flex-1 py-1.5 text-white rounded-[var(--radius-btn)] text-[9px] font-black uppercase transition-all shadow-sm active:scale-95 disabled:opacity-50 ${setupMode === 'donow' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                                         >
-                                            {isPreviewLoading && isPreviewed ? '...' : `Lägg till ${pendingQuantity}`}
+                                            {isPreviewLoading && isPreviewed ? '...' : `${t.add_qty} ${pendingQuantity}`}
                                         </button>
                                     </div>
                                 </div>
@@ -1263,324 +1304,417 @@ export default function QuestionStudio({
 
         {/* PANE 3: Workspace */}
         <div className="flex-1 flex flex-col overflow-hidden relative bg-[var(--bg-canvas)] min-h-0 h-full">
-          <div className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-6 py-2 flex flex-wrap items-center justify-between shadow-sm shrink-0 z-50 min-h-[64px]">
-              <div className="flex items-center gap-4">
-                  <div className="bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-main)] flex gap-1">
-                      <button onClick={() => setCanvasMode('studio')} className={`px-5 py-1.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'studio' ? 'bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}><Zap size={14}/> Studio</button>
-                      {setupMode && <button onClick={() => setCanvasMode('layout')} className={`px-5 py-1.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'layout' ? 'bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}><LayoutGrid size={14}/> {setupMode === 'donow' ? 'Grid' : 'Layout'}</button>}
-                  </div>
-              </div>
-
-              {canvasMode === 'layout' && (
-                  <div className="flex items-center gap-5 justify-end flex-1 pl-6">
-                      <div className="flex flex-col gap-1 items-center relative group">
-                          <button 
-                              disabled={isRegeneratingAll || packet.length === 0}
-                              onClick={() => setIsGlobalShuffleOpen(!isGlobalShuffleOpen)} 
-                              className="flex items-center gap-2 px-4 py-1.5 rounded-[var(--radius-btn)] border border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-main)] transition-all text-[10px] font-black uppercase shadow-sm hover:border-[var(--brand-solid)] disabled:opacity-50 active:scale-95"
-                          >
-                              {isRegeneratingAll ? <Loader2 size={14} className="animate-spin text-[var(--brand-solid)]" /> : <Shuffle size={14} className="text-[var(--brand-solid)]" />} 
-                              {t.regenerate_all}
-                          </button>
-                          <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Innehåll</span>
-
-                          {isGlobalShuffleOpen && (
-                              <div className="absolute top-10 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-2 w-56 z-[60] flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-200">
-                                  <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('numbers'); }} className="w-full text-left px-4 py-2.5 hover:bg-[var(--bg-surface)] rounded-[var(--radius-btn)] transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-[var(--text-main)] hover:text-[var(--brand-text)]">
-                                      <Calculator size={14} /> {lang === 'sv' ? "Bara Siffror/Värden" : "Numbers Only"}
-                                  </button>
-                                  <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('stories'); }} className="w-full text-left px-4 py-2.5 hover:bg-[var(--bg-surface)] rounded-[var(--radius-btn)] transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-[var(--text-main)] hover:text-[var(--theme-amber-text)]">
-                                      <Type size={14} /> {lang === 'sv' ? "Bara Textberättelser" : "Word Problems Only"}
-                                  </button>
-                                  <div className="h-px bg-[var(--border-main)] my-1 mx-2" />
-                                  <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('both'); }} className="w-full text-left px-4 py-2.5 hover:bg-[var(--bg-surface)] rounded-[var(--radius-btn)] transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-[var(--theme-rose-text)]">
-                                      <RefreshCcw size={14} /> {lang === 'sv' ? "Slumpa Allt (Båda)" : "Reshuffle Both"}
-                                  </button>
-                              </div>
-                          )}
-                      </div>
-
-                      <div className="w-px h-8 bg-[var(--border-main)]"></div>
-
-                      {setupMode === 'worksheet' && (
-                          <>
-                              <div className="flex flex-col gap-1 items-center">
-                                <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-[var(--radius-btn)] p-0.5 shadow-sm">
-                                    {['sm', 'md', 'lg', 'xl'].map((size) => (
-                                        <button 
-                                            key={size}
-                                            onClick={() => { 
-                                                setGlobalLatexSize(size); 
-                                                setPacket(prev => prev.map(item => ({ ...item, localLatexSize: null })));
-                                                setIsSaved(false); 
-                                            }} 
-                                            className={`px-3 py-1 rounded-[var(--radius-btn)] font-serif font-black transition-all ${size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : size === 'lg' ? 'text-base' : 'text-lg'} ${globalLatexSize === size ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-sm border border-[var(--border-strong)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-                                            title={`Textstorlek: ${size}`}
-                                        >
-                                            A
-                                        </button>
-                                    ))}
-                                </div>
-                                <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Textstorlek</span>
-                            </div>
-
-                              <div className="w-px h-8 bg-[var(--border-main)]"></div>
-
-                              <div className="flex flex-col gap-1 items-center">
-                                  <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5 shadow-sm gap-1">
-                                      <div className="flex items-center bg-[var(--bg-card)] rounded-[var(--radius-btn)] border border-[var(--border-main)] shadow-sm">
-                                          <button onClick={() => { setWorkspaceHeight(Math.max(0, workspaceHeight - 1)); setIsSaved(false); }} className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--brand-solid)]"><Minus size={12} /></button>
-                                          <span className="text-[10px] font-black uppercase text-[var(--text-main)] w-4 text-center">{workspaceHeight}</span>
-                                          <button onClick={() => { setWorkspaceHeight(Math.min(15, workspaceHeight + 1)); setIsSaved(false); }} className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--brand-solid)]"><Plus size={12} /></button>
-                                      </div>
-                                      <div className="w-px h-4 bg-[var(--border-main)] mx-0.5"></div>
-                                      <button onClick={() => { setWorkspaceStyle('blank'); setIsSaved(false); }} className={`p-1 rounded-[var(--radius-btn)] transition-all ${workspaceStyle === 'blank' ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-sm border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)]'}`} title="Tom yta">
-                                          <Square size={14} />
-                                      </button>
-                                      <button onClick={() => { setWorkspaceStyle('grid'); setIsSaved(false); }} className={`p-1 rounded-[var(--radius-btn)] transition-all ${workspaceStyle === 'grid' ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-sm border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)]'}`} title="Rutnät (8mm)">
-                                          <Grid3X3 size={14} />
-                                      </button>
-                                  </div>
-                                  <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Arbetsyta</span>
-                              </div>
-
-                              <div className="w-px h-8 bg-[var(--border-main)]"></div>
-
-                              <div className="flex flex-col gap-1 items-center">
-                                <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-[var(--radius-btn)] p-0.5 shadow-sm">
-                                    <button 
-                                        onClick={() => { setLayoutStyle('open'); setIsSaved(false); }} 
-                                        className={`px-2 py-1 rounded-[var(--radius-btn)] text-[9px] font-black uppercase tracking-wider transition-all ${layoutStyle === 'open' ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-sm border border-[var(--border-strong)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-                                    >
-                                        Öppen
-                                    </button>
-                                    <button 
-                                        onClick={() => { setLayoutStyle('framed'); setIsSaved(false); }} 
-                                        className={`px-2 py-1 rounded-[var(--radius-btn)] text-[9px] font-black uppercase tracking-wider transition-all ${layoutStyle === 'framed' ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-sm border border-[var(--border-strong)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-                                    >
-                                        Inramad
-                                    </button>
-                                </div>
-                                <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Design</span>
-                            </div>
-                          </>
-                      )}
-                  </div>
-              )}
-          </div>
-
-          <div className="flex-1 flex flex-col overflow-hidden relative min-h-0">
-            {canvasMode === 'studio' ? (
-                <div className="whiteboard-protect bg-white flex-1 rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col mx-auto w-full max-w-2xl animate-in zoom-in-95 duration-300 m-4">
-                    <div className="px-8 py-5 bg-slate-900 text-white flex justify-between items-center">
-                      <span className="text-[10px] font-black uppercase tracking-widest opacity-60 italic">
-                        {t.board_label}
-                      </span>
-                      {activePreviewKey && (
-                        <button onClick={() => triggerPreview(activePreviewKey)} className="text-[10px] bg-[var(--bg-canvas)]/10 hover:bg-[var(--bg-canvas)]/20 px-4 py-1.5 rounded-full font-black uppercase flex items-center gap-2 transition-all">
-                            <RefreshCcw size={12}/> {t.new_example}
-                        </button>
-                      )}
+            {/* Pane 3 Subheader */}
+            <div className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-6 py-2 flex items-center justify-between shadow-sm shrink-0 z-40 min-h-[56px]">
+                <div className="flex items-center gap-3">
+                    <div className="bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-main)] flex gap-1">
+                        <button onClick={() => setCanvasMode('studio')} className={`px-4 py-1.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase flex items-center gap-1.5 transition-all ${canvasMode === 'studio' ? 'bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}><Zap size={13}/> Studio</button>
+                        {setupMode && <button onClick={() => setCanvasMode('layout')} className={`px-4 py-1.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase flex items-center gap-1.5 transition-all ${canvasMode === 'layout' ? 'bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}><LayoutGrid size={13}/> {setupMode === 'donow' ? 'Grid' : 'Layout'}</button>}
                     </div>
-                  <div className="p-12 flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
-                    {isPreviewLoading ? (
-                        <div className="h-full flex items-center justify-center">
-                            <Loader2 className="animate-spin text-[var(--brand-solid)]" size={48} />
-                        </div>
-                    ) : !previewData ? (
-                        <div className="h-full flex items-center justify-center text-[var(--border-strong)] uppercase font-black tracking-widest italic">
-                            {t.select_hint}
-                        </div>
-                    ) : (
-                        <div className="w-full space-y-12 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="w-full flex justify-center drop-shadow-md">
-                                <VisualRenderer 
-                                    data={previewData?.renderData} 
-                                    isWordProblem={useWordProblems} 
-                                />
-                            </div>
-                            <div className="text-2xl text-[var(--text-main)] font-bold text-center px-10 leading-relaxed">
-                                <MathDisplay content={previewData.renderData.description} />
-                            </div>
-                            {previewData.renderData.latex && (
-                                <div className="text-4xl text-[var(--brand-solid)] bg-[var(--brand-bg)] p-10 rounded-[2.5rem] border-2 border-[var(--brand-border)] shadow-inner text-center font-serif">
-                                    <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
+                </div>
+
+                {canvasMode === 'layout' && (
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <button 
+                                disabled={isRegeneratingAll || packet.length === 0}
+                                onClick={() => setIsGlobalShuffleOpen(!isGlobalShuffleOpen)} 
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-btn)] border border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-main)] text-[10px] font-black uppercase shadow-sm hover:border-[var(--brand-solid)] disabled:opacity-50 transition-all"
+                            >
+                                {isRegeneratingAll ? <Loader2 size={13} className="animate-spin text-[var(--brand-solid)]" /> : <Shuffle size={13} className="text-[var(--brand-solid)]" />} 
+                                {t.regenerate_all}
+                            </button>
+
+                            {isGlobalShuffleOpen && (
+                                <div className="absolute top-10 right-0 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl shadow-2xl p-2 w-52 z-50 flex flex-col gap-1">
+                                    <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('numbers'); }} className="w-full text-left px-3 py-2 hover:bg-[var(--bg-surface)] rounded-xl flex items-center gap-2 text-[10px] font-black uppercase text-[var(--text-main)]">
+                                        <Calculator size={13} /> {lang === 'sv' ? "Bara Siffror" : "Numbers Only"}
+                                    </button>
+                                    <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('stories'); }} className="w-full text-left px-3 py-2 hover:bg-[var(--bg-surface)] rounded-xl flex items-center gap-2 text-[10px] font-black uppercase text-[var(--text-main)]">
+                                        <Type size={13} /> {lang === 'sv' ? "Bara Text" : "Stories Only"}
+                                    </button>
+                                    <div className="h-px bg-[var(--border-main)] my-1" />
+                                    <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('both'); }} className="w-full text-left px-3 py-2 hover:bg-[var(--bg-surface)] rounded-xl flex items-center gap-2 text-[10px] font-black uppercase text-[var(--theme-rose-text)]">
+                                        <RefreshCcw size={13} /> {lang === 'sv' ? "Slumpa Allt" : "Reshuffle Both"}
+                                    </button>
                                 </div>
                             )}
-                            {renderOptions(previewData.renderData?.options)}
                         </div>
-                    )}
-                  </div>
-                </div>
-            ) : (
-              <div className="flex-1 overflow-auto custom-scrollbar pb-24 flex justify-center items-start bg-[var(--bg-canvas)] p-4 rounded-[3rem]">
-                  <div 
-                    className={`shadow-2xl flex flex-col animate-in slide-in-from-bottom-6 origin-top ${
-                        setupMode === 'donow' 
-                        ? 'w-full max-w-5xl bg-slate-900 rounded-[2.5rem] p-8' 
-                        : 'whiteboard-protect w-[210mm] min-h-[297mm] p-[15mm]'
-                    }`}
-                    style={setupMode === 'worksheet' ? { transform: 'scale(0.85)', transformOrigin: 'top center' } : {}}
-                  >
-                      {setupMode === 'worksheet' ? (
-                          <header className="border-b-2 border-slate-900 pb-2 mb-4 flex items-end justify-between">
-                              <h1 className="text-lg font-black uppercase tracking-tighter w-1/3 truncate italic leading-none text-slate-900">{sheetTitle || "Matematik"}</h1>
-                              <div className="flex gap-6 w-2/3 justify-end text-[10px] font-black uppercase tracking-widest text-slate-900">
-                                  <div className="border-b-2 border-slate-200 pb-1 flex gap-2 flex-1 max-w-[200px]"><span>{t.name_label}</span><div className="flex-1" /></div>
-                                  <div className="border-b-2 border-slate-200 pb-1 flex gap-2 w-[120px]"><span>{t.date_label}</span><div className="flex-1" /></div>
-                              </div>
-                          </header>
-                      ) : (
-                          <header className="border-b-2 border-slate-700 pb-4 mb-6 flex items-center justify-between">
-                              <h1 className="text-xl font-black uppercase tracking-tighter text-white italic leading-none">{sheetTitle || t.donow_title}</h1>
-                          </header>
-                      )}
 
-                      <div className="grid grid-cols-6 gap-x-8 gap-y-6 items-start content-start">
-                          {Array.isArray(packet) && packet.map((item, idx) => {
-                                const displayStory = item.showText !== false;
-                                const displayLatex = item.showLatex !== false;
-                                const displayVisual = item.showVisual !== false;
+                        {setupMode === 'worksheet' && (
+                            <>
+                                <div className="h-6 w-px bg-[var(--border-main)] mx-1" />
 
-                                const isHeaderMode = displayStory && (item.instructionMode === 'header' || !item.instructionMode);
-                                const isInlineMode = displayStory && item.instructionMode === 'inline';
-                                
-                                const effectiveLatexSize = item.localLatexSize || globalLatexSize;
-                                const latexSizeClass = { sm: 'text-base', md: 'text-lg', lg: 'text-xl', xl: 'text-2xl' }[effectiveLatexSize] || 'text-lg';
-                                const effectiveWorkArea = item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight;
-                                const effectiveWorkspaceStyle = item.localWorkspaceStyle !== undefined ? item.localWorkspaceStyle : workspaceStyle;
-
-                                return (
-                                    <React.Fragment key={item.id}>
-                                        {isHeaderMode && (
-                                            <div className={`col-span-6 border-l-4 pl-4 py-2 rounded-r-xl ${setupMode === 'donow' ? 'bg-slate-800 border-indigo-500 mb-2 mt-4' : 'bg-slate-50 border-slate-900 mb-2 mt-4'}`}>
-                                                <div className={`text-sm font-semibold leading-relaxed ${setupMode === 'donow' ? 'text-white' : 'text-slate-800'}`}>
-                                                    <MathDisplay content={compileAnchoredStory(item, lang)} />
-                                                </div>
-                                            </div>
-                                        )}
-                                        
-                                        <div 
-                                            draggable 
-                                            onDragStart={(e) => handleDragStartUnified(e, idx)} 
-                                            onDragOver={(e) => handleDragOverUnified(e, idx)} 
-                                            onDragEnd={handleDragEndUnified} 
-                                            className={`whiteboard-protect relative group transition-all flex flex-col h-full cursor-move ${getColSpanClass(item.columnSpan)} ${
-                                                setupMode === 'donow' 
-                                                    ? 'p-6 shadow-xl border-2 border-transparent hover:border-indigo-400 rounded-2xl' 
-                                                    : (layoutStyle === 'framed' 
-                                                        ? 'p-5 border-2 border-slate-200 rounded-2xl shadow-sm hover:border-indigo-400' 
-                                                        : 'p-3 border-2 border-transparent hover:border-slate-200 hover:shadow-sm rounded-2xl')
-                                            } ${draggedIdx === idx ? 'opacity-20 border-indigo-500 bg-indigo-50 scale-95' : ''}`}
+                                <div className="flex items-center gap-1.5 bg-[var(--bg-surface)] border border-[var(--border-main)] p-0.5 rounded-[var(--radius-btn)] shadow-xs">
+                                    <span className="text-[9px] font-black uppercase text-[var(--text-muted)] px-1.5">{t.rows_label}</span>
+                                    <div className="flex items-center bg-[var(--bg-card)] rounded-[var(--radius-btn)] border border-[var(--border-strong)] shadow-xs">
+                                        <button 
+                                            onClick={() => { 
+                                                const next = Math.max(0, workspaceHeight - 1);
+                                                setWorkspaceHeight(next); 
+                                                setPacket(prev => prev.map(p => ({ ...p, localWorkspaceHeight: undefined })));
+                                                setIsSaved(false); 
+                                            }} 
+                                            className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--brand-solid)]"
                                         >
-                                            <div className="absolute top-2 left-2 text-slate-300 opacity-0 group-hover:opacity-100 z-10"><GripVertical size={14} /></div>
-                                            
-                                            <div className="absolute -top-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 z-30 transition-all gap-1.5">
-                                                <div className="bg-white shadow-2xl rounded-full p-1 flex gap-1 border border-slate-200 items-center">
-                                                    {setupMode === 'worksheet' && (
-                                                        <>
-                                                            <div className="flex items-center bg-slate-100 rounded-full px-1">
-                                                                <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceHeight', Math.max(0, effectiveWorkArea - 1)); }} className="p-1 hover:text-indigo-600"><Minus size={10}/></button>
-                                                                <span className="text-[9px] font-black w-3 text-center text-slate-600">{effectiveWorkArea}</span>
-                                                                <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceHeight', Math.min(15, effectiveWorkArea + 1)); }} className="p-1 hover:text-indigo-600"><Plus size={10}/></button>
-                                                            </div>
-                                                            
-                                                            <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceStyle', effectiveWorkspaceStyle === 'grid' ? 'blank' : 'grid'); }} className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1.5 rounded-full transition-colors" title="Växla rutnät/tom yta">
-                                                                {effectiveWorkspaceStyle === 'grid' ? <Grid3X3 size={10} /> : <Square size={10} />}
-                                                            </button>
+                                            <Minus size={11} />
+                                        </button>
+                                        <span className="text-[10px] font-black w-4 text-center text-[var(--text-main)]">{workspaceHeight}</span>
+                                        <button 
+                                            onClick={() => { 
+                                                const next = Math.min(15, workspaceHeight + 1);
+                                                setWorkspaceHeight(next); 
+                                                setPacket(prev => prev.map(p => ({ ...p, localWorkspaceHeight: undefined })));
+                                                setIsSaved(false); 
+                                            }} 
+                                            className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--brand-solid)]"
+                                        >
+                                            <Plus size={11} />
+                                        </button>
+                                    </div>
+                                    <button 
+                                        onClick={() => { setWorkspaceStyle(workspaceStyle === 'grid' ? 'blank' : 'grid'); setIsSaved(false); }} 
+                                        className={`p-1.5 rounded-[var(--radius-btn)] transition-all ${workspaceStyle === 'grid' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-xs border border-[var(--border-strong)]' : 'text-[var(--text-muted)]'}`}
+                                        title={t.toggle_grid}
+                                    >
+                                        <Grid3X3 size={13} />
+                                    </button>
+                                </div>
 
-                                                            <button onClick={(e) => { e.stopPropagation(); const sizes = ['sm', 'md', 'lg', 'xl']; updatePacketItem(item.id, 'localLatexSize', sizes[(sizes.indexOf(effectiveLatexSize) + 1) % 4]); }} className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-serif font-black px-2 py-1 rounded-full italic transition-colors">A</button>
-                                                        </>
-                                                    )}
+                                <div className="relative">
+                                    <button 
+                                        onClick={() => setIsLayoutMenuOpen(prev => !prev)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-btn)] border border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-main)] text-[10px] font-black uppercase shadow-xs hover:border-[var(--brand-solid)]"
+                                    >
+                                        <Settings2 size={13} className="text-[var(--brand-solid)]" />
+                                        {t.density_and_style}
+                                        <ChevronDown size={11} className="opacity-60" />
+                                    </button>
 
-                                                    <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'columnSpan', item.columnSpan === 2 ? 3 : item.columnSpan === 3 ? 6 : 2); }} className="bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full italic">W</button>
-                                                    <button onClick={(e) => { e.stopPropagation(); const modes = ['header', 'inline', 'hidden']; updatePacketItem(item.id, 'instructionMode', modes[(modes.indexOf(item.instructionMode || 'header') + 1) % 3]); }} className={`p-1.5 rounded-full transition-all ${item.instructionMode === 'inline' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400'}`}><AlignLeft size={12} /></button>
-                                                    <button onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }} className="bg-rose-500 text-white p-1.5 rounded-full hover:bg-rose-600"><Trash2 size={12} /></button>
+                                    {isLayoutMenuOpen && (
+                                        <div className="absolute top-10 right-0 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl shadow-2xl p-4 w-72 z-50 flex flex-col gap-3">
+                                            <div>
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1.5 block">
+                                                    {t.presets_heading}
+                                                </span>
+                                                <div className="grid grid-cols-3 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+                                                    <button 
+                                                        onClick={() => {
+                                                            setGlobalLatexSize('sm');
+                                                            setWorkspaceHeight(0);
+                                                            setLayoutStyle('open');
+                                                            setPacket(prev => prev.map(p => ({ ...p, localLatexSize: null, localWorkspaceHeight: undefined, columnSpan: 2 })));
+                                                            setIsSaved(false);
+                                                        }}
+                                                        className="py-1 text-center text-[9px] font-black uppercase rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-main)]"
+                                                    >
+                                                        {t.preset_compact}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => {
+                                                            setGlobalLatexSize('md');
+                                                            setWorkspaceHeight(2);
+                                                            setLayoutStyle('open');
+                                                            setPacket(prev => prev.map(p => ({ ...p, localLatexSize: null, localWorkspaceHeight: undefined, columnSpan: 3 })));
+                                                            setIsSaved(false);
+                                                        }}
+                                                        className="py-1 text-center text-[9px] font-black uppercase rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-main)]"
+                                                    >
+                                                        {t.preset_standard}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => {
+                                                            setGlobalLatexSize('lg');
+                                                            setWorkspaceHeight(4);
+                                                            setLayoutStyle('framed');
+                                                            setPacket(prev => prev.map(p => ({ ...p, localLatexSize: null, localWorkspaceHeight: undefined, columnSpan: 6 })));
+                                                            setIsSaved(false);
+                                                        }}
+                                                        className="py-1 text-center text-[9px] font-black uppercase rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-main)]"
+                                                    >
+                                                        {t.preset_spacious}
+                                                    </button>
                                                 </div>
                                             </div>
+
+                                            <div>
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1.5 block">
+                                                    {t.font_size_heading}
+                                                </span>
+                                                <div className="grid grid-cols-4 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+                                                    {['sm', 'md', 'lg', 'xl'].map(s => (
+                                                        <button 
+                                                            key={s} 
+                                                            onClick={() => { setGlobalLatexSize(s); setPacket(prev => prev.map(p => ({ ...p, localLatexSize: null }))); setIsSaved(false); }}
+                                                            className={`py-1 text-center text-[10px] font-black rounded-lg transition-all ${globalLatexSize === s ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-xs' : 'text-[var(--text-muted)]'}`}
+                                                        >
+                                                            {s.toUpperCase()}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1.5 block">
+                                                    {t.framing_heading}
+                                                </span>
+                                                <div className="grid grid-cols-2 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+                                                    <button 
+                                                        onClick={() => { setLayoutStyle('open'); setIsSaved(false); }}
+                                                        className={`py-1 text-center text-[10px] font-black uppercase rounded-lg ${layoutStyle === 'open' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-xs' : 'text-[var(--text-muted)]'}`}
+                                                    >
+                                                        {t.style_open}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => { setLayoutStyle('framed'); setIsSaved(false); }}
+                                                        className={`py-1 text-center text-[10px] font-black uppercase rounded-lg ${layoutStyle === 'framed' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-xs' : 'text-[var(--text-muted)]'}`}
+                                                    >
+                                                        {t.style_framed}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Canvas Body */}
+            <div className="flex-1 flex flex-col overflow-hidden relative min-h-0">
+                {canvasMode === 'studio' ? (
+                    <div className="whiteboard-protect bg-white flex-1 rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col mx-auto w-full max-w-2xl animate-in zoom-in-95 duration-300 m-4">
+                        <div className="px-8 py-5 bg-slate-900 text-white flex justify-between items-center">
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60 italic">
+                                {t.board_label}
+                            </span>
+                            {activePreviewKey && (
+                                <button onClick={() => triggerPreview(activePreviewKey)} className="text-[10px] bg-[var(--bg-canvas)]/10 hover:bg-[var(--bg-canvas)]/20 px-4 py-1.5 rounded-full font-black uppercase flex items-center gap-2 transition-all">
+                                    <RefreshCcw size={12}/> {t.new_example}
+                                </button>
+                            )}
+                        </div>
+                        <div className="p-12 flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
+                            {isPreviewLoading ? (
+                                <div className="h-full flex items-center justify-center">
+                                    <Loader2 className="animate-spin text-[var(--brand-solid)]" size={48} />
+                                </div>
+                            ) : !previewData ? (
+                                <div className="h-full flex items-center justify-center text-[var(--border-strong)] uppercase font-black tracking-widest italic">
+                                    {t.select_hint}
+                                </div>
+                            ) : (
+                                <div className="w-full space-y-12 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="w-full flex justify-center drop-shadow-md">
+                                        <VisualRenderer 
+                                            data={previewData?.renderData} 
+                                            isWordProblem={useWordProblems} 
+                                        />
+                                    </div>
+                                    <div className="text-2xl text-[var(--text-main)] font-bold text-center px-10 leading-relaxed">
+                                        <MathDisplay content={previewData.renderData.description} />
+                                    </div>
+                                    {previewData.renderData.latex && (
+                                        <div className="text-4xl text-[var(--brand-solid)] bg-[var(--brand-bg)] p-10 rounded-[2.5rem] border-2 border-[var(--brand-border)] shadow-inner text-center font-serif">
+                                            <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
+                                        </div>
+                                    )}
+                                    {renderOptions(previewData.renderData?.options)}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex-1 overflow-auto custom-scrollbar pb-24 flex justify-center items-start bg-[var(--bg-canvas)] p-4 rounded-[3rem]">
+                        <div 
+                            className={`shadow-2xl flex flex-col animate-in slide-in-from-bottom-6 origin-top relative ${
+                                setupMode === 'donow' 
+                                ? 'w-full max-w-5xl bg-slate-900 rounded-[2.5rem] p-8' 
+                                : 'whiteboard-protect w-[210mm] min-h-[297mm] p-[12mm]'
+                            }`}
+                            style={setupMode === 'worksheet' ? { transform: 'scale(0.85)', transformOrigin: 'top center' } : {}}
+                        >
+                            {/* Multi-Page A4 Page Break Guides */}
+                            {setupMode === 'worksheet' && [1, 2, 3, 4].map((pageNum) => {
+                                const topOffsetMm = 245 + (pageNum - 1) * 270;
+                                return (
+                                    <div 
+                                        key={`pb-${pageNum}`}
+                                        className="pointer-events-none absolute left-0 right-0 border-b-2 border-dashed border-rose-400 flex items-center justify-end pr-4 text-[10px] font-black uppercase text-rose-500 tracking-widest z-30"
+                                        style={{ top: `${topOffsetMm}mm` }}
+                                    >
+                                        <span className="bg-white px-2 py-0.5 rounded-full border border-rose-200 shadow-xs mb-[-10px]">
+                                            {lang === 'sv' ? `--- Sidbrytning (Sida ${pageNum}) ---` : `--- Page Break (Page ${pageNum}) ---`}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+
+                            {setupMode === 'worksheet' ? (
+                                <header className="border-b-2 border-slate-900 pb-2 mb-4 flex items-end justify-between">
+                                    <h1 className="text-lg font-black uppercase tracking-tighter w-1/3 truncate italic leading-none text-slate-900">{sheetTitle || t.sheet_default_title}</h1>
+                                    <div className="flex gap-6 w-2/3 justify-end text-[10px] font-black uppercase tracking-widest text-slate-900">
+                                        <div className="border-b-2 border-slate-200 pb-1 flex gap-2 flex-1 max-w-[200px]"><span>{t.name_label}</span><div className="flex-1" /></div>
+                                        <div className="border-b-2 border-slate-200 pb-1 flex gap-2 w-[120px]"><span>{t.date_label}</span><div className="flex-1" /></div>
+                                    </div>
+                                </header>
+                            ) : (
+                                <header className="border-b-2 border-slate-700 pb-4 mb-6 flex items-center justify-between">
+                                    <h1 className="text-xl font-black uppercase tracking-tighter text-white italic leading-none">{sheetTitle || t.donow_title}</h1>
+                                </header>
+                            )}
+
+                            <div className="grid grid-cols-6 gap-x-6 gap-y-4 items-start content-start">
+                                {Array.isArray(packet) && packet.map((item, idx) => {
+                                    const displayStory = item.showText !== false;
+                                    const displayLatex = item.showLatex !== false;
+                                    const displayVisual = item.showVisual !== false;
+
+                                    const isHeaderMode = displayStory && (item.instructionMode === 'header' || !item.instructionMode);
+                                    const isInlineMode = displayStory && item.instructionMode === 'inline';
+                                    
+                                    const effectiveLatexSize = item.localLatexSize || globalLatexSize;
+                                    const fontPixelMap = { sm: '14px', md: '18px', lg: '24px', xl: '32px' };
+                                    const currentFontSize = fontPixelMap[effectiveLatexSize] || '18px';
+
+                                    const effectiveWorkArea = item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight;
+                                    const effectiveWorkspaceStyle = item.localWorkspaceStyle !== undefined ? item.localWorkspaceStyle : workspaceStyle;
+
+                                    return (
+                                        <React.Fragment key={item.id}>
+                                            {isHeaderMode && (
+                                                <div className={`col-span-6 border-l-4 pl-3 py-1.5 rounded-r-xl ${setupMode === 'donow' ? 'bg-slate-800 border-indigo-500 mb-1 mt-2' : 'bg-slate-50 border-slate-900 mb-1 mt-1'}`}>
+                                                    <div className={`text-sm font-semibold leading-relaxed ${setupMode === 'donow' ? 'text-white' : 'text-slate-800'}`}>
+                                                        <MathDisplay content={compileAnchoredStory(item, lang)} />
+                                                    </div>
+                                                </div>
+                                            )}
                                             
-                                            <div className="flex items-start gap-4 flex-1">
-                                                <div className="shrink-0 w-7 h-7 rounded-full border-2 border-[var(--text-main)] flex items-center justify-center text-[var(--text-main)] font-black text-xs mt-1">
-                                                    {idx + 1}
+                                            <div 
+                                                draggable 
+                                                onDragStart={(e) => handleDragStartUnified(e, idx)} 
+                                                onDragOver={(e) => handleDragOverUnified(e, idx)} 
+                                                onDragEnd={handleDragEndUnified} 
+                                                className={`whiteboard-protect relative group transition-all flex flex-col h-full cursor-move ${getColSpanClass(item.columnSpan)} ${
+                                                    setupMode === 'donow' 
+                                                        ? 'p-5 shadow-xl border-2 border-transparent hover:border-indigo-400 rounded-2xl' 
+                                                        : (layoutStyle === 'framed' 
+                                                            ? 'p-4 border-2 border-slate-200 rounded-2xl shadow-xs hover:border-indigo-400' 
+                                                            : 'p-2 border-2 border-transparent hover:border-slate-200 hover:shadow-xs rounded-2xl')
+                                                } ${draggedIdx === idx ? 'opacity-20 border-indigo-500 bg-indigo-50 scale-95' : ''}`}
+                                            >
+                                                <div className="absolute top-2 left-2 text-slate-300 opacity-0 group-hover:opacity-100 z-10"><GripVertical size={14} /></div>
+                                                
+                                                {/* Restored Original Hover Toolbar */}
+                                                <div className="absolute -top-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 z-30 transition-all gap-1.5">
+                                                    <div className="bg-white shadow-2xl rounded-full p-1 flex gap-1 border border-slate-200 items-center">
+                                                        {setupMode === 'worksheet' && (
+                                                            <>
+                                                                <div className="flex items-center bg-slate-100 rounded-full px-1">
+                                                                    <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceHeight', Math.max(0, effectiveWorkArea - 1)); }} className="p-1 hover:text-indigo-600"><Minus size={10}/></button>
+                                                                    <span className="text-[9px] font-black w-3 text-center text-slate-600">{effectiveWorkArea}</span>
+                                                                    <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceHeight', Math.min(15, effectiveWorkArea + 1)); }} className="p-1 hover:text-indigo-600"><Plus size={10}/></button>
+                                                                </div>
+                                                                
+                                                                <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceStyle', effectiveWorkspaceStyle === 'grid' ? 'blank' : 'grid'); }} className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1.5 rounded-full transition-colors" title={t.toggle_work_area}>
+                                                                    {effectiveWorkspaceStyle === 'grid' ? <Grid3X3 size={10} /> : <Square size={10} />}
+                                                                </button>
+
+                                                                <button onClick={(e) => { e.stopPropagation(); const sizes = ['sm', 'md', 'lg', 'xl']; updatePacketItem(item.id, 'localLatexSize', sizes[(sizes.indexOf(effectiveLatexSize) + 1) % 4]); }} className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-serif font-black px-2 py-1 rounded-full italic transition-colors">A</button>
+                                                            </>
+                                                        )}
+
+                                                        <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'columnSpan', item.columnSpan === 2 ? 3 : item.columnSpan === 3 ? 6 : 2); }} className="bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full italic">W</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); const modes = ['header', 'inline', 'hidden']; updatePacketItem(item.id, 'instructionMode', modes[(modes.indexOf(item.instructionMode || 'header') + 1) % 3]); }} className={`p-1.5 rounded-full transition-all ${item.instructionMode === 'inline' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400'}`}><AlignLeft size={12} /></button>
+                                                        <button onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }} className="bg-rose-500 text-white p-1.5 rounded-full hover:bg-rose-600"><Trash2 size={12} /></button>
+                                                    </div>
                                                 </div>
                                                 
-                                                <div className="flex-1 min-w-0 flex flex-col h-full">
-                                                    {isInlineMode && (
-                                                        <div className="text-sm font-semibold text-slate-800 mb-3 leading-relaxed border-b border-slate-100 pb-2">
-                                                            <MathDisplay content={compileAnchoredStory(item, lang)} />
-                                                        </div>
-                                                    )}
-                                                    
-                                                    {displayLatex && item.resolvedData?.renderData.latex && (
-                                                        <div className={`py-3 text-center font-serif text-slate-900 ${latexSizeClass}`}>
-                                                            <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} />
-                                                        </div>
-                                                    )}
-                                                    
-                                                    {renderOptions(item.resolvedData?.renderData?.options, true)}
-                                                    
-                                                    {displayVisual && (
-                                                        <div className="flex justify-center scale-90 origin-top mt-2">
-                                                            <VisualRenderer data={item.resolvedData?.renderData} isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} />
-                                                        </div>
-                                                    )}
-
-                                                    <div className="mt-auto pt-2">
-                                                        {setupMode === 'worksheet' && effectiveWorkArea > 0 && (
-                                                            <div 
-                                                                className={`w-full mt-2 overflow-hidden ${effectiveWorkspaceStyle === 'grid' ? 'border border-slate-200 rounded-lg' : ''}`}
-                                                                style={{ 
-                                                                    height: `${effectiveWorkArea * 30}px`,
-                                                                    ...(effectiveWorkspaceStyle === 'grid' ? {
-                                                                        backgroundImage: 'linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)',
-                                                                        backgroundSize: '30px 30px'
-                                                                    } : { backgroundColor: 'transparent' })
-                                                                }} 
-                                                            />
-                                                        )}
+                                                <div className="flex items-start gap-4 flex-1">
+                                                    <div className="shrink-0 w-7 h-7 rounded-full border-2 border-[var(--text-main)] flex items-center justify-center text-[var(--text-main)] font-black text-xs mt-1">
+                                                        {idx + 1}
                                                     </div>
+                                                    
+                                                    <div className="flex-1 min-w-0 flex flex-col h-full">
+                                                        {isInlineMode && (
+                                                            <div className="text-sm font-semibold text-slate-800 mb-1.5 leading-relaxed">
+                                                                <MathDisplay content={compileAnchoredStory(item, lang)} />
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {displayLatex && item.resolvedData?.renderData.latex && (
+                                                            <div className="py-2 text-center font-serif text-slate-900">
+                                                                <MathDisplay 
+                                                                    key={`${item.id}-${effectiveLatexSize}`}
+                                                                    content={`$$${item.resolvedData.renderData.latex}$$`} 
+                                                                    style={{ fontSize: currentFontSize }}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {renderOptions(item.resolvedData?.renderData?.options, true)}
+                                                        
+                                                        {displayVisual && (
+                                                            <div className="flex justify-center scale-90 origin-top my-1">
+                                                                <VisualRenderer data={item.resolvedData?.renderData} isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} />
+                                                            </div>
+                                                        )}
 
-                                                    <div className="opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-2 pt-3 mt-3 z-40 relative">
-                                                        <div className="flex justify-end gap-2">
-                                                            <button
-                                                                onClick={async (e) => {
-                                                                    e.stopPropagation();
-                                                                    try {
-                                                                        const isItemWP = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
-                                                                        const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${isItemWP}`);
-                                                                        const data = await res.json();
-                                                                        setPacket(packet.map(p => p.id === item.id ? { ...p, resolvedData: data, selectedStoryIndex: p.selectedStoryIndex !== undefined && p.selectedStoryIndex !== null ? p.selectedStoryIndex : null } : p));
-                                                                        setIsSaved(false);
-                                                                    } catch (err) { console.error("Number shuffle failed:", err); }
-                                                                }}
-                                                                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/50 hover:border-indigo-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer"
-                                                            >
-                                                                <Calculator size={12} /> {lang === 'sv' ? "Slumpa Tal" : "Shuffle Numbers"}
-                                                            </button>
-
-                                                            {item.resolvedData?.renderData?.availableStories && item.resolvedData.renderData.availableStories.length > 1 && (
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        const totalStories = item.resolvedData.renderData.availableStories.length;
-                                                                        const currentStoryIdx = item.selectedStoryIndex !== undefined && item.selectedStoryIndex !== null ? item.selectedStoryIndex : 0;
-                                                                        let newIndex = Math.floor(Math.random() * totalStories);
-                                                                        if (newIndex === currentStoryIdx) newIndex = (newIndex + 1) % totalStories;
-                                                                        updatePacketItem(item.id, 'selectedStoryIndex', newIndex);
-                                                                    }}
-                                                                    className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-amber-600 hover:bg-amber-50/50 hover:border-amber-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer"
-                                                                >
-                                                                    <Shuffle size={12} /> {lang === 'sv' ? "Slumpa Text" : "Shuffle Story"}
-                                                                </button>
+                                                        <div className="mt-auto pt-2">
+                                                            {setupMode === 'worksheet' && effectiveWorkArea > 0 && (
+                                                                <div 
+                                                                    className={`w-full mt-2 overflow-hidden ${effectiveWorkspaceStyle === 'grid' ? 'border border-slate-300 rounded-lg worksheet-grid-bg' : ''}`}
+                                                                    style={{ 
+                                                                        height: `${effectiveWorkArea * 30}px`,
+                                                                        ...(effectiveWorkspaceStyle !== 'grid' ? { backgroundColor: 'transparent' } : {})
+                                                                    }} 
+                                                                />
                                                             )}
                                                         </div>
 
-                                                        <div className="flex justify-end gap-2">
-                                                            <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'showText', !displayStory); }} className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all cursor-pointer ${displayStory ? 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100/70' : 'bg-slate-50 border-slate-100 text-slate-400 line-through'}`}>
-                                                                <Type size={12} /> Text
-                                                            </button>
+                                                        <div className="opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-2 pt-3 mt-3 z-40 relative">
+                                                            <div className="flex justify-end gap-2">
+                                                                <button
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        try {
+                                                                            const isItemWP = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
+                                                                            const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${isItemWP}`);
+                                                                            const data = await res.json();
+                                                                            setPacket(packet.map(p => p.id === item.id ? { ...p, resolvedData: data, selectedStoryIndex: p.selectedStoryIndex !== undefined && p.selectedStoryIndex !== null ? p.selectedStoryIndex : null } : p));
+                                                                            setIsSaved(false);
+                                                                        } catch (err) { console.error("Number shuffle failed:", err); }
+                                                                    }}
+                                                                    className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/50 hover:border-indigo-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer"
+                                                                >
+                                                                    <Calculator size={12} /> {lang === 'sv' ? "Slumpa Tal" : "Shuffle Numbers"}
+                                                                </button>
 
-                                                            {item.resolvedData?.renderData.latex && (
+                                                                {item.resolvedData?.renderData?.availableStories && item.resolvedData.renderData.availableStories.length > 1 && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            const totalStories = item.resolvedData.renderData.availableStories.length;
+                                                                            const currentStoryIdx = item.selectedStoryIndex !== undefined && item.selectedStoryIndex !== null ? item.selectedStoryIndex : 0;
+                                                                            let newIndex = Math.floor(Math.random() * totalStories);
+                                                                            if (newIndex === currentStoryIdx) newIndex = (newIndex + 1) % totalStories;
+                                                                            updatePacketItem(item.id, 'selectedStoryIndex', newIndex);
+                                                                        }}
+                                                                        className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-amber-600 hover:bg-amber-50/50 hover:border-amber-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer"
+                                                                    >
+                                                                        <Shuffle size={12} /> {lang === 'sv' ? "Slumpa Text" : "Shuffle Story"}
+                                                                    </button>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="flex justify-end gap-2">
+                                                                <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'showText', !displayStory); }} className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all cursor-pointer ${displayStory ? 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100/70' : 'bg-slate-50 border-slate-100 text-slate-400 line-through'}`}>
+                                                                    <Type size={12} /> Text
+                                                                </button>
+
+                                                                {item.resolvedData?.renderData.latex && (
                                                                 <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'showLatex', !displayLatex); }} className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all cursor-pointer ${displayLatex ? 'bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100/70' : 'bg-slate-50 border-slate-100 text-slate-400 line-through'}`}>
                                                                     <Calculator size={12} /> LaTeX
                                                                 </button>
@@ -1689,9 +1823,11 @@ export default function QuestionStudio({
                                 </label>
                                 <div className="grid grid-cols-2 gap-1 p-1 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border border-[var(--border-main)]">
                                     <button onClick={() => setAnswerKeyStyle('compact')} className={`py-1 rounded-[var(--radius-btn)] text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'compact' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
-                                        Kompakt
+                                        {t.style_compact}
                                     </button>
-                                    <button onClick={() => setAnswerKeyStyle('detailed')} className={`py-1 rounded-[var(--radius-btn)] text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'detailed' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>Steg</button>
+                                    <button onClick={() => setAnswerKeyStyle('detailed')} className={`py-1 rounded-[var(--radius-btn)] text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'detailed' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+                                        {t.style_detailed}
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -1727,6 +1863,7 @@ export default function QuestionStudio({
               onClose={() => { 
                   setShowPresentation(false);
                   setActiveBoardSheet(null);
+                  setSetupMode(null);
                   fetchLibrary(); 
               }}
               onLaunchLive={(roomData) => {
@@ -1751,7 +1888,6 @@ export default function QuestionStudio({
         />
 
         {/* 🟢 Dynamic Activity Engine Render */}
-        {/* 🟢 1. Pre-Flight Activity Setup Modal */}
         {activeSetupModal && (() => {
             const def = getActivityDefinition(activeSetupModal.key);
             if (!def?.SetupModal) return null;
@@ -1761,6 +1897,7 @@ export default function QuestionStudio({
                     isOpen={true}
                     onClose={() => setActiveSetupModal(null)}
                     sourcePacket={activeSetupModal.sourcePacket || []}
+                    savedBoard={activeSetupModal.savedBoard || null}
                     profile={profile}
                     lang={lang}
                     onLaunch={(config) => {
@@ -1776,7 +1913,6 @@ export default function QuestionStudio({
             );
         })()}
 
-        {/* 🟢 2. Dynamic Activity Engine Render */}
         {activeActivity && (() => {
             const def = getActivityDefinition(activeActivity.key);
             if (!def?.TeacherEngine) return null;

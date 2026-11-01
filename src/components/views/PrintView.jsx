@@ -105,7 +105,7 @@ export default function PrintView({
     layoutStyle: propLayoutStyle
 }) {
     const globalLatexSize = propLatexSize ?? packet[0]?._globalLatexSize ?? 'md';
-    const workspaceHeight = propWorkHeight ?? packet[0]?._workspaceHeight ?? 3;
+    const workspaceHeight = propWorkHeight ?? packet[0]?._workspaceHeight ?? 0; // 👈 Default to 0
     const workspaceStyle = propWorkStyle ?? packet[0]?._workspaceStyle ?? 'blank';
     const layoutStyle = propLayoutStyle ?? packet[0]?._layoutStyle ?? 'open';
     const [zoomedIdx, setZoomedIdx] = useState(null);
@@ -131,13 +131,14 @@ export default function PrintView({
             const sandboxCards = document.querySelectorAll('.sandbox-card');
             if (!sandboxCards.length) return;
 
-            const ROW_GAP = 40;
-            const HEADER_OFFSET = 160;
-            const MAX_PAGE_HEIGHT = 950;
+            const ROW_GAP = 24; // Calibrated to tightened grid-gap-y-4
+            const PAGE_1_HEADER_OFFSET = 120; // Only Page 1 has the Name/Date header
+            const SUBSEQUENT_PAGE_OFFSET = 20; // Top margin for Pages 2+
+            const MAX_PAGE_HEIGHT = 1040; // Full printable A4 height budget
             
             const pages = [];
             let currentPage = [];
-            let currentHeight = HEADER_OFFSET;
+            let currentHeight = PAGE_1_HEADER_OFFSET;
             let currentRowWidth = 0;
             let maxHeightInCurrentRow = 0;
 
@@ -149,7 +150,7 @@ export default function PrintView({
                 const targetCard = sandboxCards[idx];
                 const baseItemHeight = targetCard && targetCard.getBoundingClientRect().height > 0 
                     ? targetCard.getBoundingClientRect().height 
-                    : 140;
+                    : 120;
 
                 const headerEl = document.getElementById(`sandbox-header-${idx}`);
                 const headerHeight = headerEl && headerEl.getBoundingClientRect().height > 0
@@ -167,10 +168,11 @@ export default function PrintView({
                     addedItemHeight = Math.max(forcesWrap ? 0 : maxHeightInCurrentRow, baseItemHeight);
                 }
 
+                // If adding this item exceeds the page budget, break to a new page
                 if (projectedHeight + addedItemHeight > MAX_PAGE_HEIGHT && currentPage.length > 0) {
                     pages.push(currentPage);
                     currentPage = [];
-                    currentHeight = HEADER_OFFSET;
+                    currentHeight = SUBSEQUENT_PAGE_OFFSET; // 👈 Page 2+ uses the full height without 120px header!
                     currentRowWidth = 0;
                     maxHeightInCurrentRow = 0;
                     forcesWrap = false;
@@ -198,7 +200,7 @@ export default function PrintView({
 
             setMeasuredPages(pages);
             setIsMeasuring(false);
-        }, 400);
+        }, 300);
 
         return () => clearTimeout(timer);
     }, [packet, workspaceHeight, workspaceStyle, layoutStyle, globalLatexSize, lang]);
@@ -276,7 +278,7 @@ export default function PrintView({
                     </header>
 
                     {/* GRID-AWARE CONTENT CONTAINER */}
-                    <div className="grid grid-cols-6 gap-x-10 gap-y-10 items-start flex-1">
+                    <div className="grid grid-cols-6 gap-x-6 gap-y-4 items-start flex-1">
                         {pageItems.map((item) => {
                             const displayStory = item.showText !== false;
                             const displayLatex = item.showLatex !== false;
