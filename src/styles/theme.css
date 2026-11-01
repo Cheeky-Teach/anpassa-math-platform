@@ -363,10 +363,21 @@ body {
 
 /* Apply this to wrappers containing SVGs, VisualRenderer, or standalone LaTeX math */
 .whiteboard-protect {
-  --bg-surface: #f8fafc;
-  --text-main: #0f172a;
+  --bg-canvas: #ffffff !important;
+  --bg-card: #ffffff !important;
+  --bg-surface: #f8fafc !important;
+  --bg-surface-hover: #f1f5f9 !important;
+  --text-main: #0f172a !important;
+  --text-muted: #64748b !important;
+  --border-main: #e2e8f0 !important;
+  --border-strong: #cbd5e1 !important;
   background-color: #ffffff !important;
   color: #0f172a !important;
+}
+
+/* Ensure no child SVG inherits dark text fills inside protected whiteboard areas */
+.whiteboard-protect svg text {
+  fill: #0f172a;
 }
 
 /* ========================================= */
