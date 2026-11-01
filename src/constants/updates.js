@@ -2,6 +2,37 @@
 
 export const APP_UPDATES = [
   {
+    id: 'v025',
+    date: '2026-11-01',
+    version: '0.2.5',
+    title: { 
+      sv: "Förvandla tidigare material till aktiviteter & uppdaterade generatorer",
+      en: "Turn Existing Materials into Activities & Updated Generators"
+    },
+    highlights: {
+      sv: "Skapa interaktiva aktiviteter direkt från tidigare material, arbeta snabbare i Question Studio och öva med uppdaterade matteområden!",
+      en: "Turn past materials directly into interactive activities, create worksheets faster in Question Studio, and practice with updated math topics!"
+    },
+    changes: {
+      sv: [
+        "Aktiviteter från tidigare material: Nu kan du enkelt förvandla dina tidigare skapade arbetsblad, Do Nows och presentationer till färdiga aktiviteter där frågor och facit genereras automatiskt.",
+        "Snabbare Question Studio med förinställningar: Nya färdiga mallar och förinställningar gör att du sätter ihop och anpassar dina arbetsblad på bara några sekunder.",
+        "Tydligare bilder & figurer: Förbättrad grafik och tydligare visningslägen gör att uppgifter och geometriska figurer ser snygga och skarpa ut överallt.",
+        "Uppdaterad Pythagoras sats: Ny, genomtänkt nivåordning som fokuserar på förståelse och tydliga figurer utan onödig text.",
+        "Förbättrade linjära grafer: Tydligare koordinatsystem och grafiska hjälpmedel som gör det lättare att läsa av och förstå linjens ekvation.",
+        "Fräschare sannolikhet: Förbättrade och mer varierade slumpuppgifter som knyter an till vardagliga och enkla situationer."
+      ],
+      en: [
+        "Turn Past Materials into Activities: You can now easily convert your existing worksheets, Do Nows, and presentations into interactive activities with questions and answers generated automatically.",
+        "Faster Question Studio with Presets: Brand new ready-made presets let you build and customize complete worksheets in just a few clicks.",
+        "Clearer Visuals & Diagrams: Polished graphic layouts and sharper visuals ensure your math questions and geometry shapes always display clearly.",
+        "Updated Pythagoras' Theorem: A fresh, intuitive level progression focused directly on geometric understanding and clear figures without extra reading clutter.",
+        "Improved Linear Graphs: Enhanced coordinate grids and visual indicators make reading slopes, intercepts, and lines easier than ever.",
+        "Refreshed Probability: Updated and more diverse probability exercises built around everyday, straightforward scenarios."
+      ]
+    }
+  },
+  {
     id: 'v024',
     date: '2026-10-22',
     version: '0.2.4',
