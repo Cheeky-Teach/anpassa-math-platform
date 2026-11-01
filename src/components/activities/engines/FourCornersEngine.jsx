@@ -277,15 +277,21 @@ export default function FourCornersEngine({
                               '';
 
         const rawOptions = rd.options || raw.options || resolved.options;
-        const options = Array.isArray(rawOptions) && rawOptions.length >= 2
-            ? normalizeQuestionOptions(rawOptions, correctAnswer)
-            : generateDistractors({
+
+        // 4 Corners requires strictly 4 options (A, B, C, D).
+        // If rawOptions has 2 or 3 items, generateDistractors MUST run to complete the 4 corners.
+        let options = [];
+        if (Array.isArray(rawOptions) && rawOptions.length === 4) {
+            options = normalizeQuestionOptions(rawOptions, correctAnswer);
+        } else {
+            options = generateDistractors({
                 correctAnswer,
-                topicId: raw.topicId || resolved.topicId || '',
-                renderData: rd,
+                topicId: raw.topicId || resolved.topicId || rd.topicId || '',
+                renderData: { ...rd, options: null },
                 resolvedData: resolved,
                 raw
             });
+        }
 
         return {
             id: raw.id || crypto.randomUUID(),
@@ -307,6 +313,15 @@ export default function FourCornersEngine({
             responseSpec: { type: 'single_choice', answer: correctAnswer, options }
         };
     };
+
+    // Load initial rounds and verify 4 distinct options on mount
+    useEffect(() => {
+        const initialList = initialConfig?.initialQuestions || sourcePacket || [];
+        if (initialList.length > 0) {
+            const formatted = initialList.map((q, idx) => formatToCornerRound(q, idx + 1));
+            setRounds(formatted);
+        }
+    }, []);
 
     const handleSavePlaylist = async () => {
         if (rounds.length === 0) return;

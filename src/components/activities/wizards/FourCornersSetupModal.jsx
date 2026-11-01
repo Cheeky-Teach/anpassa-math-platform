@@ -139,7 +139,7 @@ export default function FourCornersSetupModal({
 
                 if (importStrategy === 'exact') {
                     preparedQuestions = rawList.slice(0, questionCount).map((raw, idx) => {
-                        const rd = raw.renderData || raw.resolvedData?.renderData || raw.data?.renderData || raw;
+                        const rd = raw.renderData || raw.resolvedData?.renderData || raw.data?.renderData || raw || {};
                         const resolved = raw.resolvedData || raw;
                         
                         const answer = extractDecodedAnswer(resolved) || 
@@ -148,16 +148,21 @@ export default function FourCornersSetupModal({
                                        rd.answer || 
                                        '';
 
-                        const existingOptions = rd.options || raw.options || resolved.options;
-                        const options = Array.isArray(existingOptions) && existingOptions.length >= 2
-                            ? normalizeQuestionOptions(existingOptions, answer)
-                            : generateDistractors({
+                        const rawExistingOptions = rd.options || raw.options || resolved.options;
+                        
+                        // Four Corners requires strictly 4 options. If fewer than 4 exist, force generateDistractors
+                        let options = [];
+                        if (Array.isArray(rawExistingOptions) && rawExistingOptions.length === 4) {
+                            options = normalizeQuestionOptions(rawExistingOptions, answer);
+                        } else {
+                            options = generateDistractors({
                                 correctAnswer: answer,
-                                topicId: raw.topicId || resolved.topicId || '',
-                                renderData: rd,
+                                topicId: raw.topicId || resolved.topicId || rd.topicId || '',
+                                renderData: { ...rd, options: null },
                                 resolvedData: resolved,
                                 raw: raw
                             });
+                        }
 
                         return {
                             id: raw.id || crypto.randomUUID(),
@@ -171,8 +176,9 @@ export default function FourCornersSetupModal({
                         };
                     });
                 } else {
+                    // Strategy: reroll_domain
                     const seeds = rawList.map(q => ({
-                        topicId: q.topicId || q.resolvedData?.topicId || 'basic_arithmetic',
+                        topicId: q.topicId || q.resolvedData?.topicId || q.renderData?.topicId || 'basic_arithmetic',
                         variationKey: q.variationKey || q.resolvedData?.variationKey || null
                     }));
                     const effectiveSeeds = seeds.length > 0 ? seeds : [{ topicId: 'basic_arithmetic' }];
@@ -184,22 +190,35 @@ export default function FourCornersSetupModal({
                             const res = await fetch(url);
                             const data = await res.json();
                             const rd = data.renderData || {};
-                            const answer = data.answer || rd.answer || '';
-                            const existingOptions = data.options || rd.options;
-                            const options = Array.isArray(existingOptions) && existingOptions.length >= 2
-                                ? normalizeQuestionOptions(existingOptions, answer)
-                                : generateDistractors({ correctAnswer: answer, topicId: seed.topicId, renderData: rd });
+                            const answer = extractDecodedAnswer(data) || extractDecodedAnswer(rd) || data.answer || rd.answer || '';
+                            
+                            const rawExistingOptions = data.options || rd.options;
+
+                            // Ensure all 4 corners exist
+                            let options = [];
+                            if (Array.isArray(rawExistingOptions) && rawExistingOptions.length === 4) {
+                                options = normalizeQuestionOptions(rawExistingOptions, answer);
+                            } else {
+                                options = generateDistractors({
+                                    correctAnswer: answer,
+                                    topicId: seed.topicId,
+                                    renderData: { ...rd, options: null },
+                                    raw: data
+                                });
+                            }
+
                             return {
                                 id: crypto.randomUUID(),
                                 roundIndex: idx + 1,
                                 name: `${lang === 'sv' ? 'Runda' : 'Round'} ${idx + 1}`,
                                 topicId: seed.topicId,
-                                variationKey: seed.variationKey,
+                                variationKey: seed.variationKey || data.variationKey,
                                 source: 'generator_reroll',
                                 renderData: { ...rd, options, answer },
                                 responseSpec: { type: 'single_choice', answer, options }
                             };
-                        } catch {
+                        } catch (e) {
+                            console.error("[FourCornersSetupModal] Reroll failed for question index", idx, e);
                             return null;
                         }
                     });
