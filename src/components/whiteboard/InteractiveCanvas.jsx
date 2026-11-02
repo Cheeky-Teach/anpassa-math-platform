@@ -992,15 +992,7 @@ const handleSpawnFromDrawer = (type, payload = {}) => {
                 </defs>
 
                 {/* 🟢 Render Base Color & Dynamic Grid Layer */}
-                <rect 
-                    x="0" 
-                    y="0" 
-                    width={resolution.w} 
-                    height={resolution.h} 
-                    fill="#f8fafc" 
-                    className="pointer-events-none" 
-                />
-                
+                {/* Dynamic Grid Layer (transparent background by default) */}
                 {bgType === 'grid' && (
                     <rect 
                         x="0" 
