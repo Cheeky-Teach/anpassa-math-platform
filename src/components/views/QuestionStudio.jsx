@@ -1081,7 +1081,7 @@ export default function QuestionStudio({
                 <div className="relative group flex-1 max-w-xs">
                     <input 
                         type="text" 
-                        className="w-full bg-white/10 px-3 py-1.5 rounded-[var(--radius-btn)] text-xs font-black tracking-tight outline-none focus:bg-white/20 transition-all border border-transparent focus:border-white/30 text-white placeholder-white/40" 
+                        className="w-full bg-white/10 px-3 py-1.5 rounded-[var(--radius-btn)] text-m font-black tracking-tight outline-none focus:bg-white/20 transition-all border border-transparent focus:border-white/30 text-white placeholder-white/40" 
                         placeholder={t.title_placeholder} 
                         value={sheetTitle}
                         maxLength={100}
