@@ -594,7 +594,7 @@ function App() {
         setActiveUnitStepId(null);
     };
 
-    const markUnitStepComplete = (stepIdentifier) => {
+    const markUnitStepComplete = (completedTopic, completedLevel, explicitId = null) => {
         if (!activeBucket || activeBucket === 'FREE_PLAY') return;
         const studentId = profile?.id || 'guest_student';
         const bucketId = activeBucket?.id || 'default_bucket';
@@ -603,10 +603,31 @@ function App() {
         try {
             const raw = localStorage.getItem(storageKeyProgress);
             const current = raw ? JSON.parse(raw) : [];
-            if (!current.includes(stepIdentifier)) {
-                const updated = [...current, stepIdentifier];
-                localStorage.setItem(storageKeyProgress, JSON.stringify(updated));
+            const idsToAdd = new Set(current);
+
+            // 1. If an explicit step ID was provided (e.g. from Checkpoint/TestLab)
+            if (explicitId) {
+                idsToAdd.add(explicitId);
             }
+
+            // 2. Find ALL matching practice steps in the active unit payload
+            const payloadParts = Array.isArray(activeBucket.payload) ? activeBucket.payload : [];
+            payloadParts.forEach(part => {
+                const steps = Array.isArray(part.steps) ? part.steps : [];
+                steps.forEach(s => {
+                    const sTopic = s.topic || s.topicId || part.topicId;
+                    if (sTopic === completedTopic && Number(s.level) === Number(completedLevel)) {
+                        if (s.id) idsToAdd.add(s.id);
+                    }
+                });
+            });
+
+            // 3. Also store the generic compound keys for backward compatibility
+            idsToAdd.add(`${completedTopic}_${completedLevel}`);
+            idsToAdd.add(`step_prac_${completedTopic}_${completedLevel}`);
+
+            const updated = Array.from(idsToAdd);
+            localStorage.setItem(storageKeyProgress, JSON.stringify(updated));
         } catch (err) {
             console.error("Failed to sync unit progression:", err);
         }
@@ -657,13 +678,14 @@ function App() {
                     if (result.levelUp) {
                         setFeedback('correct');
                         if (activeBucket && activeBucket !== 'FREE_PLAY') {
-                            const stepId = `step_prac_${topic}_${level}`;
-                            markUnitStepComplete(stepId);
+                            // Pass topic and level directly so it finds and marks the real step ID!
+                            markUnitStepComplete(topic, level, activeUnitStepId);
                         }
 
                         setTimeout(() => setLevelUpAvailable(true), 1000);
                         return;
                     }
+                    
                     if ([15, 25, 50].includes(result.newStreak)) setShowStreakModal(true);
                     else setTimeout(() => fetchQuestion(topic, level, lang), 1500);
                 }

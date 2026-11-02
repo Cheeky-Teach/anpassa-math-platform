@@ -123,6 +123,7 @@ const Dashboard = ({
     const [showUpdateLog, setShowUpdateLog] = useState(false);
     const [showCapacityModal, setShowCapacityModal] = useState(false);
     const [activeInstructionModal, setActiveInstructionModal] = useState(null);
+    const [collapsedPartSections, setCollapsedPartSections] = useState({});
     
 
     const TEXT = {
@@ -209,6 +210,60 @@ const Dashboard = ({
         });
     };
 
+    // Completes all matching steps by topic + level even if started out of order
+    const handlePracticeSessionFinished = (completedTopic, completedLevel, explicitStepId = null) => {
+        const matchingSteps = allUnitSteps.filter(s => 
+            s.type === 'practice' && 
+            (s.topic === completedTopic || s.topicId === completedTopic) && 
+            Number(s.level) === Number(completedLevel)
+        );
+
+        const idsToMark = new Set();
+        if (explicitStepId) idsToMark.add(explicitStepId);
+        matchingSteps.forEach(s => idsToMark.add(s.id));
+        idsToMark.add(`${completedTopic}_${completedLevel}`);
+
+        setCompletedStepIds(prev => {
+            const next = Array.from(new Set([...prev, ...idsToMark]));
+            try {
+                localStorage.setItem(storageKeyProgress, JSON.stringify(next));
+            } catch (e) {
+                console.error("Failed to save progress:", e);
+            }
+            return next;
+        });
+    };
+    
+    // Helper to determine if a step is complete by ID or by (topic + level)
+    const checkIsStepCompleted = (step, completedIds = []) => {
+        if (!step) return false;
+
+        // 1. Exact step ID match
+        if (step.id && completedIds.includes(step.id)) {
+            return true;
+        }
+
+        // 2. Practice step topic + level match
+        if (step.type === 'practice') {
+            const stepTopic = step.topic || step.topicId;
+            const stepLevel = Number(step.level);
+
+            return completedIds.some(id => {
+                // Direct ID match
+                if (id === step.id) return true;
+                // Compound key match e.g. "step_prac_arithmetic_2" or "arithmetic_2"
+                if (typeof id === 'string') {
+                    if (id === `${stepTopic}_${stepLevel}`) return true;
+                    if (id === `step_prac_${stepTopic}_${stepLevel}`) return true;
+                    if (id.includes(`_${stepTopic}_`) && id.endsWith(`_${stepLevel}`)) return true;
+                }
+                return false;
+            });
+        }
+
+        return false;
+    };
+
     // Flatten all steps across parts to calculate progression metrics
     // 1. First, declare curatedParts
     const curatedParts = useMemo(() => {
@@ -231,7 +286,7 @@ const Dashboard = ({
 
     // Find the immediate next unfinished step in sequence
     const nextUnfinishedStep = useMemo(() => {
-        return allUnitSteps.find(step => !completedStepIds.includes(step.id)) || null;
+        return allUnitSteps.find(step => !checkIsStepCompleted(step, completedStepIds)) || null;
     }, [allUnitSteps, completedStepIds]);
 
 
@@ -708,13 +763,13 @@ const Dashboard = ({
                                                         <Award size={32} className="text-amber-300 drop-shadow-md" />
                                                     </div>
                                                     <div>
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-100 block">
+                                                        <span className="text-[12px] font-black uppercase tracking-widest text-emerald-100 block">
                                                             {lang === 'sv' ? "Grattis! Enheten Slutförd" : "Congratulations! Unit Complete"}
                                                         </span>
                                                         <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight italic leading-tight">
                                                             {lang === 'sv' ? "Alla moment är avklarade! 🏆" : "All parts completed! 🏆"}
                                                         </h3>
-                                                        <p className="text-xs font-semibold text-emerald-100/90 mt-1">
+                                                        <p className="text-s font-semibold text-emerald-100/90 mt-1">
                                                             {lang === 'sv' 
                                                                 ? `Du har gått igenom alla ${allUnitSteps.length} moment i ${activeBucket.name}.` 
                                                                 : `You have mastered all ${allUnitSteps.length} steps in ${activeBucket.name}.`}
@@ -764,217 +819,299 @@ const Dashboard = ({
                                             <ChevronLeft size={16}/> {lang === 'sv' ? "Byt Område" : "Change Unit"}
                                         </button>
                                     </div>
-
-                                    {/* Parts Sequence */}
+                                    {/* Parts Sequence (Connected Semantic Timeline) */}
                                     <div className="space-y-6">
-                                        {curatedParts.map((part, pIdx) => (
-                                            <div 
-                                                key={part.id || pIdx} 
-                                                className="bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] overflow-hidden shadow-sm"
-                                            >
-                                                {/* Part Header Strip */}
-                                                <div className="bg-[var(--bg-surface)] px-5 py-3.5 border-b border-[var(--border-main)] flex items-center justify-between">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <span className="w-7 h-7 rounded-lg bg-[var(--brand-solid)] text-white text-xs font-black flex items-center justify-center shrink-0 shadow-xs">
-                                                            {pIdx + 1}
-                                                        </span>
-                                                        <h3 className="font-black text-sm uppercase tracking-wider text-[var(--text-main)]">
-                                                            {getPartDisplayTitle(part, pIdx, lang)}
-                                                        </h3>
-                                                    </div>
-                                                    <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
-                                                        {part.steps?.length || 0} {lang === 'sv' ? "steg" : "steps"}
-                                                    </span>
-                                                </div>
+                                        {curatedParts.map((part, pIdx) => {
+                                            const partSteps = part.steps || [];
+                                            const partCompletedCount = partSteps.filter(s => checkIsStepCompleted(s, completedStepIds)).length;
+                                            const isPartFullyCompleted = partSteps.length > 0 && partCompletedCount === partSteps.length;
+                                            const isPartCollapsed = collapsedPartSections[part.id] !== undefined 
+                                                ? Boolean(collapsedPartSections[part.id]) 
+                                                : true;
 
-                                                {/* Step Cards List */}
-                                                <div className="p-4 space-y-2.5">
-                                                    {(part.steps || []).map((step, sIdx) => {
-                                                        const isCompleted = completedStepIds.includes(step.id);
-                                                        const isInstruction = step.type === 'instruction' || !!step.sheetId;
-                                                        const isTest = step.type === 'test';
-
-                                                        if (isInstruction) {
-                                                            return (
-                                                                <div 
-                                                                    key={step.id || sIdx}
-                                                                    onClick={() => handleOpenInstruction(step)}
-                                                                    className="group p-3.5 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800/60 bg-gradient-to-r from-indigo-50/80 via-[var(--bg-card)] to-indigo-50/40 dark:from-indigo-950/20 dark:via-[var(--bg-card)] dark:to-indigo-950/10 hover:to-indigo-100/60 transition-all flex items-center justify-between gap-3 cursor-pointer shadow-xs active:scale-[0.99]"
-                                                                >
-                                                                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                                                                        {/* 1. Step Indicator */}
-                                                                        <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
-                                                                            <BookOpen size={16} />
-                                                                        </div>
-                                                                        {/* 2. Step Title & Category */}
-                                                                        <div className="min-w-0 flex-1">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="font-black text-sm text-[var(--text-main)] truncate">
-                                                                                    {step.sheetTitle}
-                                                                                </span>
-                                                                                <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0">
-                                                                                    {lang === 'sv' ? "Genomgång" : "Walkthrough"}
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="flex items-center gap-2 shrink-0">
-                                                                        {isCompleted && (
-                                                                            <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                                                                                <Check size={14} strokeWidth={3} />
-                                                                            </span>
-                                                                        )}
-                                                                        <button 
-                                                                            type="button"
-                                                                            className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer ${
-                                                                                isCompleted 
-                                                                                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-600 hover:text-white' 
-                                                                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                                                                            }`}
-                                                                        >
-                                                                            <Play size={12} fill="currentColor" />
-                                                                            <span>{isCompleted ? (lang === 'sv' ? "Repetera" : "Review") : (lang === 'sv' ? "Titta" : "Watch")}</span>
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        }
-
-                                                        // CHECKPOINT TEST STEP
-                                                        if (isTest) {
-                                                            return (
-                                                                <div 
-                                                                    key={step.id || sIdx}
-                                                                    className={`group p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 shadow-xs ${
-                                                                        isCompleted 
-                                                                            ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20' 
-                                                                            : 'border-amber-300 dark:border-amber-800/80 bg-gradient-to-r from-amber-50/80 via-[var(--bg-card)] to-amber-50/30 dark:from-amber-950/20 dark:via-[var(--bg-card)] dark:to-amber-950/10'
-                                                                    }`}
-                                                                >
-                                                                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                                                                        {/* 1. Step Indicator */}
-                                                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-sm ${
-                                                                            isCompleted ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'
-                                                                        }`}>
-                                                                            <Beaker size={16} />
-                                                                        </div>
-                                                                        {/* 2. Step Title & Badge */}
-                                                                        <div className="min-w-0 flex-1">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="font-black text-sm text-[var(--text-main)] truncate">
-                                                                                    {step.title || (lang === 'sv' ? "Delprov" : "Checkpoint")}
-                                                                                </span>
-                                                                                <span className="bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0">
-                                                                                    {step.testMode === 'exam' ? (lang === 'sv' ? "Prov" : "Exam") : (lang === 'sv' ? "Delprov" : "Checkpoint")}
-                                                                                </span>
-                                                                            </div>
-                                                                            <span className="text-xs font-bold text-[var(--text-muted)] mt-1 block">
-                                                                                {step.questionCount || 10} {lang === 'sv' ? "blandade frågor" : "mixed questions"}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="flex items-center gap-2 shrink-0">
-                                                                        {isCompleted && (
-                                                                            <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                                                                                <Check size={14} strokeWidth={3} />
-                                                                            </span>
-                                                                        )}
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                if (onStartCheckpoint) {
-                                                                                    onStartCheckpoint(step.configCode, step.id);
-                                                                                }
-                                                                            }}
-                                                                            className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 ${
-                                                                                isCompleted 
-                                                                                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-amber-500 hover:text-white'
-                                                                                    : 'bg-amber-500 hover:bg-amber-600 text-white'
-                                                                            }`}
-                                                                        >
-                                                                            <Play size={12} fill="currentColor" />
-                                                                            <span>{isCompleted ? (lang === 'sv' ? "Gör om" : "Retake") : (lang === 'sv' ? "Starta prov" : "Start test")}</span>
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        }
-
-                                                        // Practice Level Step
-                                                        const safeTopic = step.topic || step.topicId || part.topicId;
-                                                        const isSelected = selectedTopic === safeTopic && selectedLevel === step.level;
-                                                        const { description, mathExample } = getLevelMetadata(safeTopic, step.level, lang);
-                                                        const isStepCompleted = completedStepIds.includes(step.id);
-
-                                                        return (
-                                                            <div 
-                                                                key={step.id || sIdx}
-                                                                onClick={() => {
-                                                                    setHasUserManuallySelected(true); // 🟢 Register manual click
-                                                                    onSelect(safeTopic, step.level);
-                                                                }}
-                                                                className={`group p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 cursor-pointer active:scale-[0.99] ${
-                                                                    isSelected 
-                                                                        ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20' 
-                                                                        : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:border-[var(--brand-solid)]'
-                                                                }`}
-                                                            >
-                                                                <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                                                                    {/* 1. Prioritized Step Counter */}
-                                                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition-colors ${
-                                                                        isSelected 
-                                                                            ? 'bg-emerald-600 text-white shadow-sm' 
-                                                                            : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-strong)]'
-                                                                    }`}>
-                                                                        {sIdx + 1}
-                                                                    </div>
-
-                                                                    {/* 2. Title & Math Example */}
-                                                                    <div className="min-w-0 flex-1">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <span className="font-black text-sm text-[var(--text-main)] truncate">
-                                                                                {description || getTopicName(safeTopic, lang)}
-                                                                            </span>
-                                                                            <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0 border border-emerald-200/50 dark:border-emerald-800/50">
-                                                                                {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
-                                                                            </span>
-                                                                        </div>
-
-                                                                        {mathExample && (
-                                                                            <div className="mt-1 text-xs text-indigo-600 dark:text-indigo-400 font-serif italic truncate flex items-center gap-2 opacity-95 overflow-x-auto no-scrollbar">
-                                                                                <span className="text-[10px] font-sans font-black uppercase tracking-wider text-[var(--text-muted)] not-italic bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
-                                                                                    Ex:
-                                                                                </span>
-                                                                                <MathDisplay content={mathExample} />
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* 3. Completed Status / Selection Indicator */}
-                                                                <div className="shrink-0 flex items-center">
-                                                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                                                        isStepCompleted
-                                                                            ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs'
-                                                                        : isSelected 
-                                                                            ? 'border-[var(--brand-solid)] bg-[var(--brand-bg)] text-[var(--brand-solid)]'
-                                                                        : 'border-[var(--border-strong)] group-hover:border-[var(--brand-solid)]'
-                                                                    }`}>
-                                                                        {isStepCompleted ? (
-                                                                            <Check size={14} strokeWidth={3} />
-                                                                        ) : isSelected ? (
-                                                                            <div className="w-2.5 h-2.5 rounded-full bg-[var(--brand-solid)]" />
-                                                                        ) : null}
-                                                                    </div>
-                                                                </div>
+                                            return (
+                                                <div 
+                                                    key={part.id || pIdx} 
+                                                    className="bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] overflow-hidden shadow-sm transition-all"
+                                                >
+                                                    {/* Part Header Strip */}
+                                                    <div 
+                                                        onClick={() => setCollapsedPartSections(prev => ({ ...prev, [part.id]: !prev[part.id] }))}
+                                                        className="bg-[var(--bg-surface)] px-5 py-3.5 border-b border-[var(--border-main)] flex items-center justify-between cursor-pointer select-none group"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <span className={`w-7 h-7 rounded-lg text-white text-sm font-black flex items-center justify-center shrink-0 shadow-xs ${
+                                                                isPartFullyCompleted ? 'bg-emerald-600' : 'bg-[var(--brand-solid)]'
+                                                            }`}>
+                                                                {isPartFullyCompleted ? <Check size={14} strokeWidth={3} /> : pIdx + 1}
+                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                <h3 className="font-black text-m uppercase tracking-wider text-[var(--text-main)] group-hover:text-[var(--brand-text)] transition-colors">
+                                                                    {getPartDisplayTitle(part, pIdx, lang)}
+                                                                </h3>
+                                                                {isPartFullyCompleted && (
+                                                                    <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
+                                                                        {lang === 'sv' ? "Klar ✓" : "Done ✓"}
+                                                                    </span>
+                                                                )}
                                                             </div>
-                                                        );
-                                                    })}
+                                                        </div>
+
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-s font-bold text-[var(--text-muted)] tracking-wider">
+                                                                {partCompletedCount}/{partSteps.length} {lang === 'sv' ? "klara" : "done"}
+                                                            </span>
+                                                            <div className="text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors p-1 rounded-md">
+                                                                {isPartCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Steps Timeline Track */}
+                                                    {!isPartCollapsed && (
+                                                        <div className="p-4 sm:p-5">
+                                                            <div className="space-y-1">
+                                                                {partSteps.map((step, sIdx) => {
+                                                                    const isCompleted = checkIsStepCompleted(step, completedStepIds);
+                                                                    const isInstruction = step.type === 'instruction' || !!step.sheetId;
+                                                                    const isTest = step.type === 'test';
+                                                                    const isNextActive = nextUnfinishedStep?.id === step.id;
+
+                                                                    // Practice Level Details
+                                                                    const safeTopic = step.topic || step.topicId || part.topicId;
+                                                                    const isSelected = selectedTopic === safeTopic && selectedLevel === step.level;
+                                                                    const { description, mathExample } = getLevelMetadata(safeTopic, step.level, lang);
+
+                                                                    return (
+                                                                        <div key={step.id || sIdx} className="relative flex items-stretch gap-3 sm:gap-4">
+                                                                            {/* 1. Left Dedicated Timeline Spine (Zero Bleed-Through) */}
+                                                                            <div className="flex flex-col items-center shrink-0 w-8 sm:w-9 select-none">
+                                                                                {/* Top Connector Segment */}
+                                                                                <div 
+                                                                                    className={`w-[2px] flex-1 ${
+                                                                                        sIdx === 0 
+                                                                                            ? 'bg-transparent' 
+                                                                                            : isCompleted 
+                                                                                                ? 'bg-emerald-500' 
+                                                                                                : 'bg-slate-300 dark:bg-slate-600'
+                                                                                    }`} 
+                                                                                />
+
+                                                                                {/* Milestone Node Badge */}
+                                                                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-xs z-10 transition-colors my-1 ${
+                                                                                    isInstruction
+                                                                                        ? 'bg-indigo-600 text-white shadow-indigo-600/20'
+                                                                                        : isTest
+                                                                                            ? isCompleted ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'
+                                                                                            : isCompleted
+                                                                                                ? 'bg-emerald-600 text-white'
+                                                                                                : isSelected
+                                                                                                    ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/30'
+                                                                                                    : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-strong)]'
+                                                                                }`}>
+                                                                                    {isInstruction ? (
+                                                                                        <BookOpen size={15} />
+                                                                                    ) : isTest ? (
+                                                                                        <Beaker size={15} />
+                                                                                    ) : isCompleted ? (
+                                                                                        <Check size={14} strokeWidth={3} />
+                                                                                    ) : (
+                                                                                        sIdx + 1
+                                                                                    )}
+                                                                                </div>
+
+                                                                                {/* Bottom Connector Segment */}
+                                                                                <div 
+                                                                                    className={`w-[2px] flex-1 ${
+                                                                                        sIdx === partSteps.length - 1 
+                                                                                            ? 'bg-transparent' 
+                                                                                            : isCompleted && completedStepIds.includes(partSteps[sIdx + 1]?.id)
+                                                                                                ? 'bg-emerald-500' 
+                                                                                                : 'bg-slate-300 dark:bg-slate-600'
+                                                                                    }`} 
+                                                                                />
+                                                                            </div>
+
+                                                                            {/* 2. Right Interactive Card Container */}
+                                                                            <div className="flex-1 min-w-0 py-1">
+                                                                                {/* CASE A: WALKTHROUGH */}
+                                                                                {isInstruction ? (
+                                                                                    <div 
+                                                                                        onClick={() => handleOpenInstruction(step)}
+                                                                                        className={`relative group p-3 sm:p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 cursor-pointer shadow-xs active:scale-[0.99] ${
+                                                                                            isNextActive
+                                                                                                ? 'border-indigo-500 bg-indigo-50/90 dark:bg-indigo-950/40 ring-2 ring-indigo-500/20'
+                                                                                                : isCompleted
+                                                                                                    ? 'border-slate-200 dark:border-slate-800 bg-[var(--bg-card)] opacity-85'
+                                                                                                    : 'border-indigo-200 dark:border-indigo-900 bg-indigo-50/40 dark:bg-indigo-950/20 hover:border-indigo-400'
+                                                                                        }`}
+                                                                                    >
+                                                                                        <div className="min-w-0 flex-1">
+                                                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                                                <span className="font-black text-sm text-[var(--text-main)] truncate">
+                                                                                                    {step.sheetTitle}
+                                                                                                </span>
+                                                                                                <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-md shrink-0">
+                                                                                                    {lang === 'sv' ? "Genomgång" : "Walkthrough"}
+                                                                                                </span>
+                                                                                                {isNextActive && (
+                                                                                                    <span className="bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full animate-pulse">
+                                                                                                        {lang === 'sv' ? "Börja här" : "Start here"}
+                                                                                                    </span>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        <div className="flex items-center gap-2 shrink-0">
+                                                                                            {isCompleted && (
+                                                                                                <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                                                                                    <Check size={14} strokeWidth={3} />
+                                                                                                </span>
+                                                                                            )}
+                                                                                            <button 
+                                                                                                type="button"
+                                                                                                className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ${
+                                                                                                    isCompleted 
+                                                                                                        ? 'bg-[var(--bg-surface)] text-[var(--text-muted)] hover:bg-indigo-600 hover:text-white' 
+                                                                                                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                                                                                }`}
+                                                                                            >
+                                                                                                <Play size={12} fill="currentColor" />
+                                                                                                <span>{isCompleted ? (lang === 'sv' ? "Repetera" : "Review") : (lang === 'sv' ? "Titta" : "Watch")}</span>
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ) : isTest ? (
+                                                                                    /* CASE B: CHECKPOINT */
+                                                                                    <div 
+                                                                                        className={`relative group p-3 sm:p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 shadow-xs ${
+                                                                                            isNextActive
+                                                                                                ? 'border-amber-500 bg-amber-50/90 dark:bg-amber-950/40 ring-2 ring-amber-500/20'
+                                                                                                : isCompleted 
+                                                                                                    ? 'border-emerald-300 dark:border-emerald-800/80 bg-emerald-50/40 dark:bg-emerald-950/20' 
+                                                                                                    : 'border-amber-300 dark:border-amber-900 bg-amber-50/40 dark:bg-amber-950/20 hover:border-amber-400'
+                                                                                        }`}
+                                                                                    >
+                                                                                        <div className="min-w-0 flex-1">
+                                                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                                                <span className="font-black text-sm text-[var(--text-main)] truncate">
+                                                                                                    {step.title || (lang === 'sv' ? "Delprov" : "Checkpoint")}
+                                                                                                </span>
+                                                                                                <span className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-md shrink-0">
+                                                                                                    {step.testMode === 'exam' ? (lang === 'sv' ? "Prov" : "Exam") : (lang === 'sv' ? "Delprov" : "Checkpoint")}
+                                                                                                </span>
+                                                                                                {isNextActive && (
+                                                                                                    <span className="bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full animate-pulse">
+                                                                                                        {lang === 'sv' ? "Nästa test" : "Next test"}
+                                                                                                    </span>
+                                                                                                )}
+                                                                                            </div>
+                                                                                            <span className="text-xs font-bold text-[var(--text-muted)] mt-1 block">
+                                                                                                {step.questionCount || 10} {lang === 'sv' ? "blandade frågor" : "mixed questions"}
+                                                                                            </span>
+                                                                                        </div>
+
+                                                                                        <div className="flex items-center gap-2 shrink-0">
+                                                                                            {isCompleted && (
+                                                                                                <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                                                                                    <Check size={14} strokeWidth={3} />
+                                                                                                </span>
+                                                                                            )}
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() => {
+                                                                                                    if (onStartCheckpoint) {
+                                                                                                        onStartCheckpoint(step.configCode, step.id);
+                                                                                                    }
+                                                                                                }}
+                                                                                                className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95 ${
+                                                                                                    isCompleted 
+                                                                                                        ? 'bg-[var(--bg-surface)] text-[var(--text-muted)] hover:bg-amber-500 hover:text-white'
+                                                                                                        : 'bg-amber-500 hover:bg-amber-600 text-white'
+                                                                                                }`}
+                                                                                            >
+                                                                                                <Play size={12} fill="currentColor" />
+                                                                                                <span>{isCompleted ? (lang === 'sv' ? "Gör om" : "Retake") : (lang === 'sv' ? "Starta prov" : "Start test")}</span>
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    /* CASE C: PRACTICE LEVEL */
+                                                                                    <div 
+                                                                                        onClick={() => {
+                                                                                            setHasUserManuallySelected(true);
+                                                                                            onSelect(safeTopic, step.level);
+                                                                                        }}
+                                                                                        className={`relative group p-3 sm:p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 cursor-pointer active:scale-[0.99] ${
+                                                                                            isSelected 
+                                                                                                ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20' 
+                                                                                                : isNextActive
+                                                                                                    ? 'border-emerald-400 dark:border-emerald-700 bg-emerald-50/40 dark:bg-emerald-950/20 ring-2 ring-emerald-500/20'
+                                                                                                    : isCompleted
+                                                                                                        ? 'bg-[var(--bg-card)] border-[var(--border-main)] opacity-85 hover:border-[var(--brand-solid)]'
+                                                                                                        : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:border-[var(--brand-solid)]'
+                                                                                        }`}
+                                                                                    >
+                                                                                        <div className="min-w-0 flex-1">
+                                                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                                                <span className="font-black text-sm sm:text-base text-[var(--text-main)] truncate">
+                                                                                                    {getTopicName(safeTopic, lang)}
+                                                                                                </span>
+                                                                                                <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-md shrink-0 border border-emerald-300/60 dark:border-emerald-800/60">
+                                                                                                    {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
+                                                                                                </span>
+                                                                                                {description && (
+                                                                                                    <span className="text-xs font-semibold text-[var(--text-muted)] truncate hidden md:inline">
+                                                                                                        • {description}
+                                                                                                    </span>
+                                                                                                )}
+                                                                                                {isNextActive && !isCompleted && (
+                                                                                                    <span className="bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full animate-pulse">
+                                                                                                        {lang === 'sv' ? "Öva nu" : "Practice now"}
+                                                                                                    </span>
+                                                                                                )}
+                                                                                            </div>
+
+                                                                                            {mathExample && (
+                                                                                                <div className="mt-1 text-xs sm:text-sm font-serif italic truncate flex items-center gap-2">
+                                                                                                    <span className="text-[10px] font-sans font-black uppercase tracking-wider text-[var(--text-muted)] not-italic bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-strong)] shrink-0">
+                                                                                                        Ex:
+                                                                                                    </span>
+                                                                                                    <span className="font-bold text-slate-900 dark:text-slate-100 not-italic">
+                                                                                                        <MathDisplay content={mathExample} />
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+
+                                                                                        {/* Selection / Status Radio */}
+                                                                                        <div className="shrink-0 flex items-center">
+                                                                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                                                                                isCompleted
+                                                                                                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs'
+                                                                                                    : isSelected 
+                                                                                                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-600'
+                                                                                                        : 'border-[var(--border-strong)] group-hover:border-emerald-500'
+                                                                                            }`}>
+                                                                                                {isCompleted ? (
+                                                                                                    <Check size={14} strokeWidth={3} />
+                                                                                                ) : isSelected ? (
+                                                                                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+                                                                                                ) : null}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ) : (

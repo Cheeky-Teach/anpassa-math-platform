@@ -14,6 +14,28 @@ body, .font-sans {
 .katex * {
   font-family: "KaTeX_Main", "Times New Roman", Times, serif !important;
 }
+
+/* ========================================================================= */
+/* ACCESSIBLE TYPOGRAPHY FLOOR                                               */
+/* Keep text legible without bloating layout hierarchy                      */
+/* ========================================================================= */
+.text-xs {
+  font-size: 0.75rem !important; /* Standard 12px desktop, ~11.5px floor */
+  line-height: 1.15rem !important;
+}
+
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: 0.725rem !important; /* ~11px hard minimum floor */
+  line-height: 1.1rem !important;
+}
+
+.badge-brand {
+  font-size: 0.7rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
 :root {
   /* ☀️ 1. LIGHT THEME (DEFAULT) */
   --bg-canvas: #f8fafc;       /* slate-50 */
@@ -30,12 +52,12 @@ body, .font-sans {
   --border-strong: #cbd5e1;   /* slate-300 */
 
   /* Standardized Proportions (Maximized Screen Real Estate) */
-  --radius-card: 1.5rem;      /* Replaces 3rem */
-  --radius-btn: 0.75rem;      /* Replaces 1.5rem */
+  --radius-card: 1.5rem;
+  --radius-btn: 0.75rem;
   
   --pad-sm: 0.5rem;
   --pad-md: 1rem;
-  --pad-lg: 1.5rem;           /* Replaces p-10 */
+  --pad-lg: 1.5rem;
 
   /* AMBIENT BACKGROUND WAVES (Light) */
   --ambient-emerald: rgba(110, 231, 183, 0.3);
@@ -47,7 +69,6 @@ body, .font-sans {
 }
 
 /* 🌙 2. FULL DARK THEME */
-/* Applied by adding className="dark" to a parent wrapper */
 .dark, [data-theme="dark"] {
   --bg-canvas: #0f172a;       /* slate-900 */
   --bg-card: #1e293b;         /* slate-800 */
@@ -72,11 +93,9 @@ body, .font-sans {
 }
 
 /* 🎯 3. FOCUS THEME (For StudentLiveView & Active Practice) */
-/* Dark canvas, but keeps cards Bright White to focus attention */
 .theme-focus {
-  --bg-canvas: #0f172a;       /* slate-900 */
-  --text-canvas: #f8fafc;     /* slate-50 */
-  /* Keeps card backgrounds as standard Light Mode */
+  --bg-canvas: #0f172a;
+  --text-canvas: #f8fafc;
 }
 
 /* 🎨 4. DYNAMIC CATEGORY THEMES (For PracticeView & Dashboard) */
@@ -93,71 +112,15 @@ body, .font-sans {
 .theme-cyan    { --brand-bg: #ecfeff; --brand-border: #a5f3fc; --brand-text: #0891b2; --brand-solid: #06b6d4; }
 
 /* --- DARK MODE OVERRIDES --- */
-.dark .theme-emerald, [data-theme="dark"] .theme-emerald {
-  --brand-bg: rgba(16, 185, 129, 0.15);
-  --brand-border: rgba(16, 185, 129, 0.3);
-  --brand-text: #34d399; 
-  --brand-solid: #10b981;
-}
-.dark .theme-indigo, [data-theme="dark"] .theme-indigo {
-  --brand-bg: rgba(99, 102, 241, 0.15);
-  --brand-border: rgba(99, 102, 241, 0.3);
-  --brand-text: #818cf8; 
-  --brand-solid: #6366f1; 
-}
-.dark .theme-pink, [data-theme="dark"] .theme-pink {
-  --brand-bg: rgba(236, 72, 153, 0.15);
-  --brand-border: rgba(236, 72, 153, 0.3);
-  --brand-text: #f472b6; 
-  --brand-solid: #ec4899; 
-}
-.dark .theme-amber, [data-theme="dark"] .theme-amber {
-  --brand-bg: rgba(245, 158, 11, 0.15);
-  --brand-border: rgba(245, 158, 11, 0.3);
-  --brand-text: #fbbf24; 
-  --brand-solid: #f59e0b; 
-}
-.dark .theme-rose, [data-theme="dark"] .theme-rose {
-  --brand-bg: rgba(244, 63, 94, 0.15);
-  --brand-border: rgba(244, 63, 94, 0.3);
-  --brand-text: #fb7185; 
-  --brand-solid: #f43f5e; 
-}
-.dark .theme-orange, [data-theme="dark"] .theme-orange {
-  --brand-bg: rgba(249, 115, 22, 0.15);
-  --brand-border: rgba(249, 115, 22, 0.3);
-  --brand-text: #fb923c; 
-  --brand-solid: #f97316; 
-}
-.dark .theme-blue, [data-theme="dark"] .theme-blue {
-  --brand-bg: rgba(59, 130, 246, 0.15);
-  --brand-border: rgba(59, 130, 246, 0.3);
-  --brand-text: #60a5fa; 
-  --brand-solid: #3b82f6; 
-}
-.dark .theme-purple, [data-theme="dark"] .theme-purple {
-  --brand-bg: rgba(168, 85, 247, 0.15);
-  --brand-border: rgba(168, 85, 247, 0.3);
-  --brand-text: #c084fc; 
-  --brand-solid: #a855f7; 
-}
-.dark .theme-cyan, [data-theme="dark"] .theme-cyan {
-  --brand-bg: rgba(6, 182, 212, 0.15);
-  --brand-border: rgba(6, 182, 212, 0.3);
-  --brand-text: #22d3ee; 
-  --brand-solid: #06b6d4; 
-}
-
-/* ========================================= */
-/* UTILITY CLASSES FOR COMPONENTS            */
-/* ========================================= */
-
-/* --- Global Math Formatting --- */
-.math-content {
-  color: var(--text-main); /* Forces all math text to near-black */
-  /* OR use var(--primary-color) for dark blue */
-}
-
+.dark .theme-emerald, [data-theme="dark"] .theme-emerald { --brand-bg: rgba(16, 185, 129, 0.15); --brand-border: rgba(16, 185, 129, 0.3); --brand-text: #34d399; --brand-solid: #10b981; }
+.dark .theme-indigo, [data-theme="dark"] .theme-indigo   { --brand-bg: rgba(99, 102, 241, 0.15); --brand-border: rgba(99, 102, 241, 0.3); --brand-text: #818cf8; --brand-solid: #6366f1; }
+.dark .theme-pink, [data-theme="dark"] .theme-pink       { --brand-bg: rgba(236, 72, 153, 0.15); --brand-border: rgba(236, 72, 153, 0.3); --brand-text: #f472b6; --brand-solid: #ec4899; }
+.dark .theme-amber, [data-theme="dark"] .theme-amber     { --brand-bg: rgba(245, 158, 11, 0.15); --brand-border: rgba(245, 158, 11, 0.3); --brand-text: #fbbf24; --brand-solid: #f59e0b; }
+.dark .theme-rose, [data-theme="dark"] .theme-rose       { --brand-bg: rgba(244, 63, 94, 0.15); --brand-border: rgba(244, 63, 94, 0.3); --brand-text: #fb7185; --brand-solid: #f43f5e; }
+.dark .theme-orange, [data-theme="dark"] .theme-orange   { --brand-bg: rgba(249, 115, 22, 0.15); --brand-border: rgba(249, 115, 22, 0.3); --brand-text: #fb923c; --brand-solid: #f97316; }
+.dark .theme-blue, [data-theme="dark"] .theme-blue       { --brand-bg: rgba(59, 130, 246, 0.15); --brand-border: rgba(59, 130, 246, 0.3); --brand-text: #60a5fa; --brand-solid: #3b82f6; }
+.dark .theme-purple, [data-theme="dark"] .theme-purple   { --brand-bg: rgba(168, 85, 247, 0.15); --brand-border: rgba(168, 85, 247, 0.3); --brand-text: #c084fc; --brand-solid: #a855f7; }
+.dark .theme-cyan, [data-theme="dark"] .theme-cyan       { --brand-bg: rgba(6, 182, 212, 0.15); --brand-border: rgba(6, 182, 212, 0.3); --brand-text: #22d3ee; --brand-solid: #06b6d4; }
 
 /* ========================================= */
 /* 1. BASE LAYOUT & HONEYCOMB BACKGROUND     */
@@ -165,28 +128,8 @@ body, .font-sans {
 body {
   background-color: var(--bg-canvas);
   color: var(--text-main);
-  font-family: 'Inter', sans-serif;
 }
 
-.layout-app, .layout-wrapper {
-  background-color: var(--bg-canvas);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-
-/* ========================================= */
-/* 1. BASE LAYOUT & HONEYCOMB BACKGROUND     */
-/* ========================================= */
-body {
-  background-color: var(--bg-canvas);
-  color: var(--text-main);
-  font-family: 'Inter', sans-serif;
-}
-
-/* 🟢 RESTORE SOLID BACKGROUND: This ensures Dark Mode works perfectly */
 .layout-app, .layout-wrapper {
   background-color: var(--bg-canvas) !important;
   min-height: 100vh;
@@ -195,10 +138,9 @@ body {
   position: relative;
 }
 
-/* 🟢 THE HONEYCOMB FADE EFFECT (Applied ONLY to layout-wrapper to prevent doubling) */
 .layout-wrapper::before {
   content: "";
-  position: fixed; /* Locks the honeycomb to the screen so it doesn't move or tile weirdly */
+  position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
@@ -215,7 +157,6 @@ body {
   mask-size: 40px;
 }
 
-/* Ensure the app content floats ABOVE the honeycomb */
 .layout-app > *, .layout-wrapper > * {
   position: relative;
   z-index: 10;
@@ -225,21 +166,15 @@ body {
 /* 2. FLOATING BRANDED HEADER ISLAND         */
 /* ========================================= */
 .header-glass {
-  /* Transforms the edge-to-edge bar into a floating solid pill */
   background-color: var(--bg-card) !important;
   margin: 1rem auto;
   border-radius: var(--radius-card);
   width: calc(100% - 2rem) !important;
   max-width: 1400px;
-  
-  /* Replaces the hard bottom border with a soft drop shadow */
   border: 1px solid var(--border-main) !important;
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
-  
-  /* Removes the blurry glass effect since it is now solid */
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  
   padding-top: 0.5rem !important;
   padding-bottom: 0.5rem !important;
 }
@@ -251,7 +186,7 @@ body {
 }
 
 .dark .header-glass, [data-theme="dark"] .header-glass {
-  background-color: rgba(15, 23, 42, 0.85); /* Dark mode canvas (slate-900) @ 85% */
+  background-color: rgba(15, 23, 42, 0.85);
 }
 
 .layout-twocol {
@@ -315,7 +250,7 @@ body {
 .btn-brand:active:not(:disabled) { transform: scale(0.98); }
 .btn-brand:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Gamified 3D Button (For PracticeView) */
+/* Gamified 3D Button */
 .btn-3d {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-main);
@@ -330,38 +265,12 @@ body {
   gap: 0.75rem;
   cursor: pointer;
 }
-.btn-3d:hover:not(:disabled) {
-  background-color: var(--bg-surface-hover);
-}
-.btn-3d:active:not(:disabled) {
-  transform: translateY(3px);
-  border-bottom-width: 1px;
-  margin-top: 3px; 
-}
-.btn-3d.is-correct {
-  background-color: #10b981;
-  border-color: #047857;
-  color: white;
-}
-.btn-3d.is-wrong {
-  background-color: #f43f5e;
-  border-color: #be123c;
-  color: white;
-}
+.btn-3d:hover:not(:disabled) { background-color: var(--bg-surface-hover); }
+.btn-3d:active:not(:disabled) { transform: translateY(3px); border-bottom-width: 1px; margin-top: 3px; }
+.btn-3d.is-correct { background-color: #10b981; border-color: #047857; color: white; }
+.btn-3d.is-wrong { background-color: #f43f5e; border-color: #be123c; color: white; }
 
-/* --- Status Badges --- */
-.badge-brand {
-  background-color: var(--brand-bg, #eef2ff);
-  color: var(--brand-text, #4f46e5);
-  border: 1px solid var(--brand-border, #c7d2fe);
-  padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.625rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-/* Apply this to wrappers containing SVGs, VisualRenderer, or standalone LaTeX math */
+/* Whiteboard Protection */
 .whiteboard-protect {
   --bg-canvas: #ffffff !important;
   --bg-card: #ffffff !important;
@@ -374,57 +283,76 @@ body {
   background-color: #ffffff !important;
   color: #0f172a !important;
 }
-
-/* Ensure no child SVG inherits dark text fills inside protected whiteboard areas */
-.whiteboard-protect svg text {
-  fill: #0f172a;
-}
+.whiteboard-protect svg text { fill: #0f172a; }
 
 /* ========================================= */
 /* GLOBAL RESPONSIVE REM SCALING             */
 /* ========================================= */
-/* 
-  Tailwind uses REM for sizes (p-4 = 1rem, text-sm = 0.875rem).
-  By scaling the root font-size based on screen width/height, 
-  the entire app shrinks proportionally without breaking layout math.
-*/
 html {
-  font-size: 16px; /* Standard 1080p Desktop */
+  font-size: 16px; /* Standard Desktop */
 }
 
-/* 1366x768 Laptops / Chromebooks */
-@media (max-width: 1400px), (max-height: 850px) {
+/* Small laptops & Chromebooks */
+@media (max-width: 1280px) {
   html {
-    font-size: 14px; /* Shrinks entire app by ~12.5% */
+    font-size: 15px; 
   }
 }
 
-/* Small Tablets / Vertically starved screens */
-@media (max-width: 1100px), (max-height: 700px) {
+/* Tablets and small devices */
+@media (max-width: 768px) {
   html {
-    font-size: 12px; /* Shrinks entire app by 25% */
+    font-size: 14px;
   }
 }
 
-/* Extreme constraint (e.g., landscape mobile) */
-@media (max-height: 600px) {
-  html {
-    font-size: 10px; /* Shrinks entire app by 37.5% */
-  }
+/* ========================================= */
+/* MATH DISPLAY & FORMULA ACCESSIBILITY      */
+/* ========================================= */
+.math-content {
+  font-size: 1.05em;
+  line-height: 1.4;
+}
+
+/* Enforce high contrast text color on formulas in both light and dark modes */
+.math-content,
+.math-content .katex,
+.math-content .katex * {
+  color: var(--text-main) !important;
+}
+
+.dark .math-content,
+.dark .math-content .katex,
+.dark .math-content .katex * {
+  color: var(--text-main) !important;
+}
+
+/* Consolidated sizing and display margins */
+.math-content .katex {
+  font-size: 1.1em !important;
+}
+
+.math-content .katex-display {
+  margin: 0.3em 0 !important;
+}
+
+.math-content .katex-display > .katex {
+  font-size: 1.1em !important;
+  text-align: center;
 }
 
 /* ========================================= */
 /* MODAL VERTICAL CONSTRAINTS                */
 /* ========================================= */
-/* Apply this to modal wrappers so they never push off the bottom of the screen */
 .modal-safe-height {
   max-height: 100dvh;
-  max-height: 100vh; /* Fallback */
+  max-height: 100vh;
   height: 100%;
   display: flex;
   flex-direction: column;
-  min-h: 0;
+  min-height: 0;
 }
+
 /* ================================================= */
 /* SLIDE & PRESENTATION HONEYCOMB TEXTURE            */
 /* ================================================= */
@@ -436,28 +364,21 @@ html {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 1; /* Sits above the slide canvas surface, but below interactive content cards */
+  z-index: 1;
   pointer-events: none;
-
   background-image: 
     radial-gradient(circle at 100% 100%, currentColor 0%, transparent 65%),
     radial-gradient(circle at 0% 0%, currentColor 0%, transparent 45%);
-
   opacity: var(--honeycomb-opacity, 0.045);
-
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
   -webkit-mask-size: 40px;
   mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
   mask-size: 40px;
 }
-/* src/styles/theme.css */
 
-/* 1. Tighten KaTeX vertical margins in worksheets and studio */
-.math-content .katex-display {
-  margin: 0.25em 0 !important;
-}
-
-/* 2. Enhanced Rutnät Work Area Grid (High-Contrast for Print & Projectors) */
+/* ================================================= */
+/* RUTNÄT WORK AREA GRID (Print & Projectors)        */
+/* ================================================= */
 .worksheet-grid-bg {
   background-image: 
     linear-gradient(to right, #94a3b8 1px, transparent 1px), 
@@ -472,14 +393,4 @@ html {
       linear-gradient(to bottom, #64748b 1px, transparent 1px) !important;
     background-size: 30px 30px !important;
   }
-}
-
-/* Enable KaTeX font scaling for both inline and display math */
-.math-content .katex {
-  font-size: 1em !important;
-}
-
-.math-content .katex-display > .katex {
-  font-size: 1em !important;
-  text-align: center;
 }

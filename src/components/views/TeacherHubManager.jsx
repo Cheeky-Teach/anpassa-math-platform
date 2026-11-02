@@ -3,7 +3,7 @@ import {
     Plus, Star, Eye, EyeOff, Copy, Trash2, 
     Calendar as CalendarIcon, FolderOpen, Layers, Loader2,
     ChevronDown, ChevronUp, Folder, X, Check, Edit2, 
-    BookOpen, Target, ArrowUp, ArrowDown,
+    BookOpen, Target, ArrowUp, ArrowDown, GripVertical,
     Bookmark, Beaker, Archive, ArchiveRestore, Filter
 } from 'lucide-react';
 import ContentModal from '../modals/ContentModal'; 
@@ -107,6 +107,12 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
     const [targetPartContext, setTargetPartContext] = useState(null);
     const [expandedSequencerBucketId, setExpandedSequencerBucketId] = useState(null);
     const [isCheckpointModalOpen, setIsCheckpointModalOpen] = useState(false);
+
+    // Drag-and-Drop & Collapsible Parts State
+    const [draggedPartIndex, setDraggedPartIndex] = useState(null);
+    const [draggedStep, setDraggedStep] = useState(null); // { bucketId, partId, stepIndex }
+    const [collapsedPartSections, setCollapsedPartSections] = useState({});
+    const [dropIndicator, setDropIndicator] = useState(null);
 
     // Inline Editing States
     const [editingPartId, setEditingPartId] = useState(null);
@@ -316,25 +322,6 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    const moveStepInsidePart = async (bucketId, partId, stepIndex, direction) => {
-        const bucket = buckets.find(b => b.id === bucketId);
-        if (!bucket) return;
-
-        const updatedParts = (bucket.payload || []).map(part => {
-            if (part.id !== partId) return part;
-            const targetIdx = stepIndex + direction;
-            if (targetIdx < 0 || targetIdx >= part.steps.length) return part;
-
-            const newSteps = [...part.steps];
-            const [moved] = newSteps.splice(stepIndex, 1);
-            newSteps.splice(targetIdx, 0, moved);
-
-            return { ...part, steps: newSteps };
-        });
-
-        await persistBucketPayload(bucketId, updatedParts);
-    };
-
     const removeStepFromPart = async (bucketId, partId, stepIndex) => {
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
@@ -384,20 +371,6 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    const movePartSection = async (bucketId, partIndex, direction) => {
-        const bucket = buckets.find(b => b.id === bucketId);
-        if (!bucket) return;
-
-        const targetIdx = partIndex + direction;
-        if (targetIdx < 0 || targetIdx >= (bucket.payload || []).length) return;
-
-        const newParts = [...bucket.payload];
-        const [moved] = newParts.splice(partIndex, 1);
-        newParts.splice(targetIdx, 0, moved);
-
-        await persistBucketPayload(bucketId, newParts);
-    };
-
     const deletePartSection = async (bucketId, partId) => {
         if (!window.confirm(lang === 'sv' ? "Vill du ta bort denna Del och alla dess steg?" : "Delete this Part and all its steps?")) return;
 
@@ -406,6 +379,52 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
 
         const updatedParts = (bucket.payload || []).filter(p => p.id !== partId);
         await persistBucketPayload(bucketId, updatedParts);
+    };
+
+    // --- NATIVE DRAG & DROP HANDLERS ---
+    const handleDropOnPart = async (bucketId, targetPartIndex) => {
+        if (draggedPartIndex === null || draggedPartIndex === targetPartIndex) return;
+        const bucket = buckets.find(b => b.id === bucketId);
+        if (!bucket) return;
+
+        const newParts = [...(bucket.payload || [])];
+        const [moved] = newParts.splice(draggedPartIndex, 1);
+        newParts.splice(targetPartIndex, 0, moved);
+
+        setDraggedPartIndex(null);
+        await persistBucketPayload(bucketId, newParts);
+    };
+
+    const handleDropOnStep = async (targetBucketId, targetPartId, targetStepIndex, position = 'before') => {
+        if (!draggedStep) return;
+        const { bucketId: srcBucketId, partId: srcPartId, stepIndex: srcStepIdx } = draggedStep;
+        if (srcBucketId !== targetBucketId) return;
+
+        const bucket = buckets.find(b => b.id === targetBucketId);
+        if (!bucket) return;
+
+        const newParts = JSON.parse(JSON.stringify(bucket.payload || []));
+        const srcPart = newParts.find(p => p.id === srcPartId);
+        const tgtPart = newParts.find(p => p.id === targetPartId);
+        if (!srcPart || !tgtPart) return;
+
+        let destinationIndex = position === 'after' ? targetStepIndex + 1 : targetStepIndex;
+        if (srcPartId === targetPartId && srcStepIdx < destinationIndex) {
+            destinationIndex -= 1;
+        }
+
+        if (srcPartId === targetPartId && srcStepIdx === destinationIndex) {
+            setDraggedStep(null);
+            setDropIndicator(null);
+            return;
+        }
+
+        const [movedStep] = srcPart.steps.splice(srcStepIdx, 1);
+        tgtPart.steps.splice(destinationIndex, 0, movedStep);
+
+        setDraggedStep(null);
+        setDropIndicator(null);
+        await persistBucketPayload(targetBucketId, newParts);
     };
 
     const handleToggleItem = (topicId, level) => {
@@ -436,10 +455,18 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                 }));
                 return { ...b, payload: cleanedParts };
             } else {
-                let targetPart = parts.find(p => p.topicId === topicId);
+                let targetPart = null;
+                if (targetPartContext?.partId) {
+                    targetPart = parts.find(p => p.id === targetPartContext.partId);
+                }
+                
+                if (!targetPart) {
+                    targetPart = parts[0] || null;
+                }
+
                 if (!targetPart) {
                     targetPart = {
-                        id: `part_${topicId}_${Date.now()}`,
+                        id: `part_custom_${Date.now()}`,
                         type: 'part',
                         topicId: topicId,
                         customTitle: null,
@@ -990,6 +1017,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                     {/* EXPANDABLE SEQUENCER DRAWER */}
                                                     {isSequencerOpen && (
                                                         <div className="mt-2 pt-4 border-t border-[var(--border-main)] space-y-4 animate-in fade-in duration-200">
+                                                            {/* Sequencer Toolbar */}
                                                             <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--bg-surface)] p-3 rounded-xl border border-[var(--border-main)]">
                                                                 <div className="flex items-center gap-2">
                                                                     <Bookmark size={15} className="text-[var(--brand-solid)]" />
@@ -998,298 +1026,414 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                     </span>
                                                                 </div>
 
-                                                                <div className="flex items-center gap-2">
-                                                                    <button 
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setActiveContentModalBucketId(bucket.id);
-                                                                            setIsContentModalOpen(true);
-                                                                        }}
-                                                                        className="px-3 py-1.5 bg-[var(--brand-bg)] hover:bg-[var(--brand-solid)] text-[var(--brand-text)] hover:text-white border border-[var(--brand-border)] rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
-                                                                    >
-                                                                        <Target size={13} />
-                                                                        <span>{lang === 'sv' ? "+ Välj Övningsnivåer" : "+ Select Practice Levels"}</span>
-                                                                    </button>
-
-                                                                    <button 
-                                                                        type="button"
-                                                                        onClick={() => handleAddNewPart(bucket.id)}
-                                                                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
-                                                                    >
-                                                                        <Plus size={13} />
-                                                                        <span>{lang === 'sv' ? "+ Ny Del" : "+ New Part"}</span>
-                                                                    </button>
-                                                                </div>
+                                                                <button 
+                                                                    type="button"
+                                                                    onClick={() => handleAddNewPart(bucket.id)}
+                                                                    className="px-3.5 py-1.5 bg-[var(--brand-bg)] hover:bg-[var(--brand-solid)] text-[var(--brand-text)] hover:text-white border border-[var(--brand-border)] rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                                                                >
+                                                                    <Plus size={13} />
+                                                                    <span>{lang === 'sv' ? "+ Skapa Ny Del" : "+ New Part"}</span>
+                                                                </button>
                                                             </div>
 
                                                             {/* Render Parts */}
                                                             {parts.length === 0 ? (
                                                                 <div className="p-8 text-center border-2 border-dashed border-[var(--border-main)] rounded-2xl text-xs font-bold text-[var(--text-muted)] italic">
                                                                     {lang === 'sv' 
-                                                                        ? "Inga delar tillagda ännu. Klicka på '+ Välj Övningsnivåer' för att automatiskt skapa delar." 
-                                                                        : "No parts created yet. Click '+ Select Practice Levels' to auto-create parts."}
+                                                                        ? "Inga delar tillagda ännu. Klicka på '+ Skapa Ny Del' för att börja bygga." 
+                                                                        : "No parts created yet. Click '+ New Part' to begin building."}
                                                                 </div>
                                                             ) : (
                                                                 <div className="space-y-4">
-                                                                    {parts.map((part, pIdx) => (
-                                                                        <div 
-                                                                            key={part.id || pIdx} 
-                                                                            className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-main)] p-4 space-y-3 shadow-xs"
-                                                                        >
-                                                                            {/* Part Header */}
-                                                                            <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
-                                                                                {editingPartId === part.id ? (
-                                                                                    <div className="flex items-center gap-2 flex-1 max-w-md">
-                                                                                        <input 
-                                                                                            autoFocus
-                                                                                            type="text" 
-                                                                                            value={editPartTitleValue} 
-                                                                                            onChange={(e) => setEditPartTitleValue(e.target.value)}
-                                                                                            onBlur={() => savePartTitleEdit(bucket.id, part.id)}
-                                                                                            onKeyDown={(e) => { 
-                                                                                                if (e.key === 'Enter') savePartTitleEdit(bucket.id, part.id);
-                                                                                                if (e.key === 'Escape') setEditingPartId(null);
-                                                                                            }}
-                                                                                            className="flex-1 bg-[var(--bg-card)] border-2 border-[var(--brand-border)] text-[var(--text-main)] rounded-lg px-2.5 py-1 text-xs font-black uppercase tracking-wider outline-none shadow-inner"
-                                                                                        />
+                                                                    {parts.map((part, pIdx) => {
+                                                                        const isPartCollapsed = collapsedPartSections[part.id] !== undefined 
+                                                                            ? Boolean(collapsedPartSections[part.id]) 
+                                                                            : true;
+
+                                                                        return (
+                                                                            <div 
+                                                                                key={part.id || pIdx} 
+                                                                                draggable
+                                                                                onDragStart={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setDraggedPartIndex(pIdx);
+                                                                                    e.dataTransfer.effectAllowed = 'move';
+                                                                                }}
+                                                                                onDragOver={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    e.stopPropagation();
+                                                                                }}
+                                                                                onDrop={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    e.stopPropagation();
+                                                                                    // If dropping a part:
+                                                                                    if (draggedPartIndex !== null) {
+                                                                                        handleDropOnPart(bucket.id, pIdx);
+                                                                                    }
+                                                                                    // If dropping a step directly into an empty part:
+                                                                                    else if (draggedStep && (part.steps || []).length === 0) {
+                                                                                        handleDropOnStep(bucket.id, part.id, 0);
+                                                                                    }
+                                                                                }}
+                                                                                onDragEnd={() => {
+                                                                                    setDraggedPartIndex(null);
+                                                                                    setDraggedStep(null);
+                                                                                    setDropIndicator(null);
+                                                                                }}
+                                                                                className={`bg-[var(--bg-surface)] rounded-2xl border-2 transition-all p-3.5 space-y-3 shadow-xs ${
+                                                                                    draggedPartIndex === pIdx 
+                                                                                        ? 'opacity-40 border-dashed border-indigo-500' 
+                                                                                        : 'border-[var(--border-main)]'
+                                                                                }`}
+                                                                            >
+                                                                                {/* Part Header */}
+                                                                                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-2.5">
+                                                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                                                        <div className="cursor-grab active:cursor-grabbing p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] shrink-0">
+                                                                                            <GripVertical size={16} />
+                                                                                        </div>
+
                                                                                         <button 
-                                                                                            onMouseDown={(e) => { e.preventDefault(); savePartTitleEdit(bucket.id, part.id); }}
-                                                                                            className="p-1.5 bg-[var(--brand-solid)] text-white rounded-lg hover:opacity-90"
+                                                                                            type="button"
+                                                                                            onClick={() => setCollapsedPartSections(prev => ({ ...prev, [part.id]: !prev[part.id] }))}
+                                                                                            className="p-1 hover:bg-[var(--bg-card)] rounded-md text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer shrink-0"
+                                                                                            title={isPartCollapsed ? (lang === 'sv' ? "Expandera" : "Expand") : (lang === 'sv' ? "Fäll ihop" : "Collapse")}
                                                                                         >
-                                                                                            <Check size={13} />
+                                                                                            {isPartCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                                                                                         </button>
-                                                                                    </div>
-                                                                                ) : (
-                                                                                    <div 
-                                                                                        className="flex items-center gap-2 cursor-pointer group"
-                                                                                        onClick={() => {
-                                                                                            setEditingPartId(part.id);
-                                                                                            setEditPartTitleValue(part.customTitle || "");
-                                                                                        }}
-                                                                                    >
+
                                                                                         <span className="w-5 h-5 rounded-md bg-[var(--brand-solid)] text-white text-[10px] font-black flex items-center justify-center shrink-0">
                                                                                             {pIdx + 1}
                                                                                         </span>
-                                                                                        <h4 className="font-black text-xs uppercase tracking-wider text-[var(--text-main)]">
-                                                                                            {getPartDisplayTitle(part, pIdx, lang)}
-                                                                                        </h4>
-                                                                                        <Edit2 size={11} className="opacity-0 group-hover:opacity-50 text-[var(--text-muted)] transition-opacity" />
-                                                                                    </div>
-                                                                                )}
 
-                                                                                {/* Part Actions */}
-                                                                                <div className="flex items-center gap-1.5 shrink-0">
-                                                                                    <button 
-                                                                                        type="button"
-                                                                                        onClick={() => {
-                                                                                            setTargetPartContext({ bucketId: bucket.id, partId: part.id });
-                                                                                            setIsInstructionPickerOpen(true);
-                                                                                        }}
-                                                                                        className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
-                                                                                    >
-                                                                                        <BookOpen size={11} />
-                                                                                        <span>{lang === 'sv' ? "+ Infoga Genomgång" : "+ Insert Walkthrough"}</span>
-                                                                                    </button>
-                                                                                    
-                                                                                    <button 
-                                                                                        type="button"
-                                                                                        onClick={() => {
-                                                                                            setTargetPartContext({ bucketId: bucket.id, partId: part.id, part });
-                                                                                            setIsCheckpointModalOpen(true);
-                                                                                        }}
-                                                                                        className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
-                                                                                    >
-                                                                                        <Beaker size={11} />
-                                                                                        <span>{lang === 'sv' ? "+ Delprov" : "+ Checkpoint"}</span>
-                                                                                    </button>
-
-                                                                                    <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-main)] rounded-lg overflow-hidden ml-1">
-                                                                                        <button 
-                                                                                            disabled={pIdx === 0} 
-                                                                                            onClick={() => movePartSection(bucket.id, pIdx, -1)} 
-                                                                                            className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] disabled:opacity-20 cursor-pointer"
-                                                                                            title={lang === 'sv' ? "Flytta Del uppåt" : "Move Part up"}
-                                                                                        >
-                                                                                            <ArrowUp size={12} />
-                                                                                        </button>
-                                                                                        <button 
-                                                                                            disabled={pIdx === parts.length - 1} 
-                                                                                            onClick={() => movePartSection(bucket.id, pIdx, 1)} 
-                                                                                            className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] disabled:opacity-20 cursor-pointer"
-                                                                                            title={lang === 'sv' ? "Flytta Del nedåt" : "Move Part down"}
-                                                                                        >
-                                                                                            <ArrowDown size={12} />
-                                                                                        </button>
-                                                                                    </div>
-
-                                                                                    <button 
-                                                                                        onClick={() => deletePartSection(bucket.id, part.id)}
-                                                                                        className="p-1 text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer ml-0.5"
-                                                                                        title={lang === 'sv' ? "Radera Del" : "Delete Part"}
-                                                                                    >
-                                                                                        <Trash2 size={13} />
-                                                                                    </button>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {/* Part Steps Sequence */}
-                                                                            {(part.steps || []).length === 0 ? (
-                                                                                <div className="py-4 text-center border border-dashed border-[var(--border-subtle)] rounded-xl text-[11px] font-bold text-[var(--text-muted)] italic">
-                                                                                    {lang === 'sv' ? "Inga steg i denna del ännu." : "No steps in this part yet."}
-                                                                                </div>
-                                                                            ) : (
-                                                                                <div className="space-y-1.5">
-                                                                                    {part.steps.map((step, sIdx) => {
-                                                                                        const isInstruction = step.type === 'instruction' || !!step.sheetId;
-                                                                                        const isTest = step.type === 'test';
-                                                                                        const { description, mathExample } = !isInstruction 
-                                                                                            ? getLevelMetadata(step.topic || step.topicId, step.level, lang)
-                                                                                            : { description: "", mathExample: "" };
-
-                                                                                        return (
+                                                                                        {editingPartId === part.id ? (
+                                                                                            <div className="flex items-center gap-2 flex-1 max-w-md">
+                                                                                                <input 
+                                                                                                    autoFocus
+                                                                                                    type="text" 
+                                                                                                    value={editPartTitleValue} 
+                                                                                                    onChange={(e) => setEditPartTitleValue(e.target.value)}
+                                                                                                    onBlur={() => savePartTitleEdit(bucket.id, part.id)}
+                                                                                                    onKeyDown={(e) => { 
+                                                                                                        if (e.key === 'Enter') savePartTitleEdit(bucket.id, part.id);
+                                                                                                        if (e.key === 'Escape') setEditingPartId(null);
+                                                                                                    }}
+                                                                                                    className="flex-1 bg-[var(--bg-card)] border-2 border-[var(--brand-border)] text-[var(--text-main)] rounded-lg px-2.5 py-1 text-xs font-black uppercase tracking-wider outline-none shadow-inner"
+                                                                                                />
+                                                                                                <button 
+                                                                                                    onMouseDown={(e) => { e.preventDefault(); savePartTitleEdit(bucket.id, part.id); }}
+                                                                                                    className="p-1.5 bg-[var(--brand-solid)] text-white rounded-lg hover:opacity-90"
+                                                                                                >
+                                                                                                    <Check size={13} />
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        ) : (
                                                                                             <div 
-                                                                                                key={step.id || sIdx}
-                                                                                                className={`p-3.5 rounded-xl border-2 flex items-center justify-between gap-4 transition-all ${
-                                                                                                    isInstruction 
-                                                                                                        ? 'bg-indigo-50/80 border-indigo-200 text-slate-800' 
-                                                                                                        : 'bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-main)] hover:border-[var(--border-strong)]'
-                                                                                                }`}
+                                                                                                className="flex items-center gap-2 cursor-pointer group truncate"
+                                                                                                onClick={() => {
+                                                                                                    setEditingPartId(part.id);
+                                                                                                    setEditPartTitleValue(part.customTitle || "");
+                                                                                                }}
                                                                                             >
-                                                                                                <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                                                                                                    <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ${
-                                                                                                        isInstruction 
-                                                                                                            ? 'bg-indigo-600 text-white shadow-xs' 
-                                                                                                            : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
-                                                                                                    }`}>
-                                                                                                        {sIdx + 1}
-                                                                                                    </div>
+                                                                                                <h4 className="font-black text-xs uppercase tracking-wider text-[var(--text-main)] truncate">
+                                                                                                    {getPartDisplayTitle(part, pIdx, lang)}
+                                                                                                </h4>
+                                                                                                <span className="text-[10px] font-bold text-[var(--text-muted)] shrink-0">
+                                                                                                    ({(part.steps || []).length} {lang === 'sv' ? "steg" : "steps"})
+                                                                                                </span>
+                                                                                                <Edit2 size={11} className="opacity-0 group-hover:opacity-50 text-[var(--text-muted)] transition-opacity shrink-0" />
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
 
-                                                                                                    {isInstruction ? (
-                                                                                                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                                                                                                            <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0">
-                                                                                                                {lang === 'sv' ? "Genomgång" : "Walkthrough"}
-                                                                                                            </span>
-                                                                                                            <BookOpen size={14} className="text-indigo-600 shrink-0" />
-                                                                                                            <span className="font-black text-sm text-slate-800 truncate">
-                                                                                                                {step.sheetTitle}
-                                                                                                            </span>
-                                                                                                        </div>
-                                                                                                    ) : isTest ? (
-                                                                                                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                                                                                            <span className="bg-amber-200 text-amber-900 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0">
-                                                                                                                {step.testMode === 'exam' ? (lang === 'sv' ? "Prov" : "Exam") : (lang === 'sv' ? "Delprov" : "Checkpoint")}
-                                                                                                            </span>
-                                                                                                            <Beaker size={14} className="text-amber-600 shrink-0" />
-                                                                                                            
-                                                                                                            {editingStepId === step.id ? (
-                                                                                                                <div className="flex items-center gap-1.5 flex-1 max-w-sm">
-                                                                                                                    <input
-                                                                                                                        autoFocus
-                                                                                                                        type="text"
-                                                                                                                        value={editStepTitleValue}
-                                                                                                                        onChange={(e) => setEditStepTitleValue(e.target.value)}
-                                                                                                                        onBlur={() => saveCheckpointTitleEdit(bucket.id, part.id, step.id)}
-                                                                                                                        onKeyDown={(e) => {
-                                                                                                                            if (e.key === 'Enter') saveCheckpointTitleEdit(bucket.id, part.id, step.id);
-                                                                                                                            if (e.key === 'Escape') setEditingStepId(null);
-                                                                                                                        }}
-                                                                                                                        className="flex-1 bg-[var(--bg-card)] border-2 border-[var(--brand-border)] text-[var(--text-main)] rounded-lg px-2 py-0.5 text-xs font-black outline-none shadow-inner"
-                                                                                                                    />
-                                                                                                                    <button
-                                                                                                                        onMouseDown={(e) => { e.preventDefault(); saveCheckpointTitleEdit(bucket.id, part.id, step.id); }}
-                                                                                                                        className="p-1 bg-[var(--brand-solid)] text-white rounded-md hover:opacity-90"
-                                                                                                                    >
-                                                                                                                        <Check size={12} />
-                                                                                                                    </button>
+                                                                                    {/* Part Action Buttons */}
+                                                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                                                        <button 
+                                                                                            type="button"
+                                                                                            onClick={() => {
+                                                                                                setActiveContentModalBucketId(bucket.id);
+                                                                                                setTargetPartContext({ bucketId: bucket.id, partId: part.id });
+                                                                                                setIsContentModalOpen(true);
+                                                                                            }}
+                                                                                            className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
+                                                                                            title={lang === 'sv' ? "Välj övningsnivåer till denna del" : "Select levels for this part"}
+                                                                                        >
+                                                                                            <Target size={11} />
+                                                                                            <span>{lang === 'sv' ? "+ Nivåer" : "+ Levels"}</span>
+                                                                                        </button>
+
+                                                                                        <button 
+                                                                                            type="button"
+                                                                                            onClick={() => {
+                                                                                                setTargetPartContext({ bucketId: bucket.id, partId: part.id });
+                                                                                                setIsInstructionPickerOpen(true);
+                                                                                            }}
+                                                                                            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
+                                                                                        >
+                                                                                            <BookOpen size={11} />
+                                                                                            <span>{lang === 'sv' ? "+ Genomgång" : "+ Walkthrough"}</span>
+                                                                                        </button>
+                                                                                        
+                                                                                        <button 
+                                                                                            type="button"
+                                                                                            onClick={() => {
+                                                                                                setTargetPartContext({ bucketId: bucket.id, partId: part.id, part });
+                                                                                                setIsCheckpointModalOpen(true);
+                                                                                            }}
+                                                                                            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
+                                                                                        >
+                                                                                            <Beaker size={11} />
+                                                                                            <span>{lang === 'sv' ? "+ Delprov" : "+ Checkpoint"}</span>
+                                                                                        </button>
+
+                                                                                        <button 
+                                                                                            onClick={() => deletePartSection(bucket.id, part.id)}
+                                                                                            className="p-1 text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer ml-1"
+                                                                                            title={lang === 'sv' ? "Radera Del" : "Delete Part"}
+                                                                                        >
+                                                                                            <Trash2 size={13} />
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                {/* Collapsible Steps List */}
+                                                                                {!isPartCollapsed && (
+                                                                                    (part.steps || []).length === 0 ? (
+                                                                                        <div 
+                                                                                            onDragOver={(e) => { 
+                                                                                                e.preventDefault(); 
+                                                                                                e.stopPropagation();
+                                                                                                if (dropIndicator?.partId !== part.id) {
+                                                                                                    setDropIndicator({ partId: part.id, stepIndex: 0, position: 'before' });
+                                                                                                }
+                                                                                            }}
+                                                                                            onDragLeave={() => {
+                                                                                                if (dropIndicator?.partId === part.id) setDropIndicator(null);
+                                                                                            }}
+                                                                                            onDrop={(e) => {
+                                                                                                e.preventDefault();
+                                                                                                e.stopPropagation();
+                                                                                                if (draggedStep) handleDropOnStep(bucket.id, part.id, 0, 'before');
+                                                                                            }}
+                                                                                            className={`py-6 text-center border-2 border-dashed rounded-xl text-[11px] font-bold transition-all ${
+                                                                                                dropIndicator?.partId === part.id 
+                                                                                                    ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 scale-[1.01]' 
+                                                                                                    : 'border-[var(--border-main)] text-[var(--text-muted)] italic'
+                                                                                            }`}
+                                                                                        >
+                                                                                            {dropIndicator?.partId === part.id 
+                                                                                                ? (lang === 'sv' ? "Släpp här för att flytta steget till denna del" : "Drop here to move step to this part")
+                                                                                                : (lang === 'sv' 
+                                                                                                    ? "Dra och släpp steg hit, eller använd knapparna ovan för att lägga till." 
+                                                                                                    : "Drag and drop steps here, or use the buttons above to add content.")}
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <div className="space-y-1.5">
+                                                                                            {part.steps.map((step, sIdx) => {
+                                                                                                const isInstruction = step.type === 'instruction' || !!step.sheetId;
+                                                                                                const isTest = step.type === 'test';
+                                                                                                const { description, mathExample } = !isInstruction 
+                                                                                                    ? getLevelMetadata(step.topic || step.topicId, step.level, lang)
+                                                                                                    : { description: "", mathExample: "" };
+
+                                                                                                const isBeingDragged = draggedStep?.partId === part.id && draggedStep?.stepIndex === sIdx;
+
+                                                                                                const isDropTargetBefore = dropIndicator?.partId === part.id && 
+                                                                                                                           dropIndicator?.stepIndex === sIdx && 
+                                                                                                                           dropIndicator?.position === 'before';
+                                                                                                const isDropTargetAfter = dropIndicator?.partId === part.id && 
+                                                                                                                          dropIndicator?.stepIndex === sIdx && 
+                                                                                                                          dropIndicator?.position === 'after';
+
+                                                                                                return (
+                                                                                                    <React.Fragment key={step.id || sIdx}>
+                                                                                                        {/* Drop Target Indicator: BEFORE */}
+                                                                                                        {isDropTargetBefore && !isBeingDragged && (
+                                                                                                            <div className="h-1.5 w-full bg-indigo-500 rounded-full my-1 shadow-md shadow-indigo-500/40 animate-pulse transition-all" />
+                                                                                                        )}
+
+                                                                                                        <div 
+                                                                                                            draggable
+                                                                                                            onDragStart={(e) => {
+                                                                                                                e.stopPropagation();
+                                                                                                                setDraggedStep({ bucketId: bucket.id, partId: part.id, stepIndex: sIdx });
+                                                                                                                e.dataTransfer.effectAllowed = 'move';
+                                                                                                            }}
+                                                                                                            onDragOver={(e) => {
+                                                                                                                e.preventDefault();
+                                                                                                                e.stopPropagation();
+
+                                                                                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                                                                                const midY = rect.top + rect.height / 2;
+                                                                                                                const position = e.clientY < midY ? 'before' : 'after';
+
+                                                                                                                if (
+                                                                                                                    dropIndicator?.partId !== part.id || 
+                                                                                                                    dropIndicator?.stepIndex !== sIdx || 
+                                                                                                                    dropIndicator?.position !== position
+                                                                                                                ) {
+                                                                                                                    setDropIndicator({ partId: part.id, stepIndex: sIdx, position });
+                                                                                                                }
+                                                                                                            }}
+                                                                                                            onDragLeave={(e) => {
+                                                                                                                e.stopPropagation();
+                                                                                                                if (dropIndicator?.partId === part.id && dropIndicator?.stepIndex === sIdx) {
+                                                                                                                    setDropIndicator(null);
+                                                                                                                }
+                                                                                                            }}
+                                                                                                            onDrop={(e) => {
+                                                                                                                e.preventDefault();
+                                                                                                                e.stopPropagation();
+                                                                                                                if (draggedStep) {
+                                                                                                                    handleDropOnStep(bucket.id, part.id, sIdx, dropIndicator?.position || 'before');
+                                                                                                                }
+                                                                                                            }}
+                                                                                                            onDragEnd={() => {
+                                                                                                                setDraggedStep(null);
+                                                                                                                setDropIndicator(null);
+                                                                                                            }}
+                                                                                                            className={`p-3 rounded-xl border-2 flex items-center justify-between gap-3 transition-all relative ${
+                                                                                                                isBeingDragged 
+                                                                                                                    ? 'opacity-25 border-dashed border-indigo-400 scale-[0.98]' 
+                                                                                                                    : isInstruction 
+                                                                                                                        ? 'bg-indigo-50/80 border-indigo-200 text-slate-800' 
+                                                                                                                        : isTest
+                                                                                                                            ? 'bg-amber-50/70 border-amber-200 text-slate-800'
+                                                                                                                            : 'bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-main)] hover:border-[var(--brand-solid)]'
+                                                                                                            }`}
+                                                                                                        >
+                                                                                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                                                                                {/* Drag Handle */}
+                                                                                                                <div className="cursor-grab active:cursor-grabbing p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] shrink-0">
+                                                                                                                    <GripVertical size={14} />
                                                                                                                 </div>
-                                                                                                            ) : (
-                                                                                                                <div
-                                                                                                                    className="flex items-center gap-1.5 cursor-pointer group"
-                                                                                                                    onClick={() => {
-                                                                                                                        setEditingStepId(step.id);
-                                                                                                                        setEditStepTitleValue(step.title || "");
-                                                                                                                    }}
-                                                                                                                >
-                                                                                                                    <span className="font-black text-sm text-[var(--text-main)] truncate">
-                                                                                                                        {step.title}
-                                                                                                                    </span>
-                                                                                                                    <Edit2 size={11} className="opacity-0 group-hover:opacity-60 text-[var(--text-muted)] transition-opacity" />
-                                                                                                                </div>
-                                                                                                            )}
 
-                                                                                                            <span className="text-[10px] font-black tracking-tight text-indigo-700 dark:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md border border-indigo-200/80 dark:border-indigo-800/60 shrink-0 ml-auto">
-                                                                                                                {step.questionCount} {lang === 'sv' ? "frågor" : "questions"}
-                                                                                                            </span>
-                                                                                                        </div>
-                                                                                                    ) : (
-                                                                                                        <div className="flex items-center gap-3 min-w-0 flex-1 flex-wrap sm:flex-nowrap">
-                                                                                                            <span className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 border border-emerald-300 dark:border-emerald-800">
-                                                                                                                {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
-                                                                                                            </span>
-
-                                                                                                            <div className="flex flex-col min-w-0 flex-1">
-                                                                                                                <div className="flex items-center gap-2">
-                                                                                                                    <span className="font-black text-sm text-[var(--text-main)] truncate">
-                                                                                                                        {getTopicName(step.topic || step.topicId, lang)}
-                                                                                                                    </span>
-                                                                                                                    {description && (
-                                                                                                                        <>
-                                                                                                                            <span className="text-[var(--text-muted)] opacity-40 hidden md:inline">•</span>
-                                                                                                                            <span className="text-xs font-semibold text-[var(--text-muted)] truncate hidden md:inline">
-                                                                                                                                {description}
-                                                                                                                            </span>
-                                                                                                                        </>
-                                                                                                                    )}
+                                                                                                                <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ${
+                                                                                                                    isInstruction 
+                                                                                                                        ? 'bg-indigo-600 text-white shadow-xs' 
+                                                                                                                        : isTest
+                                                                                                                            ? 'bg-amber-500 text-white shadow-xs'
+                                                                                                                            : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
+                                                                                                                }`}>
+                                                                                                                    {sIdx + 1}
                                                                                                                 </div>
 
-                                                                                                                {mathExample && (
-                                                                                                                    <div className="mt-1 text-sm sm:text-base text-indigo-600 dark:text-indigo-400 font-serif italic truncate flex items-center gap-2">
-                                                                                                                        <span className="text-[9px] font-sans font-black uppercase tracking-widest text-[var(--text-muted)] not-italic bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
-                                                                                                                            Ex
+                                                                                                                {isInstruction ? (
+                                                                                                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                                                                                        <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0">
+                                                                                                                            {lang === 'sv' ? "Genomgång" : "Walkthrough"}
                                                                                                                         </span>
-                                                                                                                        <MathDisplay content={mathExample} />
+                                                                                                                        <BookOpen size={14} className="text-indigo-600 shrink-0" />
+                                                                                                                        <span className="font-black text-sm text-slate-800 truncate">
+                                                                                                                            {step.sheetTitle}
+                                                                                                                        </span>
+                                                                                                                    </div>
+                                                                                                                ) : isTest ? (
+                                                                                                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                                                                                        <span className="bg-amber-200 text-amber-900 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0">
+                                                                                                                            {step.testMode === 'exam' ? (lang === 'sv' ? "Prov" : "Exam") : (lang === 'sv' ? "Delprov" : "Checkpoint")}
+                                                                                                                        </span>
+                                                                                                                        <Beaker size={14} className="text-amber-600 shrink-0" />
+                                                                                                                        
+                                                                                                                        {editingStepId === step.id ? (
+                                                                                                                            <div className="flex items-center gap-1.5 flex-1 max-w-sm">
+                                                                                                                                <input
+                                                                                                                                    autoFocus
+                                                                                                                                    type="text"
+                                                                                                                                    value={editStepTitleValue}
+                                                                                                                                    onChange={(e) => setEditStepTitleValue(e.target.value)}
+                                                                                                                                    onBlur={() => saveCheckpointTitleEdit(bucket.id, part.id, step.id)}
+                                                                                                                                    onKeyDown={(e) => {
+                                                                                                                                        if (e.key === 'Enter') saveCheckpointTitleEdit(bucket.id, part.id, step.id);
+                                                                                                                                        if (e.key === 'Escape') setEditingStepId(null);
+                                                                                                                                    }}
+                                                                                                                                    className="flex-1 bg-[var(--bg-card)] border-2 border-[var(--brand-border)] text-[var(--text-main)] rounded-lg px-2 py-0.5 text-xs font-black outline-none shadow-inner"
+                                                                                                                                />
+                                                                                                                                <button
+                                                                                                                                    onMouseDown={(e) => { e.preventDefault(); saveCheckpointTitleEdit(bucket.id, part.id, step.id); }}
+                                                                                                                                    className="p-1 bg-[var(--brand-solid)] text-white rounded-md hover:opacity-90"
+                                                                                                                                >
+                                                                                                                                    <Check size={12} />
+                                                                                                                                </button>
+                                                                                                                            </div>
+                                                                                                                        ) : (
+                                                                                                                            <div
+                                                                                                                                className="flex items-center gap-1.5 cursor-pointer group"
+                                                                                                                                onClick={() => {
+                                                                                                                                    setEditingStepId(step.id);
+                                                                                                                                    setEditStepTitleValue(step.title || "");
+                                                                                                                                }}
+                                                                                                                            >
+                                                                                                                                <span className="font-black text-sm text-[var(--text-main)] truncate">
+                                                                                                                                    {step.title}
+                                                                                                                                </span>
+                                                                                                                                <Edit2 size={11} className="opacity-0 group-hover:opacity-60 text-[var(--text-muted)] transition-opacity" />
+                                                                                                                            </div>
+                                                                                                                        )}
+
+                                                                                                                        <span className="text-[10px] font-black tracking-tight text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200 shrink-0 ml-auto">
+                                                                                                                            {step.questionCount} {lang === 'sv' ? "frågor" : "questions"}
+                                                                                                                        </span>
+                                                                                                                    </div>
+                                                                                                                ) : (
+                                                                                                                    <div className="flex items-center gap-3 min-w-0 flex-1 flex-wrap sm:flex-nowrap">
+                                                                                                                        <span className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 border border-emerald-300 dark:border-emerald-800">
+                                                                                                                            {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
+                                                                                                                        </span>
+
+                                                                                                                        <div className="flex flex-col min-w-0 flex-1">
+                                                                                                                            <div className="flex items-center gap-2">
+                                                                                                                                <span className="font-black text-sm text-[var(--text-main)] truncate">
+                                                                                                                                    {getTopicName(step.topic || step.topicId, lang)}
+                                                                                                                                </span>
+                                                                                                                                {description && (
+                                                                                                                                    <>
+                                                                                                                                        <span className="text-[var(--text-muted)] opacity-40 hidden md:inline">•</span>
+                                                                                                                                        <span className="text-xs font-semibold text-[var(--text-muted)] truncate hidden md:inline">
+                                                                                                                                            {description}
+                                                                                                                                        </span>
+                                                                                                                                    </>
+                                                                                                                                )}
+                                                                                                                            </div>
+
+                                                                                                                            {mathExample && (
+                                                                                                                                <div className="mt-1 text-sm sm:text-base text-indigo-600 dark:text-indigo-400 font-serif italic truncate flex items-center gap-2">
+                                                                                                                                    <span className="text-[9px] font-sans font-black uppercase tracking-widest text-[var(--text-muted)] not-italic bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
+                                                                                                                                        Ex
+                                                                                                                                    </span>
+                                                                                                                                    <MathDisplay content={mathExample} />
+                                                                                                                                </div>
+                                                                                                                            )}
+                                                                                                                        </div>
                                                                                                                     </div>
                                                                                                                 )}
                                                                                                             </div>
-                                                                                                        </div>
-                                                                                                    )}
-                                                                                                </div>
 
-                                                                                                <div className="flex items-center gap-1 shrink-0">
-                                                                                                    <button 
-                                                                                                        type="button"
-                                                                                                        disabled={sIdx === 0}
-                                                                                                        onClick={() => moveStepInsidePart(bucket.id, part.id, sIdx, -1)}
-                                                                                                        className="p-1.5 rounded-lg bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-main)] disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed border border-[var(--border-subtle)]"
-                                                                                                        title={lang === 'sv' ? "Flytta upp" : "Move up"}
-                                                                                                    >
-                                                                                                        <ArrowUp size={12} />
-                                                                                                    </button>
-                                                                                                    <button 
-                                                                                                        type="button"
-                                                                                                        disabled={sIdx === part.steps.length - 1}
-                                                                                                        onClick={() => moveStepInsidePart(bucket.id, part.id, sIdx, 1)}
-                                                                                                        className="p-1.5 rounded-lg bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-main)] disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed border border-[var(--border-subtle)]"
-                                                                                                        title={lang === 'sv' ? "Flytta ned" : "Move down"}
-                                                                                                    >
-                                                                                                        <ArrowDown size={12} />
-                                                                                                    </button>
-                                                                                                    <button 
-                                                                                                        type="button"
-                                                                                                        onClick={() => removeStepFromPart(bucket.id, part.id, sIdx)}
-                                                                                                        className="p-1.5 hover:bg-rose-50 text-[var(--text-muted)] hover:text-rose-600 rounded-lg transition-colors ml-1 cursor-pointer"
-                                                                                                        title={lang === 'sv' ? "Ta bort steg" : "Remove step"}
-                                                                                                    >
-                                                                                                        <X size={14} />
-                                                                                                    </button>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        );
-                                                                                    })}
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    ))}
+                                                                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                                                                <button 
+                                                                                                                    type="button"
+                                                                                                                    onClick={() => removeStepFromPart(bucket.id, part.id, sIdx)}
+                                                                                                                    className="p-1 hover:bg-rose-50 text-[var(--text-muted)] hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
+                                                                                                                    title={lang === 'sv' ? "Ta bort steg" : "Remove step"}
+                                                                                                                >
+                                                                                                                    <X size={14} />
+                                                                                                                </button>
+                                                                                                            </div>
+                                                                                                        </div>
+
+                                                                                                        {/* Drop Target Indicator: AFTER (last step bottom line) */}
+                                                                                                        {isDropTargetAfter && !isBeingDragged && (
+                                                                                                            <div className="h-1.5 w-full bg-indigo-500 rounded-full my-1 shadow-md shadow-indigo-500/40 animate-pulse transition-all" />
+                                                                                                        )}
+                                                                                                    </React.Fragment>
+                                                                                                );
+                                                                                            })}
+                                                                                        </div>
+                                                                                    )
+                                                                                )}
+                                                                            </div>
+                                                                        );
+                                                                    })}
                                                                 </div>
                                                             )}
                                                         </div>
