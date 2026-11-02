@@ -7,9 +7,9 @@ import { TransversalVisual, CompositeVisual } from './ComplexGeometry';
 import PatternVisual from './PatternComponents';
 import ProbabilityTree from './ProbabilityTree';
 import { ProbabilityMarbles, ProbabilitySpinner } from './ProbabilityVisuals';
-import { ScaleVisual, SimilarityCompare, CompareShapesArea } from './ScaleVisuals';
 import { FrequencyTable, BarGraph, PercentGrid } from './StatisticsVisuals';
 import AngleVisual from './AngleComponents';
+import { ScaleVisual, SimilarityCompare, CompareShapesArea, CompareShapesVolume } from './ScaleVisuals';
 
 export default function VisualRenderer({ data, width, height, isWordProblem }) {
     // If there is no data to render, safely return null
@@ -40,6 +40,10 @@ export default function VisualRenderer({ data, width, height, isWordProblem }) {
     if (data.scale || data.geometry?.type === 'scale') return <ScaleVisual data={data.scale || data.geometry} />;
     if (data.similarity || data.geometry?.type === 'similarity') return <SimilarityCompare data={data.similarity || data.geometry} />;
     if (data.compareArea || data.geometry?.type === 'compare_area') return <CompareShapesArea data={data.compareArea || data.geometry} />;
+    if (data.scale || data.geometry?.type === 'scale') return <ScaleVisual data={data.scale || data.geometry} />;
+    if (data.similarity || data.geometry?.type === 'similarity') return <SimilarityCompare data={data.similarity || data.geometry} />;
+    if (data.compareArea || data.geometry?.type === 'compare_area') return <CompareShapesArea data={data.compareArea || data.geometry} />;
+    if (data.compareVolume || data.geometry?.type === 'compare_volume') return <CompareShapesVolume data={data.compareVolume || data.geometry} />;
     
     // 6. CORE GEOMETRY & VOLUME
     if (data.geometry) {

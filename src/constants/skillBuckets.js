@@ -1631,91 +1631,139 @@ export const SKILL_BUCKETS = {
         ]
       },
       scale: {
-        name: { sv: 'Skala', en: 'Scale' },
+        name: { sv: 'Skala & Likformighet', en: 'Scale & Similarity' },
         variations: [
-          // LEVEL 1: Koncept & Teori (Concepts)
-          { key: 'concept_lie', level: 1, name: { sv: 'Hitta felet: Skala', en: 'Find error: Scale' }, desc: { sv: 'Analysera påstående', en: 'Analyze statement' } },
-          { key: 'concept_match', level: 1, name: { sv: 'Begrepp: Matcha', en: 'Concept: Match' }, desc: { sv: 'Matcha skala till bild', en: 'Match scale to image' } },
-
-          // LEVEL 2: Linjär beräkning & Grund (Linear Fluency)
-          { key: 'find_scale', level: 2, name: { sv: 'Bestäm skalan', en: 'Determine scale' }, desc: { sv: '1:X form', en: '1:X form' } },
+          // LEVEL 1: Begrepp & Skalriktning
           { 
-            key: 'calc_real', 
-            level: 2,
-            name: { sv: 'Beräkna verklighet', en: 'Calculate reality' },
-            desc: { sv: 'Hitta det verkliga måttet', en: 'Find the real measure' },
+            key: 'scale_direction_type', 
+            level: 1, 
+            name: { sv: 'Skalriktning (Förstoring/Förminskning)', en: 'Scale Direction (Enlarge/Reduce)' }, 
+            desc: { sv: 'Avgör om skalan anger förstoring eller förminskning', en: 'Determine whether scale is enlargement or reduction' } 
+          },
+          { 
+            key: 'scale_reading_val', 
+            level: 1, 
+            name: { sv: 'Tolka 1 cm på kartan', en: 'Interpret 1 cm on map' }, 
+            desc: { sv: 'Vad motsvarar 1 cm på ritningen i verkligheten?', en: 'What does 1 cm represent in reality?' },
+            tags: ['word_problem_ready'],
+            contextType: 'scale_reading_val',
+            extractorPattern: /^(?<k>\d+)$/
+          },
+
+          // LEVEL 2: Förminskning (1:k Beräkna verklig längd)
+          { 
+            key: 'reduction_calc_direct', 
+            level: 2, 
+            name: { sv: 'Förminskning: Beräkna cm', en: 'Reduction: Calculate cm' }, 
+            desc: { sv: 'Beräkna verklig längd i centimeter', en: 'Calculate real length in centimeters' },
             tags: ['word_problem_ready'],
             contextType: 'scale_calc_real',
-            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<imgCm>\d+)\s*;\s*(?<ans>\d+)/
+            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<imgCm>\d+)\s*;\s*(?<ans>\d+)$/
           },
           { 
-            key: 'calc_image', 
-            level: 2,
-            name: { sv: 'Beräkna ritning', en: 'Calculate drawing' },
-            desc: { sv: 'Hitta måttet på bilden', en: 'Find the image measure' },
+            key: 'reduction_cm_to_m', 
+            level: 2, 
+            name: { sv: 'Förminskning: Omvandla till meter', en: 'Reduction: Convert to meters' }, 
+            desc: { sv: 'Beräkna verklig längd och svara i meter', en: 'Calculate real length and convert to meters' },
             tags: ['word_problem_ready'],
-            contextType: 'scale_linear_image',
-            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<realCm>\d+)\s*;\s*(?<imgCm>\d+)/
+            contextType: 'scale_calc_real_m',
+            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<imgCm>\d+)\s*;\s*(?<ans>[\d.]+)$/
           },
-          { key: 'calc_magnification', level: 2, name: { sv: 'Beräkna förstoring', en: 'Calculate magnification' }, desc: { sv: 'Hitta måttet vid förstoring', en: 'Find magnified measure' } },
 
-          // LEVEL 3: Blandade scenarier (Mixed Scenarios)
+          // LEVEL 3: Förstoring (k:1 Beräkna bildens mått)
           { 
-            key: 'map_real', 
-            level: 3,
-            name: { sv: 'Karta: Verklighet', en: 'Map: Reality' },
-            desc: { sv: 'Beräkna avstånd från karta', en: 'Calculate distance from map' },
-            tags: ['word_problem_ready'],
-            contextType: 'scale_map_real',
-            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<mapCm>\d+)\s*;\s*(?<ans>[\d.]+)/
-          },
-          { 
-            key: 'blueprint_draw', 
+            key: 'enlargement_calc_direct', 
             level: 3, 
-            name: { sv: 'Ritning: Skala', en: 'Blueprint: Scale' }, 
-            desc: { sv: 'Räkna ut längd på ritning', en: 'Calculate length on drawing' }, 
-            tags: ['word_problem_ready'], 
-            contextType: 'scale_blueprint_draw', 
-            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<realM>-?\d+(?:[.,]\d+)?)\s*;\s*(?<ans>-?\d+(?:[.,]\d+)?)/ 
+            name: { sv: 'Förstoring: Beräkna mm', en: 'Enlargement: Calculate mm' }, 
+            desc: { sv: 'Beräkna bildens mått i millimeter', en: 'Calculate image length in millimeters' },
+            tags: ['word_problem_ready'],
+            contextType: 'scale_calc_enlarge',
+            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<realMm>[\d.]+)\s*;\s*(?<ansMm>[\d.]+)$/
           },
           { 
-            key: 'microscope_calc', 
-            level: 3,
-            name: { sv: 'Förstoring (Mikroskop)', en: 'Magnification (Micro)' }, 
-            desc: { sv: 'X:1 form', en: 'X:1 form' },
+            key: 'enlargement_mm_to_cm', 
+            level: 3, 
+            name: { sv: 'Förstoring: Omvandla till cm', en: 'Enlargement: Convert to cm' }, 
+            desc: { sv: 'Beräkna bildens mått och svara i centimeter', en: 'Calculate image length and convert to centimeters' },
             tags: ['word_problem_ready'],
-            contextType: 'scale_microscope_calc',
-            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<realMm>[\d.]+)\s*;\s*(?<ansMm>[\d.]+)/
+            contextType: 'scale_calc_enlarge_cm',
+            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<realMm>[\d.]+)\s*;\s*(?<ansCm>[\d.]+)$/
           },
-          { key: 'model_real', level: 3, name: { sv: 'Modell: Verklighet', en: 'Model: Reality' }, desc: { sv: 'Beräkna verklig storlek från modell', en: 'Calculate real size from model' } },
 
-          // LEVEL 4: Bestämma skalan (Determine Scale)
-          { key: 'determine_reduction', level: 4, name: { sv: 'Bestäm förminskning', en: 'Determine reduction' }, desc: { sv: 'Beräkna skalan för förminskning', en: 'Calculate scale for reduction' } },
-          { key: 'determine_magnification', level: 4, name: { sv: 'Bestäm förstoring', en: 'Determine magnification' }, desc: { sv: 'Beräkna skalan för förstoring', en: 'Calculate scale for magnification' } },
-
-          // LEVEL 5: Utan bild (No Pictures)
-          { key: 'word_problem', level: 5, name: { sv: 'Textproblem', en: 'Word problem' }, desc: { sv: 'Skala i textformat', en: 'Scale in text format' } },
-
-          // LEVEL 6: Areaskala (Area Scale Deep)
-          { key: 'area_concept', level: 6, name: { sv: 'Areaskala: Koncept', en: 'Area scale: Concept' }, desc: { sv: 'Längdskala i kvadrat', en: 'Length scale squared' } },
-          { key: 'area_calc_small', level: 6, name: { sv: 'Beräkna bild: Area', en: 'Calculate Image: Area' }, desc: { sv: 'Använd areaskalan för att beräkna bildens area', en: 'Use area scale to calculate image area' } },
-          {
-            key: "area_calc_large",
-            level: 6,
-            name: { sv: "Beräkna verklighet: Area", en: "Calculate Reality: Area" },
-            desc: { sv: "Använd längdskalan i kvadrat för att beräkna den verkliga arean", en: "Use the length scale squared to calculate the actual area" },
-            tags: ["word_problem_ready"],
-            contextType: "scale_area_forward",
-            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<smallA>\d+)\s*;\s*(?<largeA>\d+)/
+          // LEVEL 4: Bestämma skala
+          { 
+            key: 'determine_scale_blueprint', 
+            level: 4, 
+            name: { sv: 'Bestäm skala (Ritning/Hus)', en: 'Determine Scale (Blueprint)' }, 
+            desc: { sv: 'Omvandla m till cm och förenkla till 1:k', en: 'Convert m to cm and reduce to 1:k' },
+            tags: ['word_problem_ready'],
+            contextType: 'scale_determine_ratio',
+            extractorPattern: /^(?<picCm>\d+)\s*;\s*(?<realM>[\d.]+)\s*;\s*(?<k>\d+)$/
           },
-          {
-            key: "area_reverse",
-            level: 6,
-            name: { sv: "Bestäm skala utifrån area", en: "Determine Scale from Area" },
-            desc: { sv: "Beräkna längdskalan genom att dra kvadratroten ur areaskalan", en: "Calculate the length scale by taking the square root of the area scale" },
-            tags: ["word_problem_ready"],
-            contextType: "scale_area_reverse",
-            extractorPattern: /^(?<smallA>\d+)\s*;\s*(?<largeA>\d+)\s*;\s*(?<scale>\d+)/
+          { 
+            key: 'determine_scale_map', 
+            level: 4, 
+            name: { sv: 'Bestäm skala (Karta/Terräng)', en: 'Determine Scale (Map)' }, 
+            desc: { sv: 'Omvandla km till cm och förenkla till 1:k', en: 'Convert km to cm and reduce to 1:k' },
+            tags: ['word_problem_ready'],
+            contextType: 'scale_determine_map_ratio',
+            extractorPattern: /^(?<picCm>\d+)\s*;\s*(?<realKm>[\d.]+)\s*;\s*(?<k>\d+)$/
+          },
+
+          // LEVEL 5: Likformiga trianglar & månghörningar
+          { 
+            key: 'similarity_tri_side', 
+            level: 5, 
+            name: { sv: 'Likformig bas (x)', en: 'Similar Base (x)' }, 
+            desc: { sv: 'Hitta den okända basen via längdskalan', en: 'Find missing base using the scale factor' } 
+          },
+          { 
+            key: 'similarity_tri_height', 
+            level: 5, 
+            name: { sv: 'Likformig höjd (x)', en: 'Similar Height (x)' }, 
+            desc: { sv: 'Hitta den okända höjden via längdskalan', en: 'Find missing height using the scale factor' } 
+          },
+
+          // LEVEL 6: Topptriangelsatsen & Parallelltransversal
+          { 
+            key: 'nested_topptriangel_base', 
+            level: 6, 
+            name: { sv: 'Topptriangel: Bas (x)', en: 'Top Triangle: Base (x)' }, 
+            desc: { sv: 'Beräkna basen med topptriangelsatsen', en: 'Calculate base using the triangle proportionality theorem' } 
+          },
+          { 
+            key: 'nested_topptriangel_side', 
+            level: 6, 
+            name: { sv: 'Topptriangel: Sida (x)', en: 'Top Triangle: Side (x)' }, 
+            desc: { sv: 'Beräkna delsträcka längs transversalen', en: 'Calculate segment length along transversal' } 
+          },
+
+          // LEVEL 7: Areaskala & Omvänd Areaskala
+          { 
+            key: 'area_scale_direct', 
+            level: 7, 
+            name: { sv: 'Areaskala (Direkt: k²)', en: 'Area Scale (Direct: k²)' }, 
+            desc: { sv: 'Beräkna ny area med areaskalan k²', en: 'Calculate new area using area scale k²' } 
+          },
+          { 
+            key: 'area_scale_inverse', 
+            level: 7, 
+            name: { sv: 'Omvänd areaskala (√Areaskala)', en: 'Inverse Area Scale (√Area Scale)' }, 
+            desc: { sv: 'Bestäm längdskala och sidlängd utifrån kända areor', en: 'Find linear scale and side length from known areas' } 
+          },
+
+          // LEVEL 8: Volymskala & Omvänd Volymskala
+          { 
+            key: 'volume_scale_direct', 
+            level: 8, 
+            name: { sv: 'Volymskala (Direkt: k³)', en: 'Volume Scale (Direct: k³)' }, 
+            desc: { sv: 'Beräkna ny volym med volymskalan k³', en: 'Calculate new volume using volume scale k³' } 
+          },
+          { 
+            key: 'volume_scale_inverse', 
+            level: 8, 
+            name: { sv: 'Omvänd volymskala (∛Volymskala)', en: 'Inverse Volume Scale (∛Volume Scale)' }, 
+            desc: { sv: 'Bestäm längdskala och höjd utifrån kända volymer', en: 'Find linear scale and height from known volumes' } 
           }
         ]
       },

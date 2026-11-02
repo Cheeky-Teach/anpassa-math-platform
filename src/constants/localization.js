@@ -290,13 +290,14 @@ export const LEVEL_DESCRIPTIONS = {
         4: { sv: "Blandad (1-3)", en: "Mixed (1-3)" },
     },
     scale: {
-        1: { sv: "Förstå Skala", en: "Understand Scale" },
-        2: { sv: "Beräkna Längd (Enkel)", en: "Calculate Length (Simple)" },
-        3: { sv: "Blandade Scenarier", en: "Mixed Scenarios" }, 
+        1: { sv: "Begrepp & Skalriktning", en: "Concepts & Direction" },
+        2: { sv: "Förminskning (Verklig längd)", en: "Reduction (Real Length)" },
+        3: { sv: "Förstoring (Bildens mått)", en: "Enlargement (Image Size)" },
         4: { sv: "Bestäm Skalan", en: "Determine Scale" },
-        5: { sv: "Problemlösning", en: "Word Problems" },
-        6: { sv: "Areaskala", en: "Area Scale" },
-        7: { sv: "Blandat", en: "Mixed" }
+        5: { sv: "Likformiga Trianglar", en: "Similar Triangles" },
+        6: { sv: "Topptriangelsatsen", en: "Triangle Proportionality" },
+        7: { sv: "Areaskala & Omvänd Areaskala", en: "Area Scale & Inverse" },
+        8: { sv: "Volymskala & Omvänd Volymskala", en: "Volume Scale & Inverse" }
     },
     volume: {
         1: { sv: "Rätblock & Kub", en: "Cuboid & Cube" },
