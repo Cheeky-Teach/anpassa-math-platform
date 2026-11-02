@@ -1195,10 +1195,10 @@ export default function QuestionStudio({
                     </div>
                     {Object.values(SKILL_BUCKETS).map(cat => (
                         <div key={cat.id}>
-                            <h3 className="text-[12px] font-black uppercase tracking-widest text-[var(--brand-solid)] mb-3 ml-2">{cat.name[lang] || cat.name.en || cat.name.sv}</h3>
+                            <h3 className="text-[14px] font-black uppercase tracking-widest text-[var(--brand-solid)] mb-3 ml-2">{cat.name[lang] || cat.name.en || cat.name.sv}</h3>
                             <div className="space-y-1">
                                 {Object.entries(cat.topics).map(([id, data]) => (
-                                    <button key={id} onClick={() => setSelectedTopicId(id)} className={`w-full text-left px-3 py-1.5 text-sm rounded-[var(--radius-btn)] transition-all ${selectedTopicId === id ? 'bg-indigo-600 text-white font-bold shadow-md' : 'text-[var(--text-main)] hover:bg-[var(--bg-surface)]'}`}>
+                                    <button key={id} onClick={() => setSelectedTopicId(id)} className={`w-full text-left px-3 py-1.5 text-m rounded-[var(--radius-btn)] transition-all ${selectedTopicId === id ? 'bg-indigo-600 text-white font-bold shadow-md' : 'text-[var(--text-main)] hover:bg-[var(--bg-surface)]'}`}>
                                         {data.name[lang] || data.name.en || data.name.sv}
                                     </button>
                                 ))}
@@ -1278,7 +1278,7 @@ export default function QuestionStudio({
                                         </div>
                                     </div>
                                     
-                                    <p className="text-[9px] font-medium text-[var(--text-muted)] line-clamp-1 mb-2 italic leading-tight">{v.desc[lang] || v.desc.en || v.desc.sv}</p>
+                                    <p className="text-[14px] font-medium text-[var(--text-muted)] line-clamp-1 mb-2 italic leading-tight">{v.desc[lang] || v.desc.en || v.desc.sv}</p>
                                     
                                     <div className="flex items-center gap-1.5">
                                         <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5">
@@ -1747,7 +1747,7 @@ export default function QuestionStudio({
                 <div className="flex items-center gap-2">
                     <Layers size={14} className="text-[var(--text-muted)]" />
                     <h2 className="text-[12px] font-black uppercase tracking-widest text-[var(--text-main)]">{t.selected_questions}</h2>
-                    <div className="bg-[var(--text-main)] text-[var(--bg-canvas)] px-2 py-0.5 rounded-lg text-[9px] font-black">{packet.length}</div>
+                    <div className="bg-[var(--text-main)] text-[var(--bg-canvas)] px-2 py-0.5 rounded-lg text-[10px] font-black">{packet.length}</div>
                 </div>
               )}
               <button onClick={() => setIsPane4Collapsed(!isPane4Collapsed)} className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] transition-colors">
@@ -1780,12 +1780,12 @@ export default function QuestionStudio({
                                     <div className="flex items-center gap-2 mb-1">
                                         <span className="text-[14px] font-black text-[var(--text-main)]">#{idx + 1}</span>
                                         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.instructionMode === 'header' ? 'bg-indigo-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-[var(--border-strong)]'}`} />
-                                        <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest truncate">
+                                        <span className="text-[12px] font-black text-[var(--text-muted)] uppercase tracking-widest truncate">
                                             {item.name}
                                         </span>
                                     </div>
                                     
-                                    <div className="text-[11px] font-bold text-[var(--text-muted)] leading-tight pr-2">
+                                    <div className="text-[12px] font-bold text-[var(--text-muted)] leading-tight pr-2">
                                         <MathDisplay 
                                             content={compileAnchoredStory(item, lang, true)} 
                                             className="!whitespace-normal line-clamp-2" 
