@@ -421,8 +421,12 @@ export default function QuestionSummoner({
                                     <Loader2 className="animate-spin text-indigo-600" size={40} />
                                 </div>
                             ) : previewData ? (
-                                <div className="w-full flex flex-col items-center animate-in zoom-in-95 duration-200">
-                                    <div className="flex justify-center scale-95 origin-top mt-1 w-full">
+                                <div 
+                                    className="whiteboard-protect w-full flex flex-col items-center bg-white rounded-3xl p-6 border border-slate-200 shadow-sm animate-in zoom-in-95 duration-200"
+                                    style={{ colorScheme: 'light', color: '#0f172a' }}
+                                >
+                                    {/* 🟢 empty:hidden automatically hides this div whenever VisualRenderer returns null */}
+                                    <div className="empty:hidden flex justify-center scale-95 origin-top mt-1 w-full">
                                         <VisualRenderer 
                                             data={previewData?.renderData} 
                                             isWordProblem={isWordProblem} 
@@ -430,14 +434,14 @@ export default function QuestionSummoner({
                                     </div>
                                     
                                     {previewData.renderData.description && (
-                                        <div className="text-base text-slate-800 dark:text-slate-100 font-bold text-center px-4 leading-relaxed my-2">
+                                        <div className="text-base text-slate-900 font-bold text-center px-4 leading-relaxed my-2">
                                             <MathDisplay content={previewData.renderData.description} />
                                         </div>
                                     )}
 
                                     {/* LaTeX Math Box */}
                                     {previewData.renderData.latex && !isWordProblem && (
-                                        <div className="text-3xl text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/30 p-6 rounded-3xl border-2 border-indigo-100 dark:border-indigo-900 shadow-inner text-center font-serif my-3 w-full max-w-md overflow-x-auto">
+                                        <div className="text-3xl text-indigo-700 bg-indigo-50 p-6 rounded-3xl border-2 border-indigo-200 shadow-inner text-center font-serif my-3 w-full max-w-md overflow-x-auto">
                                             <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
                                         </div>
                                     )}
@@ -448,11 +452,11 @@ export default function QuestionSummoner({
                                             {previewData.renderData.options.map((opt, oIdx) => {
                                                 const choiceLabel = typeof opt === 'object' ? (opt.label || opt.text || '') : opt;
                                                 return (
-                                                    <div key={oIdx} className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-xs">
+                                                    <div key={oIdx} className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs">
                                                         <span className="font-black text-indigo-500">
                                                             {['A','B','C','D','E','F'][oIdx]}
                                                         </span>
-                                                        <MathDisplay content={String(choiceLabel)} className="font-bold text-slate-700 dark:text-slate-200" />
+                                                        <MathDisplay content={String(choiceLabel)} className="font-bold text-slate-800" />
                                                     </div>
                                                 );
                                             })}

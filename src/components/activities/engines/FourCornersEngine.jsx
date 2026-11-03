@@ -47,6 +47,7 @@ export default function FourCornersEngine({
     onClose,
     lang = 'sv'
 }) {
+    
     const t = {
         sv: {
             title: "4 Hörn",
@@ -169,12 +170,119 @@ export default function FourCornersEngine({
             in_a_row: "in a row!"
         }
     }[lang] || {};
+    const formatToCornerRound = (raw, roundNumber) => {
+        const rd = raw.renderData || raw.resolvedData?.renderData || raw.data?.renderData || raw || {};
+        const resolved = raw.resolvedData || raw;
+        const isWp = Boolean(
+            raw.wordProblem || 
+            resolved.wordProblem || 
+            rd.isWordProblemApplied || 
+            resolved.metadata?.isWordProblemApplied
+        );
 
-    // 1. Core State
-    const [viewMode, setViewMode] = useState(session?.active_question_data?.activeQuestion ? 'play' : 'curate');
-    const [rounds, setRounds] = useState([]);
-    const [activeRoundIndex, setActiveRoundIndex] = useState(0);
-    const [revealedPhase, setRevealedPhase] = useState('commit');
+        const correctAnswer = extractDecodedAnswer(resolved) || 
+                              extractDecodedAnswer(rd) || 
+                              extractDecodedAnswer(raw) || 
+                              raw.answer || 
+                              rd.answer || 
+                              '';
+
+        const rawOptions = rd.options || raw.options || resolved.options;
+
+        // 4 Corners requires strictly 4 options (A, B, C, D).
+        // If rawOptions has 2 or 3 items, generateDistractors MUST run to complete the 4 corners.
+        let options = [];
+        if (Array.isArray(rawOptions) && rawOptions.length === 4) {
+            options = normalizeQuestionOptions(rawOptions, correctAnswer);
+        } else {
+            options = generateDistractors({
+                correctAnswer,
+                topicId: raw.topicId || resolved.topicId || rd.topicId || '',
+                renderData: { ...rd, options: null },
+                resolvedData: resolved,
+                raw
+            });
+        }
+        const correctOpt = options.find(o => o.isCorrect || String(o.label) === String(correctAnswer));
+        const correctCornerId = correctOpt ? correctOpt.id : 'A';
+
+        return {
+            id: raw.id || crypto.randomUUID(),
+            roundIndex: roundNumber - 1, // 🟢 FIX: 0-indexed to match student responses!
+            topicId: raw.topicId || resolved.topicId || raw.renderData?.topicId || (raw.topic_ids?.[0]) || 'custom',
+            variationKey: raw.variationKey || resolved.variationKey || null,
+            name: raw.name || `${t.round} ${roundNumber}`,
+            source: raw.source || 'generator',
+            wordProblem: isWp,
+            showText: raw.showText !== false,
+            showLatex: raw.showLatex !== undefined ? raw.showLatex : !isWp,
+            showVisual: raw.showVisual !== false,
+            renderData: { 
+                ...rd, 
+                options, 
+                answer: correctCornerId, // 🟢 FIX: 'A', 'B', 'C', or 'D'
+                rawAnswerValue: correctAnswer,
+                isWordProblemApplied: isWp 
+            },
+            responseSpec: { 
+                type: 'single_choice', 
+                answer: correctCornerId, // 🟢 FIX: Ensures student's "A" evaluates as is_correct: true
+                options 
+            }
+        };
+    };
+
+    // 🟢 1. Safe Synchronous Question Extraction
+    const initialExtractedQuestions = useMemo(() => {
+        let aqd = session?.active_question_data;
+        if (typeof aqd === 'string') {
+            try { aqd = JSON.parse(aqd); } catch (e) { aqd = {}; }
+        }
+
+        const raw = 
+            aqd?.packet ||
+            aqd?.livePacket ||
+            aqd?.board?.tiles ||
+            sourcePacket ||
+            initialConfig?.initialQuestions ||
+            initialConfig?.sourcePacket ||
+            session?.packet ||
+            [];
+
+        const list = Array.isArray(raw) ? raw : (typeof raw === 'object' && raw !== null ? Object.values(raw) : []);
+        return list;
+    }, [session, sourcePacket, initialConfig]);
+
+    const initialFormattedRounds = useMemo(() => {
+        if (!initialExtractedQuestions.length) return [];
+        return initialExtractedQuestions.map((q, idx) => formatToCornerRound(q, idx + 1, t));
+    }, [initialExtractedQuestions]);
+
+    const [viewMode, setViewMode] = useState(() => {
+        if (session || isLiveHost) return 'play';
+        return initialExtractedQuestions.length > 0 ? 'play' : 'curate';
+    });
+
+    const [rounds, setRounds] = useState(initialFormattedRounds);
+
+    // Keep rounds synced if props change or hydrate late
+    useEffect(() => {
+        if (initialFormattedRounds.length > 0 && rounds.length === 0) {
+            setRounds(initialFormattedRounds);
+            if (session || isLiveHost) {
+                setViewMode('play');
+            }
+        }
+    }, [initialFormattedRounds, session, isLiveHost, rounds.length]);
+
+    const [activeRoundIndex, setActiveRoundIndex] = useState(() => {
+        const saved = session?.active_question_data?.roundIndex;
+        return (saved !== undefined && !isNaN(Number(saved))) ? Number(saved) : 0;
+    });
+
+    const [revealedPhase, setRevealedPhase] = useState(() => {
+        return session?.active_question_data?.revealedPhase || 'commit';
+    });
 
     // Title & Save State
     const defaultTitle = initialConfig?.title || 
@@ -226,11 +334,11 @@ export default function FourCornersEngine({
         gameKey: 'four_corners',
         title: activityTitle,
         lang,
-        getPacket: () => rounds,
-        getSettings: () => ({ questionCount: rounds.length, timerSeconds: timerDuration }),
+        getPacket: () => (rounds.length > 0 ? rounds : initialFormattedRounds),
+        getSettings: () => ({ questionCount: (rounds.length || initialFormattedRounds.length), timerSeconds: timerDuration }),
         getInitialBroadcastData: () => ({
             activeTile: null,
-            activeQuestion: null,
+            activeQuestion: (rounds[0] || initialFormattedRounds[0] || null),
             revealedPhase: 'commit',
             roundIndex: 0
         })
@@ -259,67 +367,71 @@ export default function FourCornersEngine({
         }
     };
 
-    const formatToCornerRound = (raw, roundNumber) => {
-        const rd = raw.renderData || raw.resolvedData?.renderData || raw.data?.renderData || raw || {};
-        const resolved = raw.resolvedData || raw;
-        const isWp = Boolean(
-            raw.wordProblem || 
-            resolved.wordProblem || 
-            rd.isWordProblemApplied || 
-            resolved.metadata?.isWordProblemApplied
-        );
-
-        const correctAnswer = extractDecodedAnswer(resolved) || 
-                              extractDecodedAnswer(rd) || 
-                              extractDecodedAnswer(raw) || 
-                              raw.answer || 
-                              rd.answer || 
-                              '';
-
-        const rawOptions = rd.options || raw.options || resolved.options;
-
-        // 4 Corners requires strictly 4 options (A, B, C, D).
-        // If rawOptions has 2 or 3 items, generateDistractors MUST run to complete the 4 corners.
-        let options = [];
-        if (Array.isArray(rawOptions) && rawOptions.length === 4) {
-            options = normalizeQuestionOptions(rawOptions, correctAnswer);
-        } else {
-            options = generateDistractors({
-                correctAnswer,
-                topicId: raw.topicId || resolved.topicId || rd.topicId || '',
-                renderData: { ...rd, options: null },
-                resolvedData: resolved,
-                raw
-            });
-        }
-
-        return {
-            id: raw.id || crypto.randomUUID(),
-            roundIndex: roundNumber,
-            topicId: raw.topicId || resolved.topicId || raw.renderData?.topicId || (raw.topic_ids?.[0]) || 'custom',
-            variationKey: raw.variationKey || resolved.variationKey || null,
-            name: raw.name || `${t.round} ${roundNumber}`,
-            source: raw.source || 'generator',
-            wordProblem: isWp,
-            showText: raw.showText !== false,
-            showLatex: raw.showLatex !== undefined ? raw.showLatex : !isWp,
-            showVisual: raw.showVisual !== false,
-            renderData: { 
-                ...rd, 
-                options, 
-                answer: correctAnswer,
-                isWordProblemApplied: isWp 
-            },
-            responseSpec: { type: 'single_choice', answer: correctAnswer, options }
-        };
-    };
-
-    // Load initial rounds and verify 4 distinct options on mount
+    // 🟢 Single, Unified Mount Hook for Initial Load & Room Resume
     useEffect(() => {
-        const initialList = initialConfig?.initialQuestions || sourcePacket || [];
-        if (initialList.length > 0) {
-            const formatted = initialList.map((q, idx) => formatToCornerRound(q, idx + 1));
+        // 1. Gather all possible candidate sources where questions might live
+        const rawCandidates = 
+            session?.active_question_data?.packet ||
+            session?.active_question_data?.livePacket ||
+            session?.packet ||
+            sourcePacket ||
+            initialConfig?.initialQuestions ||
+            initialConfig?.sourcePacket ||
+            [];
+
+        // 2. Ensure it's an array (even if stored as an object map)
+        const candidateList = Array.isArray(rawCandidates)
+            ? rawCandidates
+            : (typeof rawCandidates === 'object' && rawCandidates !== null ? Object.values(rawCandidates) : []);
+
+        if (candidateList.length > 0) {
+            const formatted = candidateList.map((q, idx) => formatToCornerRound(q, idx + 1));
             setRounds(formatted);
+
+            // If resuming an ongoing game, sync round index if saved in room
+            if (session?.active_question_data?.roundIndex !== undefined) {
+                const savedIdx = Number(session.active_question_data.roundIndex);
+                if (!isNaN(savedIdx) && savedIdx >= 0 && savedIdx < formatted.length) {
+                    setActiveRoundIndex(savedIdx);
+                }
+            }
+            if (session?.active_question_data?.revealedPhase) {
+                setRevealedPhase(session.active_question_data.revealedPhase);
+            }
+        }
+    }, []);
+
+    
+    // 🟢 Keep rounds in sync if props hydrate asynchronously
+    useEffect(() => {
+        if (rounds.length > 0) return; // 🟢 Don't re-run if already initialized
+
+        const aqd = session?.active_question_data;
+        const rawCandidates = 
+            aqd?.packet ||
+            aqd?.livePacket ||
+            sourcePacket ||
+            initialConfig?.initialQuestions ||
+            (aqd?.activeQuestion ? [aqd.activeQuestion] : []) ||
+            [];
+
+        const candidateList = Array.isArray(rawCandidates)
+            ? rawCandidates
+            : (typeof rawCandidates === 'object' && rawCandidates !== null ? Object.values(rawCandidates) : []);
+
+        if (candidateList.length > 0) {
+            const formatted = candidateList.map((q, idx) => formatToCornerRound(q, idx + 1, t));
+            setRounds(formatted);
+
+            if (session?.active_question_data?.roundIndex !== undefined) {
+                const savedIdx = Number(session.active_question_data.roundIndex);
+                if (!isNaN(savedIdx) && savedIdx >= 0 && savedIdx < formatted.length) {
+                    setActiveRoundIndex(savedIdx);
+                }
+            }
+            if (session?.active_question_data?.revealedPhase) {
+                setRevealedPhase(session.active_question_data.revealedPhase);
+            }
         }
     }, []);
 
@@ -344,12 +456,6 @@ export default function FourCornersEngine({
         }
     };
 
-    useEffect(() => {
-        const initialList = initialConfig?.initialQuestions || sourcePacket || [];
-        if (initialList.length > 0) {
-            setRounds(initialList.map((q, idx) => formatToCornerRound(q, idx + 1)));
-        }
-    }, []);
 
     const currentRound = rounds[activeRoundIndex] || null;
 
@@ -395,15 +501,25 @@ export default function FourCornersEngine({
         const tallies = { A: 0, B: 0, C: 0, D: 0 };
         if (!currentRound) return tallies;
 
+        const currentOptions = currentRound.renderData?.options || [];
+        const correctOpt = currentOptions.find(o => o.isCorrect);
+
         liveResponses
-            .filter(r => r.question_index === currentRound.roundIndex)
+            .filter(r => r.question_index === currentRound.roundIndex || r.question_index === activeRoundIndex)
             .forEach(r => {
-                const choice = r.answer?.toUpperCase();
+                let choice = String(r.answer || '').trim().toUpperCase();
+                
+                // If student submitted the label instead of 'A'/'B'/'C'/'D', map it back to the ID
+                if (!tallies[choice]) {
+                    const matchedOpt = currentOptions.find(o => String(o.label).trim() === String(r.answer).trim());
+                    if (matchedOpt) choice = matchedOpt.id;
+                }
+
                 if (tallies[choice] !== undefined) tallies[choice]++;
             });
 
         return tallies;
-    }, [liveResponses, currentRound]);
+    }, [liveResponses, currentRound, activeRoundIndex]);
 
     const totalVotesSubmitted = useMemo(() => {
         return liveVotes.A + liveVotes.B + liveVotes.C + liveVotes.D;
@@ -423,13 +539,20 @@ export default function FourCornersEngine({
             studentHistory[alias].push(res);
         });
 
-        // Compute scores with streak bonuses: 1->100p, 2->125p, 3->150p, 4+->200p
+        // Compute scores with streak bonuses
         Object.entries(studentHistory).forEach(([alias, history]) => {
             let runningStreak = 0;
             let total = 0;
 
             history.forEach(ans => {
-                if (ans.is_correct) {
+                // Determine correctness: either from ans.is_correct or comparing against round answer
+                const roundTarget = rounds.find(r => r.roundIndex === ans.question_index) || rounds[ans.question_index];
+                const expectedAnswer = roundTarget?.responseSpec?.answer || roundTarget?.renderData?.answer;
+                
+                const isCorrect = ans.is_correct || 
+                    (expectedAnswer && String(ans.answer).trim().toUpperCase() === String(expectedAnswer).trim().toUpperCase());
+
+                if (isCorrect) {
                     runningStreak += 1;
                     const bonus = runningStreak === 1 ? 0 : runningStreak === 2 ? 25 : runningStreak === 3 ? 50 : 100;
                     total += 100 + bonus;
@@ -477,11 +600,13 @@ export default function FourCornersEngine({
             mode: 'activity_four_corners',
             gameKey: 'four_corners',
             activity_mode: 'activity_four_corners',
-            activeTile: updatedRound ? `round_${updatedRound.roundIndex}` : null,
+            activeTile: updatedRound ? `round_${activeRoundIndex}` : null,
             activeQuestion: updatedRound,
             revealedPhase: phase,
-            roundIndex: updatedRound?.roundIndex || 1,
+            roundIndex: activeRoundIndex, // 🟢 FIX: 0-indexed
             timerSeconds: timerDuration,
+            packet: rounds,
+            livePacket: rounds,
             updated_at: new Date().toISOString()
         });
     };

@@ -227,13 +227,20 @@ export default function CategoryClashEngine({
     });
 
     useEffect(() => {
-        if (session?.active_question_data?.board?.tiles) {
-            ingestAsIs(Object.values(session.active_question_data.board.tiles));
+        const rawTiles = session?.active_question_data?.board?.tiles;
+        const sessionPacket = session?.active_question_data?.livePacket || 
+                              session?.active_question_data?.packet || 
+                              session?.packet;
+
+        if (rawTiles) {
+            ingestAsIs(Array.isArray(rawTiles) ? rawTiles : Object.values(rawTiles));
+        } else if (Array.isArray(sessionPacket) && sessionPacket.length > 0) {
+            ingestAsIs(sessionPacket);
         } else if (savedBoard?.packet?.tiles) {
             ingestAsIs(savedBoard.packet.tiles);
         } else if (initialConfig?.sourceMode === 'as_is' && sourcePacket) {
             ingestAsIs(sourcePacket);
-        } else {
+        } else if (categories && categories.length > 0) {
             generateGridFromSeeds({
                 topics: categories.map(c => c.topic),
                 categories: categories,

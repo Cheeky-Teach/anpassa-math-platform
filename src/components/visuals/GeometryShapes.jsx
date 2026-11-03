@@ -123,27 +123,32 @@ export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0
     const GUIDE_COLOR = "#94a3b8";
 
     // --- RECTANGLE / SQUARE ---
-    if (type === 'rectangle') {
-        const w = Math.min(220, (dims.w || 14) * scale);
-        const h = Math.min(150, (dims.h || 10) * scale);
+    if (type === 'rectangle' || type === 'square' || activeSubtype === 'rectangle' || activeSubtype === 'square') {
+        const w = sw;
+        const h = sh;
         const x0 = cx - w / 2;
         const y0 = cy - h / 2;
 
-        const diagLabel = lab.hyp || lab.d;
+        const diagLabel = lab.hyp || lab.d || lab.c || lab.diagonal;
+        const labelW = lab.w || lab.width || lab.base || lab.b || lab.s;
+        const labelH = lab.h || lab.height || lab.side || lab.s2 || (type === 'square' ? labelW : null);
 
         return (
             <g className="select-none">
-                {/* Base Rectangle */}
+                {/* Base Rectangle / Square */}
                 <rect 
                     x={x0} 
                     y={y0} 
                     width={w} 
                     height={h} 
-                    fill="rgba(99, 102, 241, 0.08)" 
-                    stroke="#1e293b" 
-                    strokeWidth="2.5" 
+                    fill={FILL_COLOR} 
+                    stroke={STROKE_COLOR} 
+                    strokeWidth={STROKE_WIDTH} 
                     rx="2"
                 />
+
+                {/* 90° Bottom-Left Corner Marker */}
+                {mkRightAngleMark(x0, y0 + h, 12, "bottom-left")}
 
                 {/* Optional Diagonal Line Indicator (for Pythagoras / Level 6) */}
                 {diagLabel && (
@@ -162,7 +167,7 @@ export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0
                             strokeWidth="1.5" 
                         />
 
-                        {/* Bold / Dashed Diagonal Line from top-left (or bottom-left) to opposite corner */}
+                        {/* Bold / Dashed Diagonal Line from bottom-left to top-right */}
                         <line 
                             x1={x0} 
                             y1={y0 + h} 
@@ -178,12 +183,16 @@ export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0
                     </>
                 )}
 
-                {/* Dimension Labels for Width and Height */}
-                {lab.w && mkTxt(cx, y0 + h + 16, lab.w, "middle", "middle")}
-                {lab.h && mkTxt(x0 + w + 16, cy, lab.h, "start", "middle")}
+                {/* Dimension Labels for Width and Height with Full Key Fallbacks */}
+                {labelW && mkTxt(cx, y0 + h + 20, labelW, "middle", "middle")}
+                {labelH && mkTxt(x0 + w + 18, cy, labelH, "start", "middle")}
+                
+                {/* Optional Area Callout in Center */}
+                {areaText && mkTxt(cx, cy, areaText, "middle", "middle", "#6366f1", "#ffffff")}
             </g>
         );
     }
+    
 
     // --- PARALLELOGRAM ---
     if (type === 'parallelogram') {

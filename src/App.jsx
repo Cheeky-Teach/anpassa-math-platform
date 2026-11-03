@@ -29,6 +29,7 @@ import DetourModal from './components/modals/DetourModal';
 
 // Data & Constants
 import { UI_TEXT, LEVEL_DESCRIPTIONS, CATEGORIES } from './constants/localization';
+import { getActivityDefinition } from './components/activities/registry/activityRegistry';
 
 import { useSessionSync } from './hooks/useSessionSync';
 
@@ -121,6 +122,7 @@ function App() {
     const [pendingDetour, setPendingDetour] = useState(null);
 
     const [activeBucket, setActiveBucket] = useState(null);
+    const [activeActivity, setActiveActivity] = useState(null);
 
     // React to theme changes
     useEffect(() => {
@@ -780,9 +782,73 @@ function App() {
     const handleRelaunchSession = async (roomData) => {
         setLoadingProfile(true);
         try {
+            let aqd = roomData.active_question_data;
+            if (typeof aqd === 'string') {
+                try { aqd = JSON.parse(aqd); } catch (e) { aqd = {}; }
+            }
+
+            const rawMode = aqd?.mode || roomData.mode;
+
+            if (rawMode?.startsWith('activity_')) {
+                const gameKey = rawMode.replace(/^activity_/, '');
+                
+                // 1. Check standard packet locations
+                let rawList = 
+                    aqd?.packet || 
+                    aqd?.livePacket || 
+                    aqd?.board?.tiles || 
+                    roomData.packet || 
+                    [];
+
+                // 2. If packet is missing, check if active_worksheet_id can restore it
+                if ((!rawList || rawList.length === 0) && roomData.active_worksheet_id) {
+                    const { data: sheet } = await supabase
+                        .from('saved_sheets')
+                        .select('packet')
+                        .eq('id', roomData.active_worksheet_id)
+                        .maybeSingle();
+
+                    if (sheet?.packet) {
+                        rawList = Array.isArray(sheet.packet) ? sheet.packet : (sheet.packet.livePacket || sheet.packet.tiles || []);
+                    }
+                }
+
+                // 3. Fallback: If still empty, use the currently activeQuestion
+                if ((!rawList || rawList.length === 0) && aqd?.activeQuestion) {
+                    rawList = [aqd.activeQuestion];
+                }
+
+                const safePacketArray = Array.isArray(rawList)
+                    ? rawList
+                    : (typeof rawList === 'object' && rawList !== null ? Object.values(rawList) : []);
+
+                const normalizedRoom = {
+                    ...roomData,
+                    active_question_data: {
+                        ...aqd,
+                        packet: safePacketArray,
+                        livePacket: safePacketArray
+                    }
+                };
+
+                setActiveRoom(normalizedRoom);
+                setActiveActivity({
+                    key: gameKey,
+                    session: normalizedRoom,
+                    sourcePacket: safePacketArray,
+                    config: {
+                        initialQuestions: safePacketArray
+                    },
+                    isLiveHost: true
+                });
+                return;
+            }
+
+            // Standard Worksheet / Do-Now fallback
             if (roomData.status === 'active') {
-                setSavedPacket(roomData.active_question_data.packet);
-                setSheetTitle(roomData.title);
+                const packet = aqd?.packet || [];
+                setSavedPacket(Array.isArray(packet) ? packet : []);
+                setSheetTitle(roomData.title || "");
                 setActiveRoom(roomData);
                 setView('teacher_live');
             } else {
@@ -792,15 +858,17 @@ function App() {
                     class_code: newCode,
                     status: 'active',
                     title: roomData.title,
-                    active_question_data: roomData.active_question_data
+                    active_question_data: aqd
                 }]).select().single();
                 if (error) throw error;
-                setSavedPacket(roomData.active_question_data.packet);
-                setSheetTitle(roomData.title);
+                const packet = aqd?.packet || [];
+                setSavedPacket(Array.isArray(packet) ? packet : []);
+                setSheetTitle(roomData.title || "");
                 setActiveRoom(data);
                 setView('teacher_live');
             }
         } catch (err) {
+            console.error("Relaunch failed:", err);
             alert("Kunde inte hantera sessionen: " + err.message);
         } finally {
             setLoadingProfile(false);
@@ -1026,7 +1094,29 @@ function App() {
             )}
 
             <div className="flex-1 flex flex-col relative overflow-x-hidden">
-                {view === 'dashboard' ? (
+                {/* 🟢 TOP PRIORITY: Render Resumed/Active Activity Engine */}
+                {activeActivity ? (() => {
+                    const def = getActivityDefinition(activeActivity.key);
+                    if (!def?.TeacherEngine) return null;
+                    const Engine = def.TeacherEngine;
+
+                    return (
+                        <Engine
+                            initialConfig={activeActivity.config || {}}
+                            savedBoard={activeActivity.savedBoard || null}
+                            sourcePacket={activeActivity.sourcePacket || []}
+                            session={activeActivity.session || null}
+                            isLiveHost={true}
+                            profile={profile}
+                            onClose={() => {
+                                setActiveActivity(null);
+                                setActiveRoom(null);
+                                setView('dashboard');
+                            }}
+                            lang={lang}
+                        />
+                    );
+                })() : view === 'dashboard' ? (
                     <ResponsiveWrapper>
                         {profile?.role === 'student' && !activeBucket ? (
                             <GhostRadioGatekeeper 

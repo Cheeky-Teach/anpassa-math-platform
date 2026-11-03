@@ -760,8 +760,13 @@ export default function PresentationView({
     const sizeClasses = { desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l', visualClass: 'scale-100 max-h-[180px] mb-2' };
     const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
 
+    const currentTheme = PRESENTATION_THEMES[presentationTheme] || PRESENTATION_THEMES.clean;
+
     return (
-        <div className="fixed inset-0 z-[100] bg-slate-100 flex flex-col font-sans overflow-hidden animate-in fade-in">
+        <div 
+            className={`presentation-container fixed inset-0 z-[100] flex flex-col font-sans overflow-hidden animate-in fade-in ${currentTheme.wrapperClass}`}
+            style={currentTheme.cssVars}
+        >
             {/* 🟢 NEW: CONDENSED RESPONSIVE HEADER */}
             <header className="bg-slate-900 text-white px-4 sm:px-6 py-2 flex justify-between items-center shadow-md z-50 select-none gap-4">
                 
@@ -1386,6 +1391,8 @@ export default function PresentationView({
                                     activeIds: sidebarTab === 'slides' ? (slides[activeSlideIndex]?.activeIds || []) : activeIds
                                 }}
                                 theme={presentationTheme}
+                                currentTheme={currentTheme}
+                                style={currentTheme.cssVars}
                                 livePacket={livePacket}
                                 lang={lang}
                                 bgType={bgType}
@@ -1866,6 +1873,8 @@ export default function PresentationView({
                         <SlideViewerCore
                             slide={slides[activeSlideIndex]}
                             theme={presentationTheme}
+                            currentTheme={currentTheme}
+                            style={currentTheme.cssVars}
                             livePacket={livePacket}
                             lang={lang}
                             bgType={bgType}
