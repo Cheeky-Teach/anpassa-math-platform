@@ -562,6 +562,31 @@ export default function PrintView({
                     .col-span-2 { width: calc(33.333% - 1rem) !important; flex-shrink: 0 !important; }
                     .col-span-3 { width: calc(50% - 1rem) !important; flex-shrink: 0 !important; }
                     .col-span-6 { width: 100% !important; flex-shrink: 0 !important; }
+
+                    /* Prevent print driver from flattening worked example columns */
+                    .worked-example-container {
+                        display: block !important;
+                        width: 100% !important;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+
+                    .worked-example-grid {
+                        display: flex !important;
+                        flex-direction: row !important;
+                        flex-wrap: nowrap !important;
+                        width: 100% !important;
+                    }
+
+                    .worked-example-grid > div:first-child {
+                        width: 38% !important;
+                        flex-shrink: 0 !important;
+                    }
+
+                    .worked-example-grid > div:last-child {
+                        width: 62% !important;
+                        flex: 1 1 auto !important;
+                    }
                     
                     .break-after-page { 
                         display: block !important;

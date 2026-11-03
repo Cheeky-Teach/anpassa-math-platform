@@ -412,7 +412,8 @@ export class ExponentsGen {
                         text: lang === 'sv' 
                             ? `Titta på siffrorna efter kommat i ${firstDigit},${secondDigit}. Hur många steg åt höger måste vi hoppa för att nå ${numStr}?` 
                             : `Look at the digits after the comma in ${firstDigit}.${secondDigit}. How many steps right must we jump to reach ${numStr}?`, 
-                        latex: `${manLatex} \\xrightarrow{?\\text{ ${stepLabel}}} ${firstDigit}${jumpedDigits}` 
+                        // 🟢 Frågetecknet inuti \text{} och rent mål utan trasiga escape-tecken
+                        latex: `${manLatex} \\overset{\\text{? ${stepLabel}}}{\\longrightarrow} ${number}` 
                     },
                     { 
                         text: lang === 'sv' 

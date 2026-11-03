@@ -151,8 +151,20 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
         return () => clearTimeout(timer);
     }, [packet, students, responses, printSteps, printCanvas]);
 
+    // REPLACE WITH:
     return (
-        <div className="fixed inset-0 z-[150] bg-slate-100 text-slate-900 overflow-y-auto no-scrollbar print-modal-container font-sans">
+        <div 
+            className="whiteboard-protect fixed inset-0 z-[150] bg-slate-100 text-slate-900 overflow-y-auto no-scrollbar print-modal-container font-sans"
+            style={{
+                colorScheme: 'light',
+                '--text-main': '#0f172a',
+                '--text-muted': '#475569',
+                '--bg-card': '#ffffff',
+                '--bg-surface': '#f8fafc',
+                '--border-main': '#e2e8f0',
+                '--border-strong': '#cbd5e1'
+            }}
+        >
             <style>{printStyles}</style>
             
             {isMeasuring && (
@@ -206,7 +218,7 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
             </div>
 
             {!isMeasuring && (
-                <div className="landscape-report-preview text-slate-900 bg-white">
+                <div className="whiteboard-protect landscape-report-preview !text-slate-900 !bg-white">
                     
                     {/* PAGE 1: HEADER & CLASS MATRIX */}
                     <div className="break-after-page">

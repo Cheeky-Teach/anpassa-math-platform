@@ -1,6 +1,5 @@
 // src/components/shared/WorkedExampleCard.jsx
 import React from 'react';
-import { Sparkles } from 'lucide-react';
 import MathDisplay from './MathDisplay';
 import VisualRenderer from '../visuals/VisualRenderer';
 import { compileAnchoredStory } from '../../core/utils/storyCompiler';
@@ -33,49 +32,60 @@ export default function WorkedExampleCard({
     const labelBadge = lang === 'sv' ? "Exempel" : "Example";
 
     return (
-        <div className="whiteboard-protect w-full rounded-xl border border-amber-300 bg-amber-50/25 p-2.5 sm:p-3 text-slate-900 break-inside-avoid select-none relative overflow-hidden m-0">
+        <div className="whiteboard-protect worked-example-container w-full rounded-xl border-2 border-amber-400 bg-amber-50/20 p-2.5 sm:p-3 text-slate-900 break-inside-avoid select-none relative overflow-hidden m-0">
             
             {/* COMPACT SLIM HEADER */}
-            <div className="flex items-center gap-2 border-b border-amber-200/60 pb-1.5 mb-2">
-                <span className="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-black text-[9px] uppercase tracking-wider flex items-center gap-1 shrink-0">
-                    <span>{labelBadge}</span>
+            <div className="flex items-center gap-2 border-b border-amber-300 pb-1 mb-2">
+                <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black text-[9px] uppercase tracking-wider shrink-0">
+                    {labelBadge}
                 </span>
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-900/80 truncate">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-950 truncate">
                     {item.name}
                 </span>
             </div>
 
-            {/* HIGH-DENSITY 2-COLUMN GRID */}
-            <div className="grid grid-cols-12 gap-3 items-center">
+            {/* UNCONDITIONAL 2-COLUMN GRID (Never stacks, matches print preview exactly) */}
+            <div className="worked-example-grid flex flex-row items-stretch gap-3 w-full">
                 
-                {/* LEFT: Task prompt + tight visual */}
-                <div className={`col-span-12 md:col-span-5 flex flex-col justify-center ${hasVisual ? 'space-y-1' : ''}`}>
-                    <div className="text-[11px] font-bold leading-tight text-slate-900">
-                        <MathDisplay content={compileAnchoredStory(item, lang) || rd?.description || item.name} />
+                {/* 🟢 LEFT COLUMN (38% width): Question, prompt, visual */}
+                <div className="w-[38%] shrink-0 flex flex-col justify-between pr-2 border-r border-amber-200">
+                    <div>
+                        <div className="text-[8px] font-black uppercase tracking-widest text-amber-900/60 mb-0.5">
+                            {lang === 'sv' ? "Uppgift" : "Problem"}
+                        </div>
+                        <div className="text-[11px] font-bold leading-tight text-slate-900 mb-1.5">
+                            <MathDisplay content={compileAnchoredStory(item, lang) || rd?.description || item.name} />
+                        </div>
+
+                        {rd?.latex && !rd?.geometry && (
+                            <div className="py-1 px-2 rounded-lg bg-white/80 border border-amber-200/80 text-center font-serif text-sm font-bold text-slate-950 shadow-xs">
+                                <MathDisplay content={`$$${rd.latex}$$`} />
+                            </div>
+                        )}
                     </div>
 
-                    {rd?.latex && !rd?.geometry && (
-                        <div className="py-0.5 text-center font-serif text-sm text-slate-950 font-bold">
-                            <MathDisplay content={`$$${rd.latex}$$`} />
-                        </div>
-                    )}
-
                     {hasVisual && (
-                        <div className="w-full flex items-center justify-center scale-75 origin-center -my-2 overflow-hidden [&_svg]:max-h-[90px] [&_svg]:w-auto [&_canvas]:max-h-[90px] [&_canvas]:w-auto">
+                        <div className="w-full flex items-center justify-center scale-75 origin-center -my-2 overflow-hidden [&_svg]:max-h-[85px] [&_svg]:w-auto [&_canvas]:max-h-[85px] [&_canvas]:w-auto">
                             <VisualRenderer data={rd} isWordProblem={false} />
                         </div>
                     )}
                 </div>
 
-                {/* RIGHT: Compact Step Rows (Clean Minimalist Divider Rows) */}
-                <div className="col-span-12 md:col-span-7 border-t md:border-t-0 md:border-l border-amber-200/60 md:pl-3 space-y-1">
+                {/* 🟢 RIGHT COLUMN (62% width): Strict Vertical Math Ladder */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between space-y-1">
+                    <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-widest text-amber-900/60 pb-0.5 border-b border-amber-200/60">
+                        <span>{lang === 'sv' ? "Steg / Förklaring" : "Steps / Explanation"}</span>
+                        <span className="w-44 text-center">{lang === 'sv' ? "Lösning" : "Solution"}</span>
+                    </div>
+
                     {clues.map((step, idx) => (
                         <div 
                             key={`step-${idx}`} 
-                            className="flex items-baseline justify-between gap-2 py-0.5 border-b border-amber-100/60 last:border-0"
+                            className="flex items-center justify-between gap-2 py-0.5 border-b border-amber-100/70 last:border-0"
                         >
-                            <div className="flex items-baseline gap-1.5 min-w-0 pr-1">
-                                <span className="font-mono font-black text-[9px] text-amber-800 shrink-0">
+                            {/* Step Text Commentary */}
+                            <div className="flex items-baseline gap-1 min-w-0 flex-1 pr-1">
+                                <span className="font-mono font-black text-[9px] text-amber-900 shrink-0">
                                     {idx + 1}.
                                 </span>
                                 <span className="text-[10px] font-semibold text-slate-800 leading-tight">
@@ -83,11 +93,18 @@ export default function WorkedExampleCard({
                                 </span>
                             </div>
 
-                            {step.latex && (
-                                <div className="shrink-0 font-serif text-[11px] font-bold text-slate-950 bg-white/80 px-1.5 py-0.2 rounded border border-amber-200/50">
-                                    <MathDisplay content={`$$${step.latex}$$`} />
-                                </div>
-                            )}
+                            {/* Vertically Aligned Math Ladder Column (Fixed Width & Centered) */}
+                            <div className="w-44 shrink-0 flex items-center justify-center bg-white/90 border border-amber-200/70 rounded-md py-0.5 px-1.5 shadow-xs">
+                                {step.latex ? (
+                                    <div className="font-serif text-[11px] font-bold text-slate-950 text-center">
+                                        <MathDisplay content={`$$${step.latex}$$`} />
+                                    </div>
+                                ) : (
+                                    <span className="text-[9px] italic text-slate-400">
+                                        {lang === 'sv' ? "Se text" : "See text"}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>
