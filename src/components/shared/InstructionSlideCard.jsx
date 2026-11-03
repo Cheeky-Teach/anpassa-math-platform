@@ -128,8 +128,14 @@ export default function InstructionSlideCard({
         }
     };
 
+    // 🟢 Isolate light themes from global .dark class cascade
+    const isDarkTheme = currentTheme.id === 'dark' || currentTheme.id === 'blueprint';
+    const themeIsolationClass = isDarkTheme 
+        ? 'dark text-slate-100' 
+        : '[color-scheme:light] !text-slate-900 dark:!text-slate-900 [&_*]:dark:!text-inherit [&_.katex]:dark:!text-slate-950 [&_.katex-html]:dark:!text-slate-950';
+
     return (
-        <div className={`w-full h-full p-4 sm:p-6 pb-8 sm:pb-9 flex flex-col justify-start select-none overflow-hidden font-sans transition-colors duration-300 ${currentTheme.wrapperClass}`}>
+        <div className={`whiteboard-protect w-full h-full p-4 sm:p-6 pb-8 sm:pb-9 flex flex-col justify-start select-none overflow-hidden font-sans transition-colors duration-300 ${currentTheme.wrapperClass}`}>
             
             {/* 1. TOP TOOLBAR STRIP */}
             <div className="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-2.5 shrink-0 mb-3">
@@ -169,15 +175,14 @@ export default function InstructionSlideCard({
                     )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                    {/* 🟢 FONT & LATEX ZOOM CONTROLLER PILL */}
-                    <div className="flex bg-black/5 dark:bg-white/10 p-0.5 rounded-xl border border-black/10 dark:border-white/10 text-[9px] font-black uppercase items-center">
+                {/* 🟢 FONT & LATEX ZOOM CONTROLLER PILL */}
+                    <div className="flex bg-black/5 p-0.5 rounded-xl border border-black/10 text-[9px] font-black uppercase items-center">
                         <button
                             type="button"
                             onClick={() => setWalkthroughScale('normal')}
                             className={`px-2 py-1 rounded-lg transition-all ${
                                 walkthroughScale === 'normal' 
-                                    ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs' 
+                                    ? `${currentTheme.cardBg} ${currentTheme.accentText} shadow-xs font-bold` 
                                     : 'opacity-50 hover:opacity-80'
                             }`}
                             title={lang === 'sv' ? "Standardstorlek (100%)" : "Standard size (100%)"}
@@ -189,7 +194,7 @@ export default function InstructionSlideCard({
                             onClick={() => setWalkthroughScale('large')}
                             className={`px-2 py-1 rounded-lg transition-all text-[10px] font-black ${
                                 walkthroughScale === 'large' 
-                                    ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs' 
+                                    ? `${currentTheme.cardBg} ${currentTheme.accentText} shadow-xs font-bold` 
                                     : 'opacity-50 hover:opacity-80'
                             }`}
                             title={lang === 'sv' ? "Stor text (125%)" : "Large text (125%)"}
@@ -201,14 +206,13 @@ export default function InstructionSlideCard({
                             onClick={() => setWalkthroughScale('xl')}
                             className={`px-2 py-1 rounded-lg transition-all text-[11px] font-black ${
                                 walkthroughScale === 'xl' 
-                                    ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs' 
+                                    ? `${currentTheme.cardBg} ${currentTheme.accentText} shadow-xs font-bold` 
                                     : 'opacity-50 hover:opacity-80'
                             }`}
                             title={lang === 'sv' ? "Extra stor text för tavla (150%)" : "Extra large text for board (150%)"}
                         >
                             A++
                         </button>
-                    </div>
 
                     {/* Quick Regen Button */}
                     {onRegenerate && (
@@ -254,7 +258,7 @@ export default function InstructionSlideCard({
                         </div>
 
                         {/* Problem Text with zoom scaling */}
-                        <div className={`${currentScale.promptText} font-bold leading-snug mb-2 ${currentTheme.textMain}`}>
+                        <div className={`${currentScale.promptText} font-bold leading-snug mb-2 ${isDarkTheme ? currentTheme.textMain : '!text-slate-900 dark:!text-slate-900'}`}>
                             <MathDisplay content={compileAnchoredStory(question, lang) || rd?.description || question.text} />
                         </div>
 
@@ -277,7 +281,7 @@ export default function InstructionSlideCard({
 
                         {/* Primary Math Expression with zoom scaling */}
                         {rd?.latex && !rd?.geometry && (
-                            <div className={`my-2 py-2 px-3 rounded-xl border ${currentTheme.cardSurface} ${currentTheme.mathText} text-center font-serif ${currentScale.promptLatex} shadow-xs`}>
+                            <div className={`my-2 py-2 px-3 rounded-xl border ${currentTheme.cardSurface} ${isDarkTheme ? currentTheme.mathText : '!text-slate-950 dark:!text-slate-950'} text-center font-serif ${currentScale.promptLatex} shadow-xs`}>
                                 <MathDisplay content={`$$${rd.latex}$$`} />
                             </div>
                         )}
@@ -444,9 +448,9 @@ function DerivationBoardLayout({ clues, revealedIndex, setRevealedIndex, current
                                 {idx + 1}
                             </span>
                             
-                            {/* Math Equation scaled by currentScale */}
+                            {/* Math Equation */}
                             <div className={`flex-1 text-center font-serif ${currentScale.derivationMath} ${
-                                isActive ? currentTheme.activeMathText : currentTheme.mathText
+                                isActive ? currentTheme.activeMathText : (currentTheme.id === 'dark' || currentTheme.id === 'blueprint' ? currentTheme.mathText : '!text-slate-950 dark:!text-slate-950')
                             }`}>
                                 <MathDisplay content={`$$${step.latex}$$`} />
                             </div>
@@ -471,8 +475,10 @@ function DerivationBoardLayout({ clues, revealedIndex, setRevealedIndex, current
                     <span className="text-[9px] font-bold opacity-75">💡 Insight</span>
                 </div>
 
-                {/* Text explanation scaled by currentScale */}
-                <div className={`flex-1 flex items-center my-1 ${currentScale.insightText} font-bold leading-relaxed overflow-y-auto custom-scrollbar ${currentTheme.activeText}`}>
+                {/* Text explanation */}
+                <div className={`flex-1 flex items-center my-1 ${currentScale.insightText} font-bold leading-relaxed overflow-y-auto custom-scrollbar ${
+                    currentTheme.id === 'dark' || currentTheme.id === 'blueprint' ? currentTheme.activeText : '!text-amber-950 dark:!text-amber-950'
+                }`}>
                     <MathDisplay content={activeClue.text || (lang === 'sv' ? "Utför beräkningen ovan." : "Perform the calculation above.")} />
                 </div>
             </div>
@@ -515,7 +521,7 @@ function DualRailRibbonLayout({ clues, revealedIndex, currentTheme, currentScale
 
                         {/* Rail A: Text Commentary */}
                         <div className={`flex-1 flex items-center ${currentScale.ribbonText} font-bold leading-relaxed border-b sm:border-b-0 sm:border-r border-black/10 dark:border-white/10 pb-2 sm:pb-0 sm:pr-3 ${
-                            isActive ? currentTheme.activeText : currentTheme.textMain
+                            isActive ? currentTheme.activeText : (currentTheme.id === 'dark' || currentTheme.id === 'blueprint' ? currentTheme.textMain : '!text-slate-900 dark:!text-slate-900')
                         }`}>
                             <MathDisplay content={step.text} />
                         </div>
@@ -525,7 +531,7 @@ function DualRailRibbonLayout({ clues, revealedIndex, currentTheme, currentScale
                             isActive 
                                 ? 'border-current/30 bg-black/5 dark:bg-white/5' 
                                 : 'border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5'
-                        } ${isActive ? currentTheme.activeMathText : currentTheme.mathText}`}>
+                        } ${isActive ? currentTheme.activeMathText : (currentTheme.id === 'dark' || currentTheme.id === 'blueprint' ? currentTheme.mathText : '!text-slate-950 dark:!text-slate-950')}`}>
                             {step.latex ? (
                                 <MathDisplay content={`$$${step.latex}$$`} />
                             ) : (
@@ -584,13 +590,14 @@ function AccordionFocusLayout({ clues, revealedIndex, currentTheme, currentScale
                                 {idx + 1}
                             </span>
 
+                            {/* Header Math Strip */}
                             <div className={`flex-1 text-center font-serif ${currentScale.accordionMath} truncate ${
-                                isActive ? currentTheme.activeMathText : currentTheme.mathText
+                                isActive ? currentTheme.activeMathText : (currentTheme.id === 'dark' || currentTheme.id === 'blueprint' ? currentTheme.mathText : '!text-slate-950 dark:!text-slate-950')
                             }`}>
                                 {step.latex ? (
                                     <MathDisplay content={`$$${step.latex}$$`} />
                                 ) : (
-                                    <span className={`text-xs font-bold ${isActive ? currentTheme.activeText : currentTheme.textMain}`}>
+                                    <span className={`text-xs font-bold ${isActive ? currentTheme.activeText : (currentTheme.id === 'dark' || currentTheme.id === 'blueprint' ? currentTheme.textMain : '!text-slate-900 dark:!text-slate-900')}`}>
                                         {step.text}
                                     </span>
                                 )}
@@ -603,7 +610,9 @@ function AccordionFocusLayout({ clues, revealedIndex, currentTheme, currentScale
 
                         {/* Collapsible Text Drawer */}
                         {isOpen && step.text && (
-                            <div className={`px-4 py-3 border-t border-black/10 dark:border-white/10 ${currentScale.accordionText} font-bold leading-relaxed border-l-4 border-l-amber-400 ${currentTheme.insightBox}`}>
+                            <div className={`px-4 py-3 border-t border-black/10 dark:border-white/10 ${currentScale.accordionText} font-bold leading-relaxed border-l-4 border-l-amber-400 ${currentTheme.insightBox} ${
+                                currentTheme.id === 'dark' || currentTheme.id === 'blueprint' ? '' : '!text-amber-950 dark:!text-amber-950'
+                            }`}>
                                 <MathDisplay content={step.text} />
                             </div>
                         )}

@@ -271,7 +271,8 @@ body {
 .btn-3d.is-wrong { background-color: #f43f5e; border-color: #be123c; color: white; }
 
 /* Whiteboard Protection */
-.whiteboard-protect {
+.whiteboard-protect,
+.dark .whiteboard-protect {
   --bg-canvas: #ffffff !important;
   --bg-card: #ffffff !important;
   --bg-surface: #f8fafc !important;
@@ -283,7 +284,21 @@ body {
   background-color: #ffffff !important;
   color: #0f172a !important;
 }
-.whiteboard-protect svg text { fill: #0f172a; }
+
+.whiteboard-protect svg text,
+.dark .whiteboard-protect svg text { 
+  fill: #0f172a !important; 
+}
+
+/* Ensure math inside whiteboard-protected containers remains dark */
+.whiteboard-protect .math-content,
+.whiteboard-protect .math-content .katex,
+.whiteboard-protect .math-content .katex *,
+.dark .whiteboard-protect .math-content,
+.dark .whiteboard-protect .math-content .katex,
+.dark .whiteboard-protect .math-content .katex * {
+  color: #0f172a !important;
+}
 
 /* ========================================= */
 /* GLOBAL RESPONSIVE REM SCALING             */
@@ -393,4 +408,19 @@ html {
       linear-gradient(to bottom, #64748b 1px, transparent 1px) !important;
     background-size: 30px 30px !important;
   }
+}
+/* =========================================================================
+   PROTECT INSTRUCTION SLIDE CARD FROM DARK MODE CASCADE
+   ========================================================================= */
+.dark .instruction-slide-card,
+.dark .instruction-slide-card .math-content,
+.dark .instruction-slide-card .katex,
+.dark .instruction-slide-card .katex * {
+  color: #0f172a !important; /* Forces dark slate text and math */
+}
+
+/* Retain amber styling for the pedagogical insight box */
+.dark .instruction-slide-card .insight-box-content,
+.dark .instruction-slide-card .insight-box-content * {
+  color: #451a03 !important; /* amber-950 */
 }

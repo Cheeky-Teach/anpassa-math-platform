@@ -19,5 +19,10 @@ export default function MathDisplay({ content, className = "" }) {
         }
     }, [content]);
 
-    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
+    return (
+        <div 
+            ref={containerRef} 
+            className={`math-content leading-relaxed whitespace-pre-wrap text-inherit [&_.katex]:!text-inherit [&_.katex-html]:!text-inherit ${className}`} 
+        />
+    );
 }
