@@ -424,3 +424,27 @@ html {
 .dark .instruction-slide-card .insight-box-content * {
   color: #451a03 !important; /* amber-950 */
 }
+
+/* Arcade / Dark Activity Protection */
+.arcade-dark-protect,
+.arcade-dark-protect .math-content,
+.arcade-dark-protect .math-content .katex,
+.arcade-dark-protect .math-content .katex * {
+  --text-main: #f8fafc !important;
+  color: #f8fafc !important;
+}
+
+/* Allow emerald and amber highlights to preserve their color inside dark arcade views */
+.arcade-dark-protect .text-emerald-400,
+.arcade-dark-protect .text-emerald-400 *,
+.arcade-dark-protect .text-emerald-400 .katex,
+.arcade-dark-protect .text-emerald-400 .katex * {
+  color: #34d399 !important;
+}
+
+.arcade-dark-protect .text-amber-300,
+.arcade-dark-protect .text-amber-300 *,
+.arcade-dark-protect .text-amber-300 .katex,
+.arcade-dark-protect .text-amber-300 .katex * {
+  color: #fcd34d !important;
+}

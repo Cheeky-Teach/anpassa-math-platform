@@ -589,7 +589,15 @@ export default function CategoryClashEngine({
     const progressPercent = Math.min(100, Math.round((progressInLevel / levelTarget) * 100));
 
     return (
-        <div className="fixed inset-0 z-[500] bg-slate-950 flex flex-col font-sans select-none overflow-hidden animate-in fade-in">
+        <div 
+            className="dark arcade-dark-protect fixed inset-0 z-[500] bg-slate-950 text-slate-100 flex flex-col font-sans select-none overflow-hidden animate-in fade-in"            style={{
+                colorScheme: 'dark',
+                '--text-main': '#f8fafc',
+                '--text-muted': '#94a3b8',
+                '--bg-canvas': '#0f172a',
+                '--bg-card': '#1e293b'
+            }}
+        >
 
             {/* Top Navigation & Status Bar */}
             <header className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between text-white shrink-0 gap-4">
@@ -879,7 +887,7 @@ export default function CategoryClashEngine({
                                                                         </div>
                                                                     )}
                                                                     {renderData.latex && (
-                                                                        <div className={`font-serif text-[11px] mt-0.5 ${tileQuestion.showLatex === false ? 'line-through text-slate-500' : 'text-emerald-400'}`}>
+                                                                        <div className={`font-serif text-[11px] mt-0.5 ${tileQuestion.showLatex === false ? 'line-through text-slate-500' : 'text-emerald-400 [&_*]:!text-emerald-400'}`}>
                                                                             <MathDisplay content={`$$${renderData.latex}$$`} />
                                                                         </div>
                                                                     )}
@@ -887,6 +895,9 @@ export default function CategoryClashEngine({
                                                             ) : (
                                                                 <span className="text-slate-600 italic">{t.loading_question}</span>
                                                             )}
+                                                        </td>
+                                                        <td className="py-3 font-mono font-bold text-emerald-400 truncate max-w-[120px]">
+                                                            {answer ? <MathDisplay content={`$${String(answer).replace(/\$/g, '')}$`} className="[&_*]:!text-emerald-400" /> : '—'}
                                                         </td>
                                                         <td className="py-3 font-mono font-bold text-emerald-400 truncate max-w-[120px]">
                                                             {answer ? <MathDisplay content={`$${String(answer).replace(/\$/g, '')}$`} /> : '—'}
