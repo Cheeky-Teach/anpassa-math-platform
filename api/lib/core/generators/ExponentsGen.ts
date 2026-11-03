@@ -314,43 +314,75 @@ export class ExponentsGen {
 
     // --- LEVEL 3: SCIENTIFIC NOTATION ---
     private level3_ScientificNotation(lang: string, variationKey?: string, options: any = {}): any {
-        const pool: {key: string, type: 'concept' | 'calculate'}[] = [
+        const pool: { key: string, type: 'concept' | 'calculate' }[] = [
             { key: 'scientific_to_form', type: 'calculate' },
             { key: 'scientific_missing_mantissa', type: 'calculate' },
-            { key: 'scientific_missing_exponent', type: 'calculate' } // <--- ADDED TO POOL
+            { key: 'scientific_missing_exponent', type: 'calculate' }
         ];
         const v = variationKey || this.getVariation(pool, options);
-        const mantissa = (MathUtils.randomInt(11, 99) / 10), exponent = MathUtils.randomInt(3, 7);
+        
+        // mantissa e.g. 4.5, exponent e.g. 4 -> number = 45000
+        const mantissa = (MathUtils.randomInt(11, 99) / 10);
+        const exponent = MathUtils.randomInt(3, 7);
         const number = mantissa * Math.pow(10, exponent);
         
-        // Helper strings to respect comma formatting based on locale
-        const numStr = number.toLocaleString(lang);
-        const manStr = mantissa.toString().replace('.', ',');
+        // Locale strings
+        const numStr = number.toLocaleString(lang === 'sv' ? 'sv-SE' : 'en-US');
+        const manStr = mantissa.toString().replace('.', lang === 'sv' ? ',' : '.');
+        // KaTeX-safe comma: in LaTeX, "4{,}5" prevents unwanted math-list spacing after the comma
+        const manLatex = mantissa.toString().replace('.', lang === 'sv' ? '{,}' : '.');
+
+        // Digit breakdown for the visual jump:
+        // e.g. for 4.5 * 10^4 = 45000 -> firstDigit = "4", secondDigit = "5", zeros = "000"
+        const mantissaDigits = mantissa.toFixed(1).replace('.', '');
+        const firstDigit = mantissaDigits[0];
+        const secondDigit = mantissaDigits[1];
+        const zeros = '0'.repeat(exponent - 1);
+        
+        // Formatted digit groups with KaTeX spacing for clarity: e.g. "5\,0\,0\,0"
+        const jumpedDigits = (secondDigit + zeros).split('').join('\\,');
+        
+        // Visual underbrace showing the exact jump across digits:
+        // e.g. 4 \underbrace{5\,0\,0\,0}_{\leftarrow 4 \text{ steg}}
+        const stepLabel = lang === 'sv' ? 'steg' : 'steps';
+        const jumpVisual = `${firstDigit}\\underbrace{${jumpedDigits}}_{\\mathbf{\\leftarrow ${exponent}\\text{ ${stepLabel}}}}\\mathbf{,}`;
 
         if (v === 'scientific_to_form') {
             return {
                 renderData: { 
-                    description: lang === 'sv' ? `Skriv ${numStr} i grundpotensform.` : `Write ${numStr} in scientific notation.`, 
+                    description: lang === 'sv' 
+                        ? `Skriv talet ${numStr} i grundpotensform.` 
+                        : `Write the number ${numStr} in scientific notation.`, 
                     interceptorToken: `${number} ; ${mantissa} ; ${exponent}`,
                     answerType: 'structured_scientific' 
                 },
-                token: this.toBase64(`${mantissa}*10^${exponent}`), variationKey: v, type: 'calculate',
+                token: this.toBase64(`${mantissa}*10^${exponent}`), 
+                variationKey: v, 
+                type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Ett smart sätt att skriva stora tal är att sätta ett kommatecken så att det bara blir EN siffra kvar framför." : "A clever way to write large numbers is putting a decimal point so only ONE single digit is left in front.", 
-                        latex: `\\text{Mål: } ${number}` 
+                        text: lang === 'sv' 
+                            ? `I ett heltal sitter det osynliga kommatecknet alltid längst bak: ${numStr},` 
+                            : `In a whole number, the invisible decimal point sits at the very end: ${numStr}.`, 
+                        latex: `${firstDigit}${jumpedDigits}\\mathbf{,}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Flytta kommatecknet från slutet av talet tills det hamnar direkt efter den första siffran: ${manStr}.` : `Move the decimal point from the end of the number until it lands right after the first digit: ${manStr}.`, 
-                        latex: `\\mathbf{${manStr}}` 
+                        text: lang === 'sv' 
+                            ? `Grundpotensform kräver ett tal mellan 1 och 10. Flytta kommat åt vänster tills bara EN siffra (${firstDigit}) står framför: ${manStr}.` 
+                            : `Scientific notation requires a number between 1 and 10. Move the comma left until only ONE digit (${firstDigit}) remains in front: ${manStr}.`, 
+                        latex: `\\mathbf{${manLatex}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Räkna hur många steg du tvingades flytta kommat. Det var exakt ${exponent} steg, vilket blir vårt lilla hörntal.` : `Count how many steps you had to jump the comma. It was exactly ${exponent} steps, which becomes our small corner exponent.`, 
-                        latex: `${manStr} \\cdot 10^{\\mathbf{${exponent}}}` 
+                        text: lang === 'sv' 
+                            ? `Räkna hur många siffror kommat flyttades förbi. Det passerade ${exponent} siffror (${secondDigit} och ${exponent - 1} nollor) = ${exponent} steg.` 
+                            : `Count how many digits the comma jumped across. It passed ${exponent} digits (${secondDigit} and ${exponent - 1} zeros) = ${exponent} steps.`, 
+                        latex: jumpVisual 
                     },
                     { 
-                        text: lang === 'sv' ? `Svar: ${manStr} · 10^{${exponent}}` : `Answer: ${manStr} · 10^{${exponent}}`, 
-                        latex: `${manStr} \\cdot 10^{${exponent}}` 
+                        text: lang === 'sv' 
+                            ? `Varje steg motsvarar en faktor 10. Antalet steg (${exponent}) blir exponenten: ${manStr} · 10^{${exponent}}` 
+                            : `Each step represents a factor of 10. The number of steps (${exponent}) becomes the exponent: ${manStr} · 10^{${exponent}}`, 
+                        latex: `\\mathbf{${manLatex} \\cdot 10^{${exponent}}}` 
                     }
                 ]
             };
@@ -359,58 +391,82 @@ export class ExponentsGen {
         if (v === 'scientific_missing_exponent') {
             return {
                 renderData: { 
-                    description: lang === 'sv' ? "Vilket tal saknas på platsen för 'n'?" : "Which number is missing in place of 'n'?", 
-                    latex: `${numStr} = ${manStr} \\cdot 10^{n}`, 
+                    description: lang === 'sv' 
+                        ? "Vilket tal saknas på platsen för 'n'?" 
+                        : "Which number is missing in place of 'n'?", 
+                    latex: `${numStr} = ${manLatex} \\cdot 10^{n}`, 
                     interceptorToken: `${number} ; ${mantissa} ; ${exponent}`,
                     answerType: 'numeric' 
                 },
-                token: this.toBase64(exponent.toString()), variationKey: v, type: 'calculate',
+                token: this.toBase64(exponent.toString()), 
+                variationKey: v, 
+                type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? `Den lilla exponenten 'n' talar om för oss exakt hur många steg kommatecknet har flyttats.` : `The small exponent 'n' tells us exactly how many steps the decimal point has been moved.`, 
-                        latex: `${number} = ${manStr} \\cdot 10^{n}` 
+                        text: lang === 'sv' 
+                            ? `Exponenten 'n' talar om hur många steg kommat måste flyttas mellan ${manStr} och det fulla talet.` 
+                            : `The exponent 'n' tells us how many steps the comma must move between ${manStr} and the full number.`, 
+                        latex: `${numStr} = ${manLatex} \\cdot 10^{\\mathbf{n}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Jämför talen. För att gå från det lilla talet ${manStr} tillbaka till ${numStr}, hur många steg åt höger måste kommatecknet hoppa?` : `Compare the numbers. To get from the small number ${manStr} back up to ${numStr}, how many steps to the right must the decimal point jump?`, 
-                        latex: `\\text{Steg: } ?` 
+                        text: lang === 'sv' 
+                            ? `Titta på siffrorna efter kommat i ${firstDigit},${secondDigit}. Hur många steg åt höger måste vi hoppa för att nå ${numStr}?` 
+                            : `Look at the digits after the comma in ${firstDigit}.${secondDigit}. How many steps right must we jump to reach ${numStr}?`, 
+                        latex: `${manLatex} \\xrightarrow{?\\text{ ${stepLabel}}} ${firstDigit}${jumpedDigits}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Kommatecknet måste hoppa exakt ${exponent} steg för att fylla ut nollorna. Därför är n = ${exponent}.` : `The decimal point must jump exactly ${exponent} steps to fill out the zeros. Therefore, n = ${exponent}.`, 
+                        text: lang === 'sv' 
+                            ? `Kommat flyttas 1 steg för siffran ${secondDigit}, och sedan ${exponent - 1} steg för nollorna. Totalt: ${exponent} steg.` 
+                            : `The comma moves 1 step for the digit ${secondDigit}, and then ${exponent - 1} steps for the zeros. Total: ${exponent} steps.`, 
+                        latex: jumpVisual 
+                    },
+                    { 
+                        text: lang === 'sv' 
+                            ? `Eftersom kommat flyttas ${exponent} steg är n = ${exponent}.` 
+                            : `Since the comma moves ${exponent} steps, n = ${exponent}.`, 
                         latex: `n = \\mathbf{${exponent}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Svar: ${exponent}` : `Answer: ${exponent}`, 
-                        latex: `${exponent}` 
                     }
                 ]
             };
         }
 
-        // Default fallback (scientific_missing_mantissa)
+        // Default fallback: scientific_missing_mantissa
         return {
             renderData: { 
-                description: lang === 'sv' ? "Vilket tal saknas på platsen för 'a'?" : "Which number is missing in place of 'a'?", 
+                description: lang === 'sv' 
+                    ? "Vilket tal saknas på platsen för 'a'?" 
+                    : "Which number is missing in place of 'a'?", 
                 latex: `${numStr} = a \\cdot 10^{${exponent}}`, 
                 interceptorToken: `${number} ; ${exponent} ; ${mantissa}`,
                 answerType: 'numeric' 
             },
-            token: this.toBase64(mantissa.toString()), variationKey: v, type: 'calculate',
+            token: this.toBase64(mantissa.toString()), 
+            variationKey: v, 
+            type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? `Hörntalet ${exponent} berättar att talet till höger har flyttat sitt kommatecken ${exponent} steg.` : `The corner number ${exponent} tells us that the expression on the right has moved its decimal point ${exponent} steps.`, 
-                    latex: `${number} = a \\cdot 10^{${exponent}}` 
+                    text: lang === 'sv' 
+                        ? `Exponenten ${exponent} betyder att kommatecknet i talet 'a' har flyttats ${exponent} steg åt höger för att bilda ${numStr}.` 
+                        : `The exponent ${exponent} means the comma in 'a' was moved ${exponent} steps to the right to form ${numStr}.`, 
+                    latex: `${numStr} = a \\cdot 10^{${exponent}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `För att hitta det saknade talet 'a' delar vi helt enkelt det stora talet med ${Math.pow(10, exponent)}.` : `To find the missing number 'a', we simply divide the large starting value by ${Math.pow(10, exponent)}.`, 
-                    latex: `a = \\frac{${number}}{\\mathbf{10^{${exponent}}}}` 
+                    text: lang === 'sv' 
+                        ? `För att backa och hitta 'a', dividerar vi ${numStr} med 10^{${exponent}} (vilket innebär att flytta kommat ${exponent} steg åt vänster).` 
+                        : `To backtrack and find 'a', divide ${numStr} by 10^{${exponent}} (which means shifting the comma ${exponent} steps to the left).`, 
+                    latex: `a = \\frac{${numStr}}{10^{${exponent}}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Gör om tiopotensen och räkna ut divisionen: Flytta kommatecknet i ${number} bakåt ${exponent} steg.` : `Solve the division step: Move the decimal point in ${number} backward by ${exponent} positions.`, 
-                    latex: `a = \\frac{${number}}{\\mathbf{${Math.pow(10, exponent)}}} = \\mathbf{${manStr}}` 
+                    text: lang === 'sv' 
+                        ? `Börja längst bak i heltalet och hoppa ${exponent} steg åt vänster:` 
+                        : `Start at the end of the whole number and jump ${exponent} steps to the left:`, 
+                    latex: jumpVisual 
                 },
                 { 
-                    text: lang === 'sv' ? `Svar: ${manStr}` : `Answer: ${manStr}`, 
-                    latex: `${manStr}` 
+                    text: lang === 'sv' 
+                        ? `När kommat landar direkt efter första siffran får vi a = ${manStr}.` 
+                        : `When the comma lands right after the first digit, we get a = ${manStr}.`, 
+                    latex: `a = \\mathbf{${manLatex}}` 
                 }
             ]
         };

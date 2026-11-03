@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   ChevronRight, ChevronLeft, Plus, Trash2, Layout, Send, Info, Layers, Search, Zap, 
-  FileText, Grid3X3, RefreshCcw, Loader2, Maximize2, AlertTriangle, 
+  FileText, Grid3X3, RefreshCcw, Loader2, Maximize2, AlertTriangle, Sparkles,
   Minus, Eye, Settings2, Printer, Square, Type, Shuffle, Save, Eraser, Clock,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, X, Globe, Building2, Lock, Copy, Check, Filter,
   MoreVertical, AlignLeft, LayoutGrid, EyeOff, GripVertical, Brain, Calculator, Target, 
@@ -19,6 +19,7 @@ import { liveCreateRoom } from '../live/core/liveCreateRoom.js';
 
 import ActivityHubModal from '../activities/modals/ActivityHubModal';
 import { getActivityDefinition } from '../activities/registry/activityRegistry.js';
+import WorkedExampleCard from '../shared/WorkedExampleCard.jsx';
 
 // CRITICAL: Imports Universal Theme and Preferences Toggle
 import '../../styles/theme.css'; 
@@ -1584,7 +1585,7 @@ export default function QuestionStudio({
 
                                     return (
                                         <React.Fragment key={item.id}>
-                                            {isHeaderMode && (
+                                            {!item.isWorkedExample && isHeaderMode && (
                                                 <div className={`col-span-6 border-l-4 pl-3 py-1.5 rounded-r-xl ${setupMode === 'donow' ? 'bg-slate-800 border-indigo-500 mb-1 mt-2' : 'bg-slate-50 border-slate-900 mb-1 mt-1'}`}>
                                                     <div className={`text-sm font-semibold leading-relaxed ${setupMode === 'donow' ? 'text-white' : 'text-slate-800'}`}>
                                                         <MathDisplay content={compileAnchoredStory(item, lang)} />
@@ -1597,12 +1598,14 @@ export default function QuestionStudio({
                                                 onDragStart={(e) => handleDragStartUnified(e, idx)} 
                                                 onDragOver={(e) => handleDragOverUnified(e, idx)} 
                                                 onDragEnd={handleDragEndUnified} 
-                                                className={`whiteboard-protect relative group transition-all flex flex-col h-full cursor-move ${getColSpanClass(item.columnSpan)} ${
-                                                    setupMode === 'donow' 
+                                                className={`whiteboard-protect relative group transition-all flex flex-col cursor-move ${
+                                                    item.isWorkedExample ? 'col-span-6 h-auto p-0 border-0' : `${getColSpanClass(item.columnSpan)} h-full`
+                                                } ${
+                                                    !item.isWorkedExample && (setupMode === 'donow' 
                                                         ? 'p-5 shadow-xl border-2 border-transparent hover:border-indigo-400 rounded-2xl' 
                                                         : (layoutStyle === 'framed' 
                                                             ? 'p-4 border-2 border-slate-200 rounded-2xl shadow-xs hover:border-indigo-400' 
-                                                            : 'p-2 border-2 border-transparent hover:border-slate-200 hover:shadow-xs rounded-2xl')
+                                                            : 'p-2 border-2 border-transparent hover:border-slate-200 hover:shadow-xs rounded-2xl'))
                                                 } ${draggedIdx === idx ? 'opacity-20 border-indigo-500 bg-indigo-50 scale-95' : ''}`}
                                             >
                                                 <div className="absolute top-2 left-2 text-slate-300 opacity-0 group-hover:opacity-100 z-10"><GripVertical size={14} /></div>
@@ -1632,47 +1635,57 @@ export default function QuestionStudio({
                                                     </div>
                                                 </div>
                                                 
-                                                <div className="flex items-start gap-4 flex-1">
-                                                    <div className="shrink-0 w-7 h-7 rounded-full border-2 border-[var(--text-main)] flex items-center justify-center text-[var(--text-main)] font-black text-xs mt-1">
-                                                        {idx + 1}
-                                                    </div>
-                                                    
-                                                    <div className="flex-1 min-w-0 flex flex-col h-full">
-                                                        {isInlineMode && (
-                                                            <div className="text-sm font-semibold text-slate-800 mb-1.5 leading-relaxed">
-                                                                <MathDisplay content={compileAnchoredStory(item, lang)} />
-                                                            </div>
-                                                        )}
-                                                        
-                                                        {displayLatex && item.resolvedData?.renderData.latex && (
-                                                            <div className="py-2 text-center font-serif text-slate-900">
-                                                                <MathDisplay 
-                                                                    key={`${item.id}-${effectiveLatexSize}`}
-                                                                    content={`$$${item.resolvedData.renderData.latex}$$`} 
-                                                                    style={{ fontSize: currentFontSize }}
-                                                                />
-                                                            </div>
-                                                        )}
-                                                        
-                                                        {renderOptions(item.resolvedData?.renderData?.options, true)}
-                                                        
-                                                        {displayVisual && (
-                                                            <div className="flex justify-center scale-90 origin-top my-1">
-                                                                <VisualRenderer data={item.resolvedData?.renderData} isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} />
-                                                            </div>
-                                                        )}
-
-                                                        <div className="mt-auto pt-2">
-                                                            {setupMode === 'worksheet' && effectiveWorkArea > 0 && (
-                                                                <div 
-                                                                    className={`w-full mt-2 overflow-hidden ${effectiveWorkspaceStyle === 'grid' ? 'border border-slate-300 rounded-lg worksheet-grid-bg' : ''}`}
-                                                                    style={{ 
-                                                                        height: `${effectiveWorkArea * 30}px`,
-                                                                        ...(effectiveWorkspaceStyle !== 'grid' ? { backgroundColor: 'transparent' } : {})
-                                                                    }} 
-                                                                />
-                                                            )}
+                                                <div className={`flex items-start flex-1 ${item.isWorkedExample ? 'w-full' : 'gap-4'}`}>
+                                                    {!item.isWorkedExample && (
+                                                        <div className="shrink-0 w-7 h-7 rounded-full border-2 border-[var(--text-main)] flex items-center justify-center text-[var(--text-main)] font-black text-xs mt-1">
+                                                            {idx + 1}
                                                         </div>
+                                                    )}
+                                                    
+                                                    <div className={`flex-1 min-w-0 flex flex-col ${item.isWorkedExample ? 'h-auto' : 'h-full'}`}>
+                                                        {item.isWorkedExample ? (
+                                                            <div className="w-full">
+                                                                <WorkedExampleCard item={item} lang={lang} isPrintMode={false} />
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                {isInlineMode && (
+                                                                    <div className="text-sm font-semibold text-slate-800 mb-1.5 leading-relaxed">
+                                                                        <MathDisplay content={compileAnchoredStory(item, lang)} />
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                {displayLatex && item.resolvedData?.renderData.latex && (
+                                                                    <div className="py-2 text-center font-serif text-slate-900">
+                                                                        <MathDisplay 
+                                                                            key={`${item.id}-${effectiveLatexSize}`}
+                                                                            content={`$$${item.resolvedData.renderData.latex}$$`} 
+                                                                            style={{ fontSize: currentFontSize }}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                {renderOptions(item.resolvedData?.renderData?.options, true)}
+                                                                
+                                                                {displayVisual && (
+                                                                    <div className="flex justify-center scale-90 origin-top my-1">
+                                                                        <VisualRenderer data={item.resolvedData?.renderData} isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} />
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="mt-auto pt-2">
+                                                                    {setupMode === 'worksheet' && effectiveWorkArea > 0 && (
+                                                                        <div 
+                                                                            className={`w-full mt-2 overflow-hidden ${effectiveWorkspaceStyle === 'grid' ? 'border border-slate-300 rounded-lg worksheet-grid-bg' : ''}`}
+                                                                            style={{ 
+                                                                                height: `${effectiveWorkArea * 30}px`,
+                                                                                ...(effectiveWorkspaceStyle !== 'grid' ? { backgroundColor: 'transparent' } : {})
+                                                                            }} 
+                                                                        />
+                                                                    )}
+                                                                </div>
+                                                            </>
+                                                        )}
 
                                                         <div className="opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-2 pt-3 mt-3 z-40 relative">
                                                             <div className="flex justify-end gap-2">
@@ -1725,6 +1738,27 @@ export default function QuestionStudio({
                                                                     <ImageIcon size={12} /> {lang === 'sv' ? "Figur" : "Visual"}
                                                                 </button>
                                                             )}
+                                                            <button 
+                                                                onClick={(e) => { 
+                                                                    e.stopPropagation(); 
+                                                                    const nextVal = !item.isWorkedExample;
+                                                                    setPacket(packet.map(p => p.id === item.id ? { 
+                                                                        ...p, 
+                                                                        isWorkedExample: nextVal,
+                                                                        columnSpan: nextVal ? 6 : (p.columnSpan || 6)
+                                                                    } : p));
+                                                                    setIsSaved(false);
+                                                                }} 
+                                                                className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all cursor-pointer ${
+                                                                    item.isWorkedExample 
+                                                                        ? 'bg-amber-500 border-amber-600 text-slate-950 font-black shadow-md' 
+                                                                        : 'bg-white border-slate-200 text-slate-600 hover:text-amber-700 hover:bg-amber-50 hover:border-amber-300'
+                                                                }`}
+                                                                title={lang === 'sv' ? "Gör om till genomgång / exempel" : "Convert to worked example"}
+                                                            >
+                                                                <Sparkles size={12} className={item.isWorkedExample ? "text-slate-950 fill-slate-950" : "text-amber-500"} />
+                                                                <span>{lang === 'sv' ? "Exempel" : "Example"}</span>
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>

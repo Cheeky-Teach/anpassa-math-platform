@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Printer, ChevronLeft, X, ChevronRight, Maximize2, Loader2 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer';
+import WorkedExampleCard from '../shared/WorkedExampleCard';
 
 // --- MATH RENDERING ENGINE (PROTECTED FOR PRINT & PREVIEW) ---
 const MathDisplay = ({ content, className = "" }) => {
@@ -143,9 +144,9 @@ export default function PrintView({
             let maxHeightInCurrentRow = 0;
 
             packet.forEach((item, idx) => {
-                const colSpan = item.columnSpan || 6;
+                const colSpan = item.isWorkedExample ? 6 : (item.columnSpan || 6); // 🟢 Force 6
                 const displayStory = item.showText !== false;
-                const isHeaderMode = displayStory && (item.instructionMode === 'header' || !item.instructionMode);
+                const isHeaderMode = !item.isWorkedExample && displayStory && (item.instructionMode === 'header' || !item.instructionMode);
 
                 const targetCard = sandboxCards[idx];
                 const baseItemHeight = targetCard && targetCard.getBoundingClientRect().height > 0 
@@ -292,84 +293,99 @@ export default function PrintView({
                             const effectiveWorkArea = item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight;
                             const effectiveWorkspaceStyle = item.localWorkspaceStyle !== undefined ? item.localWorkspaceStyle : workspaceStyle;
 
+                            {/* 🟢 Compute sequential problem number (skips worked examples) */}
+                            const problemNumber = packet
+                                .slice(0, item.originalIdx)
+                                .filter(p => !p.isWorkedExample).length + 1;
+
                             return (
                                 <React.Fragment key={item.id}>
-                                    {/* Header Description Text Section */}
-                                    {isHeaderMode && (
-                                        <div className="col-span-6 border-l-4 border-slate-900 pl-4 py-2 mb-2 bg-slate-50 break-inside-avoid">
-                                            <div className="text-sm font-semibold text-slate-900 leading-relaxed">
-                                                <MathDisplay content={compileAnchoredStory(item, lang)} />
-                                            </div>
+                                    {/* 🟢 1. WORKED EXAMPLE CARD BRANCH */}
+                                    {item.isWorkedExample ? (
+                                        <div className="col-span-6 break-inside-avoid w-full my-0">
+                                            <WorkedExampleCard item={item} lang={lang} isPrintMode={true} />
                                         </div>
-                                    )}
-                                    
-                                    <div className={`break-inside-avoid ${layoutStyle === 'framed' ? 'border-2 border-slate-200 rounded-xl p-4' : 'p-2'} ${
-                                        item.columnSpan === 2 ? 'col-span-2' : 
-                                        item.columnSpan === 3 ? 'col-span-3' : 'col-span-6'
-                                    }`}>
-                                        <div className="flex items-start gap-4" onClick={() => setZoomedIdx(item.originalIdx)}>
-                                            {/* Visual Anchor Circle */}
-                                            <div className="shrink-0 w-7 h-7 rounded-full border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-xs mt-1">
-                                                {(item.originalIdx + 1).toString()}
-                                            </div>
-
-                                            <div className="flex-1 min-w-0 flex flex-col h-full">
-                                                {/* Inline Description Text Section */}
-                                                {isInlineMode && (
-                                                    <div className="text-sm font-semibold text-slate-900 leading-relaxed border-b border-slate-100 pb-2 mb-3">
+                                    ) : (
+                                        /* 🟢 2. STANDARD PROBLEM CARD BRANCH */
+                                        <>
+                                            {/* Header Description Text Section */}
+                                            {isHeaderMode && (
+                                                <div className="col-span-6 border-l-4 border-slate-900 pl-4 py-2 mb-2 bg-slate-50 break-inside-avoid">
+                                                    <div className="text-sm font-semibold text-slate-900 leading-relaxed">
                                                         <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                     </div>
-                                                )}
-                                                
-                                                {/* LaTeX Equation Block */}
-                                                {displayLatex && item.resolvedData?.renderData.latex && (
-                                                    <div className="py-2">
-                                                        <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className={`${latexSizeClass} text-slate-900 text-center font-serif`} />
+                                                </div>
+                                            )}
+                                            
+                                            <div className={`break-inside-avoid ${layoutStyle === 'framed' ? 'border-2 border-slate-200 rounded-xl p-4' : 'p-2'} ${
+                                                item.columnSpan === 2 ? 'col-span-2' : 
+                                                item.columnSpan === 3 ? 'col-span-3' : 'col-span-6'
+                                            }`}>
+                                                <div className="flex items-start gap-4" onClick={() => setZoomedIdx(item.originalIdx)}>
+                                                    {/* Visual Anchor Circle: Uses problemNumber so examples don't consume student numbering */}
+                                                    <div className="shrink-0 w-7 h-7 rounded-full border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-xs mt-1">
+                                                        {problemNumber.toString()}
                                                     </div>
-                                                )}
-                                                
-                                                {/* VISUAL CONTAINER */}
-                                                {displayVisual && (
-                                                    <div className="flex justify-center scale-90 origin-top mt-2">
-                                                        <VisualRenderer 
-                                                            data={item.resolvedData?.renderData} 
-                                                            isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} 
-                                                        />
-                                                    </div>
-                                                )}
 
-                                                {item.resolvedData?.renderData?.options && (
-                                                    <div className="grid grid-cols-1 gap-2 border-l-2 border-slate-200 pl-4 mb-2">
-                                                        {item.resolvedData.renderData.options.map((opt, i) => {
-                                                            const choiceLabel = typeof opt === 'object' ? opt.label : opt;
-                                                            return (
-                                                                <div key={i} className="flex gap-2 items-baseline text-[11px] text-slate-800">
-                                                                    <span className="font-black text-slate-600">{String.fromCharCode(65 + i)})</span>
-                                                                    <MathDisplay content={choiceLabel} />
-                                                                </div>
-                                                            );
-                                                        })}
+                                                    <div className="flex-1 min-w-0 flex flex-col h-full">
+                                                        {/* Inline Description Text Section */}
+                                                        {isInlineMode && (
+                                                            <div className="text-sm font-semibold text-slate-900 leading-relaxed border-b border-slate-100 pb-2 mb-3">
+                                                                <MathDisplay content={compileAnchoredStory(item, lang)} />
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* LaTeX Equation Block */}
+                                                        {displayLatex && item.resolvedData?.renderData.latex && (
+                                                            <div className="py-2">
+                                                                <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className={`${latexSizeClass} text-slate-900 text-center font-serif`} />
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* VISUAL CONTAINER */}
+                                                        {displayVisual && (
+                                                            <div className="flex justify-center scale-90 origin-top mt-2">
+                                                                <VisualRenderer 
+                                                                    data={item.resolvedData?.renderData} 
+                                                                    isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} 
+                                                                />
+                                                            </div>
+                                                        )}
+
+                                                        {item.resolvedData?.renderData?.options && (
+                                                            <div className="grid grid-cols-1 gap-2 border-l-2 border-slate-200 pl-4 mb-2">
+                                                                {item.resolvedData.renderData.options.map((opt, i) => {
+                                                                    const choiceLabel = typeof opt === 'object' ? opt.label : opt;
+                                                                    return (
+                                                                        <div key={i} className="flex gap-2 items-baseline text-[11px] text-slate-800">
+                                                                            <span className="font-black text-slate-600">{String.fromCharCode(65 + i)})</span>
+                                                                            <MathDisplay content={choiceLabel} />
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* Dynamic Lined/Grid Paper Work Area */}
+                                                        <div className="mt-auto pt-2">
+                                                            {effectiveWorkArea > 0 && (
+                                                                <div 
+                                                                    className={`w-full mt-2 overflow-hidden ${effectiveWorkspaceStyle === 'grid' ? 'border border-slate-200 rounded-lg' : ''}`}
+                                                                    style={{ 
+                                                                        height: `${effectiveWorkArea * 30}px`, 
+                                                                        ...(effectiveWorkspaceStyle === 'grid' ? {
+                                                                            backgroundImage: 'linear-gradient(to right, #cbd5e1 1px, transparent 1px), linear-gradient(to bottom, #cbd5e1 1px, transparent 1px)',
+                                                                            backgroundSize: '30px 30px'
+                                                                        } : { backgroundColor: 'transparent' })
+                                                                    }} 
+                                                                />
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                )}
-                                                
-                                                {/* Dynamic Lined/Grid Paper Work Area */}
-                                                <div className="mt-auto pt-2">
-                                                    {effectiveWorkArea > 0 && (
-                                                        <div 
-                                                            className={`w-full mt-2 overflow-hidden ${effectiveWorkspaceStyle === 'grid' ? 'border border-slate-200 rounded-lg' : ''}`}
-                                                            style={{ 
-                                                                height: `${effectiveWorkArea * 30}px`, 
-                                                                ...(effectiveWorkspaceStyle === 'grid' ? {
-                                                                    backgroundImage: 'linear-gradient(to right, #cbd5e1 1px, transparent 1px), linear-gradient(to bottom, #cbd5e1 1px, transparent 1px)',
-                                                                    backgroundSize: '30px 30px'
-                                                                } : { backgroundColor: 'transparent' })
-                                                            }} 
-                                                        />
-                                                    )}
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
+                                        </>
+                                    )}
                                 </React.Fragment>
                             );
                         })}
@@ -387,9 +403,10 @@ export default function PrintView({
                         </header>
                         
                         <div className="print-columns-3 flex-1 text-slate-900">
-                            {packet.map((item, idx) => (
+                            {/* 🟢 Filter out worked examples so the answer key corresponds 1:1 with student practice questions */}
+                            {packet.filter(p => !p.isWorkedExample).map((item, qIdx) => (
                                 <div key={`ans-${item.id}`} className={`break-inside-avoid border-slate-200 ${answerKeyStyle === 'compact' ? 'mb-2 flex gap-2 items-baseline' : 'mb-6 pb-4 border-b'}`}>
-                                    <div className="font-black uppercase text-slate-500 shrink-0 text-[10px] italic">{idx + 1}</div>
+                                    <div className="font-black uppercase text-slate-500 shrink-0 text-[10px] italic">{qIdx + 1}</div>
                                     {answerKeyStyle === 'compact' ? (
                                         <div className="font-bold text-slate-900 text-[11px]"><MathDisplay content={getFinalAnswer(item.resolvedData)} /></div>
                                     ) : (
@@ -431,28 +448,36 @@ export default function PrintView({
                                         <div className="text-sm font-semibold text-slate-900"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
                                     </div>
                                 )}
-                                <div className={`sandbox-card ${layoutStyle === 'framed' ? 'border-2 p-4' : 'p-2'} ${item.columnSpan === 2 ? 'col-span-2' : item.columnSpan === 3 ? 'col-span-3' : 'col-span-6'}`}>
-                                    <div className="flex items-start gap-4">
-                                        <div className="shrink-0 w-7 h-7 rounded-full border-2 border-black flex items-center justify-center text-xs mt-1">
-                                            {idx + 1}
+                                <div className={`sandbox-card ${item.isWorkedExample ? 'col-span-6' : (layoutStyle === 'framed' ? 'border-2 p-4' : 'p-2')} ${
+                                    item.isWorkedExample ? 'col-span-6' : 
+                                    item.columnSpan === 2 ? 'col-span-2' : 
+                                    item.columnSpan === 3 ? 'col-span-3' : 'col-span-6'
+                                }`}>
+                                    {item.isWorkedExample ? (
+                                        <WorkedExampleCard item={item} lang={lang} isPrintMode={true} />
+                                    ) : (
+                                        <div className="flex items-start gap-4">
+                                            <div className="shrink-0 w-7 h-7 rounded-full border-2 border-black flex items-center justify-center text-xs mt-1">
+                                                {idx + 1}
+                                            </div>
+                                            <div className="flex-1 min-w-0 flex flex-col h-full space-y-4">
+                                                {isInlineMode && (
+                                                    <div className="text-sm font-semibold text-slate-900"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
+                                                )}
+                                                {displayLatex && item.resolvedData?.renderData.latex && (
+                                                    <div className="py-2"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className={`${latexSizeClass} text-center font-serif text-slate-900`} /></div>
+                                                )}
+                                                {displayVisual && (
+                                                    <div className="flex justify-center scale-90 origin-top mt-2">
+                                                        <VisualRenderer data={item.resolvedData?.renderData} isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} />
+                                                    </div>
+                                                )}
+                                                {effectiveWorkArea > 0 && (
+                                                    <div className="w-full mt-2" style={{ height: `${effectiveWorkArea * 30}px` }} />
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="flex-1 min-w-0 flex flex-col h-full space-y-4">
-                                            {isInlineMode && (
-                                                <div className="text-sm font-semibold text-slate-900"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
-                                            )}
-                                            {displayLatex && item.resolvedData?.renderData.latex && (
-                                                <div className="py-2"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className={`${latexSizeClass} text-center font-serif text-slate-900`} /></div>
-                                            )}
-                                            {displayVisual && (
-                                                <div className="flex justify-center scale-90 origin-top mt-2">
-                                                    <VisualRenderer data={item.resolvedData?.renderData} isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} />
-                                                </div>
-                                            )}
-                                            {effectiveWorkArea > 0 && (
-                                                <div className="w-full mt-2" style={{ height: `${effectiveWorkArea * 30}px` }} />
-                                            )}
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
                             </React.Fragment>
                         );
