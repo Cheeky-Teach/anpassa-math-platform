@@ -232,11 +232,14 @@ export function useGameQuestionPool({ lang = 'sv' } = {}) {
         }
     }, [pool, lang]);
 
-    const updateSlotManually = useCallback((slotId, updates) => {
-        setPool(prev => prev[slotId] ? {
+    const updateSlotManually = useCallback((slotId, updatedData) => {
+        setPool(prev => ({
             ...prev,
-            [slotId]: { ...prev[slotId], ...updates }
-        } : prev);
+            [slotId]: {
+                ...prev[slotId],
+                ...updatedData
+            }
+        }));
     }, []);
 
     const ingestAsIs = useCallback((tilesArray = []) => {
