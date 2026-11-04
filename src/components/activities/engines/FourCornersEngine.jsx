@@ -58,7 +58,7 @@ export default function FourCornersEngine({
             rounds_word: "omgångar",
             reroll_numbers: "Slumpa Tal",
             quick_edit: "Redigera",
-            review_list: "Frågelista",
+            review_list: "Avbryt",
             playlist_structure: "Omgångens Uppgifter",
             playlist_sub: "Granska svarsalternativ och ordning inför helklassgenomgång.",
             summon_more: "Hämta Frågor",
@@ -119,8 +119,8 @@ export default function FourCornersEngine({
             start_game: "Start Game",
             rounds_word: "rounds",
             reroll_numbers: "Re-roll Numbers",
-            quick_edit: "Edit",
-            review_list: "Playlist",
+            quick_edit: "Edit equesw",
+            review_list: "End activity",
             playlist_structure: "Round Questions",
             playlist_sub: "Review distractors and order before whole-class presentation.",
             summon_more: "Summon Questions",
@@ -262,9 +262,13 @@ export default function FourCornersEngine({
         return initialExtractedQuestions.map((q, idx) => formatToCornerRound(q, idx + 1, t));
     }, [initialExtractedQuestions]);
 
+    // 🟢 AFTER: Default to curate/edit mode unless actively resuming a live session
     const [viewMode, setViewMode] = useState(() => {
-        if (session || isLiveHost) return 'play';
-        return initialExtractedQuestions.length > 0 ? 'play' : 'curate';
+        // Only jump to play if resuming an already-active live room with an ongoing question
+        if (session?.active_question_data?.activeTile || session?.active_question_data?.roundIndex !== undefined) {
+            return 'play';
+        }
+        return 'curate';
     });
 
     const [rounds, setRounds] = useState(initialFormattedRounds);
@@ -273,7 +277,8 @@ export default function FourCornersEngine({
     useEffect(() => {
         if (initialFormattedRounds.length > 0 && rounds.length === 0) {
             setRounds(initialFormattedRounds);
-            if (session || isLiveHost) {
+            // 🟢 AFTER: Only jump to play if an active round was already in progress
+            if (session?.active_question_data?.activeTile) {
                 setViewMode('play');
             }
         }

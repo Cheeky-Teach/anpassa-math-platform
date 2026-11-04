@@ -229,6 +229,7 @@ export default function FourCornersSetupModal({
 
             onLaunch({
                 initialQuestions: preparedQuestions,
+                initialViewMode: 'curate',
                 settings: {
                     deliveryMode: 'physical',
                     timerSeconds,
