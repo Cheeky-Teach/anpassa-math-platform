@@ -162,9 +162,8 @@ export class PythagorasGen {
 
         if (v === 'pyth_identify_hypotenuse') {
             const letters = ['A', 'B', 'C'];
-            const hypLetter = 'C'; // The hypotenuse is always C
+            const hypLetter = 'C';
 
-            // Randomize whether leg A is height and B is base, or vice versa
             const swapLegs = Math.random() > 0.5;
             const legVertical = swapLegs ? 'B' : 'A';
             const legHorizontal = swapLegs ? 'A' : 'B';
@@ -183,9 +182,9 @@ export class PythagorasGen {
                         subtype: 'right',
                         dims: { w: 120, h: 80 },
                         labels: {
-                            h: legVertical,      // Vertical leg (A or B)
-                            b: legHorizontal,    // Horizontal leg (B or A)
-                            hyp: 'C'             // Always strictly on the hypotenuse
+                            h: legVertical,
+                            b: legHorizontal,
+                            hyp: 'C'
                         }
                     }
                 },
@@ -218,11 +217,10 @@ export class PythagorasGen {
 
         if (v === 'pyth_area_proof') {
             const triple = MathUtils.randomChoice([[3, 4, 5], [6, 8, 10], [5, 12, 13]]);
-            const areaA = triple[0] ** 2; // e.g., 9
-            const areaB = triple[1] ** 2; // e.g., 16
-            const areaC = triple[2] ** 2; // e.g., 25
+            const areaA = triple[0] ** 2;
+            const areaB = triple[1] ** 2;
+            const areaC = triple[2] ** 2;
 
-            // 70% chance to ask for Hypotenuse Square C, 30% for Leg Square A/B
             const askHypotenuse = Math.random() < 0.7;
 
             const targetAns = askHypotenuse ? areaC : areaA;
@@ -602,14 +600,12 @@ export class PythagorasGen {
 
         if (v === 'pyth_coord_dist_int') {
             const [dx, dy, d] = MathUtils.randomChoice([[3, 4, 5], [6, 8, 10], [5, 12, 13]]);
-            // Keep points within visible grid range
             const x1 = MathUtils.randomInt(-2, 2);
             const y1 = MathUtils.randomInt(-2, 2);
             const x2 = x1 + dx;
             const y2 = y1 + dy;
             const token = `(${x1},${y1});(${x2},${y2});${d}`;
 
-            // Calculate auto-fitting grid boundaries
             const minBound = Math.min(x1, y1, -1);
             const maxBound = Math.max(x2, y2, 6);
             const range = Math.max(Math.abs(minBound), Math.abs(maxBound)) + 2;
@@ -629,10 +625,8 @@ export class PythagorasGen {
                         gridStep: 1,
                         labelStep: 2,
                         segments: [
-                            // Main distance segment (hypotenuse)
                             { x1, y1, x2, y2, color: '#4f46e5', width: 2.5 },
-                            // Dashed orthogonal legs forming right triangle
-                            { x1, y1, x2: x2, y2: y1, color: '#94a3b8', width: 1.5, dashed: true },
+                            { x1, y1, x2, y2: y1, color: '#94a3b8', width: 1.5, dashed: true },
                             { x1: x2, y1, x2, y2, color: '#94a3b8', width: 1.5, dashed: true }
                         ],
                         points: [
@@ -667,7 +661,7 @@ export class PythagorasGen {
             const dVal = Math.sqrt(dx ** 2 + dy ** 2);
             const dRounded = parseFloat(dVal.toFixed(1));
             const dStr = this.formatNum(dRounded, lang);
-            const token = `(${x1},${y1});(${x2},${y2});${dRounded}`;
+            const token = `${x1};${y1};${x2};${y2};${dRounded}`;
 
             const range = Math.max(x2, y2) + 2;
 
@@ -687,7 +681,7 @@ export class PythagorasGen {
                         labelStep: 2,
                         segments: [
                             { x1, y1, x2, y2, color: '#4f46e5', width: 2.5 },
-                            { x1, y1, x2: x2, y2: y1, color: '#94a3b8', width: 1.5, dashed: true },
+                            { x1, y1, x2, y2: y1, color: '#94a3b8', width: 1.5, dashed: true },
                             { x1: x2, y1, x2, y2, color: '#94a3b8', width: 1.5, dashed: true }
                         ],
                         points: [
@@ -808,8 +802,9 @@ export class PythagorasGen {
                     answerType: 'numeric',
                     geometry: {
                         type: 'rectangle',
+                        subtype: 'diagonal',
                         dims: { w: b * 10, h: a * 10 },
-                        labels: { w: `${b}`, h: `${a}`, d: 'd' }
+                        labels: { w: `${b}`, h: `${a}`, d: 'd', diagonal: 'd' }
                     }
                 },
                 token: this.toBase64(d.toString()),
@@ -836,7 +831,8 @@ export class PythagorasGen {
                 answerType: 'numeric',
                 geometry: {
                     type: 'cuboid',
-                    labels: { l: `${l}`, w: `${w}`, h: `${h}`, d: 'd' }
+                    subtype: 'box_diagonal',
+                    labels: { w: `${w}`, h: `${h}`, depth: `${l}`, space_diag: 'd' }
                 }
             },
             token: this.toBase64(d3D.toString()),

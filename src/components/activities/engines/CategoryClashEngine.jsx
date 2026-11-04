@@ -169,7 +169,7 @@ export default function CategoryClashEngine({
     const teamsRef = useRef(teams);
     useEffect(() => { teamsRef.current = teams; }, [teams]);
 
-    // 🟢 Tile Clear State & Real-Time Synchronized Reference
+    // Tile Clear State & Real-Time Synchronized Reference
     const [clearedTiles, setClearedTiles] = useState(
         session?.active_question_data?.board?.clearedTiles || 
         savedBoard?.packet?.clearedTiles || 
@@ -190,7 +190,7 @@ export default function CategoryClashEngine({
         updateSlotManually
     } = useGameQuestionPool({ lang });
 
-    // 🟢 Dynamic Coordinates & Slot Properties Solver
+    // Dynamic Coordinates & Slot Properties Solver
     const parseSlotCoords = (slotId) => {
         if (!slotId) return { colIdx: 0, rowIdx: 0 };
         const match = String(slotId).match(/^c(\d+)_r(\d+)$/);
@@ -222,7 +222,30 @@ export default function CategoryClashEngine({
         return { topic, level: targetLevel, colIdx, rowIdx, cat };
     };
 
-    // 🟢 2. Unified Session Hook
+    // Helper to resolve answer regardless of question schema
+    const resolveQuestionAnswer = (q) => {
+        if (!q) return null;
+        const rd = q.renderData || q.resolvedData?.renderData || {};
+        const clues = q.clues || q.resolvedData?.clues || [];
+        
+        if (q.answer !== undefined && q.answer !== null && q.answer !== '') return q.answer;
+        if (rd.answer !== undefined && rd.answer !== null && rd.answer !== '') return rd.answer;
+        if (q.resolvedData?.answer) return q.resolvedData.answer;
+        if (q.correctAnswer) return q.correctAnswer;
+        if (rd.correct_answer) return rd.correct_answer;
+
+        if (clues.length > 0) {
+            const last = clues[clues.length - 1];
+            if (typeof last === 'object' && last !== null) {
+                return last.latex || last[lang] || last.text || null;
+            }
+            return last;
+        }
+
+        return null;
+    };
+
+    // 2. Unified Session Hook
     const {
         roomId,
         classCode,
@@ -378,7 +401,6 @@ export default function CategoryClashEngine({
                             pickedItem.resolvedData?.metadata?.isWordProblemApplied
                         );
 
-                        // If category needs word problems but the candidate is pure math, fetch story scenario
                         if (shouldBeWp && !itemIsWp) {
                             slotsToGenerate.push({
                                 slotId,
@@ -390,6 +412,7 @@ export default function CategoryClashEngine({
                             });
                         } else {
                             matchedAny = true;
+                            const itemAns = resolveQuestionAnswer(pickedItem);
                             slotMap[slotId] = {
                                 ...pickedItem,
                                 slotId,
@@ -397,15 +420,16 @@ export default function CategoryClashEngine({
                                 rowIndex: r,
                                 level: targetLevel,
                                 wordProblem: shouldBeWp,
+                                answer: itemAns,
                                 renderData: {
                                     ...pickedItem.renderData,
                                     level: targetLevel,
+                                    answer: itemAns,
                                     isWordProblemApplied: shouldBeWp
                                 }
                             };
                         }
                     } else {
-                        // Empty slot: queue generation
                         slotsToGenerate.push({
                             slotId,
                             colIndex: c,
@@ -418,25 +442,40 @@ export default function CategoryClashEngine({
                 }
             }
 
-            // Ingest all questions matched so far
             if (matchedAny && Object.keys(slotMap).length > 0) {
                 ingestAsIs(Object.values(slotMap));
             }
 
-            // Procedurally fetch any word problems or missing slots
             if (slotsToGenerate.length > 0) {
                 Promise.all(slotsToGenerate.map(async (slot) => {
                     try {
                         const url = `/api/question?topic=${slot.topic}&level=${slot.level}&lang=${lang}&wordProblem=${slot.wordProblem}`;
                         const res = await fetch(url);
                         const fresh = await res.json();
+                        const resolvedAnswer = resolveQuestionAnswer(fresh);
+                        const resolvedClues = fresh.clues || fresh.resolvedData?.clues || [];
+
                         updateSlotManually(slot.slotId, {
                             ...fresh,
                             slotId: slot.slotId,
                             colIndex: slot.colIndex,
                             rowIndex: slot.rowIndex,
                             level: slot.level,
-                            wordProblem: slot.wordProblem
+                            wordProblem: slot.wordProblem,
+                            answer: resolvedAnswer,
+                            clues: resolvedClues,
+                            renderData: {
+                                ...fresh.renderData,
+                                level: slot.level,
+                                answer: resolvedAnswer,
+                                isWordProblemApplied: slot.wordProblem
+                            },
+                            resolvedData: {
+                                ...fresh.resolvedData,
+                                level: slot.level,
+                                answer: resolvedAnswer,
+                                clues: resolvedClues
+                            }
                         });
                     } catch (e) {
                         console.error("Failed to generate slot:", slot, e);
@@ -568,7 +607,7 @@ export default function CategoryClashEngine({
         }));
     };
 
-    // 🟢 Tile Click & Reopen
+    // Tile Click & Reopen
     const handleTileClick = async (slotId) => {
         if (clearedTilesRef.current[slotId] && (mode === 'play' || isLive)) {
             const confirmReopen = window.confirm(
@@ -592,7 +631,7 @@ export default function CategoryClashEngine({
         }
     };
 
-    // 🟢 Persistent Clear & Modal Dismissal
+    // Persistent Clear & Modal Dismissal
     const handleFinishAndClear = async () => {
         const targetSlot = activeSlotId;
         const nextCleared = targetSlot ? { ...clearedTilesRef.current, [targetSlot]: true } : clearedTilesRef.current;
@@ -606,7 +645,7 @@ export default function CategoryClashEngine({
         }
     };
 
-    // 🟢 Standard Close (X or Avbryt): Simply dismisses modal without clearing the tile
+    // Standard Close (X or Avbryt): Dismisses modal without clearing the tile
     const handleCloseStageModal = async () => {
         setIsStageModalOpen(false);
         setActiveSlotId(null);
@@ -672,7 +711,7 @@ export default function CategoryClashEngine({
         }
     };
     
-    // 🟢 Authoritative Slot Re-roll & Level Lock
+    // Authoritative Slot Re-roll & Level Lock with Answer and Clues Hoisted
     const handleRegenerateSlot = async (slotId, overrideWordProblem = undefined) => {
         if (!slotId) return;
         const current = pool[slotId];
@@ -694,6 +733,9 @@ export default function CategoryClashEngine({
             if (!res.ok) throw new Error(`Fetch failed: ${res.statusText}`);
             const freshQuestion = await res.json();
 
+            const resolvedAnswer = resolveQuestionAnswer(freshQuestion);
+            const resolvedClues = freshQuestion.clues || freshQuestion.resolvedData?.clues || [];
+
             const newRegenVersion = Date.now();
             const itemToBroadcast = {
                 ...freshQuestion,
@@ -702,16 +744,21 @@ export default function CategoryClashEngine({
                 topicId: topic,
                 level,
                 wordProblem: isWp,
+                answer: resolvedAnswer,
+                clues: resolvedClues,
                 renderData: {
                     ...freshQuestion.renderData,
                     topicId: topic,
                     level,
+                    answer: resolvedAnswer,
                     isWordProblemApplied: isWp
                 },
                 resolvedData: {
                     ...freshQuestion.resolvedData,
                     topicId: topic,
-                    level
+                    level,
+                    answer: resolvedAnswer,
+                    clues: resolvedClues
                 },
                 regenVersion: newRegenVersion
             };
@@ -1086,7 +1133,7 @@ export default function CategoryClashEngine({
                                                 const points = pointScale[rowIdx] || 100;
                                                 const catObj = categories[colIdx];
                                                 const renderData = tileQuestion?.renderData || tileQuestion?.resolvedData?.renderData || {};
-                                                const answer = tileQuestion?.answer || renderData.answer || null;
+                                                const answer = resolveQuestionAnswer(tileQuestion);
 
                                                 return (
                                                     <tr key={slotId} className="hover:bg-slate-800/40 transition-colors">
@@ -1117,7 +1164,11 @@ export default function CategoryClashEngine({
                                                             )}
                                                         </td>
                                                         <td className="py-3 font-mono font-bold text-emerald-400 truncate max-w-[120px]">
-                                                            {answer ? <MathDisplay content={`$${String(answer).replace(/\$/g, '')}$`} className="[&_*]:!text-emerald-400" /> : '—'}
+                                                            {answer ? (
+                                                                <MathDisplay content={`$${String(answer).replace(/\$/g, '')}$`} className="[&_*]:!text-emerald-400" />
+                                                            ) : (
+                                                                <span className="text-slate-600">—</span>
+                                                            )}
                                                         </td>
                                                         <td className="py-3 text-center">
                                                             <div className="flex items-center justify-center gap-1">

@@ -1,4 +1,3 @@
-// src/components/visuals/VolumeVisualization.jsx
 import React, { useRef, useEffect, useState } from 'react';
 
 /**
@@ -89,16 +88,38 @@ export const VolumeVisualization = ({ data }) => {
 
         const labels = data.labels || {};
         const type = (data.type || '').toLowerCase();
+        const subtype = (data.subtype || (data.dims && data.dims.subtype) || '').toLowerCase();
 
-        const valW = parseFloat(labels.w || labels.s || labels.b) || 10;
-        const valH = parseFloat(labels.h) || 10;
-        const valD = parseFloat(labels.d || labels.l) || valW;
+        // Explicit check for 3D diagonal intent
+        const isDiagonalMode = 
+            subtype === 'box_diagonal' || 
+            subtype === 'space_diagonal' || 
+            Boolean(data.showDiagonal) ||
+            Boolean(labels.space_diag);
+
+        const diagLabel = isDiagonalMode 
+            ? (labels.space_diag || labels.diagonal || (labels.d && labels.depth ? labels.d : '?'))
+            : null;
+
+        // Front horizontal base: width / base / length
+        const labelW = labels.w || labels.width || labels.b || labels.base || labels.s || (!labels.w && labels.l ? labels.l : null);
+
+        // Vertical height
+        const labelH = labels.h || labels.height;
+
+        // Slanted depth edge
+        const labelD = labels.depth || labels.djup || labels.bredd || 
+            (!isDiagonalMode ? (labels.d || labels.l) : (labels.space_diag ? (labels.d || labels.l) : null));
+            
+        const valW = parseFloat(labelW) || 10;
+        const valH = parseFloat(labelH) || 10;
+        const valD = parseFloat(labelD) || valW;
         const rawD = parseFloat(labels.d);
         const valR = parseFloat(labels.r) || (rawD ? rawD / 2 : 5);
 
-        const hasRightHeightIndicator = ['cylinder', 'silo', 'cone', 'ice_cream', 'pyramid'].includes(type) && labels.h;
+        const hasRightHeightIndicator = ['cylinder', 'silo', 'cone', 'ice_cream', 'pyramid'].includes(type) && labelH;
 
-        // 1. Calculate true total unit footprint (including base ellipses and depth slant)
+        // 1. Calculate true total unit footprint
         let totalUnitW = 10;
         let totalUnitH = 10;
 
@@ -115,20 +136,17 @@ export const VolumeVisualization = ({ data }) => {
             totalUnitW = valR * 2;
             totalUnitH = valR * 2;
         } else if (type === 'ice_cream') {
-            // Cone height + Hemisphere scoop height (r) + bottom apex buffer
             totalUnitW = valR * 2;
             totalUnitH = valH + valR + (valR * 0.35);
         } else if (type === 'silo') {
-            // Cylinder height + Top Dome (r) + base ellipse
             totalUnitW = valR * 2;
             totalUnitH = valH + valR + (valR * 0.65);
         } else {
-            // Standard cylinder, cone
             totalUnitW = valR * 2;
             totalUnitH = valH + (valR * 0.65);
         }
 
-        // 2. Safe Margins: reserve explicit pixels for top/bottom labels and right-hand indicators
+        // 2. Safe Margins
         const padTop = (type === 'cuboid' || type === 'ice_cream' || type === 'silo') ? 34 : 24;
         const padBottom = 28;
         const padLeft = type === 'triangular_prism' ? 44 : 20;
@@ -137,13 +155,11 @@ export const VolumeVisualization = ({ data }) => {
         const maxAvailableW = Math.max(50, w - (padLeft + padRight));
         const maxAvailableH = Math.max(50, h - (padTop + padBottom));
 
-        // Strict uniform scale so shapes never exceed canvas boundaries
         const scale = Math.min(
             maxAvailableW / Math.max(totalUnitW, 1),
             maxAvailableH / Math.max(totalUnitH, 1)
         );
 
-        // Center calculation with directional padding offset
         const effectiveCx = (padLeft + (w - padRight)) / 2;
         const effectiveCy = (padTop + (h - padBottom)) / 2;
         const labelGap = 15;
@@ -154,11 +170,7 @@ export const VolumeVisualization = ({ data }) => {
             const dh = valH * scale * 0.85;
             const dd = valD * scale * 0.45;
 
-            // Center the full 3D envelope horizontally
             const x0 = effectiveCx - (dw + dd) / 2;
-
-            // SHIFT LOWER: y0 is pushed down so the highest rear point (y0 - dh - dd)
-            // is symmetric around effectiveCy, giving full breathing room from the top border
             const y0 = effectiveCy + (dh + dd) / 2;
 
             // Rear dashed edges
@@ -190,22 +202,25 @@ export const VolumeVisualization = ({ data }) => {
             ctx.fill();
             ctx.stroke();
 
-            // Labels
-            drawLabel(labels.w, x0 + dw / 2, y0 + labelGap);
-            drawLabel(labels.h, x0 - labelGap, y0 - dh / 2);
-            drawLabel(labels.d, x0 + dw + dd / 2 + 12, y0 - dd / 2 + 6);
+            // Dimension labels
+            if (labelW) drawLabel(labelW, x0 + dw / 2, y0 + labelGap);
+            if (labelH) drawLabel(labelH, x0 - labelGap, y0 - dh / 2);
+            if (labelD) drawLabel(labelD, x0 + dw + dd / 2 + 12, y0 - dd / 2 + 6);
 
-            if (labels.d && labels.d !== valD.toString()) {
-                // 3D Space diagonal from rear-bottom-left (x0 + dd, y0 - dd) to front-top-right (x0 + dw, y0 - dh)
+            // 3D Space Diagonal (ONLY when in diagonal mode)
+            if (isDiagonalMode && diagLabel) {
                 const pStartX = x0 + dd;
                 const pStartY = y0 - dd;
                 const pEndX = x0 + dw;
                 const pEndY = y0 - dh;
 
-                // Draw prominent diagonal line through the prism interior
+                // Base floor diagonal guideline
+                drawDashed(x0, y0, x0 + dw + dd, y0 - dd, '#94a3b8');
+
+                // Main 3D Space Diagonal line
                 ctx.save();
                 ctx.strokeStyle = '#4f46e5';
-                ctx.lineWidth = 2.2;
+                ctx.lineWidth = 2.4;
                 ctx.setLineDash([5, 4]);
                 ctx.beginPath();
                 ctx.moveTo(pStartX, pStartY);
@@ -213,15 +228,15 @@ export const VolumeVisualization = ({ data }) => {
                 ctx.stroke();
                 ctx.restore();
 
-                // End point dots
+                // Vertex markers
                 ctx.beginPath();
                 ctx.arc(pStartX, pStartY, 3.5, 0, 2 * Math.PI);
                 ctx.arc(pEndX, pEndY, 3.5, 0, 2 * Math.PI);
                 ctx.fillStyle = '#4f46e5';
                 ctx.fill();
 
-                // Diagonal label placed near the center with white halo
-                drawLabel(`d`, (pStartX + pEndX) / 2 - 10, (pStartY + pEndY) / 2 - 10, '#4f46e5', '#ffffff');
+                // Diagonal label centered along the line
+                drawLabel(diagLabel, (pStartX + pEndX) / 2 - 12, (pStartY + pEndY) / 2 - 10, '#4f46e5', '#ffffff');
             }
         }
         // --- TRIANGULAR PRISM ---
@@ -252,7 +267,6 @@ export const VolumeVisualization = ({ data }) => {
 
             drawDashed(x0 + b / 2, y0, x0 + b / 2, apexY);
 
-            // Left External Height Indicator
             const hIndX = x0 - labelGap;
             drawDashed(x0, y0, hIndX, y0);
             drawDashed(x0 + b / 2, apexY, hIndX, apexY);
@@ -265,10 +279,10 @@ export const VolumeVisualization = ({ data }) => {
             ctx.moveTo(hIndX - 4, apexY); ctx.lineTo(hIndX + 4, apexY);
             ctx.stroke();
 
-            const hLabel = labels.h ? `h = ${labels.h}` : `h`;
+            const hLabel = labelH ? `h = ${labelH}` : `h`;
             drawLabel(hLabel, hIndX - 6, (y0 + apexY) / 2, '#0f172a', '#ffffff', 'right');
-            drawLabel(labels.b, x0 + b / 2, y0 + labelGap);
-            drawLabel(labels.l, x0 + b + l / 2 + 14, y0 - l * 0.1);
+            if (labelW) drawLabel(labelW, x0 + b / 2, y0 + labelGap);
+            if (labelD) drawLabel(labelD, x0 + b + l / 2 + 14, y0 - l * 0.1);
         }
         // --- PYRAMID ---
         else if (type === 'pyramid') {
@@ -307,7 +321,7 @@ export const VolumeVisualization = ({ data }) => {
             ctx.fill();
             ctx.stroke();
 
-            if (labels.h) {
+            if (labelH) {
                 const hIndX = apex.x + pw / 2 + 14;
                 drawDashed(apex.x, apex.y, hIndX, apex.y);
                 drawDashed(apex.x, baseY, hIndX, baseY);
@@ -320,13 +334,13 @@ export const VolumeVisualization = ({ data }) => {
                 ctx.moveTo(hIndX - 4, baseY); ctx.lineTo(hIndX + 4, baseY);
                 ctx.stroke();
 
-                drawLabel(`h = ${labels.h}`, hIndX + 6, (apex.y + baseY) / 2, '#0f172a', '#ffffff', 'left');
+                drawLabel(`h = ${labelH}`, hIndX + 6, (apex.y + baseY) / 2, '#0f172a', '#ffffff', 'left');
             }
 
-            drawLabel(labels.w || labels.s, x0 + pw / 2, y0 + labelGap);
-            if (valW !== valD) drawLabel(labels.d, x0 + pw + pd / 2 + 12, y0 - pd / 2 + 4);
+            if (labelW) drawLabel(labelW, x0 + pw / 2, y0 + labelGap);
+            if (valW !== valD && labelD) drawLabel(labelD, x0 + pw + pd / 2 + 12, y0 - pd / 2 + 4);
         }
-        // --- CYLINDER, CONE, SPHERE ---
+        // --- CYLINDER, SILO, CONE, ICE CREAM, SPHERE ---
         else {
             const r = valR * scale;
             const vh = valH * scale;
@@ -396,7 +410,7 @@ export const VolumeVisualization = ({ data }) => {
                 }
                 drawRadiusOrDiameter(effectiveCx, yTop, r);
 
-                if (labels.h) {
+                if (labelH) {
                     const hIndX = effectiveCx + r + 14;
                     drawDashed(effectiveCx, yTop, hIndX, yTop);
                     drawDashed(effectiveCx, yBot, hIndX, yBot);
@@ -409,27 +423,21 @@ export const VolumeVisualization = ({ data }) => {
                     ctx.moveTo(hIndX - 4, yBot); ctx.lineTo(hIndX + 4, yBot);
                     ctx.stroke();
 
-                    drawLabel(`h = ${labels.h}`, hIndX + 6, effectiveCy, '#0f172a', '#ffffff', 'left');
+                    drawLabel(`h = ${labelH}`, hIndX + 6, effectiveCy, '#0f172a', '#ffffff', 'left');
                 }
             }
             else if (type === 'cone' || type === 'ice_cream') {
                 const isIceCream = type === 'ice_cream';
-                
-                // For ice cream: total visual height is cone height (vh) + scoop radius (r)
-                // Anchor effectiveCy to the center of the ENTIRE composite figure
                 const totalH = isIceCream ? (vh + r) : vh;
                 
-                // Cone rim position (mouth of the cone)
                 const yBase = isIceCream 
                     ? effectiveCy - (totalH / 2) + r 
                     : effectiveCy + (vh / 2);
                     
-                // Cone point/apex position
                 const apexY = isIceCream 
                     ? yBase + vh 
                     : yBase - vh;
 
-                // 1. Fill & Stroke Cone Body
                 ctx.beginPath();
                 ctx.moveTo(effectiveCx - r, yBase);
                 ctx.lineTo(effectiveCx, apexY);
@@ -437,7 +445,6 @@ export const VolumeVisualization = ({ data }) => {
                 ctx.closePath();
                 ctx.fill();
 
-                // 2. Base Ellipse at the Cone Mouth
                 drawCircleBase(effectiveCx, yBase, r, !isIceCream);
                 
                 ctx.beginPath();
@@ -446,20 +453,16 @@ export const VolumeVisualization = ({ data }) => {
                 ctx.lineTo(effectiveCx + r, yBase);
                 ctx.stroke();
 
-                // 3. Draw Ice Cream Scoop (Hemisphere Dome on Top)
                 if (isIceCream) {
                     ctx.beginPath();
-                    // Semicircular dome curving over the top from left rim to right rim
                     ctx.arc(effectiveCx, yBase, r, Math.PI, 0, false);
                     ctx.fill();
                     ctx.stroke();
                 }
 
-                // 4. Radius / Diameter Label
                 drawRadiusOrDiameter(effectiveCx, yBase, r, !isIceCream);
 
-                // 5. Height Indicator Bracket (measures the cone portion specifically)
-                if (labels.h) {
+                if (labelH) {
                     const hIndicatorX = effectiveCx + r + 14;
                     drawDashed(effectiveCx, apexY, hIndicatorX, apexY);
                     drawDashed(effectiveCx, yBase, hIndicatorX, yBase);
@@ -472,7 +475,7 @@ export const VolumeVisualization = ({ data }) => {
                     ctx.moveTo(hIndicatorX - 4, yBase); ctx.lineTo(hIndicatorX + 4, yBase);
                     ctx.stroke();
 
-                    drawLabel(`h = ${labels.h}`, hIndicatorX + 6, (yBase + apexY) / 2, '#0f172a', '#ffffff', 'left');
+                    drawLabel(`h = ${labelH}`, hIndicatorX + 6, (yBase + apexY) / 2, '#0f172a', '#ffffff', 'left');
                 }
             }
             else if (type === 'sphere') {

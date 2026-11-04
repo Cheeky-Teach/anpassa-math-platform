@@ -1,7 +1,7 @@
 // src/components/activities/engines/FourCornersEngine.jsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
-    Play, RefreshCcw, Sparkles, Edit3, Trash2, Plus, 
+    Play, RefreshCcw, Sparkles, Edit3, Trash2, Plus, Pause,
     ArrowLeft, ArrowRight, Eye, CheckCircle2, Users, Save,
     ChevronRight, X, Loader2, Type, Calculator, Lightbulb, ChevronDown, ChevronUp,
     Monitor, Lock, Building2, Timer, Flame, Trophy, Zap, Award
@@ -94,6 +94,8 @@ export default function FourCornersEngine({
             school_tooltip: "Min Skola",
             start_live: "Starta Live",
             start_live_tooltip: "Starta live-rum för nuvarande uppgifter",
+            start_timer: "Starta",
+            pause_timer: "Pausa",
             formula_on: "Formel På",
             formula_off: "Formel Av",
             reroll_all_confirm: "Slumpa nya tal för alla frågor?",
@@ -154,6 +156,8 @@ export default function FourCornersEngine({
             school_tooltip: "My School",
             start_live: "Go Live",
             start_live_tooltip: "Host live room for current tasks",
+            start_timer: "Start",
+            pause_timer: "Pause",
             formula_on: "Formula On",
             formula_off: "Formula Off",
             reroll_all_confirm: "Re-roll numbers for all questions?",
@@ -293,7 +297,7 @@ export default function FourCornersEngine({
     const [visibility, setVisibility] = useState(sourcePacket?.visibility || initialConfig?.savedSheet?.visibility || 'private');
 
     // Timer Controls
-    const defaultDuration = initialConfig?.settings?.timerSeconds !== undefined ? initialConfig.settings.timerSeconds : 30;
+    const defaultDuration = initialConfig?.settings?.timerSeconds !== undefined ? initialConfig.settings.timerSeconds : 0;
     const [timerDuration, setTimerDuration] = useState(defaultDuration);
     const [timeLeft, setTimeLeft] = useState(defaultDuration);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -459,16 +463,13 @@ export default function FourCornersEngine({
 
     const currentRound = rounds[activeRoundIndex] || null;
 
+    // 🟢 Reset time to duration, but KEEP TIMER INACTIVE until teacher clicks start
     useEffect(() => {
         setShowClues(false);
         setRevealedClueIndex(0);
-        if (timerDuration > 0) {
-            setTimeLeft(timerDuration);
-            setIsTimerRunning(viewMode === 'play');
-        } else {
-            setIsTimerRunning(false);
-        }
-    }, [activeRoundIndex, currentRound?.id, viewMode]);
+        setTimeLeft(timerDuration);
+        setIsTimerRunning(false);
+    }, [activeRoundIndex, currentRound?.id]);
 
     // 🟢 Countdown Timer Effect (Locks answers at zero, does NOT auto-advance)
     useEffect(() => {
@@ -721,6 +722,11 @@ export default function FourCornersEngine({
 
     const effectiveShowVisual = currentRound?.showVisual !== false;
 
+    // 🟢 Calculate timer progress and visual urgency flags for classroom visibility
+    const timerProgress = timerDuration > 0 ? Math.min(100, Math.max(0, (timeLeft / timerDuration) * 100)) : 0;
+    const isUrgent = isTimerRunning && timeLeft <= 10 && timeLeft > 0;
+    const isCritical = isTimerRunning && timeLeft <= 5 && timeLeft > 0;
+
     return (
         <div 
             className="fixed inset-0 z-[500] flex flex-col overflow-hidden select-none font-sans animate-in fade-in transition-colors duration-200"
@@ -813,53 +819,32 @@ export default function FourCornersEngine({
                         </button>
                     ) : (
                         <div className="flex items-center gap-2">
-                            {/* Runtime Timer Pill */}
+                            {/* Header Timer Config Menu (Configures preset duration without auto-running) */}
                             <div 
-                                className="flex items-center rounded-xl border px-2 py-1 gap-1.5 shadow-xs"
+                                className="flex items-center rounded-xl border px-2.5 py-1.5 gap-2 shadow-xs transition-colors"
                                 style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
                             >
-                                <button
-                                    type="button"
-                                    onClick={() => setIsTimerRunning(!isTimerRunning)}
-                                    className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                                        isTimerRunning ? 'text-amber-500 animate-pulse' : 'opacity-40'
-                                    }`}
-                                    title={isTimerRunning ? "Pausa timer" : "Starta timer"}
-                                >
-                                    <Timer size={14} />
-                                </button>
-
-                                <span className="font-mono text-xs font-black w-8 text-center">
-                                    {timerDuration === 0 ? "—" : `${timeLeft}s`}
+                                <Timer size={15} className={isTimerRunning ? "text-amber-500 animate-spin" : "text-slate-400"} />
+                                <span className="text-[11px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                                    Timer:
                                 </span>
-
-                                {timerDuration > 0 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setTimeLeft(prev => prev + 10)}
-                                        className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded-md hover:bg-black/10 dark:hover:bg-white/10"
-                                        title="+10 sekunder"
-                                    >
-                                        {t.add_10s}
-                                    </button>
-                                )}
-
                                 <select
                                     value={timerDuration}
                                     onChange={(e) => {
                                         const val = parseInt(e.target.value, 10);
                                         setTimerDuration(val);
                                         setTimeLeft(val);
-                                        setIsTimerRunning(val > 0 && revealedPhase === 'commit');
+                                        setIsTimerRunning(false); // keep paused on duration change
                                     }}
-                                    className="bg-transparent text-[10px] font-bold outline-none cursor-pointer border-l pl-1"
-                                    style={{ borderColor: 'var(--border-main)', color: 'var(--text-muted)' }}
+                                    className="bg-transparent text-xs font-black outline-none cursor-pointer"
+                                    style={{ color: 'var(--text-main)' }}
                                 >
                                     <option value={0} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>{t.timer_off}</option>
                                     <option value={15} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>15s</option>
                                     <option value={30} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>30s</option>
                                     <option value={45} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>45s</option>
                                     <option value={60} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>60s</option>
+                                    <option value={90} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>90s</option>
                                 </select>
                             </div>
 
@@ -1174,6 +1159,21 @@ export default function FourCornersEngine({
                                 className="lg:col-span-7 border-2 rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-xl overflow-y-auto custom-scrollbar"
                                 style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)' }}
                             >
+                                {/* 🟢 HIGH-CONTRAST THEMED TIMELINE STRIP */}
+                                {timerDuration > 0 && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-2 bg-slate-200 dark:bg-slate-800 border-t border-slate-300/80 dark:border-slate-700/80 overflow-hidden">
+                                        <div 
+                                            className={`h-full transition-all duration-1000 ease-linear ${
+                                                isCritical 
+                                                    ? 'bg-rose-500 shadow-sm shadow-rose-500' 
+                                                    : isUrgent 
+                                                    ? 'bg-amber-500 shadow-sm shadow-amber-500' 
+                                                    : 'bg-indigo-600 dark:bg-indigo-400'
+                                            }`}
+                                            style={{ width: `${timerProgress}%` }}
+                                        />
+                                    </div>
+                                )}
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <span className="badge-brand font-black text-xs px-3 py-1">
@@ -1181,6 +1181,91 @@ export default function FourCornersEngine({
                                         </span>
 
                                         <div className="flex items-center gap-2">
+                                            {/* 🟢 HIGH-CONTRAST DUAL-THEME COUNTDOWN DIAL */}
+                                            {timerDuration > 0 && (
+                                                <div 
+                                                    className={`flex items-center gap-2.5 pl-3 pr-2 py-1.5 rounded-2xl border-2 transition-all duration-300 shadow-sm ${
+                                                        isCritical 
+                                                            ? 'bg-rose-50 border-rose-500 text-rose-700 dark:bg-rose-950/50 dark:border-rose-400 dark:text-rose-300 animate-pulse ring-2 ring-rose-500/40' 
+                                                            : isUrgent 
+                                                            ? 'bg-amber-50 border-amber-500 text-amber-800 dark:bg-amber-950/50 dark:border-amber-400 dark:text-amber-300 ring-2 ring-amber-500/30' 
+                                                            : isTimerRunning
+                                                            ? 'bg-indigo-50 border-indigo-600 text-indigo-900 dark:bg-indigo-950/60 dark:border-indigo-400 dark:text-indigo-200 shadow-indigo-500/10'
+                                                            : 'bg-slate-100 border-slate-300 text-slate-700 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300'
+                                                    }`}
+                                                >
+                                                    {/* Radial SVG Dial + Digits */}
+                                                    <div className="relative flex items-center justify-center w-8 h-8 shrink-0">
+                                                        <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 36 36">
+                                                            {/* Background Track - High contrast in both themes */}
+                                                            <path
+                                                                className="text-slate-300 dark:text-slate-700"
+                                                                stroke="currentColor"
+                                                                strokeWidth="3.5"
+                                                                fill="none"
+                                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                            />
+                                                            {/* Progress Arc */}
+                                                            <path
+                                                                className={`transition-all duration-1000 ease-linear ${
+                                                                    isCritical 
+                                                                        ? 'text-rose-600 dark:text-rose-400' 
+                                                                        : isUrgent 
+                                                                        ? 'text-amber-500 dark:text-amber-400' 
+                                                                        : 'text-indigo-600 dark:text-indigo-400'
+                                                                }`}
+                                                                stroke="currentColor"
+                                                                strokeWidth="3.5"
+                                                                strokeDasharray={`${timerProgress}, 100`}
+                                                                strokeLinecap="round"
+                                                                fill="none"
+                                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                            />
+                                                        </svg>
+                                                        <Timer 
+                                                            size={14} 
+                                                            className={`absolute ${
+                                                                isTimerRunning 
+                                                                    ? 'text-indigo-600 dark:text-indigo-300 animate-pulse' 
+                                                                    : 'text-slate-500 dark:text-slate-400'
+                                                            }`} 
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex items-baseline font-mono font-black tracking-tight leading-none min-w-[2.5rem]">
+                                                        <span className="text-lg sm:text-xl">{timeLeft}</span>
+                                                        <span className="text-xs ml-0.5 opacity-75 font-sans font-bold">s</span>
+                                                    </div>
+
+                                                    {/* Tactile Control Buttons with High-Contrast Backgrounds */}
+                                                    <div className="flex items-center gap-1.5 border-l border-slate-300 dark:border-slate-700 pl-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsTimerRunning(!isTimerRunning)}
+                                                            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-90 ${
+                                                                isTimerRunning 
+                                                                    ? 'bg-amber-500 text-slate-950 hover:bg-amber-400 ring-2 ring-amber-500/30 font-black' 
+                                                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 ring-2 ring-indigo-600/30'
+                                                            }`}
+                                                            title={isTimerRunning ? t.pause_timer : t.start_timer}
+                                                        >
+                                                            {isTimerRunning 
+                                                                ? <Pause size={13} className="fill-current" /> 
+                                                                : <Play size={13} className="fill-current translate-x-0.5" />
+                                                            }
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setTimeLeft(prev => prev + 10)}
+                                                            className="h-8 px-2 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center border transition-all cursor-pointer active:scale-95 bg-white border-slate-300 text-slate-800 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700 shadow-xs"
+                                                            title="+10 sekunder"
+                                                        >
+                                                            {t.add_10s}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                             {activeClues.length > 0 && (
                                                 <button
                                                     type="button"

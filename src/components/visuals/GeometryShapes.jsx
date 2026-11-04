@@ -129,7 +129,27 @@ export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0
         const x0 = cx - w / 2;
         const y0 = cy - h / 2;
 
-        const diagLabel = lab.hyp || lab.d || lab.c || lab.diagonal;
+        // 🟢 PRECISE DIAGONAL DETECTION:
+        // Triggers for PythagorasGen (which supplies lab.hyp, lab.diagonal, or subtype),
+        // but remains FALSE for geometryGenerator area/perimeter (which only supplies w, h, b, s, or d/c without hyp/diagonal subtype).
+        const isDiagonalMode = Boolean(
+            activeSubtype === 'diagonal' || 
+            activeSubtype === 'rect_diagonal' || 
+            activeSubtype === 'square_diagonal' ||
+            activeSubtype === 'pythagoras' ||
+            safeDims.showDiagonal ||
+            safeDims.isDiagonal ||
+            lab.diagonal !== undefined ||
+            lab.diag !== undefined ||
+            lab.hyp !== undefined ||
+            lab.hypotenuse !== undefined
+        );
+
+        // Resolve the diagonal label safely
+        const diagLabel = isDiagonalMode 
+            ? (lab.diagonal || lab.diag || lab.hyp || lab.hypotenuse || lab.d || lab.c || '?') 
+            : null;
+
         const labelW = lab.w || lab.width || lab.base || lab.b || lab.s;
         const labelH = lab.h || lab.height || lab.side || lab.s2 || (type === 'square' ? labelW : null);
 
@@ -150,8 +170,8 @@ export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0
                 {/* 90° Bottom-Left Corner Marker */}
                 {mkRightAngleMark(x0, y0 + h, 12, "bottom-left")}
 
-                {/* Optional Diagonal Line Indicator (for Pythagoras / Level 6) */}
-                {diagLabel && (
+                {/* Diagonal Line & Shaded Triangle ONLY for Pythagoras / Diagonal questions */}
+                {isDiagonalMode && diagLabel && (
                     <>
                         {/* Shaded lower right-angled triangle */}
                         <polygon 
@@ -178,21 +198,93 @@ export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0
                             strokeDasharray="5,4" 
                         />
 
-                        {/* Protected Text Halo for the Diagonal 'd' */}
+                        {/* Protected Text Halo for the Diagonal */}
                         {mkTxt(cx - 8, cy - 8, diagLabel, "middle", "middle", "#4f46e5", "#ffffff")}
                     </>
                 )}
 
-                {/* Dimension Labels for Width and Height with Full Key Fallbacks */}
+                {/* Dimension Labels for Width and Height */}
                 {labelW && mkTxt(cx, y0 + h + 20, labelW, "middle", "middle")}
                 {labelH && mkTxt(x0 + w + 18, cy, labelH, "start", "middle")}
                 
-                {/* Optional Area Callout in Center */}
-                {areaText && mkTxt(cx, cy, areaText, "middle", "middle", "#6366f1", "#ffffff")}
+                {/* Area Callout (only when not in diagonal mode) */}
+                {!isDiagonalMode && areaText && mkTxt(cx, cy, areaText, "middle", "middle", "#6366f1", "#ffffff")}
             </g>
         );
     }
-    
+
+    // --- 3D CUBOID / BOX (Supports both VolumeGen and 3D Pythagoras Diagonals) ---
+    if (type === 'cuboid' || type === 'box' || type === 'prism_rect' || activeSubtype === 'box_diagonal') {
+        const w = Math.min(130, (safeDims.w || safeDims.width || 8) * (110 / maxDim));
+        const h = Math.min(90, (safeDims.h || safeDims.height || 6) * (110 / maxDim));
+        const d = Math.min(60, (safeDims.d || safeDims.depth || safeDims.length || 5) * (110 / maxDim));
+
+        const dx = d * 0.7;
+        const dy = d * 0.5;
+
+        // Front Face Coordinates
+        const x0 = cx - (w + dx) / 2;
+        const y0 = cy - (h - dy) / 2;
+
+        const is3DDiagonal = activeSubtype === 'box_diagonal' || Boolean(lab.space_diag) || Boolean(lab.diagonal3d);
+        const diag3DLabel = lab.space_diag || lab.diagonal3d || lab.d;
+
+        return (
+            <g className="select-none">
+                {/* Back Wireframe Edges (Hidden/Dashed) */}
+                <line x1={x0 + dx} y1={y0 - dy} x2={x0 + dx} y2={y0 - dy + h} stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3" />
+                <line x1={x0} y1={y0 + h} x2={x0 + dx} y2={y0 - dy + h} stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3" />
+                <line x1={x0 + dx} y1={y0 - dy + h} x2={x0 + w + dx} y2={y0 - dy + h} stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3" />
+
+                {/* Space Diagonal Line across the 3D box (e.g. from front-bottom-left to back-top-right) */}
+                {is3DDiagonal && (
+                    <>
+                        {/* Base Hypotenuse (across bottom floor) */}
+                        <line x1={x0} y1={y0 + h} x2={x0 + w + dx} y2={y0 - dy + h} stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="3,3" />
+                        
+                        {/* True 3D Space Diagonal */}
+                        <line x1={x0} y1={y0 + h} x2={x0 + w + dx} y2={y0 - dy} stroke="#ef4444" strokeWidth="2.5" strokeDasharray="5,4" />
+                        {diag3DLabel && mkTxt(cx + 8, cy - 8, diag3DLabel, "middle", "middle", "#dc2626", "#ffffff")}
+                    </>
+                )}
+
+                {/* Top Face */}
+                <polygon 
+                    points={`${x0},${y0} ${x0 + dx},${y0 - dy} ${x0 + w + dx},${y0 - dy} ${x0 + w},${y0}`} 
+                    fill="rgba(99, 102, 241, 0.04)" 
+                    stroke={STROKE_COLOR} 
+                    strokeWidth={STROKE_WIDTH} 
+                    strokeLinejoin="round" 
+                />
+
+                {/* Right Side Face */}
+                <polygon 
+                    points={`${x0 + w},${y0} ${x0 + w + dx},${y0 - dy} ${x0 + w + dx},${y0 - dy + h} ${x0 + w},${y0 + h}`} 
+                    fill="rgba(99, 102, 241, 0.06)" 
+                    stroke={STROKE_COLOR} 
+                    strokeWidth={STROKE_WIDTH} 
+                    strokeLinejoin="round" 
+                />
+
+                {/* Front Face */}
+                <rect 
+                    x={x0} 
+                    y={y0} 
+                    width={w} 
+                    height={h} 
+                    fill={FILL_COLOR} 
+                    stroke={STROKE_COLOR} 
+                    strokeWidth={STROKE_WIDTH} 
+                    rx="1" 
+                />
+
+                {/* Labels */}
+                {(lab.w || lab.width || lab.length) && mkTxt(x0 + w / 2, y0 + h + 18, lab.w || lab.width || lab.length)}
+                {(lab.h || lab.height) && mkTxt(x0 - 16, y0 + h / 2, lab.h || lab.height, "end")}
+                {(lab.d || lab.depth || lab.bredd) && !is3DDiagonal && mkTxt(x0 + w + dx / 2 + 14, y0 - dy / 2 + 4, lab.d || lab.depth || lab.bredd, "start")}
+            </g>
+        );
+    }
 
     // --- PARALLELOGRAM ---
     if (type === 'parallelogram') {
@@ -284,39 +376,32 @@ export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0
     }
 
     if (type === 'pythagoras_proof') {
-        // 3-4-5 right triangle scale calibrated to fit a 300x250 viewBox
-        const scale = 1.15;
-        const a = 36 * scale;  // Vertical leg (e.g. ~41.4px)
-        const b = 48 * scale;  // Horizontal leg (e.g. ~55.2px)
+        const pScale = 1.15;
+        const a = 36 * pScale;
+        const b = 48 * pScale;
         
-        // Position origin (the 90° right angle corner) slightly down and left
         const ox = cx - 35;
         const oy = cy + 30;
 
-        const areaA = lab.areaA; // Leg A square (left)
-        const areaB = lab.areaB; // Leg B square (bottom)
-        const areaC = lab.areaC; // Hypotenuse C square (top-right)
+        const areaA = lab.areaA;
+        const areaB = lab.areaB;
+        const areaC = lab.areaC;
 
-        // Two corners touching the hypotenuse
-        const p1x = ox;         // Top vertex
+        const p1x = ox;
         const p1y = oy - a;
-        const p2x = ox + b;     // Right vertex
+        const p2x = ox + b;
         const p2y = oy;
 
-        // Perpendicular vector (a, -b) gives a 100% true, rigid Euclidean square:
-        // Length is exactly sqrt(a^2 + b^2) and orthogonal to the hypotenuse
         const p3x = p2x + a;
         const p3y = p2y - b;
         const p4x = p1x + a;
         const p4y = p1y - b;
 
-        // Center of Square C for text label placement
         const centerCx = (p1x + p2x + p3x + p4x) / 4;
         const centerCy = (p1y + p2y + p3y + p4y) / 4;
 
         return (
             <g className="select-none">
-                {/* Square A (Left of vertical leg) */}
                 <rect 
                     x={ox - a} 
                     y={oy - a} 
@@ -328,7 +413,6 @@ export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0
                 />
                 {mkTxt(ox - a / 2, oy - a / 2, areaA, "middle", "middle", areaA === '?' ? "#dc2626" : "#0f172a", "#f8fafc")}
 
-                {/* Square B (Below horizontal leg) */}
                 <rect 
                     x={ox} 
                     y={oy} 
@@ -340,7 +424,6 @@ export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0
                 />
                 {mkTxt(ox + b / 2, oy + b / 2, areaB, "middle", "middle", areaB === '?' ? "#dc2626" : "#0f172a", "#f8fafc")}
 
-                {/* Square C (True orthogonal square on hypotenuse) */}
                 <polygon 
                     points={`${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y} ${p4x},${p4y}`} 
                     fill={areaC === '?' ? "rgba(239, 68, 68, 0.08)" : "rgba(99, 102, 241, 0.08)"} 
@@ -350,7 +433,6 @@ export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0
                 />
                 {mkTxt(centerCx, centerCy, areaC, "middle", "middle", areaC === '?' ? "#dc2626" : "#0f172a", "#ffffff")}
 
-                {/* Central Right Triangle */}
                 <polygon 
                     points={`${ox},${oy} ${p1x},${p1y} ${p2x},${p2y}`} 
                     fill="#f8fafc" 
@@ -359,7 +441,6 @@ export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0
                     strokeLinejoin="round"
                 />
 
-                {/* 90° Corner Marker */}
                 <path 
                     d={`M ${ox} ${oy - 10} L ${ox + 10} ${oy - 10} L ${ox + 10} ${oy}`} 
                     fill="none" 

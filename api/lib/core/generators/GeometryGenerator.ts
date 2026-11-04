@@ -123,7 +123,7 @@ export class GeometryGenerator {
                     geometry: { type: 'square', width: s, height: s, labels: { b: s, h: s } },
                     description: lang === 'sv' ? "Beräkna kvadratens omkrets." : "Calculate the perimeter of the square.",
                     interceptorToken: `${s}`, // 🟢 ADDED
-                    latex: `4 \\cdot ${s}`,
+                    latex: "",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -160,7 +160,7 @@ export class GeometryGenerator {
                     geometry: { type: 'rectangle', width: b, height: h, labels: { b, h: '?' } },
                     description: lang === 'sv' ? `En rektangel har omkretsen ${p} cm. Basen är ${b} cm. Hur lång är höjden?` : `A rectangle has a perimeter of ${p} cm. The base is ${b} cm. What is the height?`,
                     interceptorToken: `${p} ; ${b}`, // 🟢 ADDED
-                    latex: `P = ${p}, b = ${b}`,
+                    latex: "",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(h.toString()), variationKey: v, type: 'calculate',
