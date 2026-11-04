@@ -232,20 +232,137 @@ export default function CategoryClashEngine({
                               session?.active_question_data?.packet || 
                               session?.packet;
 
-        if (rawTiles) {
-            ingestAsIs(Array.isArray(rawTiles) ? rawTiles : Object.values(rawTiles));
-        } else if (Array.isArray(sessionPacket) && sessionPacket.length > 0) {
-            ingestAsIs(sessionPacket);
-        } else if (savedBoard?.packet?.tiles) {
-            ingestAsIs(savedBoard.packet.tiles);
-        } else if (initialConfig?.sourceMode === 'as_is' && sourcePacket) {
-            ingestAsIs(sourcePacket);
-        } else if (categories && categories.length > 0) {
+        // 1. If tiles already have explicit slotId keys, ingest as-is
+        if (rawTiles && !Array.isArray(rawTiles) && Object.keys(rawTiles).some(k => /^c\d+_r\d+$/.test(k))) {
+            ingestAsIs(Object.values(rawTiles));
+            return;
+        }
+
+        const candidateArray = Array.isArray(rawTiles)
+            ? rawTiles
+            : (Array.isArray(sessionPacket) && sessionPacket.length > 0)
+                ? sessionPacket
+                : (savedBoard?.packet?.tiles)
+                    ? (Array.isArray(savedBoard.packet.tiles) ? savedBoard.packet.tiles : Object.values(savedBoard.packet.tiles))
+                    : (initialConfig?.sourceMode === 'as_is' && sourcePacket)
+                        ? sourcePacket
+                        : null;
+
+        const numCols = Math.max(categories.length, dimensions.columns || 4);
+        const numRows = dimensions.rows || 4;
+
+        // 2. SORT INTO JEOPARDY COLUMNS WITHOUT LEAKING UNRELATED TOPICS
+        if (candidateArray && candidateArray.length > 0 && categories.length > 0) {
+            const slotMap = {};
+
+            const normalizeTopic = (t) => String(t || '').toLowerCase().trim().replace(/[-_\s]/g, '');
+
+            const getQuestionTopic = (q) => {
+                return q.topicId || 
+                       q.topic || 
+                       q.topic_id || 
+                       q.metadata?.topic || 
+                       q.resolvedData?.topicId || 
+                       q.renderData?.topicId || 
+                       '';
+            };
+
+            // Group strictly by normalized topic
+            const questionsByTopic = {};
+            candidateArray.forEach(q => {
+                const norm = normalizeTopic(getQuestionTopic(q));
+                if (!norm) return;
+                if (!questionsByTopic[norm]) questionsByTopic[norm] = [];
+                questionsByTopic[norm].push(q);
+            });
+
+            // Sort each topic bucket by level ascending
+            Object.values(questionsByTopic).forEach(list => {
+                list.sort((a, b) => {
+                    const lvlA = Number(a.resolvedData?.level || a.renderData?.level || a.level || 1);
+                    const lvlB = Number(b.resolvedData?.level || b.renderData?.level || b.level || 1);
+                    return lvlA - lvlB;
+                });
+            });
+
+            // Track any slots that still need questions generated
+            const slotsToGenerate = [];
+
+            for (let c = 0; c < numCols; c++) {
+                const cat = categories[c];
+                const catTopicRaw = cat?.topic || cat?.topicId || cat?.id || '';
+                const catTopicNorm = normalizeTopic(catTopicRaw);
+
+                // Find matching bucket
+                let matchedKey = Object.keys(questionsByTopic).find(k => k === catTopicNorm);
+                if (!matchedKey) {
+                    matchedKey = Object.keys(questionsByTopic).find(k => 
+                        k && catTopicNorm && (k.includes(catTopicNorm) || catTopicNorm.includes(k))
+                    );
+                }
+
+                let columnPool = matchedKey ? questionsByTopic[matchedKey] : [];
+
+                for (let r = 0; r < numRows; r++) {
+                    const slotId = `c${c}_r${r}`;
+                    const targetLevel = r + 1; // Row 0 -> lvl 1, Row 1 -> lvl 2, etc.
+
+                    if (columnPool && columnPool.length > 0) {
+                        const q = columnPool.shift();
+                        slotMap[slotId] = {
+                            ...q,
+                            slotId,
+                            colIndex: c,
+                            rowIndex: r
+                        };
+                    } else {
+                        // 🟢 DO NOT BORROW FROM OTHER TOPICS!
+                        // Queue this exact slot to generate with the column's topic and level
+                        slotsToGenerate.push({
+                            slotId,
+                            colIndex: c,
+                            rowIndex: r,
+                            topic: catTopicRaw || 'equations',
+                            level: targetLevel,
+                            wordProblem: Boolean(cat?.wordProblems)
+                        });
+                    }
+                }
+            }
+
+            // Ingest what we already have
+            ingestAsIs(Object.values(slotMap));
+
+            // Procedurally fetch any missing slots so every column matches its category header
+            if (slotsToGenerate.length > 0) {
+                Promise.all(slotsToGenerate.map(async (slot) => {
+                    try {
+                        const url = `/api/question?topic=${slot.topic}&level=${slot.level}&lang=${lang}&wordProblem=${slot.wordProblem}`;
+                        const res = await fetch(url);
+                        const fresh = await res.json();
+                        updateSlotManually(slot.slotId, {
+                            ...fresh,
+                            slotId: slot.slotId,
+                            colIndex: slot.colIndex,
+                            rowIndex: slot.rowIndex,
+                            level: slot.level,
+                            wordProblem: slot.wordProblem
+                        });
+                    } catch (e) {
+                        console.error("Failed to generate missing slot", slot, e);
+                    }
+                }));
+            }
+            return;
+        }
+
+        // 3. Fallback: Procedural generation for entire board
+        if (categories && categories.length > 0) {
             generateGridFromSeeds({
                 topics: categories.map(c => c.topic),
                 categories: categories,
-                columns: dimensions.columns,
-                rows: dimensions.rows,
+                columns: numCols,
+                rows: numRows,
                 startLevel: initialConfig?.startLevel || 1,
                 wordProblems: initialConfig?.wordProblems || false
             });
@@ -470,22 +587,62 @@ export default function CategoryClashEngine({
         }
     };
     
+    const getSlotLevel = (slotId) => {
+        if (!slotId) return 1;
+        const current = pool[slotId];
+        // 1. Try reading level directly from question data
+        const explicitLevel = current?.resolvedData?.level || current?.renderData?.level || current?.level;
+        if (explicitLevel && !isNaN(Number(explicitLevel))) return Number(explicitLevel);
+
+        // 2. Fall back to Jeopardy row index: row 0 -> level 1, row 1 -> level 2, etc.
+        const match = String(slotId).match(/^c\d+_r(\d+)$/);
+        const rowIdx = match ? parseInt(match[1], 10) : 0;
+        return rowIdx + 1;
+    };
+
     const handleRegenerateSlot = async (slotId, overrideWordProblem = undefined) => {
         if (!slotId) return;
+        const current = pool[slotId];
+        const targetLevel = getSlotLevel(slotId);
+        const isWp = overrideWordProblem !== undefined 
+            ? overrideWordProblem 
+            : Boolean(current?.wordProblem || current?.renderData?.isWordProblemApplied);
 
-        const freshQuestion = await regenerateSlot(slotId, overrideWordProblem);
-        if (!freshQuestion) return;
+        const topic = current?.topicId || current?.topic || current?.resolvedData?.topicId || 'basic_arithmetic';
 
-        const newRegenVersion = Date.now();
-        const itemToBroadcast = {
-            ...freshQuestion,
-            regenVersion: newRegenVersion
-        };
+        // Fetch fresh question with the preserved level
+        try {
+            const url = `/api/question?topic=${topic}&level=${targetLevel}&lang=${lang}&wordProblem=${isWp}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error("Fetch failed");
+            const freshQuestion = await res.json();
 
-        updateSlotManually(slotId, { regenVersion: newRegenVersion });
+            const newRegenVersion = Date.now();
+            const itemToBroadcast = {
+                ...freshQuestion,
+                id: current?.id || crypto.randomUUID(),
+                slotId,
+                level: targetLevel,
+                wordProblem: isWp,
+                renderData: {
+                    ...freshQuestion.renderData,
+                    level: targetLevel,
+                    isWordProblemApplied: isWp
+                },
+                resolvedData: {
+                    ...freshQuestion.resolvedData,
+                    level: targetLevel
+                },
+                regenVersion: newRegenVersion
+            };
 
-        if (isLive && roomId) {
-            await broadcastRoomState(slotId, itemToBroadcast);
+            updateSlotManually(slotId, itemToBroadcast);
+
+            if (isLive && roomId) {
+                await broadcastRoomState(slotId, itemToBroadcast);
+            }
+        } catch (err) {
+            console.error("Regenerate slot error:", err);
         }
     };
 
@@ -502,28 +659,7 @@ export default function CategoryClashEngine({
             current.resolvedData?.metadata?.isWordProblemApplied
         );
 
-        const nextWpState = !isCurrentlyWp;
-
-        // Regenerate slot with the inverted wordProblem flag
-        const freshQuestion = await regenerateSlot(targetId, nextWpState);
-        if (!freshQuestion) return;
-
-        const newRegenVersion = Date.now();
-        const itemToBroadcast = {
-            ...freshQuestion,
-            wordProblem: nextWpState,
-            renderData: {
-                ...freshQuestion.renderData,
-                isWordProblemApplied: nextWpState
-            },
-            regenVersion: newRegenVersion
-        };
-
-        updateSlotManually(targetId, itemToBroadcast);
-
-        if (isLive && roomId) {
-            await broadcastRoomState(targetId, itemToBroadcast);
-        }
+        await handleRegenerateSlot(targetId, !isCurrentlyWp);
     };
 
     const handleRegenerateAll = async () => {
