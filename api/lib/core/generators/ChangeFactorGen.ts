@@ -1,9 +1,10 @@
+// src/generators/ChangeFactorGen.ts
+
 import { MathUtils } from '../utils/MathUtils.js';
-import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js'; 
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js';
 
 export class ChangeFactorGen {
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
-        // Adaptive Fallback: If concepts (L1) are mastered, push to calculation (L2)
         if (level === 1 && options.hideConcept) {
             return this.level2_ApplyFactor(lang, undefined, options);
         }
@@ -15,20 +16,12 @@ export class ChangeFactorGen {
             case 2: questionData = this.level2_ApplyFactor(lang, undefined, options); break;
             case 3: questionData = this.level3_FindOriginal(lang, undefined, options); break;
             case 4: questionData = this.level4_TotalChange(lang, undefined, options); break;
-            case 5: 
-                if (Math.random() > 0.5) {
-                    questionData = this.level2_ApplyFactor(lang, 'apply_factor_inc', options);
-                } else {
-                    questionData = this.level2_ApplyFactor(lang, 'apply_factor_dec', options);
-                }
-                break;
+            case 5: questionData = this.level5_AdvancedChange(lang, undefined, options); break;
             default: questionData = this.level1_Concepts(lang, undefined, options); break;
         }
 
-        // Run through the decorator to handle specific variation token detection
         enrichQuestionMetadata(questionData);
 
-        // Practice Mode Level-Wide Override
         const WORD_PROBLEM_ELIGIBLE_LEVELS = [2, 3, 4, 5];
         if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
             if (!questionData.metadata) questionData.metadata = {};
@@ -38,10 +31,6 @@ export class ChangeFactorGen {
         return questionData;
     }
 
-    /**
-     * Targeted Generation for Question Studio
-     * Maps ALL keys from skillBuckets.js to the correct internal methods.
-     */
     public generateByVariation(key: string, lang: string = 'sv'): any {
         switch (key) {
             case 'pct_to_factor_inc':
@@ -60,12 +49,16 @@ export class ChangeFactorGen {
             
             case 'sequential_factors':
                 return this.level4_TotalChange(lang, key);
+
+            case 'sequential_total_pct':
+            case 'repeated_change_years':
+                return this.level5_AdvancedChange(lang, key);
+
             default:
                 return this.generate(1, lang);
         }
     }
 
-    // --- PRIVATE UTILITIES ---
     private toBase64(str: string): string {
         return Buffer.from(str).toString('base64');
     }
@@ -82,7 +75,13 @@ export class ChangeFactorGen {
         return MathUtils.randomChoice(filtered.map(v => v.key));
     }
 
-    // --- LEVEL 1: CONCEPTS & DEFINITION ---
+    private gcd(a: number, b: number): number {
+        return b === 0 ? a : this.gcd(b, a % b);
+    }
+
+    // =========================================================================
+    // LEVEL 1: CONCEPTS & DEFINITION
+    // =========================================================================
     private level1_Concepts(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'pct_to_factor_inc', type: 'concept' },
@@ -95,76 +94,85 @@ export class ChangeFactorGen {
         const isIncrease = v.endsWith('_inc');
         const isToFactor = v.startsWith('pct_to_factor');
         
-        let pct = Math.random() < 0.3 ? MathUtils.randomInt(1, 9) * 10 : MathUtils.randomInt(1, 150);
-        if (!isIncrease) pct = Math.min(pct, 99);
+        // Vast percentage pool: single digits, tens, prime numbers, halves, or large increases (>100%)
+        let pct: number;
+        const roll = Math.random();
+        if (isIncrease && roll < 0.2) {
+            pct = MathUtils.randomChoice([110, 120, 125, 150, 175, 200, 250, 300]);
+        } else if (roll < 0.35) {
+            pct = MathUtils.randomChoice([2.5, 7.5, 12.5, 17.5, 37.5]);
+        } else {
+            pct = MathUtils.randomInt(1, isIncrease ? 99 : 95);
+        }
         
         let factor = isIncrease ? 1 + (pct / 100) : 1 - (pct / 100);
-        factor = Math.round(factor * 100) / 100;
+        factor = Math.round(factor * 1000) / 1000;
+        const factorStr = lang === 'sv' ? factor.toString().replace('.', ',') : factor.toString();
+        const pctStr = lang === 'sv' ? pct.toString().replace('.', ',') : pct.toString();
 
         if (isToFactor) {
             const desc = lang === 'sv'
-                ? (isIncrease ? `Ett värde ökar med ${pct}%. Vilken förändringsfaktor motsvarar denna ökning?` : `Ett värde minskar med ${pct}%. Vilken förändringsfaktor motsvarar denna minskning?`)
-                : (isIncrease ? `A value increases by ${pct}%. What is the change factor corresponding to this increase?` : `A value decreases by ${pct}%. What is the change factor corresponding to this decrease?`);
+                ? (isIncrease ? `Ett värde ökar med ${pctStr}%. Vilken förändringsfaktor motsvarar denna ökning?` : `Ett värde minskar med ${pctStr}%. Vilken förändringsfaktor motsvarar denna minskning?`)
+                : (isIncrease ? `A value increases by ${pctStr}%. What is the change factor corresponding to this increase?` : `A value decreases by ${pctStr}%. What is the change factor corresponding to this decrease?`);
             
             return {
                 renderData: { description: desc, answerType: 'numeric' },
                 token: this.toBase64(factor.toString()),
-                variationKey: v, type: 'concept',
+                variationKey: v, 
+                type: 'concept',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Vi utgår alltid från 100%, vilket betyder hela ursprungsvärdet (1,00 i decimalform)." : "We always start with 100%, which represents the full original value (1.00 in decimal form).", 
-                        latex: `100\\% = 1.00` 
+                        text: lang === 'sv' ? "Ursprungsvärdet motsvarar 100% (1,00 i decimalform)." : "The original value represents 100% (1.00 in decimal form).", 
+                        latex: `100\\% = 1,00` 
                     },
                     { 
-                        text: lang === 'sv' ? `Gör om procentsatsen ${pct}% till decimalform genom att dela med 100.` : `Convert the percentage ${pct}% to decimal form by dividing it by 100.`, 
-                        latex: `${pct}\\% = \\mathbf{${pct / 100}}` 
+                        text: lang === 'sv' ? `Skriv om ${pctStr}% till decimalform: ${pctStr} / 100 = ${(pct / 100).toString().replace('.', ',')}.` : `Convert ${pctStr}% to decimal form: ${pctStr} / 100 = ${pct / 100}.`, 
+                        latex: `${pctStr}\\% = \\frac{${pctStr}}{100} = \\mathbf{${(pct / 100).toString().replace('.', ',')}}` 
                     },
                     { 
-                        text: lang === 'sv' ? (isIncrease ? `Eftersom värdet ökar plussar vi på decimalen till 1,00.` : `Eftersom värdet minskar drar vi bort decimalen från 1,00.`) : (isIncrease ? `Since the value increases, add the decimal to 1.00.` : `Since the value decreases, subtract the decimal from 1.00.`), 
-                        latex: isIncrease ? `\\text{Förändringsfaktor} = 1.0 + \\mathbf{${pct / 100}}` : `\\text{Förändringsfaktor} = 1.0 - \\mathbf{${pct / 100}}` 
+                        text: lang === 'sv' 
+                            ? (isIncrease ? `Vid en ökning adderas decimalen till 1,00:` : `Vid en minskning dras decimalen bort från 1,00:`) 
+                            : (isIncrease ? `For an increase, add the decimal to 1.00:` : `For a decrease, subtract the decimal from 1.00:`), 
+                        latex: isIncrease ? `1,00 + ${(pct / 100).toString().replace('.', ',')} = \\mathbf{${factorStr}}` : `1,00 - ${(pct / 100).toString().replace('.', ',')} = \\mathbf{${factorStr}}` 
                     },
                     { 
-                        text: lang === 'sv' ? "Räkna ut summan eller skillnaden för att få fram slutsvar." : "Calculate the sum or difference to reach the final answer value.", 
-                        latex: `\\text{Förändringsfaktor} = \\mathbf{${factor}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Svar: ${factor}` : `Answer: ${factor}`, 
-                        latex: `${factor}` 
+                        text: lang === 'sv' ? `Svar: ${factorStr}` : `Answer: ${factorStr}`, 
+                        latex: `${factorStr}` 
                     }
                 ],
                 metadata: { variation_key: v, difficulty: 1 }
             };
         } else {
-            const diff = Math.abs(1 - factor);
-            const diffPct = Math.round(diff * 100);
+            const diff = Math.round(Math.abs(1 - factor) * 1000) / 1000;
+            const diffPct = Math.round(diff * 1000) / 10;
+            const diffPctStr = lang === 'sv' ? diffPct.toString().replace('.', ',') : diffPct.toString();
             const desc = lang === 'sv'
-                ? `Förändringsfaktorn är ${factor}. Hur många procents ${isIncrease ? 'ökning' : 'minskning'} innebär detta?`
-                : `The change factor is ${factor}. What percentage ${isIncrease ? 'increase' : 'decrease'} does this represent?`;
+                ? `Förändringsfaktorn är ${factorStr}. Hur många procents ${isIncrease ? 'ökning' : 'minskning'} innebär detta?`
+                : `The change factor is ${factorStr}. What percentage ${isIncrease ? 'increase' : 'decrease'} does this represent?`;
 
             return {
-                renderData: { description: desc, answerType: 'numeric' },
+                renderData: { description: desc, answerType: 'numeric', suffix: '%' },
                 token: this.toBase64(diffPct.toString()),
-                variationKey: v, type: 'concept',
+                variationKey: v, 
+                type: 'concept',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Vi jämför förändringsfaktorn med talet 1,00 (vilket motsvarar 100%)." : "We compare the change factor against the base number 1.00 (which matches 100%).", 
+                        text: lang === 'sv' ? "Jämför förändringsfaktorn med basen 1,00 (100%)." : "Compare the change factor with the baseline 1.00 (100%).", 
                         latex: `\\text{Bas} = 1,00` 
                     },
                     { 
-                        text: lang === 'sv' ? (isIncrease ? `Minska med 1,00 för att se hur mycket större talet är.` : `Ta bort talet från 1,0 för att se hur mycket som saknas.`) : (isIncrease ? `Subtract 1.0 to find out how much larger the factor is.` : `Subtract the factor from 1.0 to find out how much is missing.`), 
-                        latex: isIncrease ? `\\text{Skillnad} = ${factor} - 1,00` : `\\text{Skillnad} = 1.0 - ${factor}` 
+                        text: lang === 'sv' 
+                            ? (isIncrease ? `Räkna ut skillnaden: ${factorStr} - 1,00 = ${diff.toString().replace('.', ',')}.` : `Räkna ut skillnaden: 1,00 - ${factorStr} = ${diff.toString().replace('.', ',')}.`) 
+                            : (isIncrease ? `Calculate the difference: ${factorStr} - 1.00 = ${diff}.` : `Calculate the difference: 1.00 - ${factorStr} = ${diff}.`), 
+                        latex: isIncrease ? `${factorStr} - 1,00 = \\mathbf{${diff.toString().replace('.', ',')}}` : `1,00 - ${factorStr} = \\mathbf{${diff.toString().replace('.', ',')}}` 
                     },
                     { 
-                        text: lang === 'sv' ? "Förenkla subtraktionen för att hitta skillnaden i decimalform." : "Simplify the subtraction to discover the difference in decimal form.", 
-                        latex: `\\text{Skillnad} = \\mathbf{${diff.toFixed(2)}}` 
+                        text: lang === 'sv' ? `Multiplicera med 100 för att få procentsatsen: ${diff.toString().replace('.', ',')} · 100 = ${diffPctStr}%.` : `Multiply by 100 to get the percentage: ${diff} · 100 = ${diffPctStr}%.`, 
+                        latex: `${diff.toString().replace('.', ',')} \\cdot 100 = \\mathbf{${diffPctStr}\\%}` 
                     },
                     { 
-                        text: lang === 'sv' ? "Gör om decimaltalet till procent genom att flytta kommatecknet två steg åt höger (gånger 100)." : "Convert the decimal value to a percentage by moving the decimal point two steps to the right (multiply by 100).", 
-                        latex: `${diff.toFixed(2)} \\cdot 100 = \\mathbf{${diffPct}\\%}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Svar: ${diffPct}` : `Answer: ${diffPct}`, 
-                        latex: `${diffPct}` 
+                        text: lang === 'sv' ? `Svar: ${diffPctStr}%` : `Answer: ${diffPctStr}%`, 
+                        latex: `${diffPctStr}\\%` 
                     }
                 ],
                 metadata: { variation_key: v, difficulty: 1 }
@@ -172,7 +180,9 @@ export class ChangeFactorGen {
         }
     }
 
-    // --- LEVEL 2: APPLYING FACTOR ---
+    // =========================================================================
+    // LEVEL 2: APPLYING FACTOR (Nytt värde = Ursprung · f)
+    // =========================================================================
     private level2_ApplyFactor(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'apply_factor_inc', type: 'calculate' },
@@ -181,24 +191,31 @@ export class ChangeFactorGen {
         const v = variationKey || this.getVariation(pool, options);
         const isIncrease = v === 'apply_factor_inc';
         
-        const pct = MathUtils.randomInt(5, 45);
-        let factor = isIncrease ? 1 + pct/100 : 1 - pct/100;
+        // Generate broad range of percentages (1% to 85%)
+        const pct = MathUtils.randomInt(1, 85);
+        let factor = isIncrease ? 1 + pct / 100 : 1 - pct / 100;
         factor = Math.round(factor * 100) / 100;
+        const factorStr = lang === 'sv' ? factor.toString().replace('.', ',') : factor.toString();
 
-        let base = MathUtils.randomInt(2, 50) * 100;
+        // Dynamically find reduced denominator to guarantee a clean integer product
+        const g = this.gcd(Math.round(factor * 100), 100);
+        const requiredDenominator = 100 / g;
+        
+        // Scale base realistically to represent realistic prices or counts (e.g. 120, 450, 1600, etc.)
+        const mult = MathUtils.randomInt(1, 40);
+        const base = requiredDenominator * mult * (requiredDenominator <= 10 ? 10 : 1);
         const ans = Math.round(base * factor);
 
         const desc = lang === 'sv'
-            ? `Ett pris på ${base} kr ska ${isIncrease ? 'höjas' : 'sänkas'} med ${pct}%. Beräkna det nya priset.`
-            : `A price of ${base} kr is to be ${isIncrease ? 'increased' : 'decreased'} by ${pct}%. Calculate the new price.`;
+            ? `Ett värde på ${base} kr ska ${isIncrease ? 'höjas' : 'sänkas'} med ${pct}%. Beräkna det nya värdet med hjälp av förändringsfaktor.`
+            : `A value of ${base} kr is to be ${isIncrease ? 'increased' : 'decreased'} by ${pct}%. Calculate the new value using a change factor.`;
 
-        // 🟢 Strategy B Token: Uses standard \\cdot to perfectly satisfy the interceptor regex without leaking to the view
-        const trackingToken = `${base} · ${factor.toFixed(2)}`;
+        const trackingToken = `${base} · ${factor.toFixed(2)} ; ${pct}`;
 
         return {
             renderData: { 
                 description: desc, 
-                interceptorToken: trackingToken, // Dynamic background parsing target
+                interceptorToken: trackingToken,
                 answerType: 'numeric' 
             },
             token: this.toBase64(ans.toString()),
@@ -206,23 +223,19 @@ export class ChangeFactorGen {
             type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? (isIncrease ? `Börja med att hitta förändringsfaktorn för en ökning på ${pct}%.` : `Börja med att hitta förändringsfaktorn för en minskning på ${pct}%.`) : (isIncrease ? `Start by finding the change factor for an increase of ${pct}%.` : `Start by finding the change factor for a decrease of ${pct}%.`), 
-                    latex: isIncrease ? `\\text{Förändringsfaktor} = 1,00 + ${pct / 100}` : `\\text{Förändringsfaktor} = 1.00 - ${pct / 100}` 
+                    text: lang === 'sv' 
+                        ? `Bestäm först förändringsfaktorn: 1,00 ${isIncrease ? '+' : '-'} ${(pct / 100).toString().replace('.', ',')} = ${factorStr}.` 
+                        : `Determine the change factor first: 1.00 ${isIncrease ? '+' : '-'} ${pct / 100} = ${factorStr}.`, 
+                    latex: `\\text{Förändringsfaktor} = 1,00 ${isIncrease ? '+' : '-'} ${(pct / 100).toString().replace('.', ',')} = \\mathbf{${factorStr}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Räkna ut förändringsfaktorn:" : "Calculate the change factor:", 
-                    latex: `\\text{Förändringsfaktor} = \\mathbf{${factor}}` 
+                    text: lang === 'sv' 
+                        ? `Multiplicera startvärdet med förändringsfaktorn i ett enda steg:` 
+                        : `Multiply the original value by the change factor in a single step:`, 
+                    latex: `\\text{Nytt värde} = ${base} \\cdot ${factorStr} = \\mathbf{${ans}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Multiplicera nu det gamla ursprungliga priset (${base} kr) med förändringsfaktorn.` : `Now multiply the old original value (${base} kr) by the change factor.`, 
-                    latex: `\\text{Nytt pris} = ${base} \\cdot \\mathbf{${factor}}` 
-                },
-                { 
-                    text: lang === 'sv' ? "Utför multiplikationen för att räkna ut det nya priset." : "Perform the multiplication to compute the new final price.", 
-                    latex: `\\text{Nytt pris} = \\mathbf{${ans}}` 
-                },
-                { 
-                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                    text: lang === 'sv' ? `Svar: ${ans} kr` : `Answer: ${ans} kr`, 
                     latex: `${ans}` 
                 }
             ],
@@ -230,7 +243,9 @@ export class ChangeFactorGen {
         };
     }
 
-    // --- LEVEL 3: FINDING ORIGINAL ---
+    // =========================================================================
+    // LEVEL 3: FINDING ORIGINAL (Ursprungligt = Nytt / f)
+    // =========================================================================
     private level3_FindOriginal(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'find_original_inc', type: 'calculate' },
@@ -239,24 +254,32 @@ export class ChangeFactorGen {
         const v = variationKey || this.getVariation(pool, options);
         const isIncrease = v === 'find_original_inc';
         
-        const pct = MathUtils.randomInt(5, 80);
-        let factor = isIncrease ? 1 + pct/100 : 1 - pct/100;
+        // Broad percentage selection
+        const pct = MathUtils.randomChoice([
+            2, 4, 5, 8, 10, 12, 15, 16, 20, 24, 25, 30, 35, 40, 45, 50, 60, 75
+        ]);
+        let factor = isIncrease ? 1 + pct / 100 : 1 - pct / 100;
         factor = Math.round(factor * 100) / 100;
+        const factorStr = lang === 'sv' ? factor.toString().replace('.', ',') : factor.toString();
 
-        const original = MathUtils.randomInt(2, 25) * 100;
+        const g = this.gcd(Math.round(factor * 100), 100);
+        const reqDenominator = 100 / g;
+
+        // Choose original as an integer multiple of the factor's denominator
+        const multiplier = MathUtils.randomInt(2, 35);
+        const original = reqDenominator * multiplier * (reqDenominator <= 5 ? 10 : 1);
         const newPrice = Math.round(original * factor);
 
         const desc = lang === 'sv'
-            ? `Efter en ${isIncrease ? 'höjning' : 'sänkning'} med ${pct}% kostar en vara nu ${newPrice} kr. Vad var priset från början?`
-            : `After an ${isIncrease ? 'increase' : 'decrease'} of ${pct}%, an item now costs ${newPrice} kr. What was the price originally?`;
+            ? `Efter en ${isIncrease ? 'höjning' : 'sänkning'} med ${pct}% är det nya priset ${newPrice} kr. Vad var priset från början?`
+            : `After an ${isIncrease ? 'increase' : 'decrease'} of ${pct}%, the new price is ${newPrice} kr. What was the original price?`;
 
-        // 🟢 Strategy B Token: Standardized fractional tracking token kept hidden from student displays
-        const trackingToken = `\\frac{${newPrice}}{${factor.toFixed(2)}}`;
+        const trackingToken = `\\frac{${newPrice}}{${factor.toFixed(2)}} ; ${pct}`;
 
         return {
             renderData: { 
                 description: desc, 
-                interceptorToken: trackingToken, // Dynamic background parsing target
+                interceptorToken: trackingToken,
                 answerType: 'numeric' 
             },
             token: this.toBase64(original.toString()),
@@ -264,19 +287,19 @@ export class ChangeFactorGen {
             type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? (isIncrease ? `Börja med att bestämma förändringsfaktorn för en ökning på ${pct}%.` : `Börja med att bestämma förändringsfaktorn för en minskning på ${pct}%.`) : (isIncrease ? `Start by determining the change factor for an increase of ${pct}%.` : `Start by determining the change factor for a decrease of ${pct}%.`), 
-                    latex: isIncrease ? `\\text{Förändringsfaktor} = 1,00 + ${pct / 100} = \\mathbf{${factor}}` : `\\text{Förändringsfaktor} = 1.00 - ${pct / 100} = \\mathbf{${factor}}` 
+                    text: lang === 'sv' 
+                        ? `Bestäm förändringsfaktorn: 1,00 ${isIncrease ? '+' : '-'} ${(pct / 100).toString().replace('.', ',')} = ${factorStr}.` 
+                        : `Determine the change factor: 1.00 ${isIncrease ? '+' : '-'} ${pct / 100} = ${factorStr}.`, 
+                    latex: `\\text{Förändringsfaktor} = \\mathbf{${factorStr}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "För att räkna baklänges och hitta startpriset delar vi det nya priset med förändringsfaktorn." : "To work backwards and find the starting original price, we divide the new price by the change factor.", 
-                    latex: `\\text{Ursprungligt pris} = \\frac{${newPrice}}{\\mathbf{${factor}}}` 
+                    text: lang === 'sv' 
+                        ? `För att räkna baklänges till ursprungsvärdet delar vi det nya värdet med förändringsfaktorn:` 
+                        : `To work backwards to the original value, divide the new value by the change factor:`, 
+                    latex: `\\text{Ursprungligt} = \\frac{${newPrice}}{${factorStr}} = \\mathbf{${original}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Räkna ut divisionen för att hitta vad varan kostade från början." : "Calculate the division to figure out what the item cost originally from the start.", 
-                    latex: `\\text{Ursprungligt pris} = \\mathbf{${original}}` 
-                },
-                { 
-                    text: lang === 'sv' ? `Svar: ${original}` : `Answer: ${original}`, 
+                    text: lang === 'sv' ? `Svar: ${original} kr` : `Answer: ${original} kr`, 
                     latex: `${original}` 
                 }
             ],
@@ -284,33 +307,39 @@ export class ChangeFactorGen {
         };
     }
 
-    // --- LEVEL 4: TOTAL CHANGE ---
+    // =========================================================================
+    // LEVEL 4: SEQUENTIAL CHANGE FACTOR (f_tot = f1 · f2)
+    // =========================================================================
     private level4_TotalChange(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'sequential_factors', type: 'calculate' }
         ];
         const v = variationKey || this.getVariation(pool, options);
 
-        const pct1 = MathUtils.randomChoice([10, 20, 25, 50]);
-        const pct2 = MathUtils.randomChoice([10, 20, 25, 50]);
-        const inc1 = Math.random() > 0.5;
-        const inc2 = Math.random() > 0.5;
+        // Broad range of percentage changes
+        const pct1 = MathUtils.randomChoice([2, 4, 5, 8, 10, 12, 15, 20, 25, 30, 35, 40, 50]);
+        const pct2 = MathUtils.randomChoice([2, 4, 5, 8, 10, 12, 15, 20, 25, 30, 35, 40, 50]);
+        const inc1 = Math.random() > 0.45;
+        const inc2 = Math.random() > 0.45;
 
-        const f1 = inc1 ? 1 + pct1/100 : 1 - pct1/100;
-        const f2 = inc2 ? 1 + pct2/100 : 1 - pct2/100;
+        const f1 = inc1 ? 1 + pct1 / 100 : 1 - pct1 / 100;
+        const f2 = inc2 ? 1 + pct2 / 100 : 1 - pct2 / 100;
         const totalFactor = Math.round(f1 * f2 * 10000) / 10000;
 
-        const desc = lang === 'sv'
-            ? `Värdet på ett föremål ändras först med ${inc1 ? '+' : '-'}${pct1}% och därefter med ${inc2 ? '+' : '-'}${pct2}%. Beräkna den totala förändringsfaktorn.`
-            : `The value of an item changes first by ${inc1 ? '+' : '-'}${pct1}% and then by ${inc2 ? '+' : '-'}${pct2}%. Calculate the total change factor.`;
+        const f1Str = lang === 'sv' ? f1.toString().replace('.', ',') : f1.toString();
+        const f2Str = lang === 'sv' ? f2.toString().replace('.', ',') : f2.toString();
+        const totalStr = lang === 'sv' ? totalFactor.toString().replace('.', ',') : totalFactor.toString();
 
-        // 🟢 Strategy B Token: Compounding operation token using synchronized \\cdot syntax
+        const desc = lang === 'sv'
+            ? `Ett pris ändras i två steg: först en ${inc1 ? 'ökning' : 'minskning'} med ${pct1}%, därefter en ${inc2 ? 'ökning' : 'minskning'} med ${pct2}%. Beräkna den totala förändringsfaktorn.`
+            : `A price changes in two steps: first an ${inc1 ? 'increase' : 'decrease'} of ${pct1}%, then an ${inc2 ? 'increase' : 'decrease'} of ${pct2}%. Calculate the total change factor.`;
+
         const trackingToken = `${f1.toFixed(2)} · ${f2.toFixed(2)}`;
 
         return {
             renderData: { 
                 description: desc, 
-                interceptorToken: trackingToken, // Dynamic background parsing target
+                interceptorToken: trackingToken,
                 answerType: 'numeric' 
             },
             token: this.toBase64(totalFactor.toString()),
@@ -318,27 +347,139 @@ export class ChangeFactorGen {
             type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? `Börja med att ta fram förändringsfaktorerna för de två stegen var för sig: (${inc1 ? '+' : '-'}${pct1}% och ${inc2 ? '+' : '-'}${pct2}%).` : `Start by finding the individual change factors for the two separate steps: (${inc1 ? '+' : '-'}${pct1}% and ${inc2 ? '+' : '-'}${pct2}%).`, 
-                    latex: `f_1 = ${f1}, \\quad f_2 = ${f2}` 
+                    text: lang === 'sv' 
+                        ? `Bestäm förändringsfaktorerna för de två stegen: f₁ = ${f1Str} och f₂ = ${f2Str}.` 
+                        : `Determine the change factors for the two steps: f₁ = ${f1Str} and f₂ = ${f2Str}.`, 
+                    latex: `f_1 = ${f1Str}, \\quad f_2 = ${f2Str}` 
                 },
                 { 
-                    text: lang === 'sv' ? "När ändringar sker efter varandra räknar vi ut den totala effekten genom att multiplicera faktorerna." : "When changes happen sequentially one after another, we find the combined total change by multiplying the factors together.", 
-                    latex: `\\text{Total förändringsfaktor} = {f_1} \\cdot {f_2}` 
+                    text: lang === 'sv' 
+                        ? "Vid upprepade förändringar multipliceras förändringsfaktorerna med varandra:" 
+                        : "For successive changes, multiply the change factors together:", 
+                    latex: `f_{\\text{total}} = f_1 \\cdot f_2 = ${f1Str} \\cdot ${f2Str} = \\mathbf{${totalStr}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Sätt in värdena och multiplicera: ${f1} gånger ${f2}.` : `Insert the values and multiply: ${f1} times ${f2}.`, 
-                    latex: `\\text{Total förändringsfaktor} = ${f1} \\cdot \\mathbf{${f2}}` 
-                },
-                { 
-                    text: lang === 'sv' ? "Förenkla multiplikationen för att fastställa det slutgiltiga svaret." : "Simplify the multiplication to settle the final compounding value result.", 
-                    latex: `\\text{Total förändringsfaktor} = \\mathbf{${totalFactor}}` 
-                },
-                { 
-                    text: lang === 'sv' ? `Svar: ${totalFactor}` : `Answer: ${totalFactor}`, 
-                    latex: `${totalFactor}` 
+                    text: lang === 'sv' ? `Svar: ${totalStr}` : `Answer: ${totalStr}`, 
+                    latex: `${totalStr}` 
                 }
             ],
             metadata: { variation_key: v, difficulty: 4 }
+        };
+    }
+
+    // =========================================================================
+    // LEVEL 5: ADVANCED CHANGE (Repeated Years & Total % Change)
+    // =========================================================================
+    private level5_AdvancedChange(lang: string, variationKey?: string, options: any = {}): any {
+        const pool: {key: string, type: 'concept' | 'calculate'}[] = [
+            { key: 'sequential_total_pct', type: 'calculate' },
+            { key: 'repeated_change_years', type: 'calculate' }
+        ];
+        const v = variationKey || this.getVariation(pool, options);
+
+        if (v === 'repeated_change_years') {
+            const years = MathUtils.randomChoice([2, 3, 4]);
+            const isInc = Math.random() > 0.5;
+            const pct = MathUtils.randomChoice([2, 4, 5, 10, 15, 20]);
+            const factor = isInc ? 1 + pct / 100 : 1 - pct / 100;
+            const factorStr = lang === 'sv' ? factor.toString().replace('.', ',') : factor.toString();
+
+            // Broad range of dynamic asset values
+            const baseMultiplier = MathUtils.randomChoice([
+                1200, 1500, 2400, 3500, 4800, 6000, 8500, 12000, 15000, 24000, 36000, 50000, 120000, 250000
+            ]);
+            const initialValue = baseMultiplier;
+            const finalValue = Math.round(initialValue * Math.pow(factor, years));
+
+            const desc = lang === 'sv'
+                ? `Ett föremål är värt ${initialValue} kr och värdet ${isInc ? 'ökar' : 'minskar'} med ${pct}% varje år. Vad är föremålet värt efter ${years} år?`
+                : `An item is worth ${initialValue} kr and its value ${isInc ? 'increases' : 'decreases'} by ${pct}% each year. What is the item worth after ${years} years?`;
+
+            return {
+                renderData: {
+                    description: desc,
+                    answerType: 'numeric'
+                },
+                token: this.toBase64(finalValue.toString()),
+                variationKey: v,
+                type: 'calculate',
+                clues: [
+                    {
+                        text: lang === 'sv'
+                            ? `Förändringsfaktorn för ett år är ${factorStr}.`
+                            : `The annual change factor is ${factorStr}.`,
+                        latex: `a = ${factorStr}`
+                    },
+                    {
+                        text: lang === 'sv'
+                            ? `Efter ${years} år har värdet förändrats med faktorn (${factorStr})^${years}:`
+                            : `After ${years} years, the value scales by (${factorStr})^${years}:`,
+                        latex: `y = ${initialValue} \\cdot (${factorStr})^{${years}} = \\mathbf{${finalValue}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Svar: ${finalValue} kr` : `Answer: ${finalValue} kr`,
+                        latex: `${finalValue}`
+                    }
+                ],
+                metadata: { variation_key: v, difficulty: 5 }
+            };
+        }
+
+        // sequential_total_pct: Procedurally generated paired changes
+        // Generates combinations like +15% and -10%, +20% and -15%, +30% and -20%, etc.
+        const p1 = MathUtils.randomChoice([5, 10, 12, 15, 20, 25, 30, 40, 50]);
+        const p2 = MathUtils.randomChoice([5, 10, 12, 15, 20, 25, 30, 40, 50]);
+        const inc1 = Math.random() > 0.45;
+        const inc2 = Math.random() > 0.55;
+
+        const f1 = inc1 ? 1 + p1 / 100 : 1 - p1 / 100;
+        const f2 = inc2 ? 1 + p2 / 100 : 1 - p2 / 100;
+        const totalFactor = Math.round(f1 * f2 * 10000) / 10000;
+        
+        // Exact net percentage change (can be 1 decimal place or integer)
+        const netChangePct = Math.round((totalFactor - 1) * 10000) / 100;
+        const netChangeStr = lang === 'sv' ? netChangePct.toString().replace('.', ',') : netChangePct.toString();
+
+        const desc = lang === 'sv'
+            ? `Ett pris ${inc1 ? 'höjs' : 'sänks'} först med ${p1}% och ${inc2 ? 'höjs' : 'sänks'} därefter med ${p2}%. Med hur många procent har priset förändrats totalt?`
+            : `A price is first ${inc1 ? 'increased' : 'decreased'} by ${p1}% and then ${inc2 ? 'increased' : 'decreased'} by ${p2}%. By what total percentage has the price changed?`;
+
+        const f1Str = lang === 'sv' ? f1.toString().replace('.', ',') : f1.toString();
+        const f2Str = lang === 'sv' ? f2.toString().replace('.', ',') : f2.toString();
+        const totFactorStr = lang === 'sv' ? totalFactor.toString().replace('.', ',') : totalFactor.toString();
+        const isNetIncrease = netChangePct > 0;
+
+        return {
+            renderData: {
+                description: desc,
+                interceptorToken: `${f1.toFixed(2)} · ${f2.toFixed(2)}`,
+                answerType: 'numeric',
+                suffix: '%'
+            },
+            token: this.toBase64(netChangePct.toString()),
+            variationKey: v,
+            type: 'calculate',
+            clues: [
+                {
+                    text: lang === 'sv'
+                        ? `Steg 1: Multiplicera förändringsfaktorerna: ${f1Str} · ${f2Str} = ${totFactorStr}.`
+                        : `Step 1: Multiply the change factors: ${f1Str} · ${f2Str} = ${totFactorStr}.`,
+                    latex: `f_{\\text{total}} = ${f1Str} \\cdot ${f2Str} = \\mathbf{${totFactorStr}}`
+                },
+                {
+                    text: lang === 'sv'
+                        ? `Steg 2: Jämför den totala förändringsfaktorn med basen 1,00:`
+                        : `Step 2: Compare the total change factor against baseline 1.00:`,
+                    latex: `${totFactorStr} - 1,00 = ${(totalFactor - 1).toFixed(4).replace('.', ',')} \\rightarrow \\mathbf{${netChangeStr}\\%}`
+                },
+                {
+                    text: lang === 'sv'
+                        ? `Svar: ${netChangeStr}% (${isNetIncrease ? 'ökning' : 'minskning'})`
+                        : `Answer: ${netChangeStr}% (${isNetIncrease ? 'increase' : 'decrease'})`,
+                    latex: `${netChangeStr}\\%`
+                }
+            ],
+            metadata: { variation_key: v, difficulty: 5 }
         };
     }
 }

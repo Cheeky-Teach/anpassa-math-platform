@@ -152,12 +152,30 @@ export class WordProblemInterceptor {
         const vKey = questionData.variationKey || variationConfig.key;
         const ctx = variationConfig.contextType || '';
 
+        // 1. Change Factor Instruction Suffixes (Check FIRST to prevent difficulty: 5 collision)
+        if (vKey === 'apply_factor_inc' || vKey === 'apply_factor_dec') {
+            return text + (lang === 'en' ? " Calculate the new value." : " Beräkna det nya värdet.");
+        }
+        if (vKey === 'find_original_inc' || vKey === 'find_original_dec') {
+            return text + (lang === 'en' ? " Calculate the original value." : " Beräkna det ursprungliga värdet.");
+        }
+        if (vKey === 'sequential_factors' || vKey === 'factor_compound') {
+            return text + (lang === 'en' ? " Calculate the total combined change factor." : " Beräkna den totala förändringsfaktorn.");
+        }
+        if (vKey === 'sequential_total_pct') {
+            return text + (lang === 'en' ? " Calculate the total change in percent." : " Beräkna den totala förändringen i procent.");
+        }
+        if (vKey === 'repeated_change_years') {
+            return text + (lang === 'en' ? " Calculate the value at the end of the period." : " Beräkna värdet efter periodens slut.");
+        }
+        
         // 1. Explicit Formula / Equation Prompts
         if (vKey === 'table_formula' || vKey === 'find_formula') {
             return text + (lang === 'en' 
                 ? " Write the formula that describes this situation." 
                 : " Bestäm formeln som beskriver mönstret.");
         } 
+        
         
         if (ctx.startsWith('algebra_expressions')) {
             return text + (lang === 'en'
@@ -181,6 +199,7 @@ export class WordProblemInterceptor {
         if (vKey === 'sequential_factors' || vKey === 'factor_compound') {
             return text + (lang === 'en' ? " Calculate the total combined change factor." : " Beräkna den totala förändringsfaktorn.");
         }
+        
 
         // 3. Complete Self-Contained Native Narrative Domains (No Suffix Needed)
         const isSelfContainedDomain = 

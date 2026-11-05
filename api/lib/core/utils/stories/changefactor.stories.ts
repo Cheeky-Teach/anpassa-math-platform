@@ -7,94 +7,124 @@ import { StoryScenario } from '../wordProblemContract.js';
 // =========================================================================
 const APPLY_FACTOR_INC: StoryScenario[] = [
     {
-        id: "cf_ai_bakery_buns",
-        sv: "Ett litet café säljer vanligtvis {base} bullar under en vanlig vecka. Efter att de har visats i ett populärt klipp på nätet ökar efterfrågan snabbt, vilket gör att försäljningen multipliceras med förändringsfaktorn {factor}.",
-        en: "A small bakery typically sells {base} buns during a regular week. After being featured in a popular online video, demand grows quickly, causing sales to be multiplied by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 1 }
-    },
-    {
-        id: "cf_ai_game_active_players",
-        sv: "Ett nytt onlinespel har {base} aktiva spelare på sin server. Efter en stor uppdatering under helgen växer antalet spelare med förändringsfaktorn {factor}.",
-        en: "A new online game has {base} active players on its server. Following a big weekend update, the player count grows by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 1 }
-    },
-    {
-        id: "cf_ai_gaming_monitor_price",
-        sv: "Priset på en populär gamingskärm ligger från början på {base} kr. På grund av högre fraktkostnader tvingas butiken att höja priset med förändringsfaktorn {factor}.",
-        en: "The price of a popular gaming monitor is originally {base} kr. Due to higher shipping costs, the store is forced to raise the price by a change factor of {factor}.",
+        id: "cf_ai_pocket_money_raise",
+        sv: "Alex får {base} kr i månadspeng. Efter en överenskommelse hemma höjs månadspengen med förändringsfaktorn {factor}.",
+        en: "Alex receives {base} kr in monthly allowance. Following an agreement at home, the allowance increases by a change factor of {factor}.",
         rules: { minResult: 1 }
     },
     {
-        id: "cf_ai_esports_bonus_points",
-        sv: "Ett e-sportlag samlade ihop {base} poäng under de vanliga matcherna. Genom att vinna finalen får de en bonus som ökar deras totala poäng med förändringsfaktorn {factor}.",
-        en: "An e-sports team gathered {base} points during the regular matches. By winning the finals, they get a bonus that scales their total points by a change factor of {factor}.",
+        id: "cf_ai_winter_jacket_price",
+        sv: "En varm vinterjacka kostade {base} kr före säsongen. Inför vintern höjs priset med förändringsfaktorn {factor}.",
+        en: "A warm winter jacket cost {base} kr before the season. Ahead of winter, the price increases by a change factor of {factor}.",
         rules: { minResult: 1 }
     },
     {
-        id: "cf_ai_tutoring_app_downloads",
-        sv: "En ny app för läxhjälp laddades ner {base} gånger under augusti. När skolan startar i september skjuter siffran i höjden och multipliceras med {factor}.",
-        en: "A new tutoring app was downloaded {base} times during August. When school starts in September, the number shoots up and is multiplied by {factor}.",
-        rules: { integerOnly: ['base'], minResult: 1 }
-    },
-    {
-        id: "cf_ai_collectible_card_value",
-        sv: "Värdet på ett sällsynt samlarkort uppskattades till {base} kr förra året. Eftersom kortet har blivit väldigt populärt bland samlare har värdet nu ökat med förändringsfaktorn {factor}.",
-        en: "The value of a rare collectible card was estimated at {base} kr last year. Since the card became very popular among collectors, the value has now increased by a change factor of {factor}.",
+        id: "cf_ai_savings_account_interest",
+        sv: "På ett sparkonto finns det {base} kr. Under ett år växer sparbeloppet med ränta enligt förändringsfaktorn {factor}.",
+        en: "A savings account holds {base} kr. Over the course of a year, the savings grow with interest by a change factor of {factor}.",
         rules: { minResult: 1 }
     },
     {
-        id: "cf_ai_running_race_entries",
-        sv: "Ett lopp i stan brukar samla {base} löpare vid startlinjen under sommaren. Till höstens stora lopp utökar arrangörerna platserna och ökar antalet med förändringsfaktorn {factor}.",
-        en: "A local race usually gets {base} runners at the starting line during the summer. For the big autumn race, organizers expand the event and increase the number by a change factor of {factor}.",
+        id: "cf_ai_vintage_guitar_value",
+        sv: "En akustisk gitarr i fint skick värderades till {base} kr. Ett år senare har gitarrens andrahandsvärde ökat med förändringsfaktorn {factor}.",
+        en: "A vintage acoustic guitar in good condition was valued at {base} kr. One year later, its collector value increased by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ai_summer_job_wage",
+        sv: "Timlönen på ett sommarjobb i ett trädgårdsmästeri var {base} kr. Inför nästa sommar höjs timlönen med förändringsfaktorn {factor}.",
+        en: "The hourly wage for a gardening summer job was {base} kr. For the next summer, the wage increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ai_rent_apartment_increase",
+        sv: "Månadshyran för en lägenhet låg tidigare på {base} kr. Vid årsskiftet justeras hyran uppåt med förändringsfaktorn {factor}.",
+        en: "The monthly rent for an apartment was previously {base} kr. At the turn of the year, the rent increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ai_concert_ticket_price",
+        sv: "En konsertbiljett kostade från början {base} kr i förköp. Närmare konsertdatumet stiger biljettpriset med förändringsfaktorn {factor}.",
+        en: "A concert ticket originally cost {base} kr during early bird sales. Closer to the show date, the ticket price increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ai_cinema_ticket_weekend",
+        sv: "En vanlig biobiljett kostar {base} kr på vardagar. För kvällsvisningar på helger justeras biljettpriset uppåt med förändringsfaktorn {factor}.",
+        en: "A regular cinema ticket costs {base} kr on weekdays. For weekend evening screenings, the ticket price increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ai_bus_card_annual_price",
+        sv: "Ett månadskort för kollektivtrafiken kostade {base} kr under våren. Inför hösten höjs priset med förändringsfaktorn {factor}.",
+        en: "A monthly transit card cost {base} kr in the spring. Ahead of autumn, the transit fare increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ai_bicycle_repair_cost",
+        sv: "En grundservice för en cykel kostade tidigare {base} kr hos den lokala verkstaden. På grund av dyrare reservdelar ökar servicepriset med förändringsfaktorn {factor}.",
+        en: "A standard bicycle tune-up previously cost {base} kr at a local shop. Due to higher parts costs, the service fee increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ai_bakery_sourdough_bread",
+        sv: "Ett hantverksbakat surdegsbröd kostade {base} kr på bageriet. När mjölpriserna stiger höjs brödpriset med förändringsfaktorn {factor}.",
+        en: "An artisan sourdough loaf cost {base} kr at the bakery. When flour costs rise, the bread price increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ai_coffee_beans_kilo",
+        sv: "Ett kilo hela kaffebönor kostade tidigare {base} kr i mataffären. Efter en dålig skörd i producentlandet stiger kilopriset med förändringsfaktorn {factor}.",
+        en: "A kilogram of whole coffee beans previously cost {base} kr at the grocery store. Following a poor harvest, the price per kilo increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ai_sports_club_membership",
+        sv: "Årsavgiften i en idrottsförening var {base} kr förra året. För att renovera omklädningsrummen höjs medlemsavgiften med förändringsfaktorn {factor}.",
+        en: "The annual membership fee at a sports club was {base} kr last year. To fund renovations, the fee increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ai_swim_hall_entry",
+        sv: "Inträdet till badhuset kostade {base} kr för ungdomar. Efter att en ny vattenrutschbana byggts höjs entrépriset med förändringsfaktorn {factor}.",
+        en: "Admission to the indoor public pool cost {base} kr for youth. After adding a new waterslide, the admission fee increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ai_restaurant_lunch_buffet",
+        sv: "En lunchbuffé på en kvarterskrog kostade {base} kr. När råvarupriserna går upp justeras buffépriset med förändringsfaktorn {factor}.",
+        en: "A lunch buffet at a neighborhood restaurant cost {base} kr. When food supply costs rise, the buffet price increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ai_football_match_attendance",
+        sv: "Ett lokalt fotbollslag hade i genomsnitt {base} åskådare per hemmamatch förra säsongen. Efter ett avancemang i seriesystemet ökar publiksnittet med förändringsfaktorn {factor}.",
+        en: "A local football team averaged {base} spectators per home match last season. After being promoted, average attendance increases by a change factor of {factor}.",
         rules: { integerOnly: ['base'], minResult: 1 }
     },
     {
-        id: "cf_ai_clothing_brand_jackets",
-        sv: "Ett litet klädmärke tillverkade {base} jackor under sitt allra första år. Till nästa kollektion bestämmer de sig för att öka produktionen med förändringsfaktorn {factor}.",
-        en: "A small clothing brand made {base} jackets during its very first year. For the next collection, they decide to increase production by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 1 }
+        id: "cf_ai_antique_furniture_auction",
+        sv: "Ett matsalsbord i massiv ek såldes för {base} kr på auktion för fem år sedan. Vid en ny värdering har bordets marknadsvärde ökat med förändringsfaktorn {factor}.",
+        en: "A solid oak dining table sold for {base} kr at an auction five years ago. At a new appraisal, its market value has increased by a change factor of {factor}.",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_ai_coding_video_traffic",
-        sv: "Antalet visningar på en video om programmering var {base} under den första veckan. Efter att länken har delats i ett stort forum multipliceras trafiken med {factor}.",
-        en: "The views on a programming tutorial video reached {base} during its first week. After the link is shared on a large forum, the traffic is multiplied by {factor}.",
-        rules: { integerOnly: ['base'], minResult: 1 }
+        id: "cf_ai_ski_pass_day_ticket",
+        sv: "Ett dagskort i skidbacken kostade {base} kr under försäsongen. Under sportlovet höjs priset med förändringsfaktorn {factor}.",
+        en: "A single-day ski pass cost {base} kr during the pre-season. During peak winter break, the pass price increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_ai_garden_plant_height",
-        sv: "En liten planta i trädgården var från början {base} mm hög. Under en solig och regnig vecka växer plantan så att höjden multipliceras med förändringsfaktorn {factor}.",
-        en: "A small plant in the garden was initially {base} mm tall. During a sunny and rainy week, the plant grows so that its height is multiplied by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_ai_museum_annual_pass",
+        sv: "Ett årskort till stadens museer kostade {base} kr förra året. Inför det nya året höjs kortets pris med förändringsfaktorn {factor}.",
+        en: "An annual pass to the city museums cost {base} kr last year. Ahead of the new year, the pass price increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_ai_cinema_ticket_capacity",
-        sv: "En biograf sålde {base} biljetter under sin filmfestival förra året. Genom att bygga ut och lägga till en extra salong ökar biljettkapaciteten med förändringsfaktorn {factor}.",
-        en: "A cinema sold {base} tickets during its film festival last year. By expanding and adding an extra theater screen, ticket capacity increases by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 1 }
-    },
-    {
-        id: "cf_ai_sd_card_photos",
-        sv: "Du har sparat {base} bilder på ditt minneskort. När du kommer hem från en resa laddar du över en ny bunt bilder, vilket ökar det totala antalet med förändringsfaktorn {factor}.",
-        en: "You have saved {base} photos on your memory card. When you return from a trip, you download a new batch of pictures, increasing the total count by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 1 }
-    },
-    {
-        id: "cf_ai_sports_club_youths",
-        sv: "En lokal idrottsförening har {base} ungdomar som spelar fotboll hos dem. Tack vare att de har byggt en ny fotbollsplan växer antalet spelare med förändringsfaktorn {factor}.",
-        en: "A local sports club has {base} kids playing football with them. Thanks to the construction of a new football pitch, the number of players grows by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 1 }
-    },
-    {
-        id: "cf_ai_gym_january_members",
-        sv: "Ett gym har {base} besökare i snitt per vecka under december. När alla ska ta tag i sina nyårslöften i januari ökar antalet tränande med förändringsfaktorn {factor}.",
-        en: "A gym averages {base} visitors per week during December. When everyone starts working on their New Year's resolutions in January, the traffic increases by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 1 }
-    },
-    {
-        id: "cf_ai_forest_bird_count",
-        sv: "En skog rymde {base} fåglar under en räkning på våren. Efter att ett stort naturområde har skyddats och gjorts i ordning växer fågelfamiljen med förändringsfaktorn {factor}.",
-        en: "A forest held {base} birds during a count in the spring. After a large nature area is protected and cleaned up, the bird family grows by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 1 }
+        id: "cf_ai_ice_cream_cone_parlor",
+        sv: "En stor glasstrut med tre kulor kostade {base} kr i glasskiosken förra sommaren. Till årets säsong höjs priset med förändringsfaktorn {factor}.",
+        en: "A large three-scoop ice cream cone cost {base} kr at the harbor kiosk last summer. For this season, the price increases by a change factor of {factor}.",
+        rules: { minResult: 1 }
     }
 ];
 
@@ -104,94 +134,124 @@ const APPLY_FACTOR_INC: StoryScenario[] = [
 // =========================================================================
 const APPLY_FACTOR_DEC: StoryScenario[] = [
     {
-        id: "cf_ad_stored_apples_weight",
-        sv: "En korg med äpplen väger totalt {base} gram vid plockningen. När frukten ligger förvarad torkar den lite, vilket gör att den slutliga vikten ska multipliceras med förändringsfaktorn {factor}.",
-        en: "A basket of apples weighs {base} grams when picked. While the fruit is stored, it dries out a little, meaning the final weight must be multiplied by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
-    },
-    {
-        id: "cf_ad_powersave_display_draw",
-        sv: "Skärmen på en telefon drar {base} enheter ström vid maximal ljusstyrka. Genom att slå på telefonens automatiska strömsparläge minskar förbrukningen med förändringsfaktorn {factor}.",
-        en: "A phone screen draws {base} units of power at maximum brightness. By turning on the phone's automatic power-saving mode, energy usage drops by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
-    },
-    {
-        id: "cf_ad_clearance_winter_jackets",
-        sv: "En klädbutik har {base} stycken vinterjackor kvar på lagret i slutet av vintern. För att göra plats för vårkläder säljs jackorna ut på rea med förändringsfaktorn {factor}.",
-        en: "A clothing store has {base} winter jackets left in stock at the end of winter. To make room for spring clothes, the jackets are sold off on clearance by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 0 }
-    },
-    {
-        id: "cf_ad_concert_safety_limit",
-        sv: "En konsertplats har plats för {base} personer i publiken. Av säkerhetsskäl väljer arrangörerna att minska antalet biljetter till nästa kväll med förändringsfaktorn {factor}.",
-        en: "A concert venue has space for {base} people in the audience. For safety reasons, organizers choose to reduce the number of tickets for the next night by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 1 }
-    },
-    {
-        id: "cf_ad_video_stream_data_usage",
-        sv: "När du kollar på video med högsta kvalitet drar appen {base} megabyte data per timme. Genom att sänka till standardkvalitet minskar datamängden med förändringsfaktorn {factor}.",
-        en: "When watching video in the highest quality, the app uses {base} megabytes of data per hour. By lowering it to standard quality, the data usage drops by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
-    },
-    {
-        id: "cf_ad_store_inventory_cut",
-        sv: "En butik köpte in {base} förpackningar av en leksak som visade sig sälja ganska dåligt. Inför nästa månad väljer butikschefen att minska beställningen med förändringsfaktorn {factor}.",
-        en: "A shop ordered {base} boxes of a toy that turned out to sell quite poorly. Ahead of next month, the shop manager decides to cut the order by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 0 }
-    },
-    {
-        id: "cf_ad_moped_engine_service",
-        sv: "En moped drar i genomsnitt {base} ml bränsle under ett accelerationstest. Efter att motorn har rengjorts och servats ordentligt minskar förbrukningen med förändringsfaktorn {factor}.",
-        en: "A moped uses an average of {base} ml of fuel during an acceleration test. After the engine is properly cleaned and serviced, fuel consumption drops by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
-    },
-    {
-        id: "cf_ad_used_phone_battery_health",
-        sv: "Batteriet i en begagnad smartphone har en maximal kapacitet på {base} mAh. Efter att ha laddats och använts flitigt i två år har batterihälsan sjunkit med förändringsfaktorn {factor}.",
-        en: "The battery in a used smartphone has a maximum capacity of {base} mAh. After being charged and used heavily for two years, the battery health has dropped by a change factor of {factor}.",
+        id: "cf_ad_running_shoes_sale",
+        sv: "Ett par löparskor kostade ordinarie {base} kr i sportbutiken. Under mellandagsrean sänks priset med förändringsfaktorn {factor}.",
+        en: "A pair of running shoes regularly cost {base} kr in the sporting goods store. During the holiday sale, the price drops by a change factor of {factor}.",
         rules: { minResult: 1 }
     },
     {
-        id: "cf_ad_school_bikelane_traffic",
-        sv: "Trafiken förbi en skola mättes till {base} bilar per dag under en vanlig vecka. När en ny cykelbana öppnar bredvid minskar antalet bilar med förändringsfaktorn {factor}.",
-        en: "Traffic past a school was measured at {base} cars per day during a regular week. When a new bike lane opens nearby, the number of cars drops by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 0 }
+        id: "cf_ad_winter_jacket_clearance",
+        sv: "En vinterjacka kostade {base} kr under hösten. När våren närmar sig sänks priset på utförsäljningen med förändringsfaktorn {factor}.",
+        en: "A winter jacket cost {base} kr during the fall. As spring approaches, the clearance price drops by a change factor of {factor}.",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_ad_email_cleanup_minutes",
-        sv: "Du la ner {base} minuter på att rensa gamla mejl och filer förra veckan. Genom att installera ett smart sorteringsprogram minskar tidsåtgången den här veckan med förändringsfaktorn {factor}.",
-        en: "You spent {base} minutes cleaning out old emails and files last week. By installing a smart sorting tool, the time spent this week drops by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_ad_used_car_depreciation",
+        sv: "En begagnad familjebil köptes in för {base} kr. Efter ett års körning och slitage har bilens värde minskat med förändringsfaktorn {factor}.",
+        en: "A used family car was purchased for {base} kr. After one year of driving and mileage, the car's value decreases by a change factor of {factor}.",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_ad_cleaned_fan_noise",
-        sv: "Ljudnivån från en gammal datorfläkt uppmättes till effekten {base}. Efter att fläkten har torkats ren från damm och oljats in sjunker ljudnivån med förändringsfaktorn {factor}.",
-        en: "The noise level from an old computer fan measured an output of {base}. After the fan is wiped clean of dust and oiled, the noise drops by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_ad_bicycle_helmet_discount",
+        sv: "En cykelhjälm med säkerhetsspänne kostade {base} kr i cykelaffären. För alla medlemmar i cykelklubben sänks priset med förändringsfaktorn {factor}.",
+        en: "A bicycle helmet cost {base} kr in the bike shop. For members of the local cycling club, the price is reduced by a change factor of {factor}.",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_ad_schoolyard_hall_extension",
-        sv: "En skolgård täckte en yta på {base} kvadratmeter från början. När skolan bygger ut en ny idrottshall minskar den öppna skolgårdsytan med förändringsfaktorn {factor}.",
-        en: "A schoolyard covered an area of {base} square meters originally. When the school builds a new sports hall, the open schoolyard space shrinks by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_ad_backpack_back_to_school",
+        sv: "En ergonomisk skolryggsäck kostade {base} kr. Under skolstartskampanjen sänks priset med förändringsfaktorn {factor}.",
+        en: "An ergonomic school backpack cost {base} kr. During the back-to-school sale, the price drops by a change factor of {factor}.",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_ad_school_food_waste_cut",
-        sv: "Ett skolkök slängde tyvärr {base} kg mat under en stressig vecka. Genom att planera portionerna bättre och låta eleverna ta själva minskar svinnet med förändringsfaktorn {factor}.",
-        en: "A school kitchen unfortunately threw away {base} kg of food during a stressful week. By planning portions better, the waste drops by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_ad_bookstore_novel_paperback",
+        sv: "En inbunden roman kostade {base} kr när den släpptes. När pocketversionen kommer ut sänks priset på den inbundna boken med förändringsfaktorn {factor}.",
+        en: "A hardcover novel cost {base} kr upon release. When the paperback arrives, the hardcover price drops by a change factor of {factor}.",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_ad_bug_fix_hackathon",
-        sv: "Antalet felrapporter i ett nystartat kodprojekt låg på {base} stycken. Efter en helg där utvecklarna samarbetade för att fixa buggar minskar antalet öppna fel med förändringsfaktorn {factor}.",
-        en: "The number of bug reports in a new software project stood at {base}. After a weekend of developers working together to fix bugs, the open issues drop by a change factor of {factor}.",
-        rules: { integerOnly: ['base'], minResult: 0 }
+        id: "cf_ad_fruit_evening_clearance",
+        sv: "En trälåda med färska jordgubbar kostade {base} kr på morgonen. Sent på eftermiddagen sänker torghandlaren priset med förändringsfaktorn {factor}.",
+        en: "A wooden crate of fresh strawberries cost {base} kr in the morning. Late in the afternoon, the market stall lowers the price by a change factor of {factor}.",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_ad_bakery_sugar_reduction",
-        sv: "Ett bageri använde {base} kg socker i sina kakor förra månaden. Genom att justera recepten till ett nytt alternativ minskar sockerblandningen med förändringsfaktorn {factor}.",
-        en: "A bakery used {base} kg of sugar in its pastries last month. By adjusting the recipes to a new alternative, the sugar amount decreases by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_ad_electric_scooter_end_season",
+        sv: "En elsparkcykel kostade {base} kr under sommarsäsongen. Inför hösten sänker återförsäljaren priset med förändringsfaktorn {factor}.",
+        en: "An electric scooter cost {base} kr during summer. Ahead of the cold season, the retailer lowers the price by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ad_water_bottle_sports_deal",
+        sv: "En rostfri termosflaska kostade {base} kr i butiken. Under en idrottsturnering ges en rabatt som sänker priset med förändringsfaktorn {factor}.",
+        en: "A stainless steel water bottle cost {base} kr in the shop. During a regional sports tournament, a promotional discount lowers the price by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ad_jeans_student_discount",
+        sv: "Ett par slitstarka jeans kostar {base} kr i klädbutiken. Med ett giltigt studentkort sänks priset i kassan med förändringsfaktorn {factor}.",
+        en: "A pair of durable jeans costs {base} kr in the clothing store. With a valid student ID, the checkout price drops by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ad_wool_sweater_spring_sale",
+        sv: "En stickad ulltröja kostade {base} kr under vintern. Vid vårens säsongsrensning sänks tröjans pris med förändringsfaktorn {factor}.",
+        en: "A knitted wool sweater cost {base} kr in the winter. During the spring clearance, the sweater's price is reduced by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ad_skateboard_complete_deal",
+        sv: "En komplett skateboard kostade {base} kr på skatebutikens vägg. Under en säsongsrea sänks priset med förändringsfaktorn {factor}.",
+        en: "A complete skateboard cost {base} kr on the skate shop wall. During a seasonal clearance, the price drops by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ad_gym_membership_intro_offer",
+        sv: "Ett halvårskort på simhallen kostar vanligtvis {base} kr. Som öppningserbjudande sänks priset för nya medlemmar med förändringsfaktorn {factor}.",
+        en: "A six-month pass to the local pool normally costs {base} kr. As an opening offer, the fee for new members decreases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ad_cinema_matinee_screening",
+        sv: "Ordinarie biljettpris till en teaterföreställning är {base} kr. För eftermiddagsföreställningar på vardagar sänks priset med förändringsfaktorn {factor}.",
+        en: "Regular admission to an afternoon theater show is {base} kr. For weekday matinee shows, the ticket price drops by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ad_sleeping_bag_camping_outlet",
+        sv: "En sovsäck för friluftsliv kostade {base} kr i vildmarksbutiken. På outletavdelningen sänks priset med förändringsfaktorn {factor}.",
+        en: "A camping sleeping bag cost {base} kr in the outdoor gear shop. In the outlet section, the price decreases by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ad_tennis_racket_model_year",
+        sv: "Ett tennisracket kostade {base} kr när årsmodellen lanserades. När nästa års modell anländer sänks priset med förändringsfaktorn {factor}.",
+        en: "A tennis racket cost {base} kr when the model launched. When next year's model arrives, the price drops by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ad_car_insurance_safe_driver",
+        sv: "En årlig bilförsäkring kostade {base} kr. Efter flera skadefria år sänks försäkringspremien med förändringsfaktorn {factor}.",
+        en: "An annual car insurance premium cost {base} kr. After multiple accident-free years, the premium is reduced by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ad_furniture_display_model",
+        sv: "En fåtölj i butikens utställning kostade {base} kr som ny i kartong. Som visningsexemplar säljs den med ett pris som sänkts med förändringsfaktorn {factor}.",
+        en: "An armchair cost {base} kr brand-new in the box. As a showroom display model, it is sold at a price reduced by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ad_headphones_black_friday",
+        sv: "Ett par brusreducerande hörlurar kostade {base} kr före jul. Under en reahelg sänks priset med förändringsfaktorn {factor}.",
+        en: "A pair of noise-cancelling headphones cost {base} kr before the holidays. Over a promotional weekend, the price drops by a change factor of {factor}.",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_ad_plant_pot_garden_sale",
+        sv: "En stor kruka i terrakotta kostade {base} kr på trädgårdsbutiken. I slutet av trädgårdssäsongen sänks priset med förändringsfaktorn {factor}.",
+        en: "A large terracotta planter pot cost {base} kr at the nursery. At the close of the gardening season, the price drops by a change factor of {factor}.",
+        rules: { minResult: 1 }
     }
 ];
 
@@ -201,94 +261,124 @@ const APPLY_FACTOR_DEC: StoryScenario[] = [
 // =========================================================================
 const FIND_ORIGINAL_INC: StoryScenario[] = [
     {
-        id: "cf_oi_gym_pass_price",
-        sv: "Efter en prishöjning på grund av att en vara har blivit väldigt populär kostar ett gymkort nu {newPrice} kr. Det nya priset räknades ut med förändringsfaktorn {factor}.",
-        en: "Following a price increase because an item became very popular, a gym pass now costs {newPrice} kr. The new price was calculated using a change factor of {factor}.",
+        id: "cf_oi_gym_card_new_price",
+        sv: "Efter en prishöjning motsvarande förändringsfaktorn {factor} kostar ett gymkort nu {newPrice} kr. Vad kostade kortet från början?",
+        en: "Following a price rise corresponding to a change factor of {factor}, a gym membership now costs {newPrice} kr. What was the original price?",
         rules: { minResult: 1 }
     },
     {
-        id: "cf_oi_gaming_tournament_score",
-        sv: "Ett lag har samlat ihop {newPrice} poäng totalt i en speltävling efter att deras startpoäng har multiplicerats med en bonusfaktor på {factor}.",
-        en: "A team earned {newPrice} points total in a gaming tournament after their starting score was multiplied by a bonus factor of {factor}.",
+        id: "cf_oi_apartment_rent_adjusted",
+        sv: "Månadshyran för en lägenhet har höjts till {newPrice} kr enligt förändringsfaktorn {factor}. Vad låg månadshyran på före höjningen?",
+        en: "The monthly apartment rent has increased to {newPrice} kr by a change factor of {factor}. What was the rent before the increase?",
         rules: { minResult: 1 }
     },
     {
-        id: "cf_oi_streamer_chat_rush",
-        sv: "En streamer har {newPrice} aktiva tittare i sin livechatt just nu efter en plötslig rusch där antalet tittare ändrades med förändringsfaktorn {factor}.",
-        en: "A streamer has {newPrice} active viewers in their live chat right now after a sudden rush where the viewer count shifted by a change factor of {factor}.",
-        rules: { integerOnly: ['newPrice'], minResult: 1 }
-    },
-    {
-        id: "cf_oi_concert_ticket_surge",
-        sv: "En konsertbiljett säljs på nätet för {newPrice} kr. På grund av att biljetterna nästan är slut har priset höjts och beräknats med förändringsfaktorn {factor} jämfört med startpriset.",
-        en: "A concert ticket is sold online for {newPrice} kr. Because the tickets are almost sold out, the price surged and was calculated with a factor of {factor} compared to the starting price.",
+        id: "cf_oi_winter_boots_inflation",
+        sv: "Ett par fodrade kängor kostar nu {newPrice} kr efter att butiken höjde priset med förändringsfaktorn {factor}. Vad var priset från början?",
+        en: "A pair of winter boots now costs {newPrice} kr after the store raised the price by a change factor of {factor}. What was the initial price?",
         rules: { minResult: 1 }
     },
     {
-        id: "cf_oi_clip_interaction_surge",
-        sv: "Antalet gilla-markeringar på ett videoklipp har nått {newPrice} efter en timme där visningarna och kicken har skalat om med förändringsfaktorn {factor}.",
-        en: "The likes on a video clip reached {newPrice} after an hour where the views and interactions scaled by a change factor of {factor}.",
-        rules: { integerOnly: ['newPrice'], minResult: 1 }
-    },
-    {
-        id: "cf_oi_cloud_storage_tier_cost",
-        sv: "Månadskostnaden för att spara filer i molnet ligger nu på {newPrice} kr efter en prisändring där den gamla avgiften multiplicerades med förändringsfaktorn {factor}.",
-        en: "The monthly cost to save files in the cloud is now {newPrice} kr following a price adjustment where the old fee was multiplied by a change factor of {factor}.",
+        id: "cf_oi_train_season_ticket",
+        sv: "Ett månadskort på tåget har höjts till {newPrice} kr med förändringsfaktorn {factor}. Vad kostade tågkortet innan prishöjningen?",
+        en: "A monthly commuter train ticket rose to {newPrice} kr by a change factor of {factor}. What did the ticket cost before the fare increase?",
         rules: { minResult: 1 }
     },
     {
-        id: "cf_oi_ad_campaign_traffic",
-        sv: "Efter en lyckad reklamkampanj har en hemsida {newPrice} besökare per dag. Det beräknades utifrån en tillväxtfaktor på {factor} jämfört med hur det såg ut innan.",
-        en: "Following a successful ad campaign, a website has {newPrice} daily visitors. This was calculated based on a growth factor of {factor} compared to how it looked before.",
-        rules: { integerOnly: ['newPrice'], minResult: 1 }
-    },
-    {
-        id: "cf_oi_digital_game_archive",
-        sv: "Ett digitalt spelarkiv rymmer numera {newPrice} sparade spel efter att samlingen utökats med förändringsfaktorn {factor} under den senaste uppdateringen.",
-        en: "A digital game archive currently holds {newPrice} saved games after the collection was expanded by a change factor of {factor} during the latest update.",
-        rules: { integerOnly: ['newPrice'], minResult: 1 }
-    },
-    {
-        id: "cf_oi_escooter_weekend_fee",
-        sv: "Priset för att hyra en elsparkcykel under en helg slutar på {newPrice} kr efter att en extra helgavgift lagts till som ändrade kostnaden med faktorn {factor}.",
-        en: "The price to rent an e-scooter over a weekend ends up at {newPrice} kr after an extra weekend surcharge was added that shifted the cost by a factor of {factor}.",
+        id: "cf_oi_savings_account_one_year",
+        sv: "Efter ett år med ränta har behållningen på ett sparkonto vuxit till {newPrice} kr med förändringsfaktorn {factor}. Hur mycket pengar sattes in från början?",
+        en: "After one year of earned interest, the balance in a savings account reached {newPrice} kr by a change factor of {factor}. How much was originally deposited?",
         rules: { minResult: 1 }
     },
     {
-        id: "cf_oi_forest_bird_survey",
-        sv: "En skog rymmer {newPrice} fåglar under den senaste räkningen, vilket motsvarar en ökning med förändringsfaktorn {factor} sedan förra året.",
-        en: "A forest held {newPrice} birds during the latest count, which corresponds to an increase by a change factor of {factor} since last year.",
-        rules: { integerOnly: ['newPrice'], minResult: 1 }
+        id: "cf_oi_acoustic_guitar_value",
+        sv: "Värdet på en begagnad gitarr har stigit till {newPrice} kr enligt förändringsfaktorn {factor}. Vad värderades gitarren till innan värdeökningen?",
+        en: "The value of an acoustic guitar rose to {newPrice} kr according to a change factor of {factor}. What was its valuation before the increase?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_oi_school_server_bandwidth",
-        sv: "Datatrafiken till en skolas server har ökat till {newPrice} gigabyte. IT-avdelningen meddelar att belastningen har multiplicerats med förändringsfaktorn {factor}.",
-        en: "Data traffic to a school server has increased to {newPrice} gigabytes. The IT department notes that the workload was multiplied by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_oi_monthly_salary_raise",
+        sv: "Efter en löneförhandling höjdes månadslönen för en anställd till {newPrice} kr med förändringsfaktorn {factor}. Vad var månadslönen före förhandlingen?",
+        en: "Following a salary review, an employee's monthly salary rose to {newPrice} kr by a change factor of {factor}. What was the salary prior to review?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_oi_oak_sapling_growth",
-        sv: "En liten ekplanta mäter nu {newPrice} mm. Under en solig och regnig sommarmånad ökade plantans höjd med förändringsfaktorn {factor}.",
-        en: "A small oak sapling now measures {newPrice} mm. During a rainy and sunny summer month, the sapling's height increased by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_oi_concert_ticket_tier",
+        sv: "En konsertbiljett säljs nu för {newPrice} kr efter en efterfrågehöjning motsvarande förändringsfaktorn {factor}. Vad var startpriset i förköp?",
+        en: "A concert ticket is now priced at {newPrice} kr after a demand hike by a change factor of {factor}. What was the initial early bird price?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_oi_sports_club_recruitment",
-        sv: "Medlemsantalet i en lokal idrottsförening har vuxit till {newPrice} ungdomar efter en stor värvningsvecka där klubben expanderade med förändringsfaktorn {factor}.",
-        en: "The membership count in a local sports club grew to {newPrice} youth athletes after a big signup week where the club expanded by a change factor of {factor}.",
-        rules: { integerOnly: ['newPrice'], minResult: 1 }
+        id: "cf_oi_sports_membership_dues",
+        sv: "Årsavgiften i en orienteringsklubb höjdes till {newPrice} kr med förändringsfaktorn {factor}. Vad kostade medlemskapet förra året?",
+        en: "The annual membership in an orienteering club increased to {newPrice} kr by a change factor of {factor}. What did membership cost last year?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_oi_design_canvas_width",
-        sv: "En rityta i ett ritprogram har justerats till bredden {newPrice} pixlar. Detta nya mått motsvarar en ändring med förändringsfaktorn {factor} av vad ytan mätte från början.",
-        en: "A drawing canvas in a design program was adjusted to a width of {newPrice} pixels. This new dimension corresponds to a shift by a factor of {factor} of what the canvas measured originally.",
-        rules: { integerOnly: ['newPrice'], minResult: 1 }
+        id: "cf_oi_restaurant_dinner_menu",
+        sv: "En trerättersmiddag på restaurangen kostar nu {newPrice} kr efter att menyn justerats med förändringsfaktorn {factor}. Vad kostade menyn innan justeringen?",
+        en: "A three-course dinner at a restaurant now costs {newPrice} kr after the menu was adjusted by a change factor of {factor}. What was the price before?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_oi_social_media_subscribers",
-        sv: "En sajt har {newPrice} aktiva prenumeranter efter en lyckad kampanj på sociala medier som skalade upp antalet medlemmar med förändringsfaktorn {factor}.",
-        en: "A site has {newPrice} active subscribers following a successful social media campaign that scaled up the member count by a change factor of {factor}.",
-        rules: { integerOnly: ['newPrice'], minResult: 1 }
+        id: "cf_oi_sourdough_bread_price",
+        sv: "Ett surdegsbröd på bageriet kostar nu {newPrice} kr efter en prishöjning med förändringsfaktorn {factor}. Vad kostade brödet tidigare?",
+        en: "A sourdough loaf at the bakery now costs {newPrice} kr following a price hike by a change factor of {factor}. What did the loaf cost previously?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_oi_coffee_package_price",
+        sv: "Ett paket kaffe kostar nu {newPrice} kr i butiken efter att grossisten höjde priset med förändringsfaktorn {factor}. Vad var priset före höjningen?",
+        en: "A pack of coffee now costs {newPrice} kr in the store after a supplier hike by a change factor of {factor}. What was the price before the hike?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_oi_bicycle_service_standard",
+        sv: "En grundservice för cykel kostar numera {newPrice} kr på verkstaden efter en prishöjning med förändringsfaktorn {factor}. Vad kostade servicen tidigare?",
+        en: "A standard bicycle tune-up currently costs {newPrice} kr at the workshop after an increase by a change factor of {factor}. What did it cost before?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_oi_hockey_match_tickets",
+        sv: "Biljettpriset till en hockeymatch har justerats uppåt till {newPrice} kr med förändringsfaktorn {factor}. Vad kostade biljetterna före säsongsstarten?",
+        en: "The ticket price for an ice hockey match was adjusted upward to {newPrice} kr by a change factor of {factor}. What was the ticket price prior to the season?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_oi_antique_mirror_appraisal",
+        sv: "En förgylld spegel värderas nu till {newPrice} kr efter en värdestegring med förändringsfaktorn {factor}. Vad uppskattades spegelns värde till från början?",
+        en: "A gilded antique mirror is appraised at {newPrice} kr after an appreciation by a change factor of {factor}. What was the mirror valued at initially?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_oi_ski_lift_pass_peak",
+        sv: "Ett helgkort i skidliften kostar {newPrice} kr under högsäsongen efter en prishöjning med förändringsfaktorn {factor}. Vad kostade helgkortet under lågsäsong?",
+        en: "A weekend ski lift pass costs {newPrice} kr during peak season after a price increase by a change factor of {factor}. What was the off-peak rate?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_oi_music_school_term_fee",
+        sv: "Terminsavgiften på den kommunala musikskolan höjdes till {newPrice} kr med förändringsfaktorn {factor}. Vad låg terminsavgiften på innan höjningen?",
+        en: "The semester tuition at the music school increased to {newPrice} kr by a change factor of {factor}. What was the tuition fee before the raise?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_oi_cinema_ticket_inflation",
+        sv: "En biobiljett kostar nu {newPrice} kr efter att biografen höjde biljettpriserna med förändringsfaktorn {factor}. Vad kostade biobiljetten dessförinnan?",
+        en: "A movie ticket now costs {newPrice} kr after the theater raised ticket prices by a change factor of {factor}. What did the ticket cost beforehand?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_oi_housing_association_fee",
+        sv: "Månadsavgiften till bostadsrättsföreningen höjdes till {newPrice} kr enligt förändringsfaktorn {factor}. Vad betalade de boende per månad innan höjningen?",
+        en: "The monthly fee for the housing co-op was raised to {newPrice} kr by a change factor of {factor}. What did residents pay per month prior to the hike?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_oi_swim_hall_membership",
+        sv: "Ett årskort till simhallen kostar {newPrice} kr efter att anläggningen justerade priset med förändringsfaktorn {factor}. Vad kostade årskortet från början?",
+        en: "An annual pool membership costs {newPrice} kr after the facility adjusted its rate by a change factor of {factor}. What was the starting price of the pass?",
+        rules: { minResult: 1 }
     }
 ];
 
@@ -298,94 +388,124 @@ const FIND_ORIGINAL_INC: StoryScenario[] = [
 // =========================================================================
 const FIND_ORIGINAL_DEC: StoryScenario[] = [
     {
-        id: "cf_od_app_sneakers_discount",
-        sv: "Ett sällsynt par sneakers säljs på en app för {newPrice} kr efter att säljaren har sänkt priset till förändringsfaktorn {factor} av det ordinarie nypriset.",
-        en: "A rare pair of sneakers is sold on an app for {newPrice} kr after the seller reduced the price to a change factor of {factor} of its original retail price.",
+        id: "cf_od_running_shoes_sale_orig",
+        sv: "Ett par löparskor säljs på rea för {newPrice} kr efter att priset sänkts med förändringsfaktorn {factor}. Vad var det ordinarie priset?",
+        en: "A pair of running shoes is on sale for {newPrice} kr after being discounted by a change factor of {factor}. What was the original retail price?",
         rules: { minResult: 1 }
     },
     {
-        id: "cf_od_used_pc_friend_discount",
-        sv: "Du köper en begagnad dator av en kompis för {newPrice} kr. Kompisen säljer den billigt till dig och har satt priset till faktorn {factor} av vad den kostade som helt ny.",
-        en: "You buy a used computer from a friend for {newPrice} kr. The friend sells it to you cheap, setting the price to a factor of {factor} of what the computer cost brand new.",
+        id: "cf_od_used_bicycle_friend",
+        sv: "Du köper en begagnad mountainbike av en granne för {newPrice} kr. Grannen säljer den för förändringsfaktorn {factor} av nypriset. Vad kostade cykeln som helt ny?",
+        en: "You buy a used mountain bike from a neighbor for {newPrice} kr. The neighbor sells it at a change factor of {factor} of retail. What was the bike's price brand-new?",
         rules: { minResult: 1 }
     },
     {
-        id: "cf_od_heavy_use_battery_remaining",
-        sv: "En telefon har efter en dags hård användning en kvarvarande batterikapacitet på {newPrice} mAh, vilket motsvarar förändringsfaktorn {factor} av ett fulladdat batteri.",
-        en: "A phone battery has a remaining capacity of {newPrice} mAh after a day of heavy usage, which corresponds to a change factor of {factor} of a full charge.",
+        id: "cf_od_winter_jacket_outlet",
+        sv: "En varm vinterjacka säljs på en klädoutlet för {newPrice} kr efter att priset sänkts med förändringsfaktorn {factor}. Vad kostade jackan innan rean?",
+        en: "A warm winter jacket is sold at an apparel outlet for {newPrice} kr after being marked down by a change factor of {factor}. What did it cost before the sale?",
         rules: { minResult: 1 }
     },
     {
-        id: "cf_od_smaller_plates_waste_metric",
-        sv: "Mängden matsvinn i en skola uppmättes till {newPrice} kg under den här veckan. Tack vare att man har infört mindre tallrikar har svinnet ändrats med förändringsfaktorn {factor}.",
-        en: "The amount of food waste in a school measured {newPrice} kg this week. Thanks to introducing smaller plates, the waste shifted by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_od_backpack_clearance",
+        sv: "En vandringsryggsäck reas ut för {newPrice} kr efter en prissänkning motsvarande förändringsfaktorn {factor}. Vad var det ordinarie priset?",
+        en: "A hiking backpack is cleared out for {newPrice} kr after a markdown corresponding to a change factor of {factor}. What was the regular price?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_od_caretaker_tree_thinning",
-        sv: "Efter att vaktmästaren tagit bort skadade träd finns det {newPrice} träd kvar på skolgården. Det kvarvarande antalet motsvarar förändringsfaktorn {factor} av beståndet innan rensningen.",
-        en: "After the caretaker removed damaged trees, {newPrice} trees remain in the schoolyard. This remaining count corresponds to a factor of {factor} of the stock before thinning.",
-        rules: { integerOnly: ['newPrice'], minResult: 1 }
+        id: "cf_od_used_car_one_year_value",
+        sv: "Efter ett års värdeminskning motsvarande förändringsfaktorn {factor} värderas en bil till {newPrice} kr. Vad kostade bilen när den köptes för ett år sedan?",
+        en: "After one year of depreciation matching a change factor of {factor}, a car is appraised at {newPrice} kr. What did the car cost when bought a year ago?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_od_clothing_inventory_clearance",
-        sv: "En klädbutik har {newPrice} stycken jackor kvar på lagret efter en stor rea där lagersaldot multiplicerades med förändringsfaktorn {factor}.",
-        en: "A clothing brand has {newPrice} jackets left in stock after a big sale where the inventory balance was multiplied by a change factor of {factor}.",
-        rules: { integerOnly: ['newPrice'], minResult: 0 }
+        id: "cf_od_wool_blanket_discount",
+        sv: "En pläd i ren ull kostar {newPrice} kr i butiken efter att en medlemsrabatt med förändringsfaktorn {factor} dragits av. Vad var ordinarie pris?",
+        en: "A pure wool blanket costs {newPrice} kr after a member discount with a change factor of {factor} was deducted. What was the regular retail price?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_od_laptop_powersave_draw",
-        sv: "En bärbar dator drar bara {newPrice} enheter ström under sitt strömsparläge, vilket motsvarar den vanliga förbrukningen multiplicerat med förändringsfaktorn {factor}.",
-        en: "A portable laptop draws only {newPrice} units of power under power-saver mode, which corresponds to the regular consumption multiplied by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_od_tennis_racket_sale",
+        sv: "Ett tennisracket säljs på kampanj för {newPrice} kr efter en prissänkning med förändringsfaktorn {factor}. Vad kostade racketen före kampanjen?",
+        en: "A tennis racket is on promotional sale for {newPrice} kr following a price drop by a change factor of {factor}. What was the pre-promotion price?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_od_summer_holiday_views_drop",
-        sv: "Antalet visningar på en video sjönk till {newPrice} per dag under sommarlovet. Nedgången beräknades med en säsongsfaktor på {factor} jämfört med skolterminen.",
-        en: "The view count on a video dropped to {newPrice} per day during summer break. The drop was calculated with a seasonal factor of {factor} compared to the school term.",
-        rules: { integerOnly: ['newPrice'], minResult: 0 }
+        id: "cf_od_sleeping_bag_outlet_price",
+        sv: "En lättviktssovsäck säljs på friluftsrea för {newPrice} kr efter att ha sänkts med förändringsfaktorn {factor}. Vad kostade sovsäcken från början?",
+        en: "A lightweight sleeping bag is sold on outdoor sale for {newPrice} kr after being lowered by a change factor of {factor}. What was the original price?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_od_construction_traffic_calm",
-        sv: "Trafiken förbi ett vägbygge minskade till {newPrice} bilar per dygn efter att nya skyltar sattes upp som ändrade biltätheten med förändringsfaktorn {factor}.",
-        en: "Traffic past a construction zone decreased to {newPrice} cars per day after new signs were put up that shifted traffic by a change factor of {factor}.",
-        rules: { integerOnly: ['newPrice'], minResult: 0 }
+        id: "cf_od_jeans_student_price",
+        sv: "Med studentrabatt kostar ett par jeans {newPrice} kr i kassan. Rabatten motsvarar en sänkning med förändringsfaktorn {factor}. Vad var ordinarie pris?",
+        en: "With a student discount, a pair of jeans costs {newPrice} kr at the register. The discount represents a factor of {factor}. What was the regular price?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_od_digital_study_planner_time",
-        sv: "Du la ner {newPrice} minuter på läxor den här veckan efter att ett nytt digitalt planeringsverktyg minskat tidsåtgången med förändringsfaktorn {factor}.",
-        en: "You spent {newPrice} minutes on homework this week after a new digital planning tool cut down the time spent by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_od_water_bottle_promo",
+        sv: "En termosmugg kostar {newPrice} kr under en säsongsrabatt där priset sänkts med förändringsfaktorn {factor}. Vad kostade muggen före rabatten?",
+        en: "An insulated travel mug costs {newPrice} kr under a seasonal promotion lowering the price by a factor of {factor}. What was the pre-discount price?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_od_fan_acoustic_dampening",
-        sv: "Ljudnivån nära en fläkt i datasalen sjönk till effekten {newPrice} efter att de satt upp dämpande paneler som ändrade ljudet med förändringsfaktorn {factor}.",
-        en: "The noise level near a fan in the computer lab dropped to an output of {newPrice} after mounting dampening panels that shifted output by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_od_tent_end_of_summer",
+        sv: "Ett tremannatält säljs i slutet av sommaren för {newPrice} kr efter att butiken sänkt priset med förändringsfaktorn {factor}. Vad var ordinarie tältpris?",
+        en: "A three-person camping tent is sold at the end of summer for {newPrice} kr after the shop lowered the price by a factor of {factor}. What was the regular price?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_od_bikeshed_lawn_reduction",
-        sv: "En gräsmatta täckte en yta på {newPrice} kvadratmeter efter att ett nytt cykelförråd byggts och ändrat gräsytan med förändringsfaktorn {factor}.",
-        en: "A lawn covered an area of {newPrice} square meters after a new bike shed was built, shifting the grass footprint by a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_od_rollerblades_clearance",
+        sv: "Ett par inlines säljs på höstrea för {newPrice} kr efter en prissänkning med förändringsfaktorn {factor}. Vad kostade de innan rean började?",
+        en: "A pair of inline skates sells on autumn clearance for {newPrice} kr following a markdown by a factor of {factor}. What was the price before the sale?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_od_patch_night_bug_count",
-        sv: "Antalet fel i ett spelprojekt minskade till {newPrice} stycken efter en fixarkväll där alla öppna buggar multiplicerades med förändringsfaktorn {factor}.",
-        en: "The number of bugs in a game project dropped to {newPrice} after a patch night where open issues were multiplied by a change factor of {factor}.",
-        rules: { integerOnly: ['newPrice'], minResult: 0 }
+        id: "cf_od_coffee_maker_damaged_box",
+        sv: "En kaffebryggare med skadad kartong säljs för {newPrice} kr i fyndhörnan, vilket motsvarar förändringsfaktorn {factor} av ordinarie pris. Vad var nypriset?",
+        en: "A coffee maker with a damaged carton sells for {newPrice} kr in the bargain corner, matching a factor of {factor} of list price. What was the original price?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_od_pastry_sugar_optimization",
-        sv: "Ett bageri använde {newPrice} kg socker den här månaden. Genom att ändra om i sina recept minskade sockeråtgången med förändringsfaktorn {factor} jämfört med tidigare.",
-        en: "A bakery consumed {newPrice} kg of sugar this month. By tweaking its recipes, sugar usage decreased by a change factor of {factor} compared to before.",
-        rules: { minResult: 0.1 }
+        id: "cf_od_ceramic_plant_pot_sale",
+        sv: "En stor kruka kostar {newPrice} kr i handelsträdgården efter att priset sänkts med förändringsfaktorn {factor}. Vad kostade krukan tidigare?",
+        en: "A large ceramic flower pot costs {newPrice} kr at the garden nursery after a price reduction by a factor of {factor}. What did it cost previously?",
+        rules: { minResult: 1 }
     },
     {
-        id: "cf_od_transport_fruit_evaporation",
-        sv: "Ett parti frukter väger {newPrice} kg efter transporten eftersom en del vatten i frukten har dunstat bort enligt förändringsfaktorn {factor}.",
-        en: "A batch of fruit weighs {newPrice} kg after shipping because some water in the fruit evaporated according to a change factor of {factor}.",
-        rules: { minResult: 0.1 }
+        id: "cf_od_electric_toothbrush_deal",
+        sv: "En eltandborste säljs på apoteket för {newPrice} kr efter att priset sänkts med förändringsfaktorn {factor}. Vad kostade tandborsten till ordinarie pris?",
+        en: "An electric toothbrush sells at the pharmacy for {newPrice} kr after the price was lowered by a change factor of {factor}. What was the regular price?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_od_bedsheets_linen_set",
+        sv: "Ett påslakanset i linne kostar {newPrice} kr efter en säkning med förändringsfaktorn {factor}. Vad kostade bäddsetet till ordinarie pris?",
+        en: "A set of pure linen bedsheets costs {newPrice} kr after a markdown by a change factor of {factor}. What was the original list price?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_od_frying_pan_kitchen_outlet",
+        sv: "En stekpanna i gjutjärn reas ut för {newPrice} kr i köksbutiken efter en sänkning med förändringsfaktorn {factor}. Vad var ordinarie pris?",
+        en: "A cast-iron frying pan is cleared out for {newPrice} kr in the cookware shop after a reduction by a factor of {factor}. What was the regular price?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_od_ski_helmet_clearance",
+        sv: "En skidhjälm kostar {newPrice} kr i sportbutiken efter att priset sänkts med förändringsfaktorn {factor}. Vad kostade hjälmen innan rean?",
+        en: "A ski helmet costs {newPrice} kr in the sports store after the price was reduced by a change factor of {factor}. What did the helmet cost before the sale?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_od_boardgame_damaged_box",
+        sv: "Ett sällskapsspel säljs för {newPrice} kr efter att butiken sänkt priset med förändringsfaktorn {factor} på grund av en kantstött låda. Vad kostade spelet som nytt?",
+        en: "A board game sells for {newPrice} kr after the shop dropped the price by a change factor of {factor} due to box shelf wear. What did the game cost as brand-new?",
+        rules: { minResult: 1 }
+    },
+    {
+        id: "cf_od_winter_gloves_spring_deal",
+        sv: "Ett par fodrade skinnhandskar kostar {newPrice} kr i butiken efter en utförsäljningsrabatt med förändringsfaktorn {factor}. Vad var handskarnas ordinarie pris?",
+        en: "A pair of lined leather gloves costs {newPrice} kr in the store following a seasonal markdown by a change factor of {factor}. What was their regular price?",
+        rules: { minResult: 1 }
     }
 ];
 
@@ -395,93 +515,123 @@ const FIND_ORIGINAL_DEC: StoryScenario[] = [
 // =========================================================================
 const FACTOR_COMPOUND: StoryScenario[] = [
     {
-        id: "cf_fc_headphone_two_step_sale",
-        sv: "Priset på ett par hörlurar ändras i två steg på en hemsida. Först sker en förändring med faktorn {f1} under en rea, och kort därefter justeras priset igen med faktorn {f2}.",
-        en: "The price of headphones changes in two successive steps on a website. First, a shift occurs by a factor of {f1} during a sale, and shortly after, the price is adjusted again by a factor of {f2}.",
+        id: "cf_fc_jacket_two_step_sale",
+        sv: "Priset på en vinterjacka justeras i två på varandra följande steg: först med förändringsfaktorn {f1} och därefter med faktorn {f2}.",
+        en: "The price of a winter jacket is adjusted in two consecutive steps: first by a change factor of {f1} and then by a factor of {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_consecutive_days_views",
-        sv: "Antalet visningar på en ny video ändras under två dagar i rad. På måndagen ändras trafiken med förändringsfaktorn {f1}, och på tisdagen ändras det nya värdet med faktorn {f2}.",
-        en: "The view count on a new video shifts over two consecutive days. On Monday, traffic changes by a factor of {f1}, and on Tuesday, the new value changes again by a factor of {f2}.",
+        id: "cf_fc_gym_membership_annual_shifts",
+        sv: "Medlemsavgiften på ett träningscenter ändrades i två omgångar: först med förändringsfaktorn {f1} och året efter med faktorn {f2}.",
+        en: "The membership fee at a fitness center changed in two rounds: first by a change factor of {f1} and the following year by a factor of {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_game_item_trading_day",
-        sv: "Värdet på ett föremål i ett spel shufflas upp och ner under en handelsdag. Under förmiddagen ändras värdet med faktorn {f1}, och under eftermiddagen ändras saldot med ytterligare faktorn {f2}.",
-        en: "The value of a game item shuffles up and down over a trading day. In the morning, the value shifts by a factor of {f1}, and in the afternoon, the balance changes by another factor of {f2}.",
+        id: "cf_fc_apartment_rent_two_years",
+        sv: "Hyran för en bostadslägenhet justerades under två år i rad: första året med förändringsfaktorn {f1} och andra året med faktorn {f2}.",
+        en: "The rent for an apartment was adjusted over two consecutive years: the first year by a change factor of {f1} and the second year by {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_discord_server_member_shift",
-        sv: "Antalet medlemmar i en Discord-kanal ändras under två veckor. Första veckan ändras antalet med förändringsfaktorn {f1}, och under den andra veckan ändras medlemmarna med faktorn {f2}.",
-        en: "The member count in a Discord server shifts over two weeks. During the first week, the count adjusts by a factor of {f1}, and during the second week, members shift by a factor of {f2}.",
+        id: "cf_fc_used_car_depreciation_stages",
+        sv: "Värdet på en begagnad bil minskar i två skeden: först under det första ägaråret med faktorn {f1} och därefter under nästa år med faktorn {f2}.",
+        en: "The value of a used car depreciates in two stages: first during the initial year of ownership by a factor of {f1} and the following year by {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_charging_speed_optimization",
-        sv: "Laddningstiden för ett batteri optimeras i två steg av en ny mjukvara. Det första skriptet ändrar tiden med faktorn {f1}, och nästa uppdatering ändrar värdet med ytterligare faktorn {f2}.",
-        en: "The charging speed of a battery is optimized in two steps by a new software patch. The first script shifts the runtime by a factor of {f1}, and the next update changes the value by another factor of {f2}.",
+        id: "cf_fc_concert_ticket_tier_shifts",
+        sv: "Priset på en konsertbiljett justerades i två etapper: först under förköpsperioden med förändringsfaktorn {f1} och därefter vid dörren med faktorn {f2}.",
+        en: "The price of a concert ticket changed in two phases: first during the advance sale by a factor of {f1} and then at the door by a factor of {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_string_length_stages",
-        sv: "En bit snöre till ett bygge kapas och förlängs i två omgångar. Först ändras snörets längd med förändringsfaktorn {f1}, och i nästa skede ändras den nya biten med faktorn {f2}.",
-        en: "A piece of string for a project is clipped and extended in two separate stages. First, the string length shifts by a factor of {f1}, and in the next step, the new piece changes by a factor of {f2}.",
+        id: "cf_fc_bus_card_fare_revisions",
+        sv: "Priset på ett länskort för buss och tåg ändrades vid två tillfällen: först med förändringsfaktorn {f1} och sex månader senare med faktorn {f2}.",
+        en: "The fare for a regional transit pass was updated twice: first by a change factor of {f1} and six months later by a factor of {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_game_storage_footprint",
-        sv: "Lagringsutrymmet för ett spel komprimeras i två omgångar av utvecklarna. Den första rensningen ändrar filstorleken med faktorn {f1}, och nästa optimering ändrar storleken med faktorn {f2}.",
-        en: "The storage footprint of a game is compressed in two rounds by developers. The first compression shifts the file size by a factor of {f1}, and the next optimization changes the footprint by a factor of {f2}.",
+        id: "cf_fc_coffee_beans_wholesale_shifts",
+        sv: "Kilopriset på kaffe hos en grossist ändrades under två skördeperioder: först med förändringsfaktorn {f1} och därefter med faktorn {f2}.",
+        en: "The wholesale price per kilogram of coffee shifted across two harvests: first by a change factor of {f1} and then by a factor of {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_festival_ticket_price_periods",
-        sv: "Biljettpriset till en festival justeras i två tidsperioder. Inför förköpet ändras startpriset med förändringsfaktorn {f1}, och på själva evenemangsdagen ändras priset med faktorn {f2}.",
-        en: "The ticket price for a festival is adjusted across two periods. Ahead of the pre-sale, the base price shifts by a factor of {f1}, and on the day of the event, the price changes by a factor of {f2}.",
+        id: "cf_fc_savings_account_compound_rate",
+        sv: "Behållningen på ett räntekonto förändrades under två år: under det första året med faktorn {f1} och under det andra året med faktorn {f2}.",
+        en: "The balance in a savings account shifted over two years: during the first year by a factor of {f1} and in the second year by a factor of {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_server_player_shifts",
-        sv: "Antalet aktiva spelare på en server skiftar under dygnet. Vid lunchtid ändras spelarantalet med förändringsfaktorn {f1}, och under sena kvällen ändras värdet med faktorn {f2}.",
-        en: "The count of active players on a server shifts during the day. Around lunchtime, player volume changes by a factor of {f1}, and during late evening, the count shifts by a factor of {f2}.",
+        id: "cf_fc_restaurant_lunch_price_steps",
+        sv: "Dagens lunch på en restaurang ändrades i pris vid två separata tillfällen: först med förändringsfaktorn {f1} och sedan med faktorn {f2}.",
+        en: "The price of the daily lunch special at a bistro changed on two occasions: first by a change factor of {f1} and later by a factor of {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_flower_growth_two_weeks",
-        sv: "En planterad blomma ändrar sin tillväxttakt under två veckor. Under den soliga första veckan ändras höjden med faktorn {f1}, och under den torra andra veckan ändras höjden med faktorn {f2}.",
-        en: "A planted flower shifts its growth rate over two weeks. During a sunny first week, its height changes by a factor of {f1}, and during a dry second week, its height shifts by a factor of {f2}.",
+        id: "cf_fc_sports_shoes_clearance_steps",
+        sv: "Priset på ett par träningsskor sänktes i två omgångar i sportbutiken: först med förändringsfaktorn {f1} och vid slutrean med ytterligare faktorn {f2}.",
+        en: "The price of athletic sneakers was marked down in two rounds: first by a change factor of {f1} and during final clearance by another factor of {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_audio_filter_adjustments",
-        sv: "Ljudvolymen på en video finjusteras i två steg i ett redigeringsprogram. Först ändras effekten med förändringsfaktorn {f1}, och i nästa filterinställning ändras nivån med faktorn {f2}.",
-        en: "The audio volume of a video is fine-tuned in two steps within an editing program. First, the output shifts by a factor of {f1}, and in the next filter setting, the level changes by a factor of {f2}.",
+        id: "cf_fc_antique_clock_value_trend",
+        sv: "Marknadsvärdet på ett antikt väggur förändrades under två auktionssäsonger: först med faktorn {f1} och därefter med faktorn {f2}.",
+        en: "The market value of an antique clock shifted across two auction seasons: first by a factor of {f1} and subsequently by a factor of {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_seasonal_jacket_inventory",
-        sv: "En klädbutik justerar sitt lager av jackor inför säsongsskiften. Först ändras antalet jackor på hyllan med förändringsfaktorn {f1}, och veckan efter ändras lagret med faktorn {f2}.",
-        en: "A shop adjusts its inventory of jackets ahead of seasonal changes. First, the jacket count on shelves shifts by a factor of {f1}, and the week after, stock changes by a factor of {f2}.",
+        id: "cf_fc_ski_pass_seasonal_pricing",
+        sv: "Ett säsongskort i fjällen justerades i två prissteg: först vid en boka-tidigt-kampanj med faktorn {f1} och därefter vid säsongsstarten med faktorn {f2}.",
+        en: "A ski resort season pass was adjusted in two stages: first during an early bird sale by a factor of {f1} and at season launch by a factor of {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_holiday_web_traffic",
-        sv: "Trafiken till en webbsida ändras under julafton och nyårsafton. Under julen ändras besökarantalet med förändringsfaktorn {f1}, och under nyår ändras trafiken med faktorn {f2}.",
-        en: "Web traffic to a page shifts over Christmas Eve and New Year's Eve. During Christmas, visitor volume changes by a factor of {f1}, and during New Year's, traffic shifts by a factor of {f2}.",
+        id: "cf_fc_housing_electricity_rate",
+        sv: "Elpriset per kilowattimme för ett hushåll förändrades under två kvartal: först med förändringsfaktorn {f1} och nästföljande kvartal med faktorn {f2}.",
+        en: "The kilowatt-hour electricity rate for a home changed across two quarters: first by a factor of {f1} and the following quarter by {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_headset_weight_revisions",
-        sv: "Vikten på ett nytt lättvikts-headset justeras i två designskisser. Den första skissen ändrar vikten med förändringsfaktorn {f1}, och den andra finjusteringen ändrar vikten med faktorn {f2}.",
-        en: "The weight of a new lightweight headset is adjusted across two design revisions. The first revision shifts the weight by a factor of {f1}, and the second fine-tuning changes the weight by a factor of {f2}.",
+        id: "cf_fc_theatre_season_ticket_price",
+        sv: "Priset på ett abonnemang till stadsteatern ändrades vid två tillfällen: först med förändringsfaktorn {f1} och sedan med faktorn {f2}.",
+        en: "The subscription price for the city theatre season changed at two intervals: first by a change factor of {f1} and then by a factor of {f2}.",
         rules: { minResult: 0.01 }
     },
     {
-        id: "cf_fc_coffee_beans_packaging",
-        sv: "Mängden kaffebönor i en förpackning ändras hos en tillverkare. Först ändras vikten med förändringsfaktorn {f1} i en kampanj, och efteråt återställs linjen och ändras med faktorn {f2}.",
-        en: "The amount of coffee beans in a package is modified by a manufacturer. First, the weight shifts by a factor of {f1} in a promotion, and afterward, the line is reset and changes by a factor of {f2}.",
+        id: "cf_fc_sourdough_flour_cost",
+        sv: "Inköpspriset på ekologiskt mjöl till ett bageri förändrades i två steg: först med förändringsfaktorn {f1} och en månad senare med faktorn {f2}.",
+        en: "The purchase price of organic flour for a bakery shifted in two phases: first by a change factor of {f1} and one month later by {f2}.",
+        rules: { minResult: 0.01 }
+    },
+    {
+        id: "cf_fc_wool_yarn_raw_material",
+        sv: "Priset på ospunnet ullgarn till ett väveri justerades i två omgångar: först med förändringsfaktorn {f1} och därefter med faktorn {f2}.",
+        en: "The wholesale price of raw wool yarn for a weaving mill was adjusted in two steps: first by a factor of {f1} and then by a factor of {f2}.",
+        rules: { minResult: 0.01 }
+    },
+    {
+        id: "cf_fc_book_hardcover_to_clearance",
+        sv: "Priset på en inbunden bok ändrades i två steg: först vid en bokrea med förändringsfaktorn {f1} och senare på fyndbordet med faktorn {f2}.",
+        en: "The price of a hardcover novel changed in two rounds: first during an annual book sale by a factor of {f1} and later on the bargain table by {f2}.",
+        rules: { minResult: 0.01 }
+    },
+    {
+        id: "cf_fc_tennis_court_hourly_fee",
+        sv: "Banhyran i en tennishall ändrades vid två tillfällen: först inför vintern med förändringsfaktorn {f1} och därefter inför våren med faktorn {f2}.",
+        en: "Court rental at a tennis center changed twice: first ahead of winter by a factor of {f1} and subsequently ahead of spring by a factor of {f2}.",
+        rules: { minResult: 0.01 }
+    },
+    {
+        id: "cf_fc_guitar_amplifier_price",
+        sv: "Priset på en rörförstärkare för gitarr justerades i två steg i musikaffären: först med förändringsfaktorn {f1} och därefter med faktorn {f2}.",
+        en: "The price of a tube guitar amplifier was adjusted in two steps in the music store: first by a factor of {f1} and then by a factor of {f2}.",
+        rules: { minResult: 0.01 }
+    },
+    {
+        id: "cf_fc_hotel_room_seasonal_rates",
+        sv: "Rumspriset på ett hotell ändrades i två etapper inför sommaren: först med förändringsfaktorn {f1} och under högsäsongsveckorna med ytterligare faktorn {f2}.",
+        en: "The room rate at a hotel was adjusted in two phases ahead of summer: first by a factor of {f1} and during peak season by an additional factor of {f2}.",
         rules: { minResult: 0.01 }
     }
 ];
@@ -492,7 +642,6 @@ export const CHANGE_FACTOR_STORIES: Record<string, StoryScenario[]> = {
     find_original_inc: FIND_ORIGINAL_INC,
     find_original_dec: FIND_ORIGINAL_DEC,
     factor_compound: FACTOR_COMPOUND,
-
-    // Legacy / alternate key alias
-    sequential_factors: FACTOR_COMPOUND
+    sequential_factors: FACTOR_COMPOUND,
+    sequential_total_pct: FACTOR_COMPOUND
 };

@@ -99,9 +99,15 @@ const compileAnchoredStory = (item, lang = 'sv', includeLatex = false) => {
         template += lang === 'en' ? " Calculate the new value." : " Beräkna det nya värdet.";
     } else if (item.variationKey === 'find_original_inc' || item.variationKey === 'find_original_dec') {
         template += lang === 'en' ? " Calculate the original value." : " Beräkna det ursprungliga värdet.";
-    } else if (item.variationKey === 'sequential_factors') {
+    } else if (item.variationKey === 'sequential_factors' || item.variationKey === 'factor_compound') {
         template += lang === 'en' ? " Calculate the total combined change factor." : " Beräkna den totala förändringsfaktorn.";
-    } else if (item.topicId === 'equations' || item.topicId === 'equations_word') {
+    } else if (item.variationKey === 'sequential_total_pct') {
+        template += lang === 'en' ? " Calculate the total change in percent." : " Beräkna den totala förändringen i procent.";
+    } else if (item.variationKey === 'repeated_change_years') {
+        template += lang === 'en' ? " Calculate the value at the end of the period." : " Beräkna värdet efter periodens slut.";
+    } 
+    // Equations Suffixes
+    else if (item.topicId === 'equations' || item.topicId === 'equations_word') {
         if (item.resolvedData?.metadata?.difficulty === 5) {
             template += lang === 'en' ? " Write the equation that describes this situation." : " Teckna ekvationen som beskriver situationen.";
         } else {

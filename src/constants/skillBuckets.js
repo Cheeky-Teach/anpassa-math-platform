@@ -799,33 +799,11 @@ export const SKILL_BUCKETS = {
           },
           { key: 'benchmark_commutative', level: 2, name: { sv: 'Kommutativa lagen', en: 'Commutative property' }, desc: { sv: 'A% av B = B% av A', en: 'A% of B = B% of A' } },
 
-          // LEVEL 3: Byggstenar & Beräkningar (Building Blocks & Calculations)
-          { 
-            key: 'composition', 
-            level: 3, 
-            name: { sv: 'Sammansatta procent', en: 'Composite percentages' }, 
-            desc: { sv: '20%, 30%, 70%', en: '20%, 30%, 70%' }, 
-            tags: ['word_problem_ready'], 
-            contextType: 'percent_of_amount', 
-            extractorPattern: /^(?<pct>\d+)\s*%\s*(?:av|of)?\s*(?<base>\d+)/ 
-          },
-          { key: 'decomposition', level: 3, name: { sv: 'Beräkna (5%)', en: 'Calculate (5%)' }, desc: { sv: 'Använd 10% för att hitta 5%', en: 'Use 10% to find 5%' } },
-          { key: 'estimation', level: 3, name: { sv: 'Uppskatta procent', en: 'Estimate percent' }, desc: { sv: 'Ungefärlig beräkning', en: 'Approximate calculation' } },
-          { 
-            key: 'calc_any_percent', 
-            level: 3,
-            name: { sv: 'Beräkna delen', en: 'Calculate part of a whole' }, 
-            desc: { sv: 'Beräkna delen med procent och det hela', en: 'Calculate a part using percent and the total' }, 
-            tags: ['word_problem_ready'], 
-            contextType: 'percent_of_amount', 
-            extractorPattern: /^(?<pct>\d+)\s*%\s*av\s*(?<base>\d+)$/i 
-          },
-
-          // LEVEL 4: Andelen & Procentekvationen (The Percent Equation)
-          { key: 'find_percent_basic', level: 4, name: { sv: 'Andelen (Grund)', en: 'Find Percent (Basic)' }, desc: { sv: 'Hur många procent?', en: 'How many percent?' } },
+          // LEVEL 3: Andelen (Finding the Rate / Percentage Share)
+          { key: 'find_percent_basic', level: 3, name: { sv: 'Andelen (Grund)', en: 'Find Percent (Basic)' }, desc: { sv: 'Hur många procent?', en: 'How many percent?' } },
           { 
             key: 'find_percent_test', 
-            level: 4, 
+            level: 3, 
             name: { sv: 'Andel: Provresultat', en: 'Rate: Test scores' }, 
             desc: { sv: 'Delen / Det hela', en: 'Part / Whole' }, 
             tags: ['word_problem_ready'], 
@@ -834,41 +812,62 @@ export const SKILL_BUCKETS = {
           },
           { 
             key: 'find_percent_discount', 
-            level: 4, 
+            level: 3, 
             name: { sv: 'Andel: Rabatter', en: 'Rate: Discounts' }, 
             desc: { sv: 'Prissänkning i procent', en: 'Price drop in percent' }, 
             tags: ['word_problem_ready'], 
             contextType: 'percent_find_rate', 
             extractorPattern: /^(?<part>\d+)\s*;\s*(?<whole>\d+)/ 
           },
-          { key: 'find_percent_group', level: 4, name: { sv: 'Andelen (Grupp)', en: 'Percent: Group' }, desc: { sv: 'Andel av en grupp', en: 'Share of a group' } },
+          { key: 'find_percent_group', level: 3, name: { sv: 'Andelen (Grupp)', en: 'Percent: Group' }, desc: { sv: 'Andel av en grupp', en: 'Share of a group' } },
 
-          // LEVEL 5: Omvända Procentproblem (Reverse Percentage)
+          // LEVEL 4: Byggstenar & Beräkna Delen (Building Blocks & Calculating Part)
           { 
-            key: 'reverse_find_whole', 
-            level: 5, 
-            name: { sv: 'Hitta det hela', en: 'Find the whole' }, 
-            desc: { sv: 'Givet delen, hitta 100%', en: 'Given the part, find 100%' }, 
+            key: 'composition', 
+            level: 4, 
+            name: { sv: 'Sammansatta procent', en: 'Composite percentages' }, 
+            desc: { sv: '20%, 30%, 70%', en: '20%, 30%, 70%' }, 
             tags: ['word_problem_ready'], 
-            contextType: 'percent_base_part', 
-            // 🟢 Change (?<part>\d+) to (?<part>[\d.,]+)
-            extractorPattern: /^(?<part>[\d.,]+)\s*;\s*(?<pct>\d+)/ 
+            contextType: 'percent_of_amount', 
+            extractorPattern: /^(?<pct>\d+)\s*%\s*(?:av|of)?\s*(?<base>\d+)/ 
           },
-          { key: 'reverse_scaling', level: 5, name: { sv: 'Det hela (Skalning)', en: 'Find whole (Scaling)' }, desc: { sv: 'Skala upp till 100%', en: 'Scale up to 100%' } },
-          { key: 'reverse_concept', level: 5, name: { sv: 'Koncept: Det hela', en: 'Concept: The whole' }, desc: { sv: 'Förstå samband', en: 'Understand relationship' } },
+          { key: 'decomposition', level: 4, name: { sv: 'Beräkna (5%, 15%)', en: 'Calculate (5%, 15%)' }, desc: { sv: 'Bygg med 10% och 5%', en: 'Build using 10% and 5%' } },
+          { key: 'estimation', level: 4, name: { sv: 'Uppskatta procent', en: 'Estimate percent' }, desc: { sv: 'Ungefärlig beräkning', en: 'Approximate calculation' } },
+          { 
+            key: 'calc_any_percent', 
+            level: 4,
+            name: { sv: 'Beräkna delen', en: 'Calculate part of a whole' }, 
+            desc: { sv: 'Beräkna delen med procent och det hela', en: 'Calculate a part using percent and the total' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'percent_of_amount', 
+            extractorPattern: /^(?<pct>\d+)\s*%\s*av\s*(?<base>\d+)$/i 
+          },
 
-          // LEVEL 6: Procentuell Förändring (Percentage Change)
+          // LEVEL 5: Procentuell Förändring & Multiplikator (Percentage Change & Multipliers)
           { 
             key: 'change_calc', 
-            level: 6, 
+            level: 5, 
             name: { sv: 'Beräkna förändring', en: 'Calculate change' }, 
             desc: { sv: 'Skillnad / Ursprungsvärde', en: 'Difference / Original' }, 
             tags: ['word_problem_ready'], 
             contextType: 'value_delta', 
             extractorPattern: /^(?<diff>\d+)\s*;\s*(?<oldV>\d+)/ 
           },
-          { key: 'change_multiplier', level: 6, name: { sv: 'Förändringsfaktor', en: 'Change Factor' }, desc: { sv: '1,0 +/- %', en: '1.0 +/- %' } },
-          { key: 'change_trap', level: 6, name: { sv: 'Hitta felet: Förändring', en: 'Find error: Change' }, desc: { sv: 'Vanliga misstag vid %-förändring', en: 'Common mistakes in % change' } }
+          { key: 'change_multiplier', level: 5, name: { sv: 'Förändringsfaktor', en: 'Change Factor' }, desc: { sv: '1,0 +/- %', en: '1.0 +/- %' } },
+          { key: 'change_trap', level: 5, name: { sv: 'Hitta felet: Förändring', en: 'Find error: Change' }, desc: { sv: 'Vanliga misstag vid %-förändring', en: 'Common mistakes in % change' } },
+
+          // LEVEL 6: Hitta Det Hela / Baklänges (Reverse Percentage)
+          { 
+            key: 'reverse_find_whole', 
+            level: 6, 
+            name: { sv: 'Hitta det hela', en: 'Find the whole' }, 
+            desc: { sv: 'Givet delen, hitta 100%', en: 'Given the part, find 100%' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'percent_base_part', 
+            extractorPattern: /^(?<part>[\d.,]+)\s*;\s*(?<pct>\d+)/ 
+          },
+          { key: 'reverse_scaling', level: 6, name: { sv: 'Det hela (Skalning)', en: 'Find whole (Scaling)' }, desc: { sv: 'Skala upp till 100%', en: 'Scale up to 100%' } },
+          { key: 'reverse_concept', level: 6, name: { sv: 'Koncept: Det hela', en: 'Concept: The whole' }, desc: { sv: 'Förstå samband', en: 'Understand relationship' } }
         ]
       },
       change_factor: {
@@ -877,8 +876,8 @@ export const SKILL_BUCKETS = {
           // LEVEL 1: Koncept & Omvandling
           { key: 'pct_to_factor_inc', level: 1, name: { sv: 'Ökning till Faktor', en: 'Increase to Factor' }, desc: { sv: '+20% -> 1,20', en: '+20% -> 1.20' } },
           { key: 'pct_to_factor_dec', level: 1, name: { sv: 'Minskning till Faktor', en: 'Decrease to Factor' }, desc: { sv: '-20% -> 0,80', en: '-20% -> 0.80' } },
-          { key: 'factor_to_pct_inc', level: 1, name: { sv: 'Factor till Ökning', en: 'Factor to Increase' }, desc: { sv: '1,20 -> +20%', en: '1.20 -> +20%' } },
-          { key: 'factor_to_pct_dec', level: 1, name: { sv: 'Factor till Minskning', en: 'Factor to Decrease' }, desc: { sv: '0,80 -> -20%', en: '0.80 -> -20%' } },
+          { key: 'factor_to_pct_inc', level: 1, name: { sv: 'Faktor till Ökning', en: 'Factor to Increase' }, desc: { sv: '1,20 -> +20%', en: '1.20 -> +20%' } },
+          { key: 'factor_to_pct_dec', level: 1, name: { sv: 'Faktor till Minskning', en: 'Factor to Decrease' }, desc: { sv: '0,80 -> -20%', en: '0.80 -> -20%' } },
           
           // LEVEL 2: Beräkna nytt värde
           { 
@@ -888,7 +887,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Startvärde · Ökningsfaktor', en: 'Initial value · Growth factor' },
             tags: ['word_problem_ready'],
             contextType: 'apply_factor_inc', 
-            extractorPattern: /^(?<base>\d+)\s*(?:\\cdot|·)\s*(?<factor>1[.,]\d+)$/
+            extractorPattern: /^(?<base>\d+)\s*(?:\\cdot|·)\s*(?<factor>1[.,]\d+)(?:\s*;\s*(?<pct>\d+))?$/
           },
           { 
             key: 'apply_factor_dec', 
@@ -897,7 +896,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Startvärde · Minskningsfaktor', en: 'Initial value · Decay factor' },
             tags: ['word_problem_ready'],
             contextType: 'apply_factor_dec',
-            extractorPattern: /^(?<base>\d+)\s*(?:\\cdot|·)\s*(?<factor>0[.,]\d+)$/
+            extractorPattern: /^(?<base>\d+)\s*(?:\\cdot|·)\s*(?<factor>0[.,]\d+)(?:\s*;\s*(?<pct>\d+))?$/
           },
           
           // LEVEL 3: Hitta ursprungsvärdet
@@ -908,7 +907,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Nytt värde / Ökningsfaktor', en: 'New value / Growth factor' },
             tags: ['word_problem_ready'],
             contextType: 'find_original_inc',
-            extractorPattern: /^\\frac\{(?<newPrice>\d+)\}\{(?<factor>1[.,]\d+)\}$/
+            extractorPattern: /^\\frac\{(?<newPrice>\d+)\}\{(?<factor>1[.,]\d+)\}(?:\s*;\s*(?<pct>\d+))?$/
           },
           { 
             key: 'find_original_dec', 
@@ -917,10 +916,10 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Nytt värde / Minskningsfaktor', en: 'New value / Decay factor' },
             tags: ['word_problem_ready'],
             contextType: 'find_original_dec',
-            extractorPattern: /^\\frac\{(?<newPrice>\d+)\}\{(?<factor>0[.,]\d+)\}$/
+            extractorPattern: /^\\frac\{(?<newPrice>\d+)\}\{(?<factor>0[.,]\d+)\}(?:\s*;\s*(?<pct>\d+))?$/
           },
           
-          // LEVEL 4: Upprepade förändringar
+          // LEVEL 4: Upprepade förändringar (Faktor)
           { 
             key: 'sequential_factors', 
             level: 4,
@@ -928,8 +927,25 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Faktor 1 · Faktor 2', en: 'Factor 1 · Factor 2' },
             tags: ['word_problem_ready'],
             contextType: 'factor_compound',
-            extractorPattern: /^(?<f1>[01][.,]\d+)\s*(?:\\cdot|·)\s*(?<f2>[01][.,]\d+)$/
+            extractorPattern: /^(?<f1>[012][.,]\d+)\s*(?:\\cdot|·)\s*(?<f2>[012][.,]\d+)$/
           },
+
+          // LEVEL 5: Total procentuell förändring & Upprepad förändring
+          {
+            key: 'sequential_total_pct',
+            level: 5,
+            name: { sv: 'Total förändring (%)', en: 'Total change (%)' },
+            desc: { sv: 'Beräkna den totala procentuella ändringen', en: 'Calculate total percentage change' },
+            tags: ['word_problem_ready'],
+            contextType: 'factor_compound',
+            extractorPattern: /^(?<f1>[012][.,]\d+)\s*(?:\\cdot|·)\s*(?<f2>[012][.,]\d+)$/
+          },
+          {
+            key: 'repeated_change_years',
+            level: 5,
+            name: { sv: 'Upprepad förändring (År)', en: 'Repeated change (Years)' },
+            desc: { sv: 'Värdeändring över flera perioder (C · a^t)', en: 'Change over multiple periods (C · a^t)' }
+          }
         ]
       },
       exponents: {

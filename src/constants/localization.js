@@ -162,10 +162,11 @@ export const LEVEL_DESCRIPTIONS = {
         6: { sv: "Likbelägna & Alternatvinklar", en: "Parallel Lines" },
     },
     change_factor: {
-        1: { sv: "Begrepp & Definition", en: "Concepts & Definitions" },
-        2: { sv: "Beräkna nya värdet", en: "Calculate New Value" },
-        3: { sv: "Beräkna gamla värdet", en: "Find Original Value" },
-        4: { sv: "Total förändring", en: "Total Change" }
+        1: { sv: "Begrepp & Omvandling", en: "Concepts & Conversion" },
+        2: { sv: "Beräkna det nya värdet", en: "Calculate New Value" },
+        3: { sv: "Hitta ursprungsvärdet", en: "Find Original Value" },
+        4: { sv: "Sammansatt förändringsfaktor", en: "Compound Change Factor" },
+        5: { sv: "Total förändring & Upprepad förändring", en: "Net Change & Repeated Change" }
     },
     // FIXED: fraction_basics -> fractions_basics
     fractions_basics: {
@@ -223,12 +224,12 @@ export const LEVEL_DESCRIPTIONS = {
         3: { sv: "Blandade Faktorer (0.1, 100...)", en: "Mixed Factors" }
     },
     percent: { 
-        1: { sv: "Grundläggande (Rutnät)", en: "Basic Concepts (Grid)" },
-        2: { sv: "Huvudräkning (10%, 50%)", en: "Mental Math" },
-        3: { sv: "Beräkna delen", en: "Calculate the part" },
-        4: { sv: "Beräkna andelen (Decimal)", en: "Calculate Part (Decimal)" },
-        5: { sv: "Hitta helheten (100%)", en: "Find Whole" },
-        6: { sv: "Verklig Förändring", en: "Real World Change" }
+        1: { sv: "Grundläggande & Bildstöd", en: "Basic Concepts & Visuals" },
+        2: { sv: "Huvudräkning", en: "Mental Math" },
+        3: { sv: "Beräkna andelen", en: "Find the Rate / Percentage" },
+        4: { sv: "Beräkna delen & Byggstenar", en: "Calculate Part of a Whole" },
+        5: { sv: "Procentuell förändring", en: "Percentage Change" },
+        6: { sv: "Beräkna det hela (100%)", en: "Find the Whole (Reverse %)" }
     },
     probability: {
         1: { sv: "Sannolikhetsskalan & Visuella utfall", en: "Probability Scale & Visual Outcomes" },
