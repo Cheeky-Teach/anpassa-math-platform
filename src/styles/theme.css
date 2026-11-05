@@ -448,3 +448,17 @@ html {
 .arcade-dark-protect .text-amber-300 .katex * {
   color: #fcd34d !important;
 }
+/* =========================================================================
+   PROTECT CONTENT MODAL FROM DARK MODE CASCADE
+   ========================================================================= */
+.content-modal-protect,
+.dark .content-modal-protect,
+.content-modal-protect .math-content,
+.content-modal-protect .math-content .katex,
+.content-modal-protect .math-content .katex *,
+.dark .content-modal-protect .math-content,
+.dark .content-modal-protect .math-content .katex,
+.dark .content-modal-protect .math-content .katex * {
+  --text-main: #0f172a !important;
+  color: #0f172a !important;
+}

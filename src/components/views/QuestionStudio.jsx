@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   ChevronRight, ChevronLeft, Plus, Trash2, Layout, Send, Info, Layers, Search, Zap, 
   FileText, Grid3X3, RefreshCcw, Loader2, Maximize2, AlertTriangle, Sparkles,
@@ -888,6 +888,35 @@ export default function QuestionStudio({
       ...savedSheets.flatMap(s => s.auto_topics || [])
   ])].sort((a, b) => getTopicLabel(a).localeCompare(getTopicLabel(b), lang, { sensitivity: 'base' }));
 
+  // 🟢 Filter categories and topics for Pane 1 search
+  const filteredSkillBuckets = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return Object.values(SKILL_BUCKETS);
+
+    return Object.values(SKILL_BUCKETS).map(cat => {
+      const catName = (cat.name[lang] || cat.name.en || cat.name.sv || '').toLowerCase();
+      const matchesCat = catName.includes(query);
+
+      const matchingTopics = Object.entries(cat.topics || {}).filter(([topicId, topicData]) => {
+        if (matchesCat) return true;
+
+        const topicName = (topicData.name[lang] || topicData.name.en || topicData.name.sv || '').toLowerCase();
+        if (topicName.includes(query)) return true;
+
+        return (topicData.variations || []).some(v => {
+          const varName = (v.name[lang] || v.name.en || v.name.sv || '').toLowerCase();
+          const varDesc = (v.desc?.[lang] || v.desc?.en || v.desc?.sv || '').toLowerCase();
+          return varName.includes(query) || varDesc.includes(query);
+        });
+      });
+
+      return {
+        ...cat,
+        filteredTopicEntries: matchingTopics
+      };
+    }).filter(cat => cat.filteredTopicEntries.length > 0);
+  }, [searchTerm, lang]);
+
   const visibleVariations = (currentTopic?.variations || [])
   .filter(v => {
     if (useWordProblems) {
@@ -1194,18 +1223,32 @@ export default function QuestionStudio({
                         <Search className="absolute left-3 top-2.5 text-[var(--text-muted)]" size={16} />
                         <input type="text" placeholder={t.search_placeholder} className="w-full pl-10 pr-4 py-2 bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] rounded-[var(--radius-btn)] text-sm font-bold outline-none focus:border-[var(--brand-solid)]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
-                    {Object.values(SKILL_BUCKETS).map(cat => (
+                    {filteredSkillBuckets.map(cat => (
                         <div key={cat.id}>
-                            <h3 className="text-[14px] font-black uppercase tracking-widest text-[var(--brand-solid)] mb-3 ml-2">{cat.name[lang] || cat.name.en || cat.name.sv}</h3>
+                            <h3 className="text-[14px] font-black uppercase tracking-widest text-[var(--brand-solid)] mb-3 ml-2">
+                                {cat.name[lang] || cat.name.en || cat.name.sv}
+                            </h3>
                             <div className="space-y-1">
-                                {Object.entries(cat.topics).map(([id, data]) => (
-                                    <button key={id} onClick={() => setSelectedTopicId(id)} className={`w-full text-left px-3 py-1.5 text-m rounded-[var(--radius-btn)] transition-all ${selectedTopicId === id ? 'bg-indigo-600 text-white font-bold shadow-md' : 'text-[var(--text-main)] hover:bg-[var(--bg-surface)]'}`}>
+                                {(cat.filteredTopicEntries || Object.entries(cat.topics)).map(([id, data]) => (
+                                    <button 
+                                        key={id} 
+                                        onClick={() => setSelectedTopicId(id)} 
+                                        className={`w-full text-left px-3 py-1.5 text-m rounded-[var(--radius-btn)] transition-all ${
+                                            selectedTopicId === id ? 'bg-indigo-600 text-white font-bold shadow-md' : 'text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+                                        }`}
+                                    >
                                         {data.name[lang] || data.name.en || data.name.sv}
                                     </button>
                                 ))}
                             </div>
                         </div>
                     ))}
+
+                    {filteredSkillBuckets.length === 0 && (
+                        <div className="py-8 text-center text-xs font-bold text-[var(--text-muted)] italic">
+                            {lang === 'sv' ? `Inga områden matchade "${searchTerm}"` : `No topics matched "${searchTerm}"`}
+                        </div>
+                    )}
                 </>
             )}
           </div>

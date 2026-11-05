@@ -4304,7 +4304,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "Beräkna cirkelns area (använd pi = 3,14). Avrunda svaret till två decimaler.",
+                        "ex": "Beräkna cirkelns area. Avrunda svaret till två decimaler.",
                         "desc": {
                             "sv": "Area: Cirkel",
                             "en": "Area: Circle"

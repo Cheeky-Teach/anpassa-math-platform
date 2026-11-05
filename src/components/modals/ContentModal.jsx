@@ -13,7 +13,6 @@ const ContentModal = ({
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Instant O(1) set lookup
     const selectedKeySet = useMemo(() => {
         const set = new Set();
         if (Array.isArray(selectedItems)) {
@@ -90,8 +89,8 @@ const ContentModal = ({
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-slate-50 w-full max-w-[1600px] h-[95vh] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
-                
+            {/* Added 'text-slate-800' and color reset to ensure child text defaults dark on light surfaces */}
+            <div className="content-modal-protect bg-slate-50 text-slate-800 w-full max-w-[1600px] h-[95vh] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
                 {/* Header */}
                 <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 shrink-0 shadow-sm z-10">
                     <div className="flex items-center gap-4">
@@ -114,7 +113,7 @@ const ContentModal = ({
                                 placeholder={t.searchPlaceholder}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner"
+                                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner"
                             />
                             {searchTerm && (
                                 <button 
@@ -199,17 +198,22 @@ const ContentModal = ({
                                                                     </div>
                                                                     
                                                                     {/* Description */}
-                                                                    <div className={`w-1/2 sm:w-2/5 shrink-0 p-2 font-bold border-r border-slate-100 flex items-center pointer-events-none transition-colors ${currentlySelected ? 'text-emerald-900 border-emerald-100' : 'text-slate-700'}`}>
+                                                                    <div className={`w-1/2 sm:w-2/5 shrink-0 p-2 font-bold border-r border-slate-100 flex items-center pointer-events-none transition-colors ${currentlySelected ? 'text-emerald-900 border-emerald-100' : 'text-slate-800'}`}>
                                                                         {descStr}
                                                                     </div>
                                                                     
-                                                                    {/* Math Example */}
-                                                                    <div className="flex-1 p-2 font-serif font-bold text-slate-500 italic flex items-center overflow-x-auto no-scrollbar pointer-events-none">
+                                                                    {/* Math Example - Forced dark color via text-slate-700 and style color override */}
+                                                                    <div 
+                                                                        className="flex-1 p-2 font-serif font-bold text-slate-700 italic flex items-center overflow-x-auto no-scrollbar pointer-events-none"
+                                                                        style={{ color: '#334155' }}
+                                                                    >
                                                                         {lvl.ex && (
                                                                             lvl.ex.includes('\\') || lvl.ex.includes('$') || lvl.ex.includes('=') ? (
-                                                                                <MathDisplay content={lvl.ex.includes('$') ? lvl.ex : `$$${lvl.ex}$$`} className="inline-block pointer-events-none" />
+                                                                                <div className="text-slate-800" style={{ color: '#1e293b' }}>
+                                                                                    <MathDisplay content={lvl.ex.includes('$') ? lvl.ex : `$$${lvl.ex}$$`} className="inline-block pointer-events-none text-slate-800" />
+                                                                                </div>
                                                                             ) : (
-                                                                                <span className="font-sans not-italic text-[10px] text-slate-600 pointer-events-none">{lvl.ex}</span>
+                                                                                <span className="font-sans not-italic text-[10px] text-slate-700 pointer-events-none">{lvl.ex}</span>
                                                                             )
                                                                         )}
                                                                     </div>
