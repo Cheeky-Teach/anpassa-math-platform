@@ -1102,6 +1102,7 @@ const handleSpawnFromDrawer = (type, payload = {}) => {
                         allowedTools={allowedTools}
                         activeDrawer={activeDrawer}
                         onToggleDrawer={handleToggleDrawer}
+                        onSpawn={handleSpawnFromDrawer}
                     />
                 </div>
             )}

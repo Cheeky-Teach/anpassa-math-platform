@@ -550,7 +550,7 @@ export const ARITHMETIC_STORIES: Record<string, StoryScenario[]> = {
         {
             id: "arith_div_runner_track_laps",
             sv: "En löparbana runt en park är {f1} km lång. Om en person sammanlagt har sprungit {prod} km, hur många varv runt banan motsvarar det?",
-            en: "A running track around a park is {f1} km long. If a runner has completed {prod} km in total, how many laps does that correspond to?",
+            en: "A running track around a park is {f1} km long. If a runner ran {prod} km in total, how many laps did they run?",
             rules: {
                 minResult: 0.001
             }

@@ -11,7 +11,8 @@ import { CATEGORY_DEFINITIONS } from './tools/registry';
 const Toolbar = ({ 
     lang = 'sv', activeTool, setActiveTool, color, setColor, 
     onClear, onUndo, onRedo, canUndo, canRedo, bgType, onToggleBg,
-    mode = 'all', onToggleDrawer, activeDrawer, allowedTools = null 
+    mode = 'all', onToggleDrawer, activeDrawer, allowedTools = null,
+    onSpawn = () => {} // 🟢 Add onSpawn here
 }) => {
     if (mode === 'none') return null;
 
@@ -60,7 +61,6 @@ const Toolbar = ({
 
         if (mode === 'student') {
             const baseStudent = ['select', 'pen', 'highlighter', 'eraser', 'line', 'color_picker', 'clear_all'];
-            // 🟢 All registered drawer categories are automatically allowed for students
             const allCategoryDrawers = Object.keys(CATEGORY_DEFINITIONS).map(id => `drawer_${id}`);
             return [...baseStudent, ...allCategoryDrawers].includes(toolId);
         }
@@ -81,6 +81,15 @@ const Toolbar = ({
         const handleClick = (e) => {
             e.preventDefault();
             e.stopPropagation();
+            
+            const widgetTools = ['timer', 'realClock', 'richText', 'math', 'volume_cue'];
+            if (widgetTools.includes(id) && onSpawn) {
+                onSpawn(id);
+                setShowColors(false);
+                if (onToggleDrawer) onToggleDrawer(null);
+                return;
+            }
+
             if (onClick) {
                 onClick(e);
             } else {
@@ -144,7 +153,6 @@ const Toolbar = ({
 
     const showWriting = ['pen', 'eraser', 'highlighter', 'line', 'math', 'richText', 'timer', 'realClock', 'volume_cue'].some(isToolVisible);
     
-    // Dynamic list of active categories
     const visibleCategories = Object.values(CATEGORY_DEFINITIONS).filter(cat => 
         isToolVisible(`drawer_${cat.id}`)
     );
@@ -165,7 +173,6 @@ const Toolbar = ({
                 {isCollapsed ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
 
-            {/* Color Palette Menu */}
             {showColors && !isCollapsed && (
                 <div 
                     onPointerDown={(e) => e.stopPropagation()}
@@ -185,7 +192,6 @@ const Toolbar = ({
             )}
 
             <div className="flex flex-wrap justify-center items-center gap-y-2 gap-x-1 mx-auto w-full max-w-6xl">
-                {/* System & Navigation */}
                 <div className="flex items-center gap-1">
                     <ToolButton id="undo" icon={Undo2} category="system" onClick={onUndo} disabled={!canUndo} label={t.undo} />
                     <ToolButton id="redo" icon={Redo2} category="system" onClick={onRedo} disabled={!canRedo} label={t.redo} />
@@ -195,7 +201,6 @@ const Toolbar = ({
                 {showWriting && (
                     <>
                         <Divider />
-                        {/* Writing & Annotation Tools */}
                         <div className="flex items-center gap-1">
                             {isToolVisible('pen') && <ToolButton id="pen" icon={PenTool} category="writing" label={t.pen} />}
                             {isToolVisible('eraser') && <ToolButton id="eraser" icon={Eraser} category="writing" label={t.eraser} />}
@@ -213,7 +218,6 @@ const Toolbar = ({
                 {visibleCategories.length > 0 && (
                     <>
                         <Divider />
-                        {/* Dynamic Drawer Category Trays */}
                         <div className="flex items-center gap-1.5">
                             {visibleCategories.map(cat => (
                                 <DrawerButton 
@@ -229,7 +233,6 @@ const Toolbar = ({
                 )}
 
                 <Divider />
-                {/* Color & Canvas Controls */}
                 <div className="flex items-center gap-1">
                     {isToolVisible('color_picker') && (
                         <ToolButton id="color_picker" category="system" icon={Palette} onClick={() => { setShowColors(!showColors); if (onToggleDrawer) onToggleDrawer(null); }} label={t.color}>
