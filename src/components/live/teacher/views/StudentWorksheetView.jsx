@@ -184,6 +184,8 @@ export default function StudentWorksheetView({
                     
                     {/* Left Card */}
                     <div className="flex-[3] whiteboard-protect rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative min-h-[300px] bg-white text-slate-900 border border-slate-200">
+                        
+                        {/* 1. Header Bar */}
                         <div className="px-6 py-4 lg:px-10 lg:py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                             <span className="text-sm font-bold text-slate-500">
                                 {lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} av {localPacket.length}
@@ -198,29 +200,34 @@ export default function StudentWorksheetView({
                             )}
                         </div>
 
-                        <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
-                            <div className="flex-1 p-6 lg:p-10 flex flex-col justify-center space-y-6 order-2 lg:order-1">
-                                <div className="text-xl lg:text-2xl font-bold text-slate-800 leading-relaxed">
-                                    <MathDisplay content={rd?.description || currentItem?.text || currentItem?.prompt || (lang === 'sv' ? "Diskussionsuppgift" : "Discussion Question")} />
-                                </div>
-                                {shouldShowLatexBox && (
-                                    <div className="w-full bg-indigo-50/50 border border-indigo-100/50 rounded-2xl p-4 lg:p-8 overflow-x-auto custom-scrollbar">
-                                        <div className="min-w-max flex justify-center text-2xl lg:text-4xl text-indigo-600 font-serif">
-                                            <MathDisplay content={`$$${rd.latex}$$`} />
-                                        </div>
-                                    </div>
-                                )}
+                        {/* 2. Inner Body (Stacked vertically, full width, preserving white background) */}
+                        <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-6 lg:p-10 space-y-6">
+                            
+                            {/* Question Text */}
+                            <div className="text-xl lg:text-2xl font-bold text-slate-800 leading-relaxed">
+                                <MathDisplay content={rd?.description || currentItem?.text || currentItem?.prompt || (lang === 'sv' ? "Diskussionsuppgift" : "Discussion Question")} />
                             </div>
 
+                            {/* LaTeX Box */}
+                            {shouldShowLatexBox && (
+                                <div className="w-full bg-indigo-50/50 border border-indigo-100/50 rounded-2xl p-4 lg:p-8 overflow-x-auto custom-scrollbar">
+                                    <div className="min-w-max flex justify-center text-2xl lg:text-4xl text-indigo-600 font-serif">
+                                        <MathDisplay content={`$$${rd.latex}$$`} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Visual underneath, centered and scaled to prevent clipping */}
                             {rd && (rd.graph || rd.geometry || rd.pattern) && (
-                                <div className="flex-1 p-6 lg:p-10 flex items-center justify-center bg-slate-50/50 border-b lg:border-b-0 lg:border-l border-slate-100 order-1 lg:order-2 shrink-0 min-h-[250px]">
+                                <div className="w-full flex items-center justify-center py-4 bg-slate-50/50 rounded-2xl border border-slate-100 overflow-x-auto no-scrollbar">
                                     <WordProblemVisualGuard isActive={Boolean(rd?.isWordProblemApplied)} lang={lang} questionKey={currentItem?.id || currentIndex} allowReveal={false}>
-                                        <div className="w-full h-full flex items-center justify-center drop-shadow-xs transform scale-90 lg:scale-100">
+                                        <div className="max-w-full flex items-center justify-center drop-shadow-xs">
                                             <VisualRenderer data={rd} isWordProblem={Boolean(rd?.isWordProblemApplied)} />
                                         </div>
                                     </WordProblemVisualGuard>
                                 </div>
                             )}
+
                         </div>
                     </div>
 
