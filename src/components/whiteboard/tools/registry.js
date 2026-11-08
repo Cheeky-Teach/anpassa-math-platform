@@ -18,6 +18,7 @@ import { ProtractorTool } from './geometry/ProtractorTool';
 import { Shapes3DTool } from './geometry/Shapes3DTool';
 import { AlgebraTileTool } from './manipulatives/AlgebraTileTool';
 import { IntegerCounterTool } from './manipulatives/IntegerCounterTool';
+import AngleArcTool from './geometry/AngleArcTool';
 
 import { 
     Clock, Timer, Calculator, MessageCircle, FileText, 
@@ -159,6 +160,13 @@ export const TOOL_REGISTRY = {
         name: { sv: 'Gradskiva', en: 'Protractor' },
         icon: Compass,
         tool: ProtractorTool
+    },
+    angle_arc: {
+        id: 'angle_arc',
+        category: 'shapes',
+        name: { sv: 'Vinkel', en: 'Angle' },
+        icon: Compass,
+        tool: AngleArcTool
     },
     shapes_3d: {
         id: 'shapes_3d',

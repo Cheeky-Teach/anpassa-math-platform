@@ -1,19 +1,22 @@
 // src/components/views/ManipulativeSandboxView.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import InteractiveCanvas from '../whiteboard/InteractiveCanvas';
 import { 
     ChevronLeft, RotateCcw, SplitSquareVertical, 
-    Grid3X3, Minus
+    Grid3X3, Minus, Download 
 } from 'lucide-react';
+import { downloadSvgAsImage } from '../whiteboard/utils/exportSVG';
 
 export default function ManipulativeSandboxView({ lang = 'sv', onBack }) {
     const [elements, setElements] = useState([]);
-    const [surfaceMode, setSurfaceMode] = useState('blank'); // 'equation_mat' | 'grid' | 'blank'
+    const [surfaceMode, setSurfaceMode] = useState('blank');
+    const canvasRef = useRef(null);
 
     const t = {
         sv: {
             back: "Tillbaka",
             clear: "Rensa tavla",
+            export: "Ladda ner som bild",
             surface: "Arbetsyta",
             equationMat: "Ekvationsmatta (=)",
             grid: "Rutnät",
@@ -24,6 +27,7 @@ export default function ManipulativeSandboxView({ lang = 'sv', onBack }) {
         en: {
             back: "Back",
             clear: "Clear Board",
+            export: "Download as Image",
             surface: "Surface",
             equationMat: "Equation Mat (=)",
             grid: "Grid",
@@ -32,6 +36,18 @@ export default function ManipulativeSandboxView({ lang = 'sv', onBack }) {
             rhs: "RIGHT SIDE (RHS)"
         }
     }[lang || 'sv'];
+
+    const handleDownload = () => {
+        const svgNode = canvasRef.current?.getSvg();
+        if (!svgNode) return;
+
+        downloadSvgAsImage(svgNode, {
+            width: 1920,
+            height: 1080,
+            fileName: `matematik-tavla-${Date.now()}.png`,
+            backgroundColor: surfaceMode === 'grid' ? '#ffffff' : '#f9fbf7'
+        });
+    };
 
     return (
         <div className="w-screen h-screen relative bg-[#f9fbf7] overflow-hidden select-none">
@@ -61,6 +77,16 @@ export default function ManipulativeSandboxView({ lang = 'sv', onBack }) {
                         title={t.clear}
                     >
                         <RotateCcw size={16} />
+                    </button>
+
+                    {/* 🟢 Export / Download Image Button */}
+                    <button 
+                        type="button"
+                        onClick={handleDownload}
+                        className="p-2.5 bg-white/95 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 flex items-center justify-center font-bold text-xs cursor-pointer transition-colors active:scale-95"
+                        title={t.export}
+                    >
+                        <Download size={16} />
                     </button>
 
                     {/* Surface Backdrop Selector (Non-Destructive) */}
@@ -129,6 +155,7 @@ export default function ManipulativeSandboxView({ lang = 'sv', onBack }) {
 
             {/* Core Interactive Canvas with Sandbox Toolbar */}
             <InteractiveCanvas 
+                ref={canvasRef}
                 key="manipulatives_workspace"
                 lang={lang}
                 elements={elements}

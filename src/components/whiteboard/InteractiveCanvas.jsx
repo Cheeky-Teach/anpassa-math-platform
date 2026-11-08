@@ -1,10 +1,11 @@
 // src/components/whiteboard/InteractiveCanvas.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import Toolbar from './Toolbar';
 import WhiteboardDrawer from './WhiteboardDrawer';
-import { Trash2, Copy, Move } from 'lucide-react';
+import { Trash2, Copy, Move, Download } from 'lucide-react';
 import 'mathlive';
 import { getToolDefinition } from './tools/registry';
+import { downloadSvgAsImage, downloadElementAsImage } from './utils/exportSVG';
 
 
 const MathDisplay = ({ content, className = "" }) => {
@@ -26,7 +27,7 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
 };
 
-export default function InteractiveCanvas({ 
+function InteractiveCanvas({ 
     lang = 'sv', 
     bgType: controlledBgType, 
     onToggleBg: controlledOnToggleBg,
@@ -44,7 +45,7 @@ export default function InteractiveCanvas({
     onToggleDrawer: controlledOnToggleDrawer,
     showDividingLine = false,
     renderDrawer = true
-}) {
+}, ref) {
     const t = {
         sv: {
             stepX: "Steg X:", stepY: "Steg Y:", quad1: "1:a Kvadr.", addRow: "+ Rad", remRow: "- Rad",
@@ -67,6 +68,7 @@ export default function InteractiveCanvas({
     const handleToggleDrawer = controlledOnToggleDrawer || ((key) => {
         setInternalDrawer(prev => prev === key ? null : key);
     });
+   
 
     const [activeTool, setActiveTool] = useState('select');
     const [color, setColor] = useState('#06b6d4');
@@ -93,6 +95,11 @@ export default function InteractiveCanvas({
     const activePathRef = useRef(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const interactionModeRef = useRef(null);
+
+     // Expose the SVG element to parent components
+    useImperativeHandle(ref, () => ({
+        getSvg: () => svgRef.current
+    }));
 
     // 1. Master Timer & Clock Interval
     useEffect(() => {
@@ -813,6 +820,20 @@ const handleSpawnFromDrawer = (type, payload = {}) => {
                             <Copy size={20}/>
                         </button>
 
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                downloadElementAsImage(svgRef.current, el.id, {
+                                    fileName: `${el.type}-${Date.now()}.png`,
+                                    backgroundColor: 'transparent' // Transparent background makes it ideal for slides & worksheets
+                                });
+                            }}
+                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-pointer pointer-events-auto transition-colors" 
+                            title={lang === 'sv' ? 'Ladda ner objekt som bild' : 'Download object as image'}
+                        >
+                            <Download size={20} />
+                        </button>
+
                         <div className="w-px h-5 bg-slate-200 mx-0.5" />
                         <button 
                             onClick={() => deleteElement(el.id)} 
@@ -1124,3 +1145,5 @@ const handleSpawnFromDrawer = (type, payload = {}) => {
         </div>
     );
 }
+
+export default forwardRef(InteractiveCanvas);

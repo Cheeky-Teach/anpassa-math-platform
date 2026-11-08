@@ -1,6 +1,7 @@
 // src/components/whiteboard/tools/geometry/ProtractorTool.jsx
 import React from 'react';
 import { GripHorizontal, Stamp, Eye, EyeOff, HelpCircle } from 'lucide-react';
+import AngleArcTool from './AngleArcTool';
 
 const PRESET_ANGLES = [30, 45, 60, 90, 120, 180];
 
@@ -58,25 +59,33 @@ export const ProtractorTool = {
         // Stamps an interactive angle element with rays, arc, and label badge
         const stampAngleToCanvas = () => {
             const rad = el.width / 2;
-            const cx = el.x + rad;
-            const cy = el.y + rad;
-            const timestamp = Date.now();
             const angleVal = currentAngle;
-            const rayLen = rad * 0.95;
+            const rayLen = Math.round(rad * 0.85);
+
+            let labelText = `${angleVal}°`;
+            if (el.showLabels === false) {
+                labelText = '?';
+            } else if (stampMode === 'unknown') {
+                labelText = 'x';
+            }
+
+            // Offset to the right of the protractor
+            const stampX = Math.round(el.x + el.width + 40);
+            // Anchor y to the top of the angle's visual bounding box
+            const stampY = Math.round(el.y + rad - rayLen);
 
             const newAngleElement = {
-                id: `angle_${timestamp}`,
+                id: `angle_${Date.now()}`,
                 type: 'angle_arc',
-                x: cx,
-                y: cy,
-                width: rayLen,
-                height: rayLen,
+                x: stampX,
+                y: stampY,
+                width: rayLen + 40,
+                height: rayLen + 40,
                 rayLength: rayLen,
-                radius: Math.max(40, rad * 0.28),
                 angle: angleVal,
-                label: stampMode === 'unknown' ? 'x' : `${angleVal}°`,
-                stroke: '#0f172a',
-                arcColor: el.stroke || '#3b82f6',
+                label: labelText,
+                stroke: el.stroke || '#0f172a',
+                strokeWidth: 3,
                 rotation: el.rotation || 0,
                 opacity: 1
             };
@@ -451,8 +460,11 @@ export const ProtractorTool = {
                 <line x1={cx - 10} y1={cy} x2={cx + 10} y2={cy} stroke="#0f172a" strokeWidth={1.5} className="pointer-events-none" />
                 <line x1={cx} y1={cy - 10} x2={cx} y2={cy + 10} stroke="#0f172a" strokeWidth={1.5} className="pointer-events-none" />
 
-                {/* 9. Scaled Floating Classification & Angle Badge */}
-                <g transform={`translate(${cx}, ${cy - Math.max(80, r * 0.42)})`} className="pointer-events-none select-none">
+                {/* 9. Scaled Floating Classification & Angle Badge (Relocated Above Top Rim) */}
+                <g 
+                    transform={`translate(${cx}, ${-badgeHeight / 2 - 12})`} 
+                    className="pointer-events-none select-none"
+                >
                     <rect 
                         x={-badgeWidth / 2} 
                         y={-badgeHeight / 2} 
