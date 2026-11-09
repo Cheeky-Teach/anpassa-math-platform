@@ -63,7 +63,12 @@ export default function WhiteboardDrawer({
                     />
                 ) : activeDrawer === 'algebra' ? (
                     <AlgebraTileBin 
-                        onSpawn={(kind, sign, side) => onSpawn('algebra_tile', { kind, sign, side })} 
+                        onSpawn={(kind, sign, side) => onSpawn('algebra_tile', { 
+                            kind, 
+                            sign, 
+                            side, 
+                            existingElements: elements 
+                        })} 
                         lang={lang} 
                         showDivider={showDividingLine}
                     />

@@ -347,7 +347,16 @@ const handleSpawnFromDrawer = (type, payload = {}) => {
     // Transparent pass-through: Canvas does not know or care what tool or payload this is
     const newElement = toolDef.createDefault(id, color, { type, ...payload });
     
-    setElements(prev => [...prev, newElement]);
+    setElements(prev => {
+        // Pass the live elements list so the spawner knows how many tiles already exist
+        const newElement = toolDef.createDefault(id, color, { 
+            type, 
+            ...payload, 
+            existingElements: prev 
+        });
+        return [...prev, newElement];
+    });
+
     setSelectedIds([id]);
 };
 

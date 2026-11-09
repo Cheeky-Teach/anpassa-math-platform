@@ -44,14 +44,45 @@ export const AlgebraTileTool = {
       const kind = payload.kind || 'x';
       const sign = Number(payload.sign) || 1;
       const cfg = TILE_CONFIGS[kind] || TILE_CONFIGS['x'];
+      const side = payload.side || 'VL';
+
+      // 1. Base anchor coordinates per equation side
+      const basePositions = {
+          VL: { x: 380, y: 320 },
+          HL: { x: 1100, y: 320 }
+      };
+      const origin = basePositions[side] || basePositions.VL;
+
+      // 2. Count existing tiles on the canvas sharing the same side, kind, and sign
+      let index = 0;
+      if (Array.isArray(payload.existingElements)) {
+          index = payload.existingElements.filter(el => 
+              el.type === 'algebra_tile' &&
+              el.tileKind === kind &&
+              el.sign === (sign >= 0 ? 1 : -1) &&
+              (el.side === side || (side === 'VL' ? el.x < 960 : el.x >= 960))
+          ).length;
+      }
+
+      // 3. Grid placement: up to 5 per row, then wrap down
+      const maxPerRow = 5;
+      const col = index % maxPerRow;
+      const row = Math.floor(index / maxPerRow);
+
+      // Consistent spacing: width + margin (8px), height + margin (12px)
+      const gapX = 8;
+      const gapY = 12;
+      const computedX = origin.x + col * (cfg.width + gapX);
+      const computedY = origin.y + row * (cfg.height + gapY);
 
       return {
           id,
           type: 'algebra_tile',
           tileKind: cfg === TILE_CONFIGS[kind] ? kind : 'x',
           sign: sign >= 0 ? 1 : -1,
-          x: Math.round(Number(payload.x ?? (payload.side === 'HL' ? 1150 : 420))),
-          y: Math.round(Number(payload.y ?? 350)),
+          side: side,
+          x: Math.round(Number(payload.x ?? computedX)),
+          y: Math.round(Number(payload.y ?? computedY)),
           width: cfg.width,
           height: cfg.height,
           isRotated: false
