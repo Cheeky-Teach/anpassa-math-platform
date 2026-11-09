@@ -13,23 +13,50 @@ export const IntegerCounterTool = {
         const val = typeof payload === 'number' 
             ? payload 
             : (payload.value !== undefined ? Number(payload.value) : 1);
-        const x = payload.x !== undefined ? Number(payload.x) : (680 + Math.random() * 60);
-        const y = payload.y !== undefined ? Number(payload.y) : (340 + Math.random() * 60);
+        const isPos = val >= 0;
+        const normalizedVal = isPos ? 1 : -1;
+        const diameter = COUNTER_RADIUS * 2; // 64px
+
+        // 1. Separate base origins so positive and negative counters have dedicated clusters
+        // (e.g. positive counters start above, negative counters start below)
+        const baseOrigin = isPos 
+            ? { x: 520, y: 260 } 
+            : { x: 520, y: 440 };
+
+        // 2. Count existing counters of the same sign
+        let index = 0;
+        if (Array.isArray(payload.existingElements)) {
+            index = payload.existingElements.filter(el => 
+                el.type === 'integer_counter' && 
+                (Number(el.value) >= 0) === isPos
+            ).length;
+        }
+
+        // 3. Grid positioning: up to 5 per row, then start the next row beneath
+        const maxPerRow = 5;
+        const col = index % maxPerRow;
+        const row = Math.floor(index / maxPerRow);
+
+        const gapX = 12;
+        const gapY = 12;
+
+        const computedX = baseOrigin.x + col * (diameter + gapX);
+        const computedY = baseOrigin.y + row * (diameter + gapY);
 
         return {
             id,
             type: 'integer_counter',
-            value: val >= 0 ? 1 : -1,
-            x: Math.round(x),
-            y: Math.round(y),
-            width: COUNTER_RADIUS * 2,
-            height: COUNTER_RADIUS * 2,
+            value: normalizedVal,
+            x: Math.round(Number(payload.x ?? computedX)),
+            y: Math.round(Number(payload.y ?? computedY)),
+            width: diameter,
+            height: diameter,
             pairedWithId: null,
             rotation: 0,
             opacity: 1
         };
     },
-
+    
     // Magnetic Zero-Pairing: Only snap to an UNPAIRED counter of the opposite sign!
     snapAlgorithm: (target, allElements, threshold = ZERO_PAIR_PROXIMITY) => {
         let bestX = target.x;

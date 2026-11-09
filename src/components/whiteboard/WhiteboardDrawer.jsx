@@ -56,7 +56,11 @@ export default function WhiteboardDrawer({
                 {/* 1. Custom Specialized Bin: Algebra Tiles */}
                 {activeDrawer === 'arithmetic' ? (
                     <IntegerCounterBin 
-                        onSpawn={(val, coords) => onSpawn('integer_counter', { value: val, ...(coords || {}) })}
+                        onSpawn={(val, coords) => onSpawn('integer_counter', { 
+                            value: val, 
+                            ...(coords || {}),
+                            existingElements: elements 
+                        })}
                         elements={elements}
                         setElements={setElements}
                         lang={lang}
