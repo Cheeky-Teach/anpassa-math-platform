@@ -1,5 +1,6 @@
 // src/components/whiteboard/tools/manipulatives/IntegerCounterBin.jsx
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
+import IntegerCounterTool from './IntegerCounterTool';
 import { Plus, Minus, Sparkles, Trash2 } from 'lucide-react';
 
 export default function IntegerCounterBin({ onSpawn, elements = [], setElements = () => {}, lang = 'sv' }) {
@@ -27,7 +28,7 @@ export default function IntegerCounterBin({ onSpawn, elements = [], setElements 
         for (let i = 0; i < count; i++) {
             const col = i % 5;
             const row = Math.floor(i / 5);
-            onSpawn(value, {
+            onSpawn('integer_counter', { value,
                 x: startX + col * 76,
                 y: startY + row * 76
             });
@@ -41,14 +42,40 @@ export default function IntegerCounterBin({ onSpawn, elements = [], setElements 
 
         for (let i = 0; i < pairsCount; i++) {
             const px = startX + i * 84;
-            onSpawn(1, { x: px, y: startY });
-            onSpawn(-1, { x: px, y: startY + 80 });
+            onSpawn('integer_counter', { value: 1, x: px, y: startY });
+            onSpawn('integer_counter', { value: -1, x: px, y: startY + 80 });
         }
     };
 
     const clearAllCounters = () => {
         setElements(prev => prev.filter(el => el.type !== 'integer_counter'));
     };
+
+    const handleSnapAll = useCallback(() => {
+        setElements(prev => {
+            return prev.map(el => {
+                if (el.type === 'integer_counter') {
+                    const snapped = IntegerCounterTool.snapAlgorithm(el, prev);
+                    return { ...el, ...snapped };
+                }
+                return el;
+            });
+        });
+    }, [setElements]);
+
+    const handleClearZeroPairs = useCallback(() => {
+        setElements(prev => {
+            const toRemove = new Set();
+            prev.forEach(el => {
+                if (el.type === 'integer_counter' && el.pairedWithId) {
+                    toRemove.add(el.id);
+                    const partner = prev.find(p => p.id === el.pairedWithId);
+                    if (partner) toRemove.add(partner.id);
+                }
+            });
+            return prev.filter(el => !toRemove.has(el.id));
+        });
+    }, [setElements]);
 
     return (
         <div className="flex flex-col gap-3 w-full font-sans select-none" data-whiteboard-interactive="true">
@@ -88,7 +115,7 @@ export default function IntegerCounterBin({ onSpawn, elements = [], setElements 
             <div className="grid grid-cols-2 gap-2">
                 <button
                     type="button"
-                    onClick={() => onSpawn(1)}
+                    onClick={() => onSpawn('integer_counter', { value: 1 })}
                     className="p-3 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-2xl flex items-center gap-2.5 transition-all shadow-xs cursor-pointer active:scale-95 group"
                 >
                     <div className="w-8 h-8 rounded-full bg-sky-600 border-2 border-sky-700 flex items-center justify-center text-white font-black text-lg shadow-2xs group-hover:scale-105 transition-transform">
@@ -102,7 +129,7 @@ export default function IntegerCounterBin({ onSpawn, elements = [], setElements 
 
                 <button
                     type="button"
-                    onClick={() => onSpawn(-1)}
+                    onClick={() => onSpawn('integer_counter', { value: -1 })}
                     className="p-3 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 rounded-2xl flex items-center gap-2.5 transition-all shadow-xs cursor-pointer active:scale-95 group"
                 >
                     <div className="w-8 h-8 rounded-full bg-rose-600 border-2 border-rose-700 flex items-center justify-center text-white font-black text-2xl shadow-2xs group-hover:scale-105 transition-transform">
@@ -150,14 +177,41 @@ export default function IntegerCounterBin({ onSpawn, elements = [], setElements 
 
             {/* Clear Counters Action */}
             {posCount + negCount > 0 && (
-                <button
-                    type="button"
-                    onClick={clearAllCounters}
-                    className="mt-1 p-2 rounded-xl border border-slate-200 hover:bg-rose-50 hover:border-rose-200 text-slate-500 hover:text-rose-600 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                    <Trash2 size={13} />
-                    <span>{lang === 'sv' ? "Rensa alla markörer" : "Clear all counters"}</span>
-                </button>
+                <>
+                    <button
+                        type="button"
+                        onClick={clearAllCounters}
+                        className="mt-1 p-2 rounded-xl border border-slate-200 hover:bg-rose-50 hover:border-rose-200 text-slate-500 hover:text-rose-600 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                        <Trash2 size={13} />
+                        <span>{lang === 'sv' ? "Rensa alla markörer" : "Clear all counters"}</span>
+                    </button>
+
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 pt-2">
+                        {lang === 'sv' ? "Avancerade åtgärder" : "Advanced Actions"}
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            type="button"
+                            onClick={handleSnapAll}
+                            className="p-2.5 bg-white hover:bg-sky-50 border border-slate-200 rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-95"
+                            title={lang === 'sv' ? "Snapa ihop nollpar" : "Snap zero pairs together"}
+                        >
+                            <Sparkles size={14} className="text-sky-500" />
+                            <span className="text-xs font-bold text-slate-700">{lang === 'sv' ? "Snapa ihop" : "Snap together"}</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleClearZeroPairs}
+                            className="p-2.5 bg-white hover:bg-rose-50 border border-slate-200 rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-95"
+                            title={lang === 'sv' ? "Rensa alla nollpar" : "Clear all zero pairs"}
+                        >
+                            <Trash2 size={14} className="text-rose-500" />
+                            <span className="text-xs font-bold text-slate-700">{lang === 'sv' ? "Rensa nollpar" : "Clear zero pairs"}</span>
+                        </button>
+                    </div>
+                </>
             )}
         </div>
     );

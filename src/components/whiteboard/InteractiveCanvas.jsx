@@ -328,37 +328,35 @@ function InteractiveCanvas({
     }, [activeTool, elements, editingId, isOverlay]);
 
     // 4. Decoupled Drawer Tool Spawner
-    // src/components/whiteboard/InteractiveCanvas.jsx
-    // src/components/whiteboard/InteractiveCanvas.jsx
-const handleSpawnFromDrawer = (type, payload = {}) => {
-    // Non-element canvas mode switches (pen, eraser, etc.)
-    const toolModes = ['pen', 'highlighter', 'eraser', 'line', 'select'];
-    if (toolModes.includes(type)) {
-        setActiveTool(type);
-        handleToggleDrawer(null);
-        return;
-    }
+    const handleSpawnFromDrawer = (type, payload = {}) => {
+        // Non-element canvas mode switches (pen, eraser, etc.)
+        const toolModes = ['pen', 'highlighter', 'eraser', 'line', 'select'];
+        if (toolModes.includes(type)) {
+            setActiveTool(type);
+            handleToggleDrawer(null);
+            return;
+        }
 
-    const toolDef = getToolDefinition(type);
-    if (!toolDef || typeof toolDef.createDefault !== 'function') return;
+        const toolDef = getToolDefinition(type);
+        if (!toolDef || typeof toolDef.createDefault !== 'function') return;
 
-    const id = `el_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    
-    // Transparent pass-through: Canvas does not know or care what tool or payload this is
-    const newElement = toolDef.createDefault(id, color, { type, ...payload });
-    
-    setElements(prev => {
-        // Pass the live elements list so the spawner knows how many tiles already exist
-        const newElement = toolDef.createDefault(id, color, { 
-            type, 
-            ...payload, 
-            existingElements: prev 
+        const id = `el_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        
+        // Transparent pass-through: Canvas does not know or care what tool or payload this is
+        const newElement = toolDef.createDefault(id, color, { type, ...payload });
+        
+        setElements(prev => {
+            // Pass the live elements list so the spawner knows how many tiles already exist
+            const newElement = toolDef.createDefault(id, color, { 
+                type, 
+                ...payload, 
+                existingElements: prev 
+            });
+            return [...prev, newElement];
         });
-        return [...prev, newElement];
-    });
 
-    setSelectedIds([id]);
-};
+        setSelectedIds([id]);
+    };
 
     const getSmoothPathData = (points) => {
         if (!points || points.length === 0) return '';

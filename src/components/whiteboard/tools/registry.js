@@ -19,6 +19,7 @@ import { Shapes3DTool } from './geometry/Shapes3DTool';
 import { AlgebraTileTool } from './manipulatives/AlgebraTileTool';
 import { IntegerCounterTool } from './manipulatives/IntegerCounterTool';
 import AngleArcTool from './geometry/AngleArcTool';
+import BaseTenBlocksTool from './manipulatives/BaseTenBlocksTool';
 
 import { 
     Clock, Timer, Calculator, MessageCircle, FileText, 
@@ -27,13 +28,6 @@ import {
 } from 'lucide-react';
 
 export const CATEGORY_DEFINITIONS = {
-    algebra: {
-        id: 'algebra',
-        label: { sv: 'Algebrabrickor', en: 'Algebra Tiles' },
-        icon: Layers,
-        color: 'text-indigo-600',
-        activeBg: 'bg-indigo-600'
-    },
     fractions: {
         id: 'fractions',
         label: { sv: 'Bråk & Sannolikhet', en: 'Fractions & Chance' },
@@ -60,7 +54,8 @@ export const CATEGORY_DEFINITIONS = {
         label: { sv: 'Tal & Räkning', en: 'Numbers & Arithmetic' },
         icon: Dices,
         color: 'text-rose-600',
-        activeBg: 'bg-rose-600'
+        activeBg: 'bg-rose-600',
+        modes: ['counters', 'base10', 'algebra']
     }
 };
 
@@ -232,7 +227,7 @@ export const TOOL_REGISTRY = {
     // --- Manipulatives ---
     algebra_tile: {
         id: 'algebra_tile',
-        category: 'algebra',
+        category: 'arithmetic',
         name: { sv: 'Algebrabrickor', en: 'Algebra Tiles' },
         icon: Layers,
         tool: AlgebraTileTool
@@ -243,6 +238,13 @@ export const TOOL_REGISTRY = {
         name: { sv: 'Räknemarkörer (+/−)', en: 'Integer Counters (+/−)' },
         icon: CircleDot,
         tool: IntegerCounterTool
+    },
+    base_ten_block: {
+        id: 'base_ten_block',
+        category: 'arithmetic',
+        name: { sv: 'Bas-10 block', en: 'Base-10 Blocks' },
+        icon: Box,
+        tool: BaseTenBlocksTool
     }
 };
 

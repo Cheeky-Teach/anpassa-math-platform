@@ -4,6 +4,7 @@ import { X, Layers, Box, PieChart, LineChart, Dices } from 'lucide-react';
 import { CATEGORY_DEFINITIONS, getToolsByCategory } from './tools/registry';
 import AlgebraTileBin from './tools/manipulatives/AlgebraTileBin';
 import IntegerCounterBin from './tools/manipulatives/IntegerCounterBin';
+import TabbedDrawer from './TabbedDrawer';
 
 export default function WhiteboardDrawer({ 
     activeDrawer, 
@@ -53,28 +54,13 @@ export default function WhiteboardDrawer({
             {/* Scrollable Body Content */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden pr-1 flex flex-col gap-3 min-h-0 custom-scrollbar">
                 
-                {/* 1. Custom Specialized Bin: Algebra Tiles */}
+                {/* 1. Numbers & Arithmetic Hub */}
                 {activeDrawer === 'arithmetic' ? (
-                    <IntegerCounterBin 
-                        onSpawn={(val, coords) => onSpawn('integer_counter', { 
-                            value: val, 
-                            ...(coords || {}),
-                            existingElements: elements 
-                        })}
+                    <TabbedDrawer 
+                        onSpawn={onSpawn}
                         elements={elements}
                         setElements={setElements}
                         lang={lang}
-                    />
-                ) : activeDrawer === 'algebra' ? (
-                    <AlgebraTileBin 
-                        onSpawn={(kind, sign, side) => onSpawn('algebra_tile', { 
-                            kind, 
-                            sign, 
-                            side, 
-                            existingElements: elements 
-                        })} 
-                        lang={lang} 
-                        showDivider={showDividingLine}
                     />
                 ) : activeDrawer === 'shapes' ? (
                     /* 2. Specialized Shapes Category (2D + 3D sub-grids) */

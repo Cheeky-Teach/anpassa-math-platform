@@ -231,7 +231,7 @@ export const AlgebraTileTool = {
           dominantBaseline="central"
           fontFamily="system-ui, -apple-system, sans-serif"
           fontWeight="900"
-          fontSize={kind === '1' ? 18 : 24}
+          fontSize={kind === '1' ? 24 : 30}
           fill="#ffffff"
           pointerEvents="none"
         >

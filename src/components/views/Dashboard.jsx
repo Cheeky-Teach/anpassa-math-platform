@@ -397,32 +397,50 @@ const Dashboard = ({
         };
     };
     
-    const fetchArchive = async () => {
-        setIsLoadingArchive(true);
-        try {
-            const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
-            const { data, error } = await supabase
-                .from('rooms')
-                .select('*, responses(is_correct, student_alias)')
-                .eq('teacher_id', profile.id)
-                .eq('status', 'closed')
-                .gt('created_at', cutoff) 
-                .order('created_at', { ascending: false });
+    // Replace your existing fetchArchive function in Dashboard.jsx with this:
+
+const fetchArchive = async () => {
+    setIsLoadingArchive(true);
+    try {
+        const cutoff = new Date(Date.now() - 192 * 60 * 60 * 1000).toISOString();
+        const { data, error } = await supabase
+            .from('rooms')
+            .select('*, responses(is_correct, student_alias)')
+            .eq('teacher_id', profile.id)
+            .eq('status', 'closed')
+            .gt('created_at', cutoff)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+
+        const processed = (data || []).map(room => {
+            const total = room.responses?.length || 0;
+            const correct = room.responses?.filter(r => r.is_correct).length || 0;
+            const uniqueStudents = new Set(room.responses?.map(r => r.student_alias)).size;
+            const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+            // 🟢 Use the database `expires_at` column directly
+            const expirationDate = room.expires_at ? new Date(room.expires_at) : null;
+            const isExpired = expirationDate ? expirationDate < new Date() : false;
             
-            if (error) throw error;
+            const formattedExpires = expirationDate ? expirationDate.toLocaleDateString(lang === 'sv' ? 'sv-SE' : 'en-US', {
+                month: 'short', day: 'numeric'
+            }) : '';
 
-            const processed = (data || []).map(room => {
-                const total = room.responses?.length || 0;
-                const correct = room.responses?.filter(r => r.is_correct).length || 0;
-                const uniqueStudents = new Set(room.responses?.map(r => r.student_alias)).size;
-                const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
-                return { ...room, accuracy, studentCount: uniqueStudents };
-            });
+            return { 
+                ...room, 
+                accuracy, 
+                studentCount: uniqueStudents,
+                expirationText: isExpired 
+                    ? (lang === 'sv' ? "Utgick" : "Expired") 
+                    : (lang === 'sv' ? `Raderas ${formattedExpires}` : `Expires ${formattedExpires}`)
+            };
+        });
 
-            setArchivedSessions(processed);
-        } catch (err) { console.error("Archive Fetch Error:", err); }
-        finally { setIsLoadingArchive(false); }
-    };
+        setArchivedSessions(processed);
+    } catch (err) { console.error("Archive Fetch Error:", err); }
+    finally { setIsLoadingArchive(false); }
+};
 
     const activeCategoryData = CATEGORIES[expandedCategory];
     const themeColorString = activeCategoryData?.color || 'emerald';
@@ -1233,8 +1251,16 @@ const Dashboard = ({
                                                 <div className="min-w-0">
                                                     <h4 className="font-bold text-[var(--text-main)] text-base truncate leading-none mb-2">{session.title || (isDoNow ? "Do Now Grid" : "Live Lektion")}</h4>
                                                     <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-                                                        <span className="flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border-main)] px-2 py-1 rounded-md"><Calendar size={10}/> {new Date(session.created_at).toLocaleDateString()}</span>
-                                                        <span className="flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border-main)] px-2 py-1 rounded-md"><Users size={10}/> {session.studentCount} Elever</span>
+                                                        <span className="flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border-main)] px-2 py-1 rounded-md">
+                                                            <Calendar size={10}/> {new Date(session.created_at).toLocaleDateString()}
+                                                        </span>
+                                                        {/* 🟢 Render the database expiration badge */}
+                                                        <span className="flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border-main)] px-2 py-1 rounded-md text-amber-600 dark:text-amber-400">
+                                                            <Clock size={10}/> {session.expirationText}
+                                                        </span>
+                                                        <span className="flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border-main)] px-2 py-1 rounded-md">
+                                                            <Users size={10}/> {session.studentCount} {lang === 'sv' ? "Elever" : "Students"}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>

@@ -57,7 +57,7 @@ export default function AlgebraTileBin({ onSpawn, lang = 'sv', showDivider = tru
                     <button
                         key={`${t.kind}_${t.sign}_${idx}`}
                         type="button"
-                        onClick={() => onSpawn(t.kind, t.sign, targetSide)}
+                        onClick={() => onSpawn('algebra_tile', { kind: t.kind, sign: t.sign, side: targetSide })}
                         className="group flex flex-col items-center justify-end p-2 rounded-2xl hover:bg-slate-100/70 border border-transparent hover:border-slate-200 transition-all cursor-pointer active:scale-95 w-full"
                         title={lang === 'sv' ? `Lägg till ${t.label} i ${targetSide}` : `Add ${t.label}`}
                     >
