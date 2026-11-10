@@ -150,9 +150,10 @@ export const BaseTenBlocksTool = {
                       { w: r, h: r };
 
         const fillColor = el.blockType === 'ones' ? '#0284c7' : 
-                          el.blockType === 'tens' ? '#0284c7' : '#0284c7'; 
-        // Actually, for base 10, colors are usually distinct, but let's keep it simple for now
-        // or maybe use a color scale.
+                          el.blockType === 'tens' ? '#ea580c' : '#16a34a'; 
+        
+        const strokeColor = el.blockType === 'ones' ? '#0369a1' : 
+                            el.blockType === 'tens' ? '#c2410c' : '#15803d';
         
         const isCurrentSelected = isSelected || (options.selectedIds && options.selectedIds.includes(el.id));
 
@@ -179,7 +180,7 @@ export const BaseTenBlocksTool = {
                     width={dims.w} 
                     height={dims.h} 
                     fill={fillColor} 
-                    stroke="#0369a1" 
+                    stroke={strokeColor} 
                     strokeWidth="3.5" 
                     filter="drop-shadow(0 6px 14px rgba(0,0,0,0.18))"
                     className="transition-colors duration-200 pointer-events-auto"
@@ -196,20 +197,46 @@ export const BaseTenBlocksTool = {
                     className="pointer-events-none"
                 />
 
-                {/* 4. Large Centered Sign Glyph */}
-                <text 
-                    x={cx} 
-                    y={cy} 
-                    textAnchor="middle" 
-                    dominantBaseline="central" 
-                    fontSize={dims.w > 100 ? "24" : "36"} 
-                    fontWeight="900" 
-                    fill="#ffffff" 
-                    fontFamily="ui-sans-serif, system-ui, -apple-system, sans-serif"
-                    className="pointer-events-none select-none drop-shadow-xs"
-                >
-                    {el.blockType === 'ones' ? '1' : el.blockType === 'tens' ? '10' : '100'}
-                </text>
+                {/* 4. Internal Geometry */}
+                {el.blockType === 'tens' && (
+                    <g>
+                        {Array.from({ length: 10 }).map((_, i) => (
+                            <rect 
+                                key={i}
+                                x={0} 
+                                y={i * (dims.h / 10)} 
+                                width={dims.w} 
+                                height={dims.h / 10} 
+                                fill="none" 
+                                stroke={strokeColor} 
+                                strokeWidth={2} 
+                                opacity={1.0}
+                            />
+                        ))}
+                    </g>
+                )}
+
+                {el.blockType === 'hundreds' && (
+                    <g>
+                        {Array.from({ length: 10 }).map((_, row) => (
+                            <g key={row}>
+                                {Array.from({ length: 10 }).map((_, col) => (
+                                    <rect 
+                                        key={col}
+                                        x={col * (dims.w / 10)} 
+                                        y={row * (dims.h / 10)} 
+                                        width={dims.w / 10} 
+                                        height={dims.h / 10} 
+                                        fill="none" 
+                                        stroke={strokeColor} 
+                                        strokeWidth={2} 
+                                        opacity={1.0}
+                                    />
+                                ))}
+                            </g>
+                        ))}
+                    </g>
+                )}
 
                 {/* 5. Magnetic Zero-Pair Indicator Badge */}
                 {el.pairedWithId && (
