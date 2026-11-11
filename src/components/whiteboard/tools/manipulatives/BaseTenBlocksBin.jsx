@@ -1,9 +1,16 @@
 // src/components/whiteboard/tools/manipulatives/BaseTenBlocksBin.jsx
 import React, { useMemo, useCallback } from 'react';
 import BaseTenBlocksTool from './BaseTenBlocksTool';
-import { Sparkles, Trash2 } from 'lucide-react';
+import { Sparkles, Trash2, Combine, Split } from 'lucide-react';
 
-export default function BaseTenBlocksBin({ onSpawn, elements = [], setElements = () => {}, lang = 'sv' }) {
+export default function BaseTenBlocksBin({ 
+    onSpawn, 
+    elements = [], 
+    setElements = () => {}, 
+    selectedIds = [],
+    setSelectedIds = () => {},
+    lang = 'sv' 
+}) {
     
     // Live calculation of all blocks currently on the whiteboard
     const { onesCount, tensCount, hundredsCount } = useMemo(() => {
@@ -30,15 +37,17 @@ export default function BaseTenBlocksBin({ onSpawn, elements = [], setElements =
         for (let i = 0; i < count; i++) {
             const col = i % 5;
             const row = Math.floor(i / 5);
-            onSpawn('base_ten_block', { blockType: type,
-                x: startX + col * 150,
-                y: startY + row * 150
+            onSpawn('base_ten_block', { 
+                blockType: type,
+                x: startX + col * (type === 'ones' ? 52 : type === 'tens' ? 52 : 420),
+                y: startY + row * (type === 'hundreds' ? 420 : 52)
             });
         }
     };
 
     const handleClearBlocks = () => {
         setElements(prev => prev.filter(el => el.type !== 'base_ten_block'));
+        setSelectedIds([]);
     };
 
     const handleSnapAll = useCallback(() => {
@@ -53,19 +62,50 @@ export default function BaseTenBlocksBin({ onSpawn, elements = [], setElements =
         });
     }, [setElements]);
 
-    const handleClearZeroPairs = useCallback(() => {
-        setElements(prev => {
-            const toRemove = new Set();
-            prev.forEach(el => {
-                if (el.type === 'base_ten_block' && el.pairedWithId) {
-                    toRemove.add(el.id);
-                    const partner = prev.find(p => p.id === el.pairedWithId);
-                    if (partner) toRemove.add(partner.id);
+    // Detect if the active canvas selection qualifies for a Merge or Split
+    const smartAction = useMemo(() => {
+        if (!selectedIds || selectedIds.length === 0) return null;
+
+        // 1. Check for 10-block Merge (10 ones -> 1 ten, or 10 tens -> 1 hundred)
+        const mergePlan = BaseTenBlocksTool.getValidMerge(selectedIds, elements);
+        if (mergePlan) {
+            return {
+                mode: 'merge',
+                label: mergePlan.targetType === 'tens'
+                    ? (lang === 'sv' ? "Slå ihop till 10:a" : "Merge to Ten")
+                    : (lang === 'sv' ? "Slå ihop till 100:a" : "Merge to Hundred"),
+                execute: () => {
+                    setElements(prev => [
+                        ...prev.filter(el => !mergePlan.removeIds.includes(el.id)),
+                        mergePlan.newBlock
+                    ]);
+                    setSelectedIds([mergePlan.newBlock.id]);
                 }
-            });
-            return prev.filter(el => !toRemove.has(el.id));
-        });
-    }, [setElements]);
+            };
+        }
+
+        // 2. Check for Single-Block Split (1 ten -> 10 ones, or 1 hundred -> 10 tens)
+        if (selectedIds.length === 1) {
+            const splitPlan = BaseTenBlocksTool.getValidSplit(selectedIds[0], elements);
+            if (splitPlan) {
+                return {
+                    mode: 'split',
+                    label: splitPlan.targetType === 'ones'
+                        ? (lang === 'sv' ? "Dela upp till 1:or" : "Split to Ones")
+                        : (lang === 'sv' ? "Dela upp till 10:or" : "Split to Tens"),
+                    execute: () => {
+                        setElements(prev => [
+                            ...prev.filter(el => !splitPlan.removeIds.includes(el.id)),
+                            ...splitPlan.newBlocks
+                        ]);
+                        setSelectedIds(splitPlan.newBlocks.map(b => b.id));
+                    }
+                };
+            }
+        }
+
+        return null;
+    }, [selectedIds, elements, lang, setElements, setSelectedIds]);
 
     return (
         <div className="flex flex-col gap-3 w-full font-sans select-none" data-whiteboard-interactive="true">
@@ -166,9 +206,10 @@ export default function BaseTenBlocksBin({ onSpawn, elements = [], setElements =
                     </button>
 
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 pt-2">
-                        {lang === 'sv' ? "Avancerade åtgärder" : "Advanced Actions"}
+                        {lang === 'sv' ? "Smarta åtgärder" : "Smart Actions"}
                     </span>
                     <div className="grid grid-cols-2 gap-2">
+                        {/* Snap Together Button */}
                         <button
                             type="button"
                             onClick={handleSnapAll}
@@ -179,14 +220,30 @@ export default function BaseTenBlocksBin({ onSpawn, elements = [], setElements =
                             <span className="text-xs font-bold text-slate-700">{lang === 'sv' ? "Snapa ihop" : "Snap together"}</span>
                         </button>
 
+                        {/* Context-Aware Dynamic Merge/Split Button */}
                         <button
                             type="button"
-                            onClick={handleClearZeroPairs}
-                            className="p-2.5 bg-white hover:bg-rose-50 border border-slate-200 rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-95"
-                            title={lang === 'sv' ? "Rensa alla nollpar" : "Clear all zero pairs"}
+                            disabled={!smartAction}
+                            onClick={() => smartAction?.execute()}
+                            className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer text-xs font-bold ${
+                                !smartAction
+                                    ? 'bg-slate-50 border-slate-200 text-slate-400 opacity-60 cursor-not-allowed'
+                                    : smartAction.mode === 'merge'
+                                    ? 'bg-amber-500 hover:bg-amber-600 border-amber-600 text-white shadow-sm active:scale-95'
+                                    : 'bg-indigo-600 hover:bg-indigo-700 border-indigo-700 text-white shadow-sm active:scale-95'
+                            }`}
+                            title={smartAction?.label || (lang === 'sv' ? "Välj 10 block för att slå ihop eller 1 för att dela upp" : "Select 10 blocks to merge or 1 to split")}
                         >
-                            <Trash2 size={14} className="text-rose-500" />
-                            <span className="text-xs font-bold text-slate-700">{lang === 'sv' ? "Rensa nollpar" : "Clear zero pairs"}</span>
+                            {smartAction?.mode === 'merge' ? (
+                                <Combine size={14} className="text-white" />
+                            ) : smartAction?.mode === 'split' ? (
+                                <Split size={14} className="text-white" />
+                            ) : (
+                                <Combine size={14} className="text-slate-400" />
+                            )}
+                            <span className="truncate">
+                                {smartAction?.label || (lang === 'sv' ? "Slå ihop / Dela" : "Merge / Split")}
+                            </span>
                         </button>
                     </div>
                 </>

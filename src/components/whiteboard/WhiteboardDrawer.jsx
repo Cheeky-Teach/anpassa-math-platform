@@ -13,7 +13,9 @@ export default function WhiteboardDrawer({
     lang = 'sv',
     showDividingLine = true,
     elements = [],
-    setElements = () => {}
+    setElements = () => {},
+    selectedIds = [],
+    setSelectedIds = () => {}
 }) {
     if (!activeDrawer) return null;
 
@@ -60,6 +62,8 @@ export default function WhiteboardDrawer({
                         onSpawn={onSpawn}
                         elements={elements}
                         setElements={setElements}
+                        selectedIds={selectedIds}
+                        setSelectedIds={setSelectedIds}
                         lang={lang}
                     />
                 ) : activeDrawer === 'shapes' ? (
@@ -68,8 +72,9 @@ export default function WhiteboardDrawer({
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                             {lang === 'sv' ? "2D Figurer" : "2D Shapes"}
                         </span>
+                        {/* In the 2D Shapes section */}
                         <div className="grid grid-cols-2 gap-2">
-                            {categoryTools.filter(t => !['shapes_3d'].includes(t.id)).map(t => {
+                            {categoryTools.filter(t => !['shapes_3d', 'angle_arc'].includes(t.id)).map(t => {
                                 const ToolIcon = t.icon;
                                 return (
                                     <button 

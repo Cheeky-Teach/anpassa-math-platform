@@ -4,22 +4,26 @@ import { RefreshCw, Sparkles } from 'lucide-react';
 
 const BASE_SIZE = 40;
 
+const BLOCK_DIMS = {
+    ones: { w: BASE_SIZE, h: BASE_SIZE },
+    tens: { w: BASE_SIZE, h: BASE_SIZE * 10 },
+    hundreds: { w: BASE_SIZE * 10, h: BASE_SIZE * 10 }
+};
+
+const BLOCK_COLORS = {
+    ones: { fill: '#0284c7', stroke: '#0369a1' },      // Blue
+    tens: { fill: '#ea580c', stroke: '#c2410c' },      // Orange
+    hundreds: { fill: '#16a34a', stroke: '#15803d' }   // Green
+};
+
 export const BaseTenBlocksTool = {
     type: 'base_ten_block',
     hasOptions: true,
 
     createDefault: (id, color = '#0284c7', payload = {}) => {
-        const dimensions = {
-            ones: { w: BASE_SIZE, h: BASE_SIZE },
-            tens: { w: BASE_SIZE, h: BASE_SIZE * 10 },
-            hundreds: { w: BASE_SIZE * 10, h: BASE_SIZE * 10 }
-        };
-
         const blockType = payload.blockType || 'ones';
-        const dim = dimensions[blockType] || dimensions.ones;
-        const isPos = blockType === 'ones' || blockType === 'tens' || blockType === 'hundreds';
+        const dim = BLOCK_DIMS[blockType] || BLOCK_DIMS.ones;
         
-        // Base origin based on type to keep them somewhat clustered
         const baseOrigin = { 
             x: blockType === 'ones' ? 520 : (blockType === 'tens' ? 640 : 760),
             y: 300 
@@ -54,8 +58,114 @@ export const BaseTenBlocksTool = {
         };
     },
 
-    // Snap to neighboring blocks of the same type!
-    snapAlgorithm: (target, allElements, threshold = 100) => {
+    // 1. Geometric Center of selected elements
+    getGeometricCenter(selectedIds = [], elements = []) {
+        const selected = elements.filter(el => selectedIds.includes(el.id));
+        if (selected.length === 0) return null;
+
+        const minX = Math.min(...selected.map(el => el.x));
+        const maxX = Math.max(...selected.map(el => el.x + (Number(el.width) || BASE_SIZE)));
+        const minY = Math.min(...selected.map(el => el.y));
+        const maxY = Math.max(...selected.map(el => el.y + (Number(el.height) || BASE_SIZE)));
+
+        return {
+            x: Math.round((minX + maxX) / 2),
+            y: Math.round((minY + maxY) / 2)
+        };
+    },
+
+    // 2. Valid Merge Calculation
+    getValidMerge(selectedIds = [], elements = []) {
+        if (!Array.isArray(selectedIds) || selectedIds.length !== 10) return null;
+
+        const selected = elements.filter(el => selectedIds.includes(el.id) && el.type === 'base_ten_block');
+        if (selected.length !== 10) return null;
+
+        const allOnes = selected.every(el => el.blockType === 'ones');
+        const allTens = selected.every(el => el.blockType === 'tens');
+
+        if (!allOnes && !allTens) return null;
+
+        const targetType = allOnes ? 'tens' : 'hundreds';
+        const targetDim = BLOCK_DIMS[targetType];
+        const center = this.getGeometricCenter(selectedIds, elements);
+        if (!center) return null;
+
+        return {
+            action: 'merge',
+            targetType,
+            removeIds: selected.map(el => el.id),
+            newBlock: {
+                id: `block_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+                type: 'base_ten_block',
+                blockType: targetType,
+                x: Math.round(center.x - targetDim.w / 2),
+                y: Math.round(center.y - targetDim.h / 2),
+                width: targetDim.w,
+                height: targetDim.h,
+                pairedWithId: null,
+                rotation: 0,
+                opacity: 1
+            }
+        };
+    },
+
+    // 3. Valid Split Calculation (Grid/column layout centered on original block)
+    getValidSplit(blockId, elements = []) {
+        const block = elements.find(el => el.id === blockId && el.type === 'base_ten_block');
+        if (!block || (block.blockType !== 'tens' && block.blockType !== 'hundreds')) {
+            return null;
+        }
+
+        const targetType = block.blockType === 'hundreds' ? 'tens' : 'ones';
+        const targetDim = BLOCK_DIMS[targetType];
+        const newBlocks = [];
+        const timestamp = Date.now();
+
+        if (block.blockType === 'tens') {
+            // Split 1 Ten into 10 Ones vertically aligned at original location
+            for (let i = 0; i < 10; i++) {
+                newBlocks.push({
+                    id: `split_${timestamp}_${i}`,
+                    type: 'base_ten_block',
+                    blockType: 'ones',
+                    x: Math.round(block.x),
+                    y: Math.round(block.y + i * BASE_SIZE),
+                    width: targetDim.w,
+                    height: targetDim.h,
+                    pairedWithId: null,
+                    rotation: 0,
+                    opacity: 1
+                });
+            }
+        } else if (block.blockType === 'hundreds') {
+            // Split 1 Hundred into 10 Tens arranged side-by-side
+            for (let i = 0; i < 10; i++) {
+                newBlocks.push({
+                    id: `split_${timestamp}_${i}`,
+                    type: 'base_ten_block',
+                    blockType: 'tens',
+                    x: Math.round(block.x + i * BASE_SIZE),
+                    y: Math.round(block.y),
+                    width: targetDim.w,
+                    height: targetDim.h,
+                    pairedWithId: null,
+                    rotation: 0,
+                    opacity: 1
+                });
+            }
+        }
+
+        return {
+            action: 'split',
+            targetType,
+            removeIds: [block.id],
+            newBlocks
+        };
+    },
+
+    // Snap to neighboring blocks of the same type
+    snapAlgorithm: (target, allElements, threshold = 60) => {
         let bestX = target.x;
         let bestY = target.y;
         let matchedPartnerId = null;
@@ -72,9 +182,8 @@ export const BaseTenBlocksTool = {
             const dist = Math.hypot(other.x - target.x, other.y - target.y);
             if (dist < minDistance) {
                 minDistance = dist;
-                // Snap to the side of the other block
-                bestX = other.x + (target.blockType === 'tens' ? other.width : other.width);
-                bestY = other.y + (target.blockType === 'hundreds' ? other.height : other.height);
+                bestX = other.x + other.width;
+                bestY = other.y;
                 matchedPartnerId = other.id;
             }
         }
@@ -90,7 +199,14 @@ export const BaseTenBlocksTool = {
         const toggleType = () => {
             const types = ['ones', 'tens', 'hundreds'];
             const nextIndex = (types.indexOf(el.blockType) + 1) % types.length;
-            setElements(prev => prev.map(o => o.id === el.id ? { ...o, blockType: types[nextIndex] } : o));
+            const nextType = types[nextIndex];
+            const nextDim = BLOCK_DIMS[nextType];
+            setElements(prev => prev.map(o => o.id === el.id ? { 
+                ...o, 
+                blockType: nextType,
+                width: nextDim.w,
+                height: nextDim.h 
+            } : o));
         };
 
         const annihilateZeroPair = () => {
@@ -132,115 +248,157 @@ export const BaseTenBlocksTool = {
             showUI = false, 
             renderHandles = null, 
             setElements = null,
-            setSelectedId = null,
-            setInteractionMode = null,
-            setIsDrawing = null,
-            setDragOffset = null,
-            getCoordinates = null
+            selectedIds = [],
+            elements = []
         } = options;
 
         if (!el) return null;
 
-        const r = BASE_SIZE;
-        const cx = r;
-        const cy = r;
+        const dims = BLOCK_DIMS[el.blockType] || BLOCK_DIMS.ones;
+        const colors = BLOCK_COLORS[el.blockType] || BLOCK_COLORS.ones;
+        const isCurrentSelected = isSelected || selectedIds.includes(el.id);
 
-        const dims = el.blockType === 'tens' ? { w: r, h: r * 10 } : 
-                      el.blockType === 'hundreds' ? { w: r * 10, h: r * 10 } : 
-                      { w: r, h: r };
-
-        const fillColor = el.blockType === 'ones' ? '#0284c7' : 
-                          el.blockType === 'tens' ? '#ea580c' : '#16a34a'; 
-        
-        const strokeColor = el.blockType === 'ones' ? '#0369a1' : 
-                            el.blockType === 'tens' ? '#c2410c' : '#15803d';
-        
-        const isCurrentSelected = isSelected || (options.selectedIds && options.selectedIds.includes(el.id));
+        // Compute merge validity for ghost preview
+        const mergePlan = isCurrentSelected ? BaseTenBlocksTool.getValidMerge(selectedIds, elements) : null;
+        const isPrimarySelected = isCurrentSelected && selectedIds[0] === el.id;
 
         return (
             <g 
                 key={el.id} 
                 data-id={el.id} 
-                transform={`translate(${el.x}, ${el.y}) rotate(${el.rotation || 0}, ${cx}, ${cy})`}
+                transform={`translate(${el.x}, ${el.y}) rotate(${el.rotation || 0}, ${dims.w / 2}, ${dims.h / 2})`}
                 className="select-none cursor-move pointer-events-auto"
                 onDoubleClick={(e) => {
                     e.stopPropagation();
-                    if (setElements) {
-                        setElements(prev => prev.map(item => item.id === el.id ? { ...item, blockType: (item.blockType === 'ones' ? 'tens' : item.blockType === 'tens' ? 'hundreds' : 'ones') } : item));
-                    }
+                    if (!setElements) return;
+                    const types = ['ones', 'tens', 'hundreds'];
+                    const nextType = types[(types.indexOf(el.blockType) + 1) % types.length];
+                    const nextDim = BLOCK_DIMS[nextType];
+                    setElements(prev => prev.map(item => item.id === el.id ? { 
+                        ...item, 
+                        blockType: nextType,
+                        width: nextDim.w,
+                        height: nextDim.h 
+                    } : item));
                 }}
             >
-                {/* 1. Tactile 3D Extrusion Drop Shadow */}
-                <rect x={0} y={0} width={dims.w} height={dims.h} fill="#0f172a" fillOpacity="0.22" className="pointer-events-none" />
+                {/* 1. 3D Extrusion Drop Shadow */}
+                <rect 
+                    x={0} 
+                    y={4} 
+                    width={dims.w} 
+                    height={dims.h} 
+                    fill="#0f172a" 
+                    fillOpacity="0.2" 
+                    rx={4}
+                    className="pointer-events-none" 
+                />
 
-                {/* 2. Physical Acrylic Puck Body */}
+                {/* 2. Physical Puck Body */}
                 <rect 
                     x={0} 
                     y={0} 
                     width={dims.w} 
                     height={dims.h} 
-                    fill={fillColor} 
-                    stroke={strokeColor} 
-                    strokeWidth="3.5" 
-                    filter="drop-shadow(0 6px 14px rgba(0,0,0,0.18))"
+                    fill={colors.fill} 
+                    stroke={colors.stroke} 
+                    strokeWidth="3" 
+                    rx={4}
+                    filter="drop-shadow(0 4px 10px rgba(0,0,0,0.14))"
                     className="transition-colors duration-200 pointer-events-auto"
                 />
 
-                {/* 3. Gloss Reflection Arc */}
-                <path 
-                    d={`M ${cx - dims.w * 0.65} ${cy - dims.h * 0.25} A ${dims.w * 0.72} ${dims.h * 0.68} 0 0 1 ${cx + dims.w * 0.65} ${cy - dims.h * 0.25}`} 
-                    fill="none" 
-                    stroke="#ffffff" 
-                    strokeWidth="3" 
-                    strokeLinecap="round" 
-                    opacity="0.45" 
-                    className="pointer-events-none"
+                {/* 3. Gloss Reflection Strip */}
+                <rect 
+                    x={2} 
+                    y={2} 
+                    width={Math.max(4, dims.w - 4)} 
+                    height={Math.max(4, Math.min(12, dims.h * 0.15))} 
+                    fill="#ffffff" 
+                    fillOpacity="0.35" 
+                    rx={2}
+                    className="pointer-events-none" 
                 />
 
-                {/* 4. Internal Geometry */}
+                {/* 4. Internal Segments (Tens: 10 vertical segments) */}
                 {el.blockType === 'tens' && (
-                    <g>
-                        {Array.from({ length: 10 }).map((_, i) => (
-                            <rect 
+                    <g className="pointer-events-none">
+                        {Array.from({ length: 9 }).map((_, i) => (
+                            <line 
                                 key={i}
-                                x={0} 
-                                y={i * (dims.h / 10)} 
-                                width={dims.w} 
-                                height={dims.h / 10} 
-                                fill="none" 
-                                stroke={strokeColor} 
+                                x1={0} 
+                                y1={(i + 1) * BASE_SIZE} 
+                                x2={dims.w} 
+                                y2={(i + 1) * BASE_SIZE} 
+                                stroke={colors.stroke} 
                                 strokeWidth={2} 
-                                opacity={1.0}
+                                opacity={0.8}
                             />
                         ))}
                     </g>
                 )}
 
+                {/* 4. Internal Segments (Hundreds: 10x10 Grid Array) */}
                 {el.blockType === 'hundreds' && (
-                    <g>
-                        {Array.from({ length: 10 }).map((_, row) => (
-                            <g key={row}>
-                                {Array.from({ length: 10 }).map((_, col) => (
-                                    <rect 
-                                        key={col}
-                                        x={col * (dims.w / 10)} 
-                                        y={row * (dims.h / 10)} 
-                                        width={dims.w / 10} 
-                                        height={dims.h / 10} 
-                                        fill="none" 
-                                        stroke={strokeColor} 
-                                        strokeWidth={2} 
-                                        opacity={1.0}
-                                    />
-                                ))}
-                            </g>
+                    <g className="pointer-events-none">
+                        {Array.from({ length: 9 }).map((_, i) => (
+                            <React.Fragment key={i}>
+                                {/* Horizontal dividers */}
+                                <line 
+                                    x1={0} 
+                                    y1={(i + 1) * BASE_SIZE} 
+                                    x2={dims.w} 
+                                    y2={(i + 1) * BASE_SIZE} 
+                                    stroke={colors.stroke} 
+                                    strokeWidth={2} 
+                                    opacity={0.8}
+                                />
+                                {/* Vertical dividers */}
+                                <line 
+                                    x1={(i + 1) * BASE_SIZE} 
+                                    y1={0} 
+                                    x2={(i + 1) * BASE_SIZE} 
+                                    y2={dims.h} 
+                                    stroke={colors.stroke} 
+                                    strokeWidth={2} 
+                                    opacity={0.8}
+                                />
+                            </React.Fragment>
                         ))}
                     </g>
                 )}
 
-                {/* 5. Magnetic Zero-Pair Indicator Badge */}
+                {/* 5. Ghost Preview (Rendered once by the primary selection item) */}
+                {isPrimarySelected && mergePlan && (() => {
+                    const targetDims = BLOCK_DIMS[mergePlan.targetType];
+                    const targetColors = BLOCK_COLORS[mergePlan.targetType];
+                    const ghostRelX = mergePlan.newBlock.x - el.x;
+                    const ghostRelY = mergePlan.newBlock.y - el.y;
+
+                    return (
+                        <g 
+                            transform={`translate(${ghostRelX}, ${ghostRelY})`} 
+                            className="pointer-events-none animate-pulse"
+                        >
+                            <rect 
+                                x={0} 
+                                y={0} 
+                                width={targetDims.w} 
+                                height={targetDims.h} 
+                                fill={targetColors.fill} 
+                                fillOpacity={0.22} 
+                                stroke={targetColors.stroke} 
+                                strokeWidth={2.5} 
+                                strokeDasharray="6 4"
+                                rx={6}
+                            />
+                        </g>
+                    );
+                })()}
+
+                {/* 6. Magnetic Zero-Pair Indicator Badge */}
                 {el.pairedWithId && (
-                    <g transform={`translate(${dims.w + 4}, ${-dims.h / 2})`} className="pointer-events-none select-none">
+                    <g transform={`translate(${dims.w + 4}, 0)`} className="pointer-events-none select-none">
                         <rect x={0} y={0} width={42} height={24} rx={12} fill="#0f172a" stroke="#cbd5e1" strokeWidth={1.5} />
                         <text x={21} y={13} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="900" fill="#fbbf24">
                             = 0
@@ -248,10 +406,10 @@ export const BaseTenBlocksTool = {
                     </g>
                 )}
 
-                {/* 6. Standard Whiteboard Selection Handles */}
+                {/* 7. Standard Whiteboard Selection Handles */}
                 {showUI && renderHandles && (
                     <g transform={`translate(${-el.x}, ${-el.y})`}>
-                        {renderHandles(el, dims.w, { canRotate: false })}
+                        {renderHandles(el, dims.w / 2, { canRotate: false })}
                     </g>
                 )}
             </g>

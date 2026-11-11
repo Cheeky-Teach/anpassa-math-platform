@@ -782,12 +782,17 @@ function InteractiveCanvas({
         const cx = (isC || isP) ? el.x + actualRadius : el.x + objWidth / 2;
         const rigX = (isC || isP) ? el.x + actualRadius * 2 : el.x + objWidth;
 
+        // Center of the object used as origin for counter-rotation
+        const rot = Number(el.rotation) || 0;
+        const originX = (isC || isP) ? el.x + actualRadius : el.x + objWidth / 2;
+        const originY = (isC || isP) ? el.y + actualRadius : el.y + objHeight / 2;
+
         const Tool = getToolDefinition(el.type);
         const hasCustomContextMenu = Tool && typeof Tool.renderContextMenu === 'function';
 
         return (
             <g className="ui-ignore pointer-events-auto">
-                {/* Visual Selection Outline */}
+                {/* 1. Visual Selection Outline (Rotates with the object so it wraps the shape neatly) */}
                 <rect 
                     data-ui="true"
                     x={el.x - 4} 
@@ -801,79 +806,8 @@ function InteractiveCanvas({
                     opacity="0.6" 
                     className="pointer-events-none" 
                 />
-                
-                {/* System Actions (Move, Copy, Delete) */}
-                <foreignObject x={el.x} y={topY - 10} width={260} height={70} className="overflow-visible pointer-events-auto">
-                    <div className="flex gap-2 items-center bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border-2 border-slate-200 shadow-xl w-max">
-                        <button 
-                            onPointerDown={(e) => {
-                                e.stopPropagation();
-                                setSelectedIds([el.id]);
-                                setInteractionMode('moving');
-                                setIsDrawing(true);
-                                const { x, y } = getCoordinates(e, false);
-                                dragCoordRef.current = { x, y };
-                            }}
-                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-move pointer-events-auto transition-colors" 
-                            title={lang === 'sv' ? 'Flytta' : 'Move'}
-                        >
-                            <Move size={20} />
-                        </button>
-                        <button 
-                            onClick={() => duplicateElement(el.id)} 
-                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-pointer pointer-events-auto" 
-                            title={lang === 'sv' ? 'Kopiera' : 'Copy'}
-                        >
-                            <Copy size={20}/>
-                        </button>
 
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                downloadElementAsImage(svgRef.current, el.id, {
-                                    fileName: `${el.type}-${Date.now()}.png`,
-                                    backgroundColor: 'transparent' // Transparent background makes it ideal for slides & worksheets
-                                });
-                            }}
-                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-pointer pointer-events-auto transition-colors" 
-                            title={lang === 'sv' ? 'Ladda ner objekt som bild' : 'Download object as image'}
-                        >
-                            <Download size={20} />
-                        </button>
-
-                        <div className="w-px h-5 bg-slate-200 mx-0.5" />
-                        <button 
-                            onClick={() => deleteElement(el.id)} 
-                            className="!bg-white !text-rose-500 border border-rose-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-rose-50 cursor-pointer pointer-events-auto" 
-                            title={lang === 'sv' ? 'Ta bort' : 'Delete'}
-                        >
-                            <Trash2 size={20}/>
-                        </button>
-                    </div>
-                </foreignObject>
-
-                {/* Custom Context Menu */}
-                {hasCustomContextMenu && (
-                    <foreignObject x={el.x} y={botY + 6} width={1200} height={100} className="overflow-visible pointer-events-auto">
-                        <div 
-                            onPointerDown={(e) => e.stopPropagation()} 
-                            data-whiteboard-interactive="true"
-                            className="flex items-center gap-4 !bg-white !text-slate-900 px-5 py-3 rounded-2xl border-2 border-slate-200/90 shadow-2xl pointer-events-auto text-3xl font-bold font-sans w-max select-none"
-                            style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
-                        >
-                            {Tool.renderContextMenu({
-                                el,
-                                setElements,
-                                lang,
-                                t,
-                                setEditingId,
-                                onUpdate: (updated) => setElements(prev => prev.map(item => item.id === el.id ? updated : item))
-                            })}
-                        </div>
-                    </foreignObject>
-                )}
-
-                {/* Rotation Handle */}
+                {/* 2. Rotation Handle (Keeps position relative to rotated bounding box) */}
                 {canRotate && el.type !== 'volume_cue' && (
                     <circle 
                         cx={cx} 
@@ -891,7 +825,7 @@ function InteractiveCanvas({
                     />
                 )}
                 
-                {/* Resize Handle */}
+                {/* 3. Resize Handle (Keeps position on the corner of the bounding box) */}
                 <rect 
                     x={rigX - 9} 
                     y={el.y + objHeight - 9} 
@@ -908,13 +842,90 @@ function InteractiveCanvas({
                         setIsDrawing(true);
                     }} 
                 />
+                
+                {/* 🟢 4. System Action Bar (Counter-rotated around its own center so it's always level & readable) */}
+                <g transform={`rotate(${-rot}, ${el.x + 80}, ${topY + 25})`}>
+                    <foreignObject x={el.x} y={topY - 10} width={260} height={70} className="overflow-visible pointer-events-auto">
+                        <div className="flex gap-2 items-center bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border-2 border-slate-200 shadow-xl w-max">
+                            <button 
+                                onPointerDown={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedIds([el.id]);
+                                    setInteractionMode('moving');
+                                    setIsDrawing(true);
+                                    const { x, y } = getCoordinates(e, false);
+                                    dragCoordRef.current = { x, y };
+                                }}
+                                className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-move pointer-events-auto transition-colors" 
+                                title={lang === 'sv' ? 'Flytta' : 'Move'}
+                            >
+                                <Move size={20} />
+                            </button>
+                            <button 
+                                onClick={() => duplicateElement(el.id)} 
+                                className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-pointer pointer-events-auto" 
+                                title={lang === 'sv' ? 'Kopiera' : 'Copy'}
+                            >
+                                <Copy size={20}/>
+                            </button>
+
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadElementAsImage(svgRef.current, el.id, {
+                                        fileName: `${el.type}-${Date.now()}.png`,
+                                        backgroundColor: 'transparent'
+                                    });
+                                }}
+                                className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-pointer pointer-events-auto transition-colors" 
+                                title={lang === 'sv' ? 'Ladda ner objekt som bild' : 'Download object as image'}
+                            >
+                                <Download size={20} />
+                            </button>
+
+                            <div className="w-px h-5 bg-slate-200 mx-0.5" />
+                            <button 
+                                onClick={() => deleteElement(el.id)} 
+                                className="!bg-white !text-rose-500 border border-rose-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-rose-50 cursor-pointer pointer-events-auto" 
+                                title={lang === 'sv' ? 'Ta bort' : 'Delete'}
+                            >
+                                <Trash2 size={20}/>
+                            </button>
+                        </div>
+                    </foreignObject>
+                </g>
+
+                {/* 🟢 5. Custom Context Menu (Counter-rotated so text/sliders/inputs stay horizontal) */}
+                {hasCustomContextMenu && (
+                    <g transform={`rotate(${-rot}, ${el.x + 100}, ${botY + 30})`}>
+                        <foreignObject x={el.x} y={botY + 6} width={1200} height={100} className="overflow-visible pointer-events-auto">
+                            <div 
+                                onPointerDown={(e) => e.stopPropagation()} 
+                                data-whiteboard-interactive="true"
+                                className="flex items-center gap-4 !bg-white !text-slate-900 px-5 py-3 rounded-2xl border-2 border-slate-200/90 shadow-2xl pointer-events-auto text-3xl font-bold font-sans w-max select-none"
+                                style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
+                            >
+                                {Tool.renderContextMenu({
+                                    el,
+                                    setElements,
+                                    lang,
+                                    t,
+                                    setEditingId,
+                                    onUpdate: (updated) => setElements(prev => prev.map(item => item.id === el.id ? updated : item))
+                                })}
+                            </div>
+                        </foreignObject>
+                    </g>
+                )}
             </g>
         );
     };
 
     const renderElement = (el) => {
         const isSelected = selectedIds.includes(el.id);
-        const showUI = isSelected || hoveredId === el.id;
+        // Only show individual toolbar & custom menu if exactly 1 item is selected
+        const isSingleSelected = selectedIds.length === 1 && isSelected;
+        const showUI = isSingleSelected;
         const transform = `rotate(${el.rotation || 0}, ${el.x + (el.width || 0)/2}, ${el.y + (el.height || 0)/2})`;
         
         const Tool = getToolDefinition(el.type);
@@ -1008,6 +1019,64 @@ function InteractiveCanvas({
                 onPointerMove={readOnly || !shouldInterceptEvents ? undefined : handlePointerMove}
                 onPointerUp={readOnly || !shouldInterceptEvents ? undefined : handlePointerUp}
             >
+                {/* Multi-Selection Group Outline + Floating Single Action Bar */}
+                {selectedIds.length > 1 && (() => {
+                    const selectedElements = elements.filter(el => selectedIds.includes(el.id));
+                    if (selectedElements.length <= 1) return null;
+
+                    const minX = Math.min(...selectedElements.map(el => Number(el.x) || 0));
+                    const maxX = Math.max(...selectedElements.map(el => (Number(el.x) || 0) + (Number(el.width) || 64)));
+                    const minY = Math.min(...selectedElements.map(el => Number(el.y) || 0));
+                    const maxY = Math.max(...selectedElements.map(el => (Number(el.y) || 0) + (Number(el.height) || 64)));
+                    const padding = 12;
+
+                    return (
+                        <g className="ui-ignore pointer-events-auto">
+                            {/* Group bounding box */}
+                            <rect
+                                x={minX - padding}
+                                y={minY - padding}
+                                width={maxX - minX + padding * 2}
+                                height={maxY - minY + padding * 2}
+                                fill="none"
+                                stroke="#6366f1"
+                                strokeWidth={2}
+                                strokeDasharray="6 4"
+                                rx={16}
+                                opacity={0.8}
+                            />
+
+                            {/* SINGLE Floating Action Bar for the whole cluster */}
+                            <foreignObject 
+                                x={minX - padding} 
+                                y={minY - padding - 64} 
+                                width={320} 
+                                height={60} 
+                                className="overflow-visible pointer-events-auto"
+                            >
+                                <div className="flex gap-2 items-center bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border-2 border-slate-200 shadow-xl w-max">
+                                    <span className="text-xs font-black text-indigo-600 px-2">
+                                        {selectedElements.length} {lang === 'sv' ? "valda" : "selected"}
+                                    </span>
+                                    <button 
+                                        onClick={() => handleDuplicateSelected()} 
+                                        className="p-2 hover:bg-slate-100 rounded-xl text-slate-700"
+                                        title={lang === 'sv' ? "Kopiera alla" : "Duplicate all"}
+                                    >
+                                        <Copy size={16} />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeleteSelected()} 
+                                        className="p-2 hover:bg-rose-50 text-rose-500 rounded-xl"
+                                        title={lang === 'sv' ? "Ta bort alla" : "Delete all"}
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </foreignObject>
+                        </g>
+                    );
+                })()}
                 {/* 🟢 SVG Grid Background Pattern Definitions */}
                 <defs>
                     <pattern id="whiteboard-small-grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -1048,38 +1117,7 @@ function InteractiveCanvas({
 
                     return (
                         <g className="pointer-events-none">
-                            <rect
-                                x={minX - padding}
-                                y={minY - padding}
-                                width={maxX - minX + padding * 2}
-                                height={maxY - minY + padding * 2}
-                                fill="none"
-                                stroke="#6366f1"
-                                strokeWidth={2}
-                                strokeDasharray="6 4"
-                                rx={16}
-                                opacity={0.8}
-                            />
-                            <rect
-                                x={minX - padding}
-                                y={minY - padding - 22}
-                                width={70}
-                                height={18}
-                                rx={6}
-                                fill="#6366f1"
-                            />
-                            <text
-                                x={minX - padding + 35}
-                                y={minY - padding - 10}
-                                textAnchor="middle"
-                                dominantBaseline="central"
-                                fill="#ffffff"
-                                fontSize={10}
-                                fontWeight="900"
-                                fontFamily="sans-serif"
-                            >
-                                {selectedElements.length} {lang === 'sv' ? "valda" : "selected"}
-                            </text>
+                            
                         </g>
                     );
                 })()}
@@ -1146,6 +1184,8 @@ function InteractiveCanvas({
                         showDividingLine={showDividingLine}
                         elements={elements}
                         setElements={setElements}
+                        selectedIds={selectedIds}
+                        setSelectedIds={setSelectedIds}
                     />
                 </div>
             )}
