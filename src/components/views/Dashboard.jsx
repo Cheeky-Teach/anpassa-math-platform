@@ -38,10 +38,10 @@ const getPartDisplayTitle = (part, partIndex, lang = 'sv') => {
     return topicLabel ? `${prefix} ${partIndex + 1}: ${topicLabel}` : `${prefix} ${partIndex + 1}`;
 };
 
-// Helper to retrieve level description and math example
+// Helper to retrieve level description, math example, and layout format
 const getLevelMetadata = (topicId, level, lang = 'sv') => {
     if (!topicId || level === undefined || level === null) {
-        return { description: "", mathExample: "" };
+        return { description: "", mathExample: "", isSentence: false };
     }
     const descriptionsObj = typeof LEVEL_DESCRIPTIONS !== 'undefined' ? LEVEL_DESCRIPTIONS : {};
     const topicDesc = descriptionsObj[topicId]?.[level];
@@ -55,14 +55,25 @@ const getLevelMetadata = (topicId, level, lang = 'sv') => {
             const foundTopic = cat.topics?.find(t => t.id === topicId);
             if (foundTopic) {
                 const foundLevel = foundTopic.levels?.find(l => l.lvl === level);
-                if (foundLevel?.ex) {
-                    mathExample = foundLevel.ex;
-                    break;
+                const firstVar = foundLevel?.variations?.[0];
+                const rawEx = foundLevel?.ex 
+                    || (typeof firstVar?.desc === 'object' ? (firstVar.desc[lang] || firstVar.desc.sv) : firstVar?.ex)
+                    || "";
+
+                if (rawEx) {
+                    const str = String(rawEx).trim();
+                    const looksLikePureMath = !str.includes('$') && /^[0-9xya-zA-Z+\-*/=()^\\{}\[\].,\s<>%°]+$/.test(str) && str.split(' ').length <= 4;
+                    mathExample = looksLikePureMath ? `$${str}$` : str;
                 }
+                break;
             }
         }
     }
-    return { description, mathExample };
+
+    const plainLength = mathExample.replace(/\$/g, '').length;
+    const isSentence = plainLength > 26 || mathExample.replace(/\$[^$]*\$/g, '').trim().split(/\s+/).length > 3;
+
+    return { description, mathExample, isSentence };
 };
 
 // Normalizer: Handles both legacy flat arrays and structured parts
@@ -124,6 +135,7 @@ const Dashboard = ({
     const [showCapacityModal, setShowCapacityModal] = useState(false);
     const [activeInstructionModal, setActiveInstructionModal] = useState(null);
     const [collapsedPartSections, setCollapsedPartSections] = useState({});
+    const [openDropdownTopicId, setOpenDropdownTopicId] = useState(null);
     
 
     const TEXT = {
@@ -1195,34 +1207,144 @@ const fetchArchive = async () => {
                                             </div>
                                         </div>
 
+                                        {/* Backdrop to close open dropdown when clicking outside */}
+                                        {openDropdownTopicId && (
+                                            <div 
+                                                className="fixed inset-0 z-20" 
+                                                onClick={() => setOpenDropdownTopicId(null)} 
+                                            />
+                                        )}
+
                                         <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3.5">
-                                            {activeCategoryData.topics.map(topic => (
-                                                <div key={topic.id} className="bg-[var(--bg-card)] rounded-[var(--radius-card)] p-5 border-2 border-[var(--border-main)] hover:border-[var(--brand-solid)] shadow-sm hover:shadow-lg transition-all group">
-                                                    <div className="font-bold text-[var(--text-main)] mb-4 flex items-center justify-between text-sm leading-tight">
-                                                        {topic.label[lang]}
-                                                        <div className="w-2 h-2 rounded-full bg-[var(--brand-solid)] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                                    </div>
-                                                    <div className="relative">
-                                                        <select 
-                                                            value={selectedTopic === topic.id ? selectedLevel : 0} 
-                                                            onChange={(e) => onSelect(topic.id, Number(e.target.value))} 
-                                                            className={`w-full p-3 pl-4 bg-[var(--bg-surface)] border-2 rounded-[var(--radius-btn)] text-xs font-bold text-[var(--text-main)] appearance-none transition-all cursor-pointer outline-none ${
-                                                                selectedTopic === topic.id ? `border-[var(--brand-solid)] shadow-md` : 'border-[var(--border-strong)] focus:border-[var(--brand-solid)]'
-                                                            }`}
-                                                        >
-                                                            <option value={0} disabled>{t.select_level}</option>
-                                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl] && (
-                                                                <option key={lvl} value={lvl}>
-                                                                    {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} — {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                        <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[var(--text-muted)]">
-                                                            <ChevronDown size={16} />
+                                            {activeCategoryData.topics.map(topic => {
+                                                const isThisTopicSelected = selectedTopic === topic.id && selectedLevel > 0;
+                                                const isDropdownOpen = openDropdownTopicId === topic.id;
+                                                const availableLevels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(
+                                                    lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl]
+                                                );
+
+                                                const selectedMeta = isThisTopicSelected
+                                                    ? getLevelMetadata(topic.id, selectedLevel, lang)
+                                                    : null;
+
+                                                return (
+                                                    <div 
+                                                        key={topic.id} 
+                                                        className={`relative bg-[var(--bg-card)] rounded-[var(--radius-card)] p-5 border-2 transition-all group ${
+                                                            isThisTopicSelected 
+                                                                ? 'border-[var(--brand-solid)] shadow-md' 
+                                                                : 'border-[var(--border-main)] hover:border-[var(--brand-solid)] shadow-sm hover:shadow-lg'
+                                                        } ${isDropdownOpen ? 'z-30' : 'z-10'}`}
+                                                    >
+                                                        {/* Topic Title & Level Count */}
+                                                        <div className="font-bold text-[var(--text-main)] mb-3.5 flex items-center justify-between gap-2 text-sm leading-tight">
+                                                            <span>{topic.label[lang]}</span>
+                                                            <span className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-surface)] px-2 py-0.5 rounded-md border border-[var(--border-main)] shrink-0">
+                                                                {availableLevels.length} {lang === 'sv' ? 'nivåer' : 'levels'}
+                                                            </span>
                                                         </div>
+
+                                                        {/* Custom Dropdown Trigger */}
+                                                        <div className="relative">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setOpenDropdownTopicId(isDropdownOpen ? null : topic.id)}
+                                                                className={`w-full p-3 pl-3.5 pr-3 bg-[var(--bg-surface)] border-2 rounded-[var(--radius-btn)] text-xs font-bold text-[var(--text-main)] flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
+                                                                    isDropdownOpen || isThisTopicSelected
+                                                                        ? 'border-[var(--brand-solid)] shadow-sm'
+                                                                        : 'border-[var(--border-strong)] hover:border-[var(--brand-solid)]'
+                                                                }`}
+                                                            >
+                                                                <span className="truncate">
+                                                                    {isThisTopicSelected ? (
+                                                                        <>
+                                                                            <span className="font-black text-[var(--brand-text)]">
+                                                                                {lang === 'sv' ? `Nivå ${selectedLevel}` : `Level ${selectedLevel}`}
+                                                                            </span>
+                                                                            {selectedMeta?.description && (
+                                                                                <span className="text-[var(--text-muted)] font-semibold">
+                                                                                    {' '}— {selectedMeta.description}
+                                                                                </span>
+                                                                            )}
+                                                                        </>
+                                                                    ) : (
+                                                                        <span className="text-[var(--text-muted)]">{t.select_level}</span>
+                                                                    )}
+                                                                </span>
+                                                                <ChevronDown 
+                                                                    size={16} 
+                                                                    className={`shrink-0 text-[var(--text-muted)] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180 text-[var(--brand-solid)]' : ''}`} 
+                                                                />
+                                                            </button>
+
+                                                            {/* Floating Rich Level Menu (Rendered ONLY when clicked) */}
+                                                            {isDropdownOpen && (
+                                                                <div className="absolute left-0 right-0 top-full mt-2 bg-[var(--bg-card)] border-2 border-[var(--brand-solid)] rounded-2xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)] animate-in fade-in slide-in-from-top-1 duration-150">
+                                                                    {availableLevels.map(lvl => {
+                                                                        const { description, mathExample, isSentence } = getLevelMetadata(topic.id, lvl, lang);
+                                                                        const isRowSelected = isThisTopicSelected && selectedLevel === lvl;
+
+                                                                        return (
+                                                                            <button
+                                                                                key={lvl}
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    onSelect(topic.id, lvl);
+                                                                                    setOpenDropdownTopicId(null);
+                                                                                }}
+                                                                                className={`w-full text-left p-3 transition-colors cursor-pointer flex flex-col gap-1.5 ${
+                                                                                    isRowSelected
+                                                                                        ? 'bg-[var(--brand-bg)]'
+                                                                                        : 'hover:bg-[var(--bg-surface)]'
+                                                                                }`}
+                                                                            >
+                                                                                <div className="flex items-center justify-between gap-2 w-full">
+                                                                                    <div className="flex items-center gap-2 min-w-0">
+                                                                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shrink-0 ${
+                                                                                            isRowSelected
+                                                                                                ? 'bg-[var(--brand-solid)] text-white'
+                                                                                                : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
+                                                                                        }`}>
+                                                                                            {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
+                                                                                        </span>
+                                                                                        <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                                                                                            {description}
+                                                                                        </span>
+                                                                                    </div>
+
+                                                                                    {mathExample && !isSentence && (
+                                                                                        <span className="shrink-0 px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-main)] text-xs font-bold text-[var(--text-main)]">
+                                                                                            <MathDisplay content={mathExample} />
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+
+                                                                                {mathExample && isSentence && (
+                                                                                    <div className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1 pl-1 italic">
+                                                                                        <MathDisplay content={mathExample} />
+                                                                                    </div>
+                                                                                )}
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Selected Level Full Example Preview Pill */}
+                                                        {isThisTopicSelected && selectedMeta?.mathExample && (
+                                                            <div className="mt-3 p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)] flex items-start gap-2 animate-in fade-in duration-200">
+                                                                <span className="text-[10px] font-black uppercase tracking-wider text-[var(--brand-text)] bg-[var(--brand-bg)] border border-[var(--brand-border)] px-1.5 py-0.5 rounded shrink-0 mt-0.5">
+                                                                    Ex:
+                                                                </span>
+                                                                <div className="text-xs font-bold text-[var(--text-main)] leading-snug break-words min-w-0 flex-1">
+                                                                    <MathDisplay content={selectedMeta.mathExample} />
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 </>
