@@ -101,13 +101,15 @@ export function useLibrary(profile = null, lang = 'sv') {
         if (!user) throw new Error("Not authenticated");
 
         const copyPrefix = lang === 'sv' ? "Kopia av " : "Copy of ";
+        const rawTitle = sheet.title || (lang === 'sv' ? "Namnlöst arbete" : "Untitled Work");
+        const finalTitle = rawTitle.startsWith(copyPrefix) ? rawTitle : `${copyPrefix}${rawTitle}`;
+
         const duplicatePayload = {
-            title: `${copyPrefix}${sheet.title || (lang === 'sv' ? "Namnlöst arbete" : "Untitled Work")}`,
+            title: finalTitle,
             type: sheet.type,
             user_id: user.id,
             visibility: 'private',
             school_name: profile?.school_name?.trim() || null,
-            school_id: profile?.school_id || null,
             packet: sheet.packet,
             config: sheet.config || {},
             auto_topics: sheet.auto_topics || [],

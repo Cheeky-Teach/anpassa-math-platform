@@ -155,6 +155,7 @@ export default function CategoryClashEngine({
     const [mode, setMode] = useState(savedBoard ? 'play' : 'curate');
     const [curateView, setCurateView] = useState('grid');
     const [studentScoreAdjustments, setStudentScoreAdjustments] = useState({});
+    const [showAllStudents, setShowAllStudents] = useState(false);
 
     // Grid configuration
     const dimensions = initialConfig?.dimensions || savedBoard?.packet?.dimensions || session?.active_question_data?.settings?.dimensions || { columns: 4, rows: 4 };
@@ -283,7 +284,7 @@ export default function CategoryClashEngine({
         })
     });
 
-    const broadcastRoomState = async (slotId, questionData, updatedTeams = teamsRef.current, updatedCleared = clearedTilesRef.current) => {
+    const broadcastRoomState = async (slotId, questionData, updatedTeams = teamsRef.current, updatedCleared = clearedTilesRef.current, updatedScores = studentScoresMap) => {
         if (!isLive) return;
 
         await broadcastState({
@@ -293,6 +294,7 @@ export default function CategoryClashEngine({
             activeQuestion: questionData,
             points: slotId ? (pointScale[parseInt(slotId.split('_r')[1], 10)] || 100) : 0,
             teams: updatedTeams,
+            studentScores: updatedScores,
             board: {
                 dimensions,
                 pointScale,
@@ -302,6 +304,11 @@ export default function CategoryClashEngine({
             }
         });
     };
+
+    useEffect(() => {
+        if (!isLive || mode !== 'play') return;
+        broadcastRoomState(activeSlotId, activeQuestion, teamsRef.current, clearedTilesRef.current, studentScoresMap);
+    }, [studentScoresMap]);
 
     useEffect(() => {
         const rawTiles = session?.active_question_data?.board?.tiles;
@@ -571,6 +578,15 @@ export default function CategoryClashEngine({
         const top7 = sortedStudents.slice(0, 7);
         const top7Names = new Set(top7.map(s => s.displayName));
 
+        const studentScoresMap = {};
+        sortedStudents.forEach((s, idx) => {
+            studentScoresMap[s.displayName] = {
+                score: s.score,
+                correctCount: s.correctCount,
+                rank: idx + 1
+            };
+        });
+
         const streaks = [];
         Object.entries(studentAnswersHistory).forEach(([name, history]) => {
             if (top7Names.has(name)) return;
@@ -594,6 +610,8 @@ export default function CategoryClashEngine({
 
         return {
             leaderboard: top7,
+            allStudents: sortedStudents,
+            studentScoresMap,
             streakList: streaks.slice(0, 4),
             totalClassScore: totalPoints,
             activeStudentCount: Object.keys(studentMap).length
@@ -1373,12 +1391,23 @@ export default function CategoryClashEngine({
                                 <div className="flex items-center gap-2">
                                     <Trophy size={15} className="text-amber-400" />
                                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-200">
-                                        {t.top7_heading}
+                                        {showAllStudents 
+                                            ? (lang === 'sv' ? "Alla elever" : "All Students") 
+                                            : t.top7_heading}
                                     </h3>
                                 </div>
-                                <span className="text-[10px] font-bold text-slate-500 font-mono">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAllStudents(prev => !prev)}
+                                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold font-mono border transition-colors cursor-pointer ${
+                                        showAllStudents
+                                            ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
+                                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                                    }`}
+                                    title={lang === 'sv' ? "Växla mellan Topp 7 och alla elever" : "Toggle between Top 7 and all students"}
+                                >
                                     {activeStudentCount} {t.active_students}
-                                </span>
+                                </button>
                             </div>
 
                             <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1.5 pr-0.5">

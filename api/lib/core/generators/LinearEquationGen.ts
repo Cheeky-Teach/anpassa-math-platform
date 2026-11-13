@@ -161,8 +161,8 @@ export class LinearEquationGen {
                 },
                 token: this.toBase64(ansVal), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Målet med att lösa en ekvation är att få variabeln (x) helt ensam på ena sidan." : "Step 1: The goal of solving an equation is to isolate the variable (x) on one side." },
-                    { text: lang === 'sv' ? "Steg 2: Vi gör detta genom att utföra 'motsatt operation' på båda sidor om likhetstecknet." : "Step 2: We do this by performing the 'inverse operation' on both sides of the equals sign." },
+                    { text: lang === 'sv' ? "Målet med att lösa en ekvation är att få variabeln (x) helt ensam på ena sidan." : "Step 1: The goal of solving an equation is to isolate the variable (x) on one side." },
+                    { text: lang === 'sv' ? "Vi gör detta genom att utföra 'motsatt operation' på båda sidor om likhetstecknet." : "Step 2: We do this by performing the 'inverse operation' on both sides of the equals sign." },
                     { text: rule },
                     { text: lang === 'sv' ? "Exempel på uträkning:" : "Example calculation:", latex: example },
                     { text: lang === 'sv' ? `Svar: ${ansVal}` : `Answer: ${ansVal}` }
@@ -184,8 +184,8 @@ export class LinearEquationGen {
                 },
                 token: this.toBase64(lie), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: För att testa om ett påstående är sant, ersätt x med värdet " + targetX + "." : "Step 1: To test if a statement is true, replace x with the value " + targetX + "." },
-                    { text: lang === 'sv' ? `Steg 2: Kontrollera $${targetX} - ${b}$.` : `Step 2: Check $${targetX} - ${b}$.` },
+                    { text: lang === 'sv' ? "För att testa om ett påstående är sant, ersätt x med värdet " + targetX + "." : "Step 1: To test if a statement is true, replace x with the value " + targetX + "." },
+                    { text: lang === 'sv' ? `Kontrollera $${targetX} - ${b}$.` : `Step 2: Check $${targetX} - ${b}$.` },
                     { text: lang === 'sv' ? `Uträkning: ${targetX} - ${b} = ${targetX - b}.` : `Calculation: ${targetX} - ${b} = ${targetX - b}.` },
                     { text: lang === 'sv' ? `Eftersom ${targetX - b} inte är lika med ${targetX + b}, är påståendet falskt.` : `Since ${targetX - b} is not equal to ${targetX + b}, the statement is false.` },
                     { text: lang === 'sv' ? `Svar: ${lie}` : `Answer: ${lie}` }
@@ -216,7 +216,7 @@ export class LinearEquationGen {
                     latex: `${k}x = ${res}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Steg 1: Ta bort multiplikationen genom att dela med ${k} på båda sidor.` : `Step 1: Undo the multiplication by dividing both sides by ${k}.`, 
+                    text: lang === 'sv' ? `Ta bort multiplikationen genom att dela med ${k} på båda sidor.` : `Step 1: Undo the multiplication by dividing both sides by ${k}.`, 
                     latex: `\\frac{${k}x}{\\mathbf{${k}}} = \\frac{${res}}{\\mathbf{${k}}}` 
                 },
                 { 
@@ -241,7 +241,7 @@ export class LinearEquationGen {
                     latex: isPlus ? `x + ${k} = ${res}` : `x - ${k} = ${res}` 
                 },
                 { 
-                    text: lang === 'sv' ? (isPlus ? `Steg 1: Ta bort +${k} genom att subtrahera ${k} från båda sidor.` : `Step 1: Remove -${k} by adding ${k} to both sides.`) : (isPlus ? `Step 1: Undo +${k} by subtracting ${k} from both sides.` : `Step 1: Undo -${k} by adding ${k} to both sides.`), 
+                    text: lang === 'sv' ? (isPlus ? `Ta bort +${k} genom att subtrahera ${k} från båda sidor.` : `Step 1: Remove -${k} by adding ${k} to both sides.`) : (isPlus ? `Step 1: Undo +${k} by subtracting ${k} from both sides.` : `Step 1: Undo -${k} by adding ${k} to both sides.`), 
                     latex: isPlus ? `x + ${k} \\mathbf{- ${k}} = ${res} \\mathbf{- ${k}}` : `x - ${k} \\mathbf{+ ${k}} = ${res} \\mathbf{+ ${k}}` 
                 },
                 { 
@@ -349,7 +349,7 @@ export class LinearEquationGen {
                 latex: equationLatex 
             },
             { 
-                text: lang === 'sv' ? (isPlus ? `Steg 1: Ta bort +${b} genom och subtrahera ${b} från båda sidor.` : `Steg 1: Ta bort -${b} genom att addera ${b} på båda sidor.`) : (isPlus ? `Step 1: Remove +${b} by subtracting ${b} from both sides.` : `Step 1: Remove -${b} by adding ${b} to both sides.`), 
+                text: lang === 'sv' ? (isPlus ? `Ta bort +${b} genom och subtrahera ${b} från båda sidor.` : `Ta bort -${b} genom att addera ${b} på båda sidor.`) : (isPlus ? `Step 1: Remove +${b} by subtracting ${b} from both sides.` : `Step 1: Remove -${b} by adding ${b} to both sides.`), 
                 latex: isMultiplication 
                     ? `${a}x ${isPlus ? '+' : '-'} ${b} \\mathbf{${isPlus ? '-' : '+'}} ${b} = ${c} \\mathbf{${isPlus ? '-' : '+'}} ${b}`
                     : `\\frac{x}{${a}} ${isPlus ? '+' : '-'} ${b} \\mathbf{${isPlus ? '-' : '+'}} ${b} = ${c} \\mathbf{${isPlus ? '-' : '+'}} ${b}`
@@ -360,8 +360,8 @@ export class LinearEquationGen {
             },
             { 
                 text: isMultiplication 
-                    ? (lang === 'sv' ? `Steg 2: Dela båda sidor med ${a} för att få bort multiplikationen.` : `Step 2: Divide both sides by ${a} to undo the multiplication.`)
-                    : (lang === 'sv' ? `Steg 2: Multiplicera båda sidor med ${a} för att få bort divisionen.` : `Step 2: Multiply both sides by ${a} to undo the division.`),
+                    ? (lang === 'sv' ? `Dela båda sidor med ${a} för att få bort multiplikationen.` : `Step 2: Divide both sides by ${a} to undo the multiplication.`)
+                    : (lang === 'sv' ? `Multiplicera båda sidor med ${a} för att få bort divisionen.` : `Step 2: Multiply both sides by ${a} to undo the division.`),
                 latex: isMultiplication
                     ? `\\frac{${a}x}{\\mathbf{${a}}} = \\frac{${intermediate}}{\\mathbf{${a}}}`
                     : `\\frac{x}{${a}} \\mathbf{\\cdot ${a}} = ${intermediate} \\mathbf{\\cdot ${a}}`
@@ -416,8 +416,8 @@ export class LinearEquationGen {
                 },
                 token: this.toBase64(lie), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Distributiva lagen innebär att faktorn utanför parentesen ska multipliceras med VARJE term inuti." : "Step 1: The distributive law means the factor outside the parentheses must be multiplied by EVERY term inside." },
-                    { text: lang === 'sv' ? `Steg 2: Beräkna ${a} · x och ${a} · ${b}.` : `Step 2: Calculate ${a} · x and ${a} · ${b}.` },
+                    { text: lang === 'sv' ? "Distributiva lagen innebär att faktorn utanför parentesen ska multipliceras med VARJE term inuti." : "Step 1: The distributive law means the factor outside the parentheses must be multiplied by EVERY term inside." },
+                    { text: lang === 'sv' ? `Beräkna ${a} · x och ${a} · ${b}.` : `Step 2: Calculate ${a} · x and ${a} · ${b}.` },
                     { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${a}x + ${a*b}` },
                     { text: lang === 'sv' ? `Eftersom ${b} inte multiplicerats med ${a} i ett av alternativen, är det lögnen.` : `Since ${b} was not multiplied by ${a} in one of the options, that is the lie.` },
                     { text: lang === 'sv' ? `Svar: ${lie}` : `Answer: ${lie}` }
@@ -454,7 +454,7 @@ export class LinearEquationGen {
                     latex: `${a}x + \\mathbf{${expandedConst}} = ${constantSum}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Steg 1: Ta bort siffertermen genom att ta -${expandedConst} på båda sidor.` : `Step 1: Remove the constant term by subtracting ${expandedConst} from both sides.`, 
+                    text: lang === 'sv' ? `Ta bort siffertermen genom att ta -${expandedConst} på båda sidor.` : `Step 1: Remove the constant term by subtracting ${expandedConst} from both sides.`, 
                     latex: `${a}x + ${expandedConst} \\mathbf{- ${expandedConst}} = ${constantSum} \\mathbf{- ${expandedConst}}` 
                 },
                 { 
@@ -462,7 +462,7 @@ export class LinearEquationGen {
                     latex: `${a}x = \\mathbf{${diff}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Steg 2: Dela båda sidor med ${a} för att få x helt fritt.` : `Step 2: Divide both sides by ${a} to set x completely free.`, 
+                    text: lang === 'sv' ? `Dela båda sidor med ${a} för att få x helt fritt.` : `Step 2: Divide both sides by ${a} to set x completely free.`, 
                     latex: `\\frac{${a}x}{\\mathbf{${a}}} = \\frac{${diff}}{\\mathbf{${a}}}` 
                 },
                 { 
@@ -499,8 +499,8 @@ export class LinearEquationGen {
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: När x finns på båda sidor vill vi samla dem på en och samma sida." : "Step 1: When x is on both sides, we want to gather them on one side." },
-                    { text: lang === 'sv' ? "Steg 2: Det är oftast bäst att ta bort den MINSTA x-termen först för att undvika negativa tal." : "Step 2: It is usually best to remove the SMALLEST x-term first to avoid negative numbers." },
+                    { text: lang === 'sv' ? "När x finns på båda sidor vill vi samla dem på en och samma sida." : "Step 1: When x is on both sides, we want to gather them on one side." },
+                    { text: lang === 'sv' ? "Det är oftast bäst att ta bort den MINSTA x-termen först för att undvika negativa tal." : "Step 2: It is usually best to remove the SMALLEST x-term first to avoid negative numbers." },
                     { text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}` }
                 ],
                 metadata: { variation_key: v, difficulty: 4 }
@@ -525,7 +525,7 @@ export class LinearEquationGen {
                     latex: eq 
                 },
                 { 
-                    text: lang === 'sv' ? `Steg 1: Ta bort den minsta x-termen (${c}x) genom att subtrahera den från båda sidor.` : `Step 1: Remove the smallest x-term (${c}x) by subtracting it from both sides.`, 
+                    text: lang === 'sv' ? `Ta bort den minsta x-termen (${c}x) genom att subtrahera den från båda sidor.` : `Step 1: Remove the smallest x-term (${c}x) by subtracting it from both sides.`, 
                     latex: `${a}x \\mathbf{- ${c}x} + ${b} = ${c}x \\mathbf{- ${c}x} + ${d}` 
                 },
                 { 
@@ -533,7 +533,7 @@ export class LinearEquationGen {
                     latex: `\\mathbf{${diffX}}x + ${b} = ${d}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Steg 2: Ta bort siffertermen +${b} genom att ta -${b} på båda sidor.` : `Step 2: Remove the constant term +${b} by subtracting ${b} from both sides.`, 
+                    text: lang === 'sv' ? `Ta bort siffertermen +${b} genom att ta -${b} på båda sidor.` : `Step 2: Remove the constant term +${b} by subtracting ${b} from both sides.`, 
                     latex: `${diffX}x + ${b} \\mathbf{- ${b}} = ${d} \\mathbf{- ${b}}` 
                 },
                 { 
@@ -541,7 +541,7 @@ export class LinearEquationGen {
                     latex: `${diffX}x = \\mathbf{${diffConst}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Steg 3: Dela båda sidor med ${diffX} för att räkna ut vad ett ensamt x är värt.` : `Step 3: Divide both sides by ${diffX} to calculate what a single x is worth.`, 
+                    text: lang === 'sv' ? `Dela båda sidor med ${diffX} för att räkna ut vad ett ensamt x är värt.` : `Step 3: Divide both sides by ${diffX} to calculate what a single x is worth.`, 
                     latex: `\\frac{${diffX}x}{\\mathbf{${diffX}}} = \\frac{${diffConst}}{\\mathbf{${diffX}}}` 
                 },
                 { 

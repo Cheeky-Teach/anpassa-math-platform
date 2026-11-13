@@ -6,6 +6,7 @@ import {
     Grid3X3, Minus, Download 
 } from 'lucide-react';
 import { downloadSvgAsImage } from '../whiteboard/utils/exportSVG';
+import PreferencesToggle from '../ui/PreferencesToggle';
 
 export default function ManipulativeSandboxView({ lang = 'sv', onBack }) {
     const [elements, setElements] = useState([]);
@@ -132,6 +133,7 @@ export default function ManipulativeSandboxView({ lang = 'sv', onBack }) {
                             <Minus size={14} />
                             <span className="hidden sm:inline">{t.blank}</span>
                         </button>
+                        <PreferencesToggle />
                     </div>
                 </div>
             </header>

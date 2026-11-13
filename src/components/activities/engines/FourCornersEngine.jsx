@@ -573,6 +573,14 @@ export default function FourCornersEngine({
 
         const sorted = Object.values(studentMap).sort((a, b) => b.score - a.score);
         const topPodium = sorted.slice(0, 5);
+        const studentScoresMap = {};
+        sorted.forEach((s, idx) => {
+            studentScoresMap[s.alias] = {
+                score: s.score,
+                streak: s.currentStreak,
+                rank: idx + 1
+            };
+        });
 
         // Streaks for students not in 1st place
         const activeStreaks = sorted
@@ -599,7 +607,7 @@ export default function FourCornersEngine({
         return [];
     }, [currentRound]);
 
-    const broadcastRoomState = async (updatedRound, phase = 'commit') => {
+    const broadcastRoomState = async (updatedRound, phase = 'commit', updatedScores = studentScoresMap) => {
         if (!isLive) return;
 
         await broadcastState({
@@ -609,13 +617,19 @@ export default function FourCornersEngine({
             activeTile: updatedRound ? `round_${activeRoundIndex}` : null,
             activeQuestion: updatedRound,
             revealedPhase: phase,
-            roundIndex: activeRoundIndex, // 🟢 FIX: 0-indexed
+            roundIndex: activeRoundIndex,
             timerSeconds: timerDuration,
+            studentScores: updatedScores,
             packet: rounds,
             livePacket: rounds,
             updated_at: new Date().toISOString()
         });
     };
+
+    useEffect(() => {
+        if (!isLive || viewMode !== 'play') return;
+        broadcastRoomState(currentRound, revealedPhase, studentScoresMap);
+    }, [studentScoresMap]);
 
     const commitAndBroadcastRound = async (updatedRound, phase = 'commit') => {
         setRounds(prev => prev.map(r => r.id === updatedRound.id ? updatedRound : r));

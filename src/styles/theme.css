@@ -96,6 +96,15 @@ body, .font-sans {
 .theme-focus {
   --bg-canvas: #0f172a;
   --text-canvas: #f8fafc;
+  --bg-card: #1e293b;
+  --bg-surface: #334155;
+  --bg-surface-hover: #475569;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-main: #334155;
+  --border-strong: #475569;
+  --brand-solid: #818cf8;
+  --brand-text: #a5b4fc;
 }
 
 /* 🎨 4. DYNAMIC CATEGORY THEMES (For PracticeView & Dashboard) */
@@ -304,20 +313,20 @@ body {
 /* GLOBAL RESPONSIVE REM SCALING             */
 /* ========================================= */
 html {
-  font-size: 16px; /* Standard Desktop */
+  font-size: 15px; /* Standard Desktop */
 }
 
 /* Small laptops & Chromebooks */
 @media (max-width: 1280px) {
   html {
-    font-size: 15px; 
+    font-size: 13px; 
   }
 }
 
 /* Tablets and small devices */
 @media (max-width: 768px) {
   html {
-    font-size: 14px;
+    font-size: 12px;
   }
 }
 

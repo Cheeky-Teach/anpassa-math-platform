@@ -97,6 +97,14 @@ export default function StudentActivityView({
 
     const myTeam = teams.find(t => t.id === selectedTeamId) || teams[0];
 
+    const [localEarnedPoints, setLocalEarnedPoints] = useState(0);
+
+    const myPersonalScore = useMemo(() => {
+        const cleanName = (studentAlias || '').replace(/<[^>]*>?/gm, '').substring(0, 20).trim();
+        const syncedScore = liveActiveData?.studentScores?.[cleanName]?.score;
+        return syncedScore !== undefined ? syncedScore : localEarnedPoints;
+    }, [liveActiveData?.studentScores, studentAlias, localEarnedPoints]);
+
     // Scratchpad & Canvas controls
     const settings = liveActiveData?.settings || {};
     const allowScratchpad = settings.allowScratchpad !== false;
@@ -203,6 +211,11 @@ export default function StudentActivityView({
             // 🟢 Record that current round is completed locally to trigger the drawer
             const targetKey = `round_${activeQuestion?.roundIndex || 0}`;
             setLocalCompleted(prev => ({ ...prev, [targetKey]: true }));
+            
+            const expectedCorner = activeQuestion?.responseSpec?.answer || activeQuestion?.renderData?.answer;
+            if (expectedCorner && String(answerVal).trim().toUpperCase() === String(expectedCorner).trim().toUpperCase()) {
+                setLocalEarnedPoints(prev => prev + 100);
+            }
         } catch (err) {
             console.error("[StudentActivityView] Four Corners submit error:", err);
         } finally {
@@ -254,6 +267,9 @@ export default function StudentActivityView({
             if (error && error.code !== '23505') throw error;
 
             setLocalCompleted(prev => ({ ...prev, [activeTile]: true }));
+            if (isCorrect) {
+                setLocalEarnedPoints(prev => prev + (Number(points) || 100));
+            }
         } catch (err) {
             console.error("[StudentActivityView] Submit error:", err);
             alert(lang === 'sv' ? "Kunde inte skicka svar." : "Failed to submit answer.");
@@ -297,6 +313,11 @@ export default function StudentActivityView({
                     <span className="text-xs font-mono font-bold text-slate-400">
                         {studentAlias}
                     </span>
+
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-mono font-black shadow-xs">
+                        <Trophy size={12} className="text-amber-400 shrink-0" />
+                        <span>{myPersonalScore}p</span>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -344,6 +365,10 @@ export default function StudentActivityView({
                                     <span>{lang === 'sv' ? "Starta Snabbräknare (Medan du väntar)" : "Start Quick Practice (While waiting)"}</span>
                                 </button>
                             ) : null}
+                            <div className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono font-black text-sm">
+                                <Trophy size={16} className="text-amber-400" />
+                                <span>{lang === 'sv' ? "Dina poäng:" : "Your score:"} {myPersonalScore}p</span>
+                            </div>
 
                             {teams.length > 0 && !isFourCorners && (
                                 <div className="w-full bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 space-y-2.5 mt-6">
@@ -382,14 +407,7 @@ export default function StudentActivityView({
                         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 min-h-0 items-stretch">
                             
                             {/* LEFT STAGE (7 Cols / ~58%): Prompt, Diagram Visual, Protected LaTeX */}
-                            <div 
-                                className="lg:col-span-7 rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-xl border overflow-y-auto custom-scrollbar"
-                                style={{ 
-                                    backgroundColor: 'var(--bg-card, #ffffff)', 
-                                    borderColor: 'var(--border-main, #e2e8f0)',
-                                    color: 'var(--text-main, #0f172a)'
-                                }}
-                            >
+                            <div className="lg:col-span-7 bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-main)] rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-xl border overflow-y-auto custom-scrollbar">
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <span className="badge-brand font-black text-xs px-3 py-1">
@@ -419,14 +437,7 @@ export default function StudentActivityView({
                                     )}
 
                                     {effectiveShowLatex && rd.latex && (
-                                        <div 
-                                            className="text-3xl sm:text-4xl font-serif font-black p-6 rounded-2xl border text-center my-3 shadow-inner"
-                                            style={{ 
-                                                backgroundColor: 'var(--bg-surface, #f8fafc)', 
-                                                borderColor: 'var(--border-main, #e2e8f0)', 
-                                                color: 'var(--brand-solid, #4f46e5)' 
-                                            }}
-                                        >
+                                        <div className="bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--brand-solid)] text-3xl sm:text-4xl font-serif font-black p-6 rounded-2xl border text-center my-3 shadow-inner">
                                             <MathDisplay content={`$$${rd.latex}$$`} />
                                         </div>
                                     )}
@@ -446,14 +457,7 @@ export default function StudentActivityView({
                                     />
                                 ) : (
                                     <div className="w-full h-full flex flex-col gap-3 animate-in fade-in duration-300">
-                                        <div 
-                                            className="p-4 rounded-2xl border flex items-center justify-between shadow-sm"
-                                            style={{
-                                                backgroundColor: 'var(--bg-card, #ffffff)',
-                                                borderColor: 'var(--border-main, #e2e8f0)',
-                                                color: 'var(--text-main, #0f172a)'
-                                            }}
-                                        >
+                                        <div className="p-4 rounded-2xl border bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-main)] flex items-center justify-between shadow-sm">
                                             <div className="flex items-center gap-2.5">
                                                 <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
                                                 <div>
@@ -501,7 +505,7 @@ export default function StudentActivityView({
                     <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-5 items-start animate-in fade-in duration-300">
                         
                         {/* Question Card (Left 7 Cols) */}
-                        <div className="lg:col-span-7 bg-white text-slate-900 rounded-[2rem] p-6 sm:p-8 shadow-xl border border-slate-200 flex flex-col space-y-6">
+                        <div className="lg:col-span-7 bg-[var(--bg-card)] text-[var(--text-main)] rounded-[2rem] p-6 sm:p-8 shadow-xl border border-[var(--border-main)] flex flex-col space-y-6">
                             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                                 <span className="text-xs font-black uppercase tracking-wider px-3 py-1 bg-amber-500/10 text-amber-600 rounded-lg">
                                     {points} {lang === 'sv' ? "Poäng" : "Points"}
@@ -513,6 +517,13 @@ export default function StudentActivityView({
                                     </div>
                                 )}
                             </div>
+                            
+                            {/* Question Text Prompt */}
+                            {effectiveShowText && rd.description && (
+                                <div className="text-xl sm:text-2xl font-bold text-[var(--text-main)] leading-relaxed">
+                                    <MathDisplay content={rd.description} />
+                                </div>
+                            )}
 
                             {/* Diagram / Visual Geometry */}
                             {showVisual && hasVisualElement && (
@@ -524,16 +535,9 @@ export default function StudentActivityView({
                                 </div>
                             )}
 
-                            {/* Question Text Prompt */}
-                            {effectiveShowText && rd.description && (
-                                <div className="text-xl sm:text-2xl font-bold text-slate-800 leading-relaxed">
-                                    <MathDisplay content={rd.description} />
-                                </div>
-                            )}
-
                             {/* LaTeX Display */}
                             {(effectiveShowLatex || (!rd.description && !hasVisualElement)) && rd.latex && (
-                                <div className="w-full bg-indigo-50/50 border border-indigo-100/60 rounded-2xl p-6 text-center text-2xl sm:text-3xl text-indigo-700 font-serif">
+                                <div className="w-full bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-2xl p-6 text-center text-2xl sm:text-3xl text-[var(--brand-solid)] font-serif">
                                     <MathDisplay content={`$$${rd.latex}$$`} />
                                 </div>
                             )}
@@ -556,8 +560,8 @@ export default function StudentActivityView({
                                                 }}
                                                 className={`p-4 rounded-2xl border-2 text-left font-bold text-base transition-all flex items-center justify-between cursor-pointer active:scale-95 ${
                                                     isSelected 
-                                                        ? 'border-indigo-600 bg-indigo-50 text-indigo-950 ring-2 ring-indigo-400' 
-                                                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800'
+                                                        ? 'border-indigo-500 bg-indigo-500/15 text-[var(--text-main)] ring-2 ring-indigo-500/40' 
+                                                        : 'border-[var(--border-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)]'
                                                 } ${isCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
                                                 <MathDisplay content={String(choiceLabel)} />
@@ -570,14 +574,7 @@ export default function StudentActivityView({
                         </div>
 
                         {/* Solution & Input Pane (Right 5 Cols) */}
-                        <div 
-                            className="lg:col-span-5 rounded-[2rem] p-6 shadow-xl border flex flex-col space-y-4"
-                            style={{
-                                backgroundColor: 'var(--bg-card, #ffffff)',
-                                borderColor: 'var(--border-main, #e2e8f0)',
-                                color: 'var(--text-main, #0f172a)'
-                            }}
-                        >
+                        <div className="lg:col-span-5 bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-main)] rounded-[2rem] p-6 shadow-xl border flex flex-col space-y-4">
                             {!hasAnsweredCurrent ? (
                                 <>
                                     {/* Work Area Tabs */}

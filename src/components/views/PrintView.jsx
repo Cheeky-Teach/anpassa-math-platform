@@ -266,17 +266,24 @@ export default function PrintView({
                     key={pageIdx} 
                     className={`max-w-[210mm] mx-auto !bg-white !text-slate-900 shadow-2xl my-8 p-[8mm] flex flex-col min-h-[240mm] print:min-h-auto print:shadow-none print:my-0 print:p-[12mm] relative ${pageIdx < measuredPages.length - 1 ? 'break-after-page' : ''}`}
                 >
-                    <header className="border-b border-black pb-2 mb-4 relative">
-                        <div className="mb-6">
-                            <div className="text-[6px] font-black uppercase text-slate-600 italic tracking-widest">{t.watermark}</div>
-                            <h1 className="text-[12px] font-black uppercase tracking-tight leading-none text-slate-900">{title || "Matematik"}</h1>
+                    {pageIdx === 0 ? (
+                        <header className="border-b border-black pb-2 mb-4 relative">
+                            <div className="mb-6">
+                                <div className="text-[6px] font-black uppercase text-slate-600 italic tracking-widest">{t.watermark}</div>
+                                <h1 className="text-[12px] font-black uppercase tracking-tight leading-none text-slate-900">{title || "Matematik"}</h1>
+                            </div>
+                            <div className="flex gap-8 text-[10px] font-bold uppercase text-slate-800">
+                                <div className="flex-1 flex gap-2 items-baseline border-b border-black/20"><span>{t.name}</span><div className="flex-1" /></div>
+                                <div className="w-32 flex gap-2 items-baseline border-b border-black/20"><span>{t.class}</span><div className="flex-1" /></div>
+                                <div className="w-32 flex gap-2 items-baseline border-b border-black/20"><span>{t.date}</span><div className="flex-1" /></div>
+                            </div>
+                        </header>
+                    ) : (
+                        <div className="border-b border-slate-200 pb-1 mb-3 flex justify-between items-center text-[8px] font-bold uppercase text-slate-400">
+                            <span>{title || "Matematik"}</span>
+                            <span>{t.page} {pageIdx + 1}</span>
                         </div>
-                        <div className="flex gap-8 text-[10px] font-bold uppercase text-slate-800">
-                            <div className="flex-1 flex gap-2 items-baseline border-b border-black/20"><span>{t.name}</span><div className="flex-1" /></div>
-                            <div className="w-32 flex gap-2 items-baseline border-b border-black/20"><span>{t.class}</span><div className="flex-1" /></div>
-                            <div className="w-32 flex gap-2 items-baseline border-b border-black/20"><span>{t.date}</span><div className="flex-1" /></div>
-                        </div>
-                    </header>
+                    )}
 
                     {/* GRID-AWARE CONTENT CONTAINER */}
                     <div className="grid grid-cols-6 gap-x-6 gap-y-4 items-start flex-1">
@@ -428,7 +435,7 @@ export default function PrintView({
 
             {/* HIDDEN SANDBOX INTERACTION CANVAS */}
             <div className="absolute top-0 left-0 opacity-0 pointer-events-none print:hidden z-[-100] w-[210mm] px-[12mm] box-border text-slate-900 bg-white">
-                <div id="print-sandbox" className="grid grid-cols-6 gap-x-10 gap-y-10 items-start">
+                <div id="print-sandbox" className="grid grid-cols-6 gap-x-6 gap-y-4 items-start">
                     {packet.map((item, idx) => {
                         const displayStory = item.showText !== false;
                         const displayLatex = item.showLatex !== false;

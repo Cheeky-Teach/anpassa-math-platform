@@ -75,6 +75,16 @@ export default function SheetLibraryModal({
         setShowMoveModal(null);
     };
 
+    const handleDuplicate = async (e, sheet) => {
+        e?.stopPropagation();
+        try {
+            await duplicateSheet(sheet);
+        } catch (err) {
+            console.error("Duplicate error:", err);
+            alert((lang === 'sv' ? "Kunde inte duplicera: " : "Failed to duplicate: ") + err.message);
+        }
+    };
+
     const getTopicLabel = (topicId) => {
         if (!topicId || topicId === 'all') return lang === 'sv' ? "Alla ämnen" : "All topics";
         for (const catKey in SKILL_BUCKETS) {
@@ -357,20 +367,22 @@ export default function SheetLibraryModal({
                                                     </td>
                                                 </tr>
 
-                                                {/* Files inside folder */}
+                                                {/* Files inside folder (5 columns matching <thead>) */}
                                                 {isExpanded && folderFiles.map(sheet => {
                                                     const style = getSheetIconStyle(sheet.type);
                                                     return (
                                                         <tr key={sheet.id} className="hover:bg-indigo-50/30 transition-colors group bg-slate-50/50">
+                                                            {/* Col 1: Tree Connector + Icon */}
                                                             <td className="py-2.5 text-center relative">
-                                                                <div className="w-4 h-px bg-slate-300 ml-6" />
-                                                            </td>
-                                                            <td className="py-2.5 font-bold text-slate-700 text-sm pl-4">
-                                                                <div className="flex items-center gap-2 truncate">
-                                                                    <span className={`p-1 rounded-md border ${style.bg}`}>{style.icon}</span>
-                                                                    <span className="truncate">{sheet.title}</span>
+                                                                <div className="flex items-center justify-center">
+                                                                    <span className={`inline-flex p-1.5 rounded-xl border ${style.bg}`}>{style.icon}</span>
                                                                 </div>
                                                             </td>
+                                                            {/* Col 2: Title (Indented slightly to show folder hierarchy) */}
+                                                            <td className="py-2.5 font-bold text-slate-700 text-sm max-w-0 pl-3 border-l-2 border-indigo-200">
+                                                                <div className="truncate" title={sheet.title}>{sheet.title}</div>
+                                                            </td>
+                                                            {/* Col 3: Content / Topics */}
                                                             <td className="py-2.5">
                                                                 {sheet.type?.startsWith('activity') ? (
                                                                     <span className="text-[9px] font-black uppercase tracking-wider bg-purple-50 border border-purple-200 text-purple-700 px-2 py-0.5 rounded-md">
@@ -387,17 +399,31 @@ export default function SheetLibraryModal({
                                                                     </div>
                                                                 )}
                                                             </td>
+                                                            {/* Col 4: Date */}
                                                             <td className="py-2.5 text-center text-slate-400 text-xs">{new Date(sheet.updated_at).toLocaleDateString()}</td>
+                                                            {/* Col 5: Actions (Includes Move, Duplicate, Peek, Open, Delete) */}
                                                             <td className="py-2.5 text-right pr-4">
                                                                 <div className="flex justify-end gap-1 items-center">
                                                                     <button 
                                                                         onClick={() => onSelectSheet(sheet)} 
-                                                                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shadow-xs cursor-pointer"
+                                                                        className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-xs cursor-pointer"
                                                                     >
-                                                                        {lang === 'sv' ? "Öppna" : "Open"}
+                                                                        {sheet.type?.startsWith('activity') 
+                                                                            ? (lang === 'sv' ? "Spela" : "Play") 
+                                                                            : (lang === 'sv' ? "Öppna" : "Open")}
                                                                     </button>
-                                                                    <button onClick={() => setPeekSheet(sheet)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg"><Maximize2 size={13} /></button>
-                                                                    <button onClick={() => softDeleteSheet(sheet.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"><Trash2 size={13} /></button>
+                                                                    <button onClick={() => setPeekSheet(sheet)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg" title={lang === 'sv' ? "Förhandsgranska" : "Peek"}>
+                                                                        <Maximize2 size={14} />
+                                                                    </button>
+                                                                    <button onClick={() => setShowMoveModal(sheet)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg" title={lang === 'sv' ? "Flytta fil" : "Move file"}>
+                                                                        <PanelLeftClose size={14} />
+                                                                    </button>
+                                                                    <button onClick={(e) => handleDuplicate(e, sheet)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg" title={lang === 'sv' ? "Duplicera" : "Duplicate"}>
+                                                                        <Copy size={14} />
+                                                                    </button>
+                                                                    <button onClick={() => softDeleteSheet(sheet.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg" title={lang === 'sv' ? "Ta bort" : "Delete"}>
+                                                                        <Trash2 size={14} />
+                                                                    </button>
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -407,17 +433,20 @@ export default function SheetLibraryModal({
                                         );
                                     })}
 
-                                    {/* ROOT FILES */}
+                                    {/* ROOT FILES (Fixed to 5 columns by removing the duplicate <td>) */}
                                     {filteredLibrary.filter(sheet => isTrashView || libraryTab !== 'private' || sheet.folder_id === null).map(sheet => {
                                         const style = getSheetIconStyle(sheet.type);
                                         return (
                                             <tr key={sheet.id} className="hover:bg-slate-50 transition-colors group">
+                                                {/* Col 1: Icon */}
                                                 <td className="py-3 text-center">
                                                     <span className={`inline-flex p-1.5 rounded-xl border ${style.bg}`}>{style.icon}</span>
                                                 </td>
+                                                {/* Col 2: Title */}
                                                 <td className="py-3 font-bold text-slate-800 text-sm max-w-0">
                                                     <div className="truncate" title={sheet.title}>{sheet.title}</div>
                                                 </td>
+                                                {/* Col 3: Content / Topics (Duplicate <td> removed!) */}
                                                 <td className="py-3">
                                                     {sheet.type?.startsWith('activity') ? (
                                                         <span className="text-[9px] font-black uppercase tracking-wider bg-purple-50 border border-purple-200 text-purple-700 px-2 py-0.5 rounded-md">
@@ -432,14 +461,9 @@ export default function SheetLibraryModal({
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="py-3">
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {sheet.auto_topics?.slice(0, 2).map(tag => (
-                                                            <span key={tag} className="text-[9px] font-black uppercase tracking-wider bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md">{tag}</span>
-                                                        ))}
-                                                    </div>
-                                                </td>
+                                                {/* Col 4: Date */}
                                                 <td className="py-3 text-center text-slate-400 text-xs">{new Date(sheet.updated_at).toLocaleDateString()}</td>
+                                                {/* Col 5: Actions */}
                                                 <td className="py-3 text-right pr-4">
                                                     <div className="flex justify-end gap-1 items-center">
                                                         <button 
@@ -450,7 +474,9 @@ export default function SheetLibraryModal({
                                                                 ? (lang === 'sv' ? "Spela" : "Play") 
                                                                 : (lang === 'sv' ? "Öppna" : "Open")}
                                                         </button>
-                                                        <button onClick={() => setPeekSheet(sheet)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg"><Maximize2 size={14} /></button>
+                                                        <button onClick={() => setPeekSheet(sheet)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg" title={lang === 'sv' ? "Förhandsgranska" : "Peek"}>
+                                                            <Maximize2 size={14} />
+                                                        </button>
                                                         {isTrashView ? (
                                                             <>
                                                                 <button onClick={() => restoreSheet(sheet.id)} className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-lg border border-emerald-200">Återställ</button>
@@ -458,9 +484,15 @@ export default function SheetLibraryModal({
                                                             </>
                                                         ) : libraryTab === 'private' ? (
                                                             <>
-                                                                <button onClick={() => setShowMoveModal(sheet)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg"><PanelLeftClose size={14} /></button>
-                                                                <button onClick={() => duplicateSheet(sheet)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg"><Copy size={14} /></button>
-                                                                <button onClick={() => softDeleteSheet(sheet.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"><Trash2 size={14} /></button>
+                                                                <button onClick={() => setShowMoveModal(sheet)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg" title={lang === 'sv' ? "Flytta fil" : "Move file"}>
+                                                                    <PanelLeftClose size={14} />
+                                                                </button>
+                                                                <button onClick={(e) => handleDuplicate(e, sheet)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg" title={lang === 'sv' ? "Duplicera" : "Duplicate"}>
+                                                                    <Copy size={14} />
+                                                                </button>
+                                                                <button onClick={() => softDeleteSheet(sheet.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg" title={lang === 'sv' ? "Ta bort" : "Delete"}>
+                                                                    <Trash2 size={14} />
+                                                                </button>
                                                             </>
                                                         ) : (
                                                             <button onClick={() => cloneSheet(sheet.id)} className="px-2 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase rounded-lg border border-indigo-200">Kopiera</button>

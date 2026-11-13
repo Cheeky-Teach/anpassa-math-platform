@@ -11,9 +11,9 @@ const BLOCK_DIMS = {
 };
 
 const BLOCK_COLORS = {
-    ones: { fill: '#0284c7', stroke: '#0369a1' },      // Blue
-    tens: { fill: '#ea580c', stroke: '#c2410c' },      // Orange
-    hundreds: { fill: '#16a34a', stroke: '#15803d' }   // Green
+    ones: { fill: '#0284c7', stroke: '#000000' },      // Blue
+    tens: { fill: '#ea580c', stroke: '#000000' },      // Orange
+    hundreds: { fill: '#16a34a', stroke: '#000000' }   // Green
 };
 
 export const BaseTenBlocksTool = {
@@ -331,8 +331,8 @@ export const BaseTenBlocksTool = {
                                 x2={dims.w} 
                                 y2={(i + 1) * BASE_SIZE} 
                                 stroke={colors.stroke} 
-                                strokeWidth={2} 
-                                opacity={0.8}
+                                strokeWidth={2.5} 
+                                opacity={1}
                             />
                         ))}
                     </g>

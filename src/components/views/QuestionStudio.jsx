@@ -21,6 +21,9 @@ import ActivityHubModal from '../activities/modals/ActivityHubModal';
 import { getActivityDefinition } from '../activities/registry/activityRegistry.js';
 import WorkedExampleCard from '../shared/WorkedExampleCard.jsx';
 
+import { useSheetSaver } from '../../hooks/useSheetSaver';
+import SaveChoiceModal from '../modals/SaveChoiceModal';
+
 // CRITICAL: Imports Universal Theme and Preferences Toggle
 import '../../styles/theme.css'; 
 import PreferencesToggle from '../ui/PreferencesToggle';
@@ -276,11 +279,53 @@ export default function QuestionStudio({
   const [editingFolderName, setEditingFolderName] = useState(''); 
 
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
 
   const [showActivityHub, setShowActivityHub] = useState(false);
   const [activeActivity, setActiveActivity] = useState(null);
   const [activeSetupModal, setActiveSetupModal] = useState(null);
+
+  const {
+      isSaving,
+      showSaveChoiceModal,
+      setShowSaveChoiceModal,
+      executeSave,
+      triggerSave
+  } = useSheetSaver({
+      sheetId: activeSheetId,
+      setSheetId: setActiveSheetId,
+      title: sheetTitle,
+      setTitle: setSheetTitle,
+      lang,
+      buildPayload: ({ userId, finalTitle }) => ({
+          title: finalTitle,
+          type: setupMode || 'worksheet',
+          user_id: userId,
+          visibility: chosenVisibility,
+          school_name: profile?.school_name?.trim() || null,
+          packet,
+          config: {
+              includeAnswerKey,
+              answerKeyStyle,
+              globalLatexSize,
+              layoutStyle,
+              workspaceStyle,
+              workspaceHeight
+          },
+          auto_topics: [...new Set(packet.map(p => p.topicId))]
+      }),
+      onSaveSuccess: async () => {
+          syncBatchProgress('studio_sheet_saved', packet, {
+              app_mode: 'question_studio',
+              sheet_type: setupMode || 'worksheet',
+              visibility: chosenVisibility,
+              include_answer_key: includeAnswerKey,
+              answer_style: answerKeyStyle,
+              layout_style: layoutStyle
+          });
+          setIsSaved(true);
+          await fetchLibrary();
+      }
+  });
 
   // Universal Launch Handler
   const handleLaunchActivity = async (gameKey, config) => {
@@ -526,60 +571,6 @@ export default function QuestionStudio({
         if (error) throw error;
         setSavedSheets(data || []);
     } catch (err) { console.error(err); } finally { setIsLibraryLoading(false); }
-  };
-
-  const handleSave = async () => {
-      setIsSaving(true);
-      try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) throw new Error("Not authenticated");
-
-          const payload = {
-              title: sheetTitle || (lang === 'sv' ? "Namnlöst arbete" : "Untitled Work"),
-              type: setupMode || 'worksheet', 
-              user_id: user.id,
-              visibility: chosenVisibility,
-              school_name: profile?.school_name?.trim() || null,
-              packet: packet,
-              config: {
-                  includeAnswerKey,
-                  answerKeyStyle,
-                  globalLatexSize,
-                  layoutStyle,
-                  workspaceStyle,
-                  workspaceHeight
-              },
-              auto_topics: [...new Set(packet.map(p => p.topicId))]
-          };
-
-          let res;
-          if (activeSheetId) {
-              res = await supabase.from('saved_sheets').update(payload).eq('id', activeSheetId).select().single();
-          } else {
-              res = await supabase.from('saved_sheets').insert(payload).select().single();
-          }
-
-          if (res.error) throw res.error;
-          
-          syncBatchProgress('studio_sheet_saved', packet, {
-              app_mode: 'question_studio',
-              sheet_type: setupMode || 'worksheet',
-              visibility: chosenVisibility,
-              include_answer_key: includeAnswerKey,
-              answer_style: answerKeyStyle,
-              layout_style: layoutStyle
-          });
-          
-          setActiveSheetId(res.data.id); 
-          setIsSaved(true);
-          fetchLibrary();
-          alert(t.save_success);
-      } catch (err) {
-          console.error("Save Error:", err);
-          alert(lang === 'sv' ? "Kunde inte spara." : "Failed to save.");
-      } finally {
-          setIsSaving(false);
-      }
   };
 
   const handleCreateFolder = async () => {
@@ -1131,8 +1122,8 @@ export default function QuestionStudio({
                 </div>
 
                 <button 
-                    onClick={handleSave} 
-                    disabled={packet.length === 0} 
+                    onClick={() => triggerSave()} 
+                    disabled={packet.length === 0 || isSaving} 
                     className="px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-[var(--bg-surface)] text-[var(--text-main)] transition-all disabled:opacity-50 cursor-pointer shadow-sm"
                 >
                     <Save size={13}/> {t.save_btn}
@@ -1400,31 +1391,50 @@ export default function QuestionStudio({
                                     <div className="flex items-center bg-[var(--bg-card)] rounded-[var(--radius-btn)] border border-[var(--border-strong)] shadow-xs">
                                         <button 
                                             onClick={() => { 
-                                                const next = Math.max(0, workspaceHeight - 1);
-                                                setWorkspaceHeight(next); 
-                                                setPacket(prev => prev.map(p => ({ ...p, localWorkspaceHeight: undefined })));
+                                                const nextGlobal = Math.max(0, workspaceHeight - 1);
+                                                setWorkspaceHeight(nextGlobal); 
+                                                setPacket(prev => prev.map(p => {
+                                                    const current = p.localWorkspaceHeight !== undefined ? p.localWorkspaceHeight : workspaceHeight;
+                                                    return { ...p, localWorkspaceHeight: Math.max(0, current - 1), _workspaceHeight: nextGlobal };
+                                                }));
                                                 setIsSaved(false); 
                                             }} 
-                                            className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--brand-solid)]"
+                                            className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--brand-solid)] cursor-pointer"
                                         >
                                             <Minus size={11} />
                                         </button>
-                                        <span className="text-[10px] font-black w-4 text-center text-[var(--text-main)]">{workspaceHeight}</span>
+                                        <span className="text-[10px] font-black w-5 text-center text-[var(--text-main)]">
+                                            {(() => {
+                                                const practiceItems = packet.filter(p => !p.isWorkedExample);
+                                                if (practiceItems.length === 0) return workspaceHeight;
+                                                const heights = practiceItems.map(p => p.localWorkspaceHeight !== undefined ? p.localWorkspaceHeight : workspaceHeight);
+                                                const allSame = heights.every(h => h === heights[0]);
+                                                return allSame ? heights[0] : `${Math.min(...heights)}–${Math.max(...heights)}`;
+                                            })()}
+                                        </span>
                                         <button 
                                             onClick={() => { 
-                                                const next = Math.min(15, workspaceHeight + 1);
-                                                setWorkspaceHeight(next); 
-                                                setPacket(prev => prev.map(p => ({ ...p, localWorkspaceHeight: undefined })));
+                                                const nextGlobal = Math.min(15, workspaceHeight + 1);
+                                                setWorkspaceHeight(nextGlobal); 
+                                                setPacket(prev => prev.map(p => {
+                                                    const current = p.localWorkspaceHeight !== undefined ? p.localWorkspaceHeight : workspaceHeight;
+                                                    return { ...p, localWorkspaceHeight: Math.min(15, current + 1), _workspaceHeight: nextGlobal };
+                                                }));
                                                 setIsSaved(false); 
                                             }} 
-                                            className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--brand-solid)]"
+                                            className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--brand-solid)] cursor-pointer"
                                         >
                                             <Plus size={11} />
                                         </button>
                                     </div>
                                     <button 
-                                        onClick={() => { setWorkspaceStyle(workspaceStyle === 'grid' ? 'blank' : 'grid'); setIsSaved(false); }} 
-                                        className={`p-1.5 rounded-[var(--radius-btn)] transition-all ${workspaceStyle === 'grid' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-xs border border-[var(--border-strong)]' : 'text-[var(--text-muted)]'}`}
+                                        onClick={() => { 
+                                            const nextStyle = workspaceStyle === 'grid' ? 'blank' : 'grid';
+                                            setWorkspaceStyle(nextStyle); 
+                                            setPacket(prev => prev.map(p => ({ ...p, localWorkspaceStyle: nextStyle })));
+                                            setIsSaved(false); 
+                                        }} 
+                                        className={`p-1.5 rounded-[var(--radius-btn)] transition-all cursor-pointer ${workspaceStyle === 'grid' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-xs border border-[var(--border-strong)]' : 'text-[var(--text-muted)]'}`}
                                         title={t.toggle_grid}
                                     >
                                         <Grid3X3 size={13} />
@@ -1581,14 +1591,14 @@ export default function QuestionStudio({
                         <div 
                             className={`shadow-2xl flex flex-col animate-in slide-in-from-bottom-6 origin-top relative ${
                                 setupMode === 'donow' 
-                                ? 'w-full max-w-5xl bg-slate-900 rounded-[2.5rem] p-8' 
+                                ? 'whiteboard-protect w-full max-w-5xl bg-white border border-slate-200 rounded-[2.5rem] p-8' 
                                 : 'whiteboard-protect w-[210mm] min-h-[297mm] p-[12mm]'
                             }`}
                             style={setupMode === 'worksheet' ? { transform: 'scale(0.85)', transformOrigin: 'top center' } : {}}
                         >
                             {/* Multi-Page A4 Page Break Guides */}
                             {setupMode === 'worksheet' && [1, 2, 3, 4].map((pageNum) => {
-                                const topOffsetMm = 245 + (pageNum - 1) * 270;
+                                const topOffsetMm = pageNum * 273;
                                 return (
                                     <div 
                                         key={`pb-${pageNum}`}
@@ -1611,8 +1621,8 @@ export default function QuestionStudio({
                                     </div>
                                 </header>
                             ) : (
-                                <header className="border-b-2 border-slate-700 pb-4 mb-6 flex items-center justify-between">
-                                    <h1 className="text-xl font-black uppercase tracking-tighter text-white italic leading-none">{sheetTitle || t.donow_title}</h1>
+                                <header className="border-b-2 border-slate-900 pb-4 mb-6 flex items-center justify-between">
+                                    <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900 italic leading-none">{sheetTitle || t.donow_title}</h1>
                                 </header>
                             )}
 
@@ -1635,8 +1645,8 @@ export default function QuestionStudio({
                                     return (
                                         <React.Fragment key={item.id}>
                                             {!item.isWorkedExample && isHeaderMode && (
-                                                <div className={`col-span-6 border-l-4 pl-3 py-1.5 rounded-r-xl ${setupMode === 'donow' ? 'bg-slate-800 border-indigo-500 mb-1 mt-2' : 'bg-slate-50 border-slate-900 mb-1 mt-1'}`}>
-                                                    <div className={`text-sm font-semibold leading-relaxed ${setupMode === 'donow' ? 'text-white' : 'text-slate-800'}`}>
+                                                <div className={`col-span-6 border-l-4 pl-3 py-1.5 rounded-r-xl ${setupMode === 'donow' ? 'bg-indigo-50/70 border-indigo-600 mb-1 mt-2' : 'bg-slate-50 border-slate-900 mb-1 mt-1'}`}>
+                                                    <div className="text-sm font-semibold leading-relaxed text-slate-900">
                                                         <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                     </div>
                                                 </div>
@@ -2016,6 +2026,23 @@ export default function QuestionStudio({
                 />
             );
         })()}
+        <SaveChoiceModal
+            isOpen={showSaveChoiceModal}
+            onClose={() => setShowSaveChoiceModal(false)}
+            onOverwrite={async () => {
+                setShowSaveChoiceModal(false);
+                await executeSave({ forceNewCopy: false, silent: false });
+            }}
+            onSaveAsCopy={async () => {
+                setShowSaveChoiceModal(false);
+                await executeSave({ forceNewCopy: true, silent: false });
+            }}
+            lang={lang}
+            itemTypeLabel={{
+                sv: setupMode === 'donow' ? 'Do Now-rutnät' : 'arbetsblad',
+                en: setupMode === 'donow' ? 'Do Now grid' : 'worksheet'
+            }}
+        />
     </div>
   );
 }
