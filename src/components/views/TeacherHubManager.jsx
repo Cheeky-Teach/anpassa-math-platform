@@ -4,7 +4,7 @@ import {
     Calendar as CalendarIcon, FolderOpen, Layers, Loader2,
     ChevronDown, ChevronUp, Folder, X, Check, Edit2, 
     BookOpen, Target, ArrowUp, ArrowDown, GripVertical,
-    Bookmark, Beaker, Archive, ArchiveRestore, Filter
+    Bookmark, Beaker, Archive, ArchiveRestore, Filter, GitBranch
 } from 'lucide-react';
 import ContentModal from '../modals/ContentModal'; 
 import { supabase } from '../../lib/supabaseClient';
@@ -13,6 +13,7 @@ import { CONTENT_MAP } from '../../constants/content_map.generated';
 import MathDisplay from '../shared/MathDisplay';
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
 import CheckpointModal from '../modals/CheckpointModal';
+import { SKILL_GRAPH } from '../../constants/skillGraph';
 
 // Helper to get localized topic names
 const getTopicName = (topicId, lang = 'sv') => {
@@ -107,6 +108,128 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
     const [targetPartContext, setTargetPartContext] = useState(null);
     const [expandedSequencerBucketId, setExpandedSequencerBucketId] = useState(null);
     const [isCheckpointModalOpen, setIsCheckpointModalOpen] = useState(false);
+
+    // Prerequisite Review Popover State
+    const [prereqReviewContext, setPrereqReviewContext] = useState(null); // { bucketId, partId }
+    const [prereqDepth, setPrereqDepth] = useState(1); // 1 = direkta (standard), 2 = utökad repetition
+    const [selectedPrereqIds, setSelectedPrereqIds] = useState([]);
+    const [prereqInsertMode, setPrereqInsertMode] = useState('prepend_part'); // 'prepend_part' | 'new_warmup_part'
+
+    // Calculcate how many steps behind the prerequisite levels fill in when auto-filling module
+    const computePrereqSuggestions = (bucket, part, depth = 1) => {
+        if (!bucket || !part) return [];
+
+        const practiceSteps = (part.steps || []).filter(
+            s => s.type === 'practice' && (s.topic || s.topicId)
+        );
+        if (practiceSteps.length === 0) return [];
+
+        // Samla alla redan existerande (topic:level) i hela enheten för att undvika dubbletter
+        const existingNodeIds = new Set();
+        (bucket.payload || []).forEach(p => {
+            (p.steps || []).forEach(s => {
+                if (s.type === 'practice') {
+                    const tId = s.topic || s.topicId;
+                    existingNodeIds.add(`${tId}:${Number(s.level)}`);
+                }
+            });
+        });
+
+        const targetNodeIds = practiceSteps.map(
+            s => `${s.topic || s.topicId}:${Number(s.level)}`
+        );
+        targetNodeIds.forEach(id => existingNodeIds.add(id));
+
+        const visited = new Set(existingNodeIds);
+        const suggestions = [];
+        let frontier = [...targetNodeIds];
+
+        for (let hop = 1; hop <= depth; hop++) {
+            const nextFrontier = [];
+            for (const nodeId of frontier) {
+                const node = SKILL_GRAPH[nodeId];
+                if (!node) continue;
+                for (const prereqId of node.prerequisites || []) {
+                    if (!visited.has(prereqId) && SKILL_GRAPH[prereqId]) {
+                        visited.add(prereqId);
+                        nextFrontier.push(prereqId);
+                        suggestions.push({
+                            ...SKILL_GRAPH[prereqId],
+                            hopDistance: hop
+                        });
+                    }
+                }
+            }
+            frontier = nextFrontier;
+        }
+
+        // Sortera topologiskt (grundläggande tier först)
+        return suggestions.sort((a, b) => (a.tier ?? 0) - (b.tier ?? 0) || a.level - b.level);
+    };
+
+    const openPrereqReview = (bucket, part, depth = 1) => {
+        const suggestions = computePrereqSuggestions(bucket, part, depth);
+        setPrereqDepth(depth);
+        setSelectedPrereqIds(suggestions.map(s => s.id));
+        setPrereqReviewContext({ bucketId: bucket.id, partId: part.id });
+    };
+
+    const handleConfirmInsertPrerequisites = async () => {
+        if (!prereqReviewContext) return;
+        const { bucketId, partId } = prereqReviewContext;
+        const bucket = buckets.find(b => b.id === bucketId);
+        if (!bucket) return;
+
+        const chosenNodes = selectedPrereqIds
+            .map(id => SKILL_GRAPH[id])
+            .filter(Boolean)
+            .sort((a, b) => (a.tier ?? 0) - (b.tier ?? 0) || a.level - b.level);
+
+        if (chosenNodes.length === 0) {
+            setPrereqReviewContext(null);
+            return;
+        }
+
+        const newSteps = chosenNodes.map((node, idx) => ({
+            id: `step_prereq_${node.topicId}_${node.level}_${Date.now()}_${idx}`,
+            type: 'practice',
+            topic: node.topicId,
+            level: Number(node.level)
+        }));
+
+        let updatedParts = [];
+
+        if (prereqInsertMode === 'new_warmup_part') {
+            const targetIdx = (bucket.payload || []).findIndex(p => p.id === partId);
+            const warmupPart = {
+                id: `part_prereq_${Date.now()}`,
+                type: 'part',
+                topicId: chosenNodes[0].topicId,
+                customTitle: lang === 'sv' ? 'Repetition & Förkunskaper' : 'Warm-up & Prerequisites',
+                steps: newSteps
+            };
+
+            updatedParts = [...(bucket.payload || [])];
+            if (targetIdx !== -1) {
+                updatedParts.splice(targetIdx, 0, warmupPart);
+            } else {
+                updatedParts.unshift(warmupPart);
+            }
+        } else {
+            // Lägg till överst i aktuell Del och expandera delen automatiskt
+            updatedParts = (bucket.payload || []).map(part => {
+                if (part.id !== partId) return part;
+                return {
+                    ...part,
+                    steps: [...newSteps, ...(part.steps || [])]
+                };
+            });
+            setCollapsedPartSections(prev => ({ ...prev, [partId]: false }));
+        }
+
+        setPrereqReviewContext(null);
+        await persistBucketPayload(bucketId, updatedParts);
+    };
 
     // Drag-and-Drop & Collapsible Parts State
     const [draggedPartIndex, setDraggedPartIndex] = useState(null);
@@ -1050,6 +1173,10 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                             ? Boolean(collapsedPartSections[part.id]) 
                                                                             : true;
 
+                                                                        const hasPracticeSteps = (part.steps || []).some(s => s.type === 'practice');
+                                                                        const isPrereqOpen = prereqReviewContext?.bucketId === bucket.id && prereqReviewContext?.partId === part.id;
+                                                                        const prereqCandidates = isPrereqOpen ? computePrereqSuggestions(bucket, part, prereqDepth) : [];
+
                                                                         return (
                                                                             <div 
                                                                                 key={part.id || pIdx} 
@@ -1148,6 +1275,28 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
 
                                                                                     {/* Part Action Buttons */}
                                                                                     <div className="flex items-center gap-1.5 shrink-0">
+                                                                                        
+                                                                                        {hasPracticeSteps && (
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() => {
+                                                                                                    if (isPrereqOpen) {
+                                                                                                        setPrereqReviewContext(null);
+                                                                                                    } else {
+                                                                                                        openPrereqReview(bucket, part, 1);
+                                                                                                    }
+                                                                                                }}
+                                                                                                className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs border ${
+                                                                                                    isPrereqOpen
+                                                                                                        ? 'bg-purple-600 text-white border-purple-600'
+                                                                                                        : 'bg-purple-50 hover:bg-purple-100 text-purple-800 border-purple-200'
+                                                                                                }`}
+                                                                                                title={lang === 'sv' ? "Hitta och lägg till rekommenderade förkunskaper" : "Find and add recommended prerequisites"}
+                                                                                            >
+                                                                                                <GitBranch size={11} />
+                                                                                                <span>{lang === 'sv' ? "+ Förkunskaper" : "+ Prerequisites"}</span>
+                                                                                            </button>
+                                                                                        )}
                                                                                         <button 
                                                                                             type="button"
                                                                                             onClick={() => {
@@ -1195,6 +1344,144 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                                         </button>
                                                                                     </div>
                                                                                 </div>
+
+                                                                                {/* INTERACTIVE PREREQUISITE REVIEW POPOVER */}
+                                                                                {isPrereqOpen && (
+                                                                                    <div className="p-4 rounded-2xl bg-purple-500/[0.06] border-2 border-purple-500/40 space-y-3 animate-in fade-in duration-150">
+                                                                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <GitBranch size={15} className="text-purple-600" />
+                                                                                                <span className="text-xs font-black uppercase tracking-wider text-[var(--text-main)]">
+                                                                                                    {lang === 'sv' ? 'Rekommenderade förkunskaper' : 'Recommended Prerequisites'}
+                                                                                                </span>
+                                                                                            </div>
+
+                                                                                            {/* Djupreglage: 1 steg vs 2 steg bakåt */}
+                                                                                            <div className="flex items-center gap-1.5">
+                                                                                                {[1, 2].map(d => (
+                                                                                                    <button
+                                                                                                        key={d}
+                                                                                                        type="button"
+                                                                                                        onClick={() => openPrereqReview(bucket, part, d)}
+                                                                                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                                                                                            prereqDepth === d
+                                                                                                                ? 'bg-purple-600 text-white'
+                                                                                                                : 'bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-main)]'
+                                                                                                        }`}
+                                                                                                    >
+                                                                                                        {lang === 'sv' ? `${d} steg bakåt` : `${d} step${d > 1 ? 's' : ''} back`}
+                                                                                                    </button>
+                                                                                                ))}
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    onClick={() => setPrereqReviewContext(null)}
+                                                                                                    className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer ml-1"
+                                                                                                >
+                                                                                                    <X size={14} />
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        {prereqCandidates.length === 0 ? (
+                                                                                            <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] text-xs font-bold text-[var(--text-muted)]">
+                                                                                                {lang === 'sv'
+                                                                                                    ? 'Alla direkta förkunskaper finns redan med i modulen (eller så är detta en grundnivå).'
+                                                                                                    : 'All direct prerequisites are already included in this unit (or this is a foundation level).'}
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            <>
+                                                                                                <div className="space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+                                                                                                    {prereqCandidates.map(cand => {
+                                                                                                        const isChecked = selectedPrereqIds.includes(cand.id);
+                                                                                                        return (
+                                                                                                            <label
+                                                                                                                key={cand.id}
+                                                                                                                className={`p-2.5 rounded-xl border-2 flex items-center justify-between gap-3 cursor-pointer transition-all ${
+                                                                                                                    isChecked
+                                                                                                                        ? 'bg-[var(--bg-card)] border-purple-500/60 shadow-2xs'
+                                                                                                                        : 'bg-[var(--bg-surface)] border-[var(--border-main)] opacity-60'
+                                                                                                                }`}
+                                                                                                            >
+                                                                                                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                                                                                                    <input
+                                                                                                                        type="checkbox"
+                                                                                                                        checked={isChecked}
+                                                                                                                        onChange={() => {
+                                                                                                                            setSelectedPrereqIds(prev =>
+                                                                                                                                prev.includes(cand.id)
+                                                                                                                                    ? prev.filter(x => x !== cand.id)
+                                                                                                                                    : [...prev, cand.id]
+                                                                                                                            );
+                                                                                                                        }}
+                                                                                                                        className="w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"
+                                                                                                                    />
+                                                                                                                    <span className="px-2 py-0.5 rounded bg-purple-600 text-white text-[10px] font-black uppercase shrink-0">
+                                                                                                                        {lang === 'sv' ? `Nivå ${cand.level}` : `Lvl ${cand.level}`}
+                                                                                                                    </span>
+                                                                                                                    <div className="min-w-0 flex-1">
+                                                                                                                        <div className="text-xs font-black text-[var(--text-main)] truncate">
+                                                                                                                            {cand.topicLabel?.[lang] || cand.topicLabel?.sv}
+                                                                                                                        </div>
+                                                                                                                        <div className="text-[11px] font-semibold text-[var(--text-muted)] truncate">
+                                                                                                                            {cand.levelDesc?.[lang] || cand.levelDesc?.sv}
+                                                                                                                        </div>
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                                {cand.example && (
+                                                                                                                    <div className="hidden sm:block text-xs font-bold text-[var(--text-main)] bg-[var(--bg-surface)] px-2 py-1 rounded-lg border border-[var(--border-main)] shrink-0">
+                                                                                                                        <MathDisplay content={cand.example} />
+                                                                                                                    </div>
+                                                                                                                )}
+                                                                                                            </label>
+                                                                                                        );
+                                                                                                    })}
+                                                                                                </div>
+
+                                                                                                {/* Placeringsval & Bekräfta-knapp */}
+                                                                                                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-purple-500/20">
+                                                                                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider">
+                                                                                                        <button
+                                                                                                            type="button"
+                                                                                                            onClick={() => setPrereqInsertMode('prepend_part')}
+                                                                                                            className={`px-2.5 py-1.5 rounded-lg border cursor-pointer transition-all ${
+                                                                                                                prereqInsertMode === 'prepend_part'
+                                                                                                                    ? 'bg-[var(--text-main)] text-[var(--bg-canvas)] border-[var(--text-main)]'
+                                                                                                                    : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-main)]'
+                                                                                                            }`}
+                                                                                                        >
+                                                                                                            {lang === 'sv' ? 'Överst i denna Del' : 'Top of this Part'}
+                                                                                                        </button>
+                                                                                                        <button
+                                                                                                            type="button"
+                                                                                                            onClick={() => setPrereqInsertMode('new_warmup_part')}
+                                                                                                            className={`px-2.5 py-1.5 rounded-lg border cursor-pointer transition-all ${
+                                                                                                                prereqInsertMode === 'new_warmup_part'
+                                                                                                                    ? 'bg-[var(--text-main)] text-[var(--bg-canvas)] border-[var(--text-main)]'
+                                                                                                                    : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-main)]'
+                                                                                                            }`}
+                                                                                                        >
+                                                                                                            {lang === 'sv' ? 'Som ny repetitions-Del före' : 'As new Warm-up Part before'}
+                                                                                                        </button>
+                                                                                                    </div>
+
+                                                                                                    <button
+                                                                                                        type="button"
+                                                                                                        disabled={selectedPrereqIds.length === 0}
+                                                                                                        onClick={handleConfirmInsertPrerequisites}
+                                                                                                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+                                                                                                    >
+                                                                                                        <Check size={13} />
+                                                                                                        <span>
+                                                                                                            {lang === 'sv'
+                                                                                                                ? `Lägg till valda (${selectedPrereqIds.length})`
+                                                                                                                : `Add Selected (${selectedPrereqIds.length})`}
+                                                                                                        </span>
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                            </>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )}
 
                                                                                 {/* Collapsible Steps List */}
                                                                                 {!isPartCollapsed && (

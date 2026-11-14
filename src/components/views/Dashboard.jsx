@@ -5,7 +5,7 @@ import {
   Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings, User, 
   History, Target, LayoutGrid, RotateCcw, FileSpreadsheet, MoreHorizontal,
   PlayCircle, CheckCircle2, AlertCircle, Grid3X3, Monitor, Beaker, Newspaper, X, 
-  ArrowUpRight, Layers, PieChart, HelpCircle, Check
+  ArrowUpRight, Layers, PieChart, HelpCircle, Check, Compass
 } from 'lucide-react';
 
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
@@ -17,6 +17,8 @@ import DashboardTutorialModal from '../modals/DashboardTutorialModal';
 import CapacityModal from '../modals/CapacityModal';
 import { BookOpen } from 'lucide-react';
 import InstructionSlideModal from '../modals/InstructionSlideModal';
+
+import ConceptMapDashboard from './ConceptMapDashboard';
 
 // Helper to look up topic name safely
 const getTopicName = (topicId, lang = 'sv') => {
@@ -136,6 +138,8 @@ const Dashboard = ({
     const [activeInstructionModal, setActiveInstructionModal] = useState(null);
     const [collapsedPartSections, setCollapsedPartSections] = useState({});
     const [openDropdownTopicId, setOpenDropdownTopicId] = useState(null);
+
+    const [diagnosticTarget, setDiagnosticTarget] = useState(null); // { topicId, level, isNewGoal } | null
     
 
     const TEXT = {
@@ -472,38 +476,42 @@ const fetchArchive = async () => {
         });
     }
 
+    const isEducator = ['teacher', 'super_admin'].includes(userRole);
+
     return (
         <div className="layout-wrapper relative z-10 animate-in fade-in pb-10">
-            <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[320px_1fr] gap-6 lg:gap-8 pt-6 w-full max-w-[1600px] mx-auto px-4 sm:px-6">           
+            <div className={`pt-6 w-full max-w-[1600px] mx-auto px-4 sm:px-6 ${
+                isEducator
+                    ? 'grid grid-cols-1 lg:grid-cols-[260px_1fr] xl:grid-cols-[276px_1fr] gap-6 lg:gap-7'
+                    : 'flex flex-col gap-5'
+            }`}>           
                 {/* ========================================================= */}
-                {/* LEFT COLUMN: COMMAND CENTER (PROFILE & TOOLS)        */}
+                {/* LEFT COLUMN: TEACHER COMMAND CENTER (EDUCATORS ONLY)      */}
                 {/* ========================================================= */}
-                <aside className="w-full flex flex-col gap-4">
-                    
-                    {/* --- HEADER STATUS CARD --- */}
-                    <div className="card theme-emerald flex flex-col gap-4">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-[var(--brand-solid)] rounded-[var(--radius-btn)] flex items-center justify-center text-white shadow-md shrink-0">
-                                {['teacher', 'super_admin'].includes(userRole) ? <Users size="{24}"/> : <User size="{24}"/>}
+                {isEducator && (
+                    <aside className="w-full flex flex-col gap-3.5">
+                        {/* --- TEACHER HEADER STATUS CARD --- */}
+                        <div className="card theme-emerald p-4 flex flex-col gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-[var(--brand-solid)] rounded-[var(--radius-btn)] flex items-center justify-center text-white shadow-sm shrink-0">
+                                    <Users size={20} />
+                                </div>
+                                <div className="min-w-0">
+                                    <h1 className="text-base font-bold text-[var(--text-main)] leading-none mb-1 truncate">
+                                        {profile?.full_name || "Lärare"}
+                                    </h1>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-1 truncate">
+                                        <Target size={10} /> {profile?.school_name || "Anpassa Math Platform"}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="min-w-0">
-                                <h1 className="text-lg font-bold text-[var(--text-main)] leading-none mb-1 truncate">
-                                    {['teacher', 'super_admin'].includes(userRole) ? (profile?.full_name || "Lärare") : (profile?.full_name || "Elev")}
-                                </h1>
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-1.5 truncate">
-                                    <Target size={10}/> {profile?.school_name || "Anpassa Math Platform"}
-                                </p>
-                            </div>
-                        </div>
-                    {/* ONLY SHOW TO TEACHERS & SUPER ADMINS */}
-                    {['teacher', 'super_admin'].includes(userRole) && (
-                        <>
+
                             {/* Subscription Date */}
                             {(() => {
                                 const sub = formatSubscriptionDate(profile?.subscription_end_date || profile?.subscription_ends_at, lang);
                                 if (!sub) return null;
                                 return (
-                                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-[var(--bg-surface)] p-2 rounded-[var(--radius-btn)] border border-[var(--border-main)]">
+                                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-[var(--bg-surface)] px-2.5 py-1.5 rounded-[var(--radius-btn)] border border-[var(--border-main)]">
                                         <span className={`w-2 h-2 rounded-full ${sub.isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`} />
                                         <span className={sub.isExpired ? 'text-[var(--theme-rose-text)] font-black' : 'text-[var(--text-muted)]'}>
                                             {sub.text}
@@ -513,21 +521,20 @@ const fetchArchive = async () => {
                             })()}
 
                             {/* Class Code */}
-                            <div className="flex flex-col items-center bg-[var(--brand-bg)] px-4 py-3 rounded-[var(--radius-btn)] border border-[var(--brand-border)] relative overflow-hidden">
+                            <div className="flex flex-col items-center bg-[var(--brand-bg)] px-3 py-2.5 rounded-[var(--radius-btn)] border border-[var(--brand-border)] relative overflow-hidden">
                                 <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--brand-text)] opacity-80 mb-0.5">
-                                    {['teacher', 'super_admin'].includes(userRole) ? t.class_code_label : t.connected_code_label}
+                                    {t.class_code_label}
                                 </span>
-                                <span className="text-xl font-black tracking-[0.2em] text-[var(--brand-text)] uppercase">
+                                <span className="text-lg font-black tracking-[0.2em] text-[var(--brand-text)] uppercase">
                                     {profile?.class_code || "---"}
                                 </span>
-                                
-                                {/*  NEW: Capacity Management Button */}
-                                {['teacher', 'super_admin'].includes(userRole) && profile?.class_code && (
+
+                                {profile?.class_code && (
                                     <button 
                                         onClick={() => setShowCapacityModal(true)}
-                                        className="theme-amber mt-3 flex items-center gap-1.5 px-4 py-1.5 bg-[var(--theme-amber-bg)] border border-[var(--theme-amber-border)] rounded-md text-[9px] font-black uppercase tracking-widest text-[var(--theme-amber-text)] hover:bg-amber-500 hover:text-white transition-all shadow-sm active:scale-95 cursor-pointer"
+                                        className="theme-amber mt-2 flex items-center gap-1.5 px-3 py-1 bg-[var(--theme-amber-bg)] border border-[var(--theme-amber-border)] rounded-md text-[9px] font-black uppercase tracking-widest text-[var(--theme-amber-text)] hover:bg-amber-500 hover:text-white transition-all shadow-2xs active:scale-95 cursor-pointer"
                                     >
-                                        <Users size={12} /> {lang === 'sv' ? "Hantera Platser" : "Manage Slots"}
+                                        <Users size={11} /> {lang === 'sv' ? "Hantera Platser" : "Manage Slots"}
                                     </button>
                                 )}
                             </div>
@@ -535,123 +542,225 @@ const fetchArchive = async () => {
                             {/* Profile/Settings Button */}
                             <button 
                                 onClick={onProfileOpen} 
-                                className="w-full flex items-center justify-center gap-2 py-3 bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-widest hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)] transition-all shadow-sm active:scale-95 cursor-pointer"
+                                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-widest hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)] transition-all shadow-2xs active:scale-95 cursor-pointer"
                             >
-                                <Settings size={14} /> {t.profile_btn}
+                                <Settings size={13} /> {t.profile_btn}
                             </button>
-                        </>
-                    )}
-                    </div>
-
-
-                    {/* --- TOOLS SECTION --- */}
-                    <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-2 ml-2">
-                            <Zap size={14} className="text-orange-400" />
-                            <h2 className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t.tools_section}</h2>
                         </div>
 
-                        {/* Question Studio */}
-                        {['teacher', 'super_admin'].includes(userRole) && (
+                        {/* --- TEACHER TOOLS SECTION --- */}
+                        <div className="flex flex-col gap-2.5">
+                            <div className="flex items-center gap-2 ml-1.5">
+                                <Zap size={13} className="text-orange-400" />
+                                <h2 className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t.tools_section}</h2>
+                            </div>
+
+                            {/* Question Studio */}
                             <div className="theme-emerald">
-                                <button onClick={onStudioOpen} className="group flex items-center gap-4 p-4 bg-[var(--brand-solid)] text-white rounded-[var(--radius-card)] hover:opacity-90 transition-all shadow-md text-left w-full">
-                                    <div className="w-10 h-10 bg-white/20 rounded-[var(--radius-btn)] flex items-center justify-center shrink-0">
-                                        <Zap size={18} fill="currentColor" />
+                                <button onClick={onStudioOpen} className="group flex items-center gap-3.5 p-3.5 bg-[var(--brand-solid)] text-white rounded-[var(--radius-card)] hover:opacity-90 transition-all shadow-md text-left w-full cursor-pointer">
+                                    <div className="w-9 h-9 bg-white/20 rounded-[var(--radius-btn)] flex items-center justify-center shrink-0">
+                                        <Zap size={17} fill="currentColor" />
                                     </div>
                                     <div>
-                                        <span className="block font-bold text-sm uppercase tracking-tight leading-tight">{t.studio_title}</span>
-                                        <span className="text-[9px] font-medium text-white/70 uppercase tracking-widest">{t.studio_desc}</span>
+                                        <span className="block font-bold text-xs uppercase tracking-tight leading-tight">{t.studio_title}</span>
+                                        <span className="text-[9px] font-medium text-white/80 uppercase tracking-widest">{t.studio_desc}</span>
                                     </div>
                                 </button>
                             </div>
-                        )}
 
-                        <div className="theme-indigo mt-2">
+                            {/* Digitala laborationer */}
+                            <div className="theme-indigo">
+                                <button 
+                                    onClick={onFractionLabOpen} 
+                                    className="group flex items-center gap-3 p-3 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] hover:bg-[var(--brand-solid)] transition-all text-left w-full cursor-pointer"
+                                >
+                                    <div className="w-8 h-8 bg-[var(--bg-card)] rounded-[var(--radius-btn)] flex items-center justify-center text-[var(--brand-text)] shrink-0 shadow-2xs">
+                                        <PieChart size={16} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="block font-bold text-xs uppercase text-[var(--text-main)] group-hover:text-white leading-tight truncate">
+                                            {lang === 'sv' ? "Digitala laborationer" : "Digital Manipulatives"}
+                                        </span>
+                                        <span className="text-[9px] font-bold text-[var(--brand-text)] group-hover:text-white/85 uppercase tracking-widest block truncate">
+                                            {lang === 'sv' ? "Bråk, Algebra, Geometri" : "Fraction, Algebra, Geometry"}
+                                        </span>
+                                    </div>
+                                </button>
+                            </div>
+
+                            {/* Test Lab */}
+                            <div className="theme-indigo">
+                                <button onClick={onLabOpen} className="group flex items-center gap-3 p-3 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] hover:bg-[var(--brand-solid)] transition-all text-left w-full cursor-pointer">
+                                    <div className="w-8 h-8 bg-[var(--bg-card)] rounded-[var(--radius-btn)] flex items-center justify-center text-[var(--brand-text)] shrink-0 shadow-2xs">
+                                        <Beaker size={16} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="block font-bold text-xs uppercase text-[var(--text-main)] group-hover:text-white leading-tight">Test Lab</span>
+                                        <span className="text-[9px] font-bold text-[var(--brand-text)] group-hover:text-white/85 uppercase tracking-widest block">
+                                            {lang === 'sv' ? 'Övningsprov' : 'Practice tests'}
+                                        </span>
+                                    </div>
+                                </button>
+                            </div>
+
+                            {/* Timer Inline Tool */}
+                            <div className="theme-emerald">
+                                <div className="flex items-center gap-2.5 p-3 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] w-full">
+                                    <div className="w-8 h-8 bg-[var(--brand-solid)] rounded-[var(--radius-btn)] flex items-center justify-center text-white shrink-0 shadow-2xs">
+                                        <Clock size={16} />
+                                    </div>
+                                    <div className="flex-1 flex items-center gap-1.5">
+                                        <select value={timerSettings.duration / 60} onChange={(e) => toggleTimer(Number(e.target.value))} className="flex-1 bg-[var(--bg-card)] border border-[var(--border-strong)] text-[var(--text-main)] py-1.5 px-2 rounded-[var(--radius-btn)] text-xs font-bold outline-none cursor-pointer focus:border-[var(--brand-solid)] appearance-none">
+                                            <option value="0">{t.timer_off}</option>
+                                            {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
+                                        </select>
+                                        {timerSettings.duration > 0 && (
+                                            <button onClick={resetTimer} className="p-1.5 text-[var(--theme-rose-text)] bg-[var(--bg-card)] rounded-[var(--radius-btn)] shadow-2xs border border-[var(--border-strong)] hover:border-[var(--theme-rose-border)] hover:bg-[var(--theme-rose-bg)] transition-colors cursor-pointer">
+                                                <RotateCcw size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Bottom Row Tools */}
+                            <div className="grid grid-cols-2 gap-2.5">
+                                <div className="theme-emerald">
+                                    <button onClick={onTimesTableOpen} className="w-full group flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] transition-all text-center cursor-pointer">
+                                        <Grid3X3 size={18} className="text-[var(--brand-text)]" />
+                                        <span className="font-bold text-[10px] uppercase text-[var(--text-main)]">{t.times_table_title}</span>
+                                    </button>
+                                </div>
+                                <div className="theme-amber">
+                                    <button onClick={onStatsOpen} className="w-full group flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] transition-all text-center cursor-pointer">
+                                        <BarChart3 size={18} className="text-[var(--brand-text)]" />
+                                        <span className="font-bold text-[10px] uppercase text-[var(--text-main)]">{t.stats_title}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Compact Utility Menu */}
+                        <div className="card p-3 flex flex-wrap gap-1.5 border border-[var(--border-main)]">
                             <button 
-                                onClick={onFractionLabOpen} 
-                                className="group flex items-center gap-3 p-3.5 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] hover:bg-[var(--brand-solid)] transition-all text-left w-full cursor-pointer"
+                                type="button"
+                                onClick={onContentOpen} 
+                                className="flex-1 min-w-[110px] px-2.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[10px] font-bold uppercase tracking-wider text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                                
-                                <div className="w-8 h-8 bg-[var(--bg-card)] rounded-[var(--radius-btn)] flex items-center justify-center text-[var(--brand-text)] shrink-0 shadow-sm">
-                                    <PieChart size={18} />
-                                </div>
-                                <div>
-                            <span className="block font-bold text-xs uppercase text-[var(--text-main)] group-hover:text-white leading-tight">
-                                {lang === 'sv' ? "Digitala laborationer" : "Digitala Manipulatives"}
-                            </span>
-                            <span className="text-[9px] font-bold text-[var(--brand-text)] group-hover:text-white/80 uppercase tracking-widest">
-                                {lang === 'sv' ? "Bråk, Algebra, Geometri" : "Fraction, Algebra, Geometry"}
-                            </span>
-                        </div>
-                
+                                <Map size={12} className="text-indigo-500 shrink-0" />
+                                <span className="truncate">{t.content_map}</span>
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => setShowDashboardTutorial(true)} 
+                                className="flex-1 min-w-[110px] px-2.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[10px] font-bold uppercase tracking-wider text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                                <HelpCircle size={12} className="text-amber-500 shrink-0" />
+                                <span className="truncate">{lang === 'sv' ? "Snabbguide" : "Quick Guide"}</span>
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={onLgrOpen} 
+                                className="flex-1 min-w-[110px] px-2.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[10px] font-bold uppercase tracking-wider text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                                <Book size={12} className="text-emerald-500 shrink-0" />
+                                <span className="truncate">{t.lgr_link}</span>
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={onAboutOpen} 
+                                className="flex-1 min-w-[110px] px-2.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[10px] font-bold uppercase tracking-wider text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                                <Info size={12} className="text-slate-400 shrink-0" />
+                                <span className="truncate">{t.about_link}</span>
                             </button>
                         </div>
+                    </aside>
+                )}
 
-                        {/* Test Lab */}
-                        <div className="theme-indigo">
-                            <button onClick={onLabOpen} className="group flex items-center gap-4 p-4 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] hover:bg-[var(--brand-solid)] transition-all text-left w-full">
-                                <div className="w-10 h-10 bg-[var(--bg-card)] rounded-[var(--radius-btn)] flex items-center justify-center text-[var(--brand-text)] shrink-0 group-hover:text-[var(--brand-text)] shadow-sm">
-                                    <Beaker size={18} />
-                                </div>
-                                <div>
-                                    <span className="block font-bold text-sm uppercase text-[var(--text-main)] group-hover:text-white leading-tight">Test Lab</span>
-                                    <span className="text-[9px] font-bold text-[var(--brand-text)] group-hover:text-white/80 uppercase tracking-widest">
-                                        {lang === 'sv' ? 'Övningsprov' : 'Practice tests'}
-                                    </span>
-                                </div>
-                            </button>
-                        </div>
-                        
 
-                        {/* Timer Inline Tool */}
-                        <div className="theme-emerald">
-                            <div className="flex items-center gap-3 p-4 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] w-full">
-                                <div className="w-10 h-10 bg-[var(--brand-solid)] rounded-[var(--radius-btn)] flex items-center justify-center text-white shrink-0 shadow-sm">
-                                    <Clock size={18} />
-                                </div>
-                                <div className="flex-1 flex items-center gap-2">
-                                    <select value={timerSettings.duration / 60} onChange={(e) => toggleTimer(Number(e.target.value))} className="flex-1 bg-[var(--bg-card)] border-2 border-[var(--border-strong)] text-[var(--text-main)] py-2 px-2 rounded-[var(--radius-btn)] text-xs font-bold outline-none cursor-pointer focus:border-[var(--brand-solid)] appearance-none">
+                {/* ========================================================= */}
+                {/* ➡️ MAIN CONTENT (FULL WIDTH FOR STUDENTS/GUESTS)          */}
+                {/* ========================================================= */}
+                <main className="w-full min-w-0 flex flex-col">
+
+                    {/* STUDENT / GUEST COMPACT QUICK-ACCESS TOOLS STRIP */}
+                    {!isEducator && (
+                        <div className="mb-5 flex flex-wrap items-center justify-between gap-2.5 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl p-2.5 sm:px-4 shadow-2xs">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={onFractionLabOpen}
+                                    className="px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-indigo-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-indigo-600 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+                                >
+                                    <PieChart size={15} className="text-indigo-500 group-hover:text-white" />
+                                    <span>{lang === 'sv' ? "Laborationer" : "Manipulatives"}</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={onLabOpen}
+                                    className="px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-indigo-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-indigo-600 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+                                >
+                                    <Beaker size={15} className="text-indigo-500" />
+                                    <span>Test Lab</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={onTimesTableOpen}
+                                    className="px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-emerald-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-emerald-600 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+                                >
+                                    <Grid3X3 size={15} className="text-emerald-500" />
+                                    <span>{t.times_table_title}</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={onStatsOpen}
+                                    className="px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-amber-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-amber-600 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+                                >
+                                    <BarChart3 size={15} className="text-amber-500" />
+                                    <span>{t.stats_title}</span>
+                                </button>
+                            </div>
+
+                            <div className="flex items-center gap-2 ml-auto">
+                                {/* Compact Timer Pill */}
+                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)]">
+                                    <Clock size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                    <select
+                                        value={timerSettings.duration / 60}
+                                        onChange={(e) => toggleTimer(Number(e.target.value))}
+                                        className="bg-transparent text-xs font-bold text-[var(--text-main)] outline-none cursor-pointer"
+                                        aria-label={t.timer_title}
+                                    >
                                         <option value="0">{t.timer_off}</option>
                                         {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
                                     </select>
                                     {timerSettings.duration > 0 && (
-                                        <button onClick={resetTimer} className="p-2 text-[var(--theme-rose-text)] bg-[var(--bg-card)] rounded-[var(--radius-btn)] shadow-sm border border-[var(--border-strong)] hover:border-[var(--theme-rose-border)] hover:bg-[var(--theme-rose-bg)] transition-colors">
-                                            <RotateCcw size={16} />
+                                        <button
+                                            type="button"
+                                            onClick={resetTimer}
+                                            className="p-1 text-rose-600 dark:text-rose-400 hover:opacity-75 cursor-pointer"
+                                            title={t.timer_reset}
+                                        >
+                                            <RotateCcw size={13} />
                                         </button>
                                     )}
                                 </div>
-                            </div>
-                        </div>
 
-                        {/* Bottom Row Tools */}
-                        <div className="grid grid-cols-2 gap-3 mt-1">
-                            <div className="theme-emerald">
-                                <button onClick={onTimesTableOpen} className="group flex flex-col items-center justify-center gap-2 p-4 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] transition-all text-center">
-                                    <Grid3X3 size={20} className="text-[var(--brand-text)]" />
-                                    <span className="font-bold text-[10px] uppercase text-[var(--text-main)]">{t.times_table_title}</span>
-                                </button>
-                            </div>
-                            <div className="theme-amber">
-                                <button onClick={onStatsOpen} className="group flex flex-col items-center justify-center gap-2 p-4 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] transition-all text-center">
-                                    <BarChart3 size={20} className="text-[var(--brand-text)]" />
-                                    <span className="font-bold text-[10px] uppercase text-[var(--text-main)]">{t.stats_title}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDashboardTutorial(true)}
+                                    className="p-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-main)] text-[var(--text-main)] transition-colors cursor-pointer"
+                                    title={lang === 'sv' ? "Snabbguide & Hjälp" : "Quick Guide & Help"}
+                                >
+                                    <HelpCircle size={16} className="text-amber-500" />
                                 </button>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Left Footer Links */}
-                    <footer className="mt-auto pt-8 pb-4 flex flex-col gap-4 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
-                        <button onClick={onLgrOpen} className="flex items-center gap-2 hover:text-[var(--brand-solid)] transition-colors"><Book size={14} /> {t.lgr_link}</button>
-                        <button onClick={onAboutOpen} className="flex items-center gap-2 hover:text-[var(--brand-solid)] transition-colors"><Info size={14} /> {t.about_link}</button>
-                    </footer>
-                </aside>
-
-
-                {/* ========================================================= */}
-                {/* ➡️ RIGHT COLUMN: MAIN CONTENT (CURRICULUM & ARCHIVE)    */}
-                {/* ========================================================= */}
-                <main className="w-full min-w-0 flex flex-col">
+                    )}
                     
                     {/* --- ACTIVE SESSION RESUME BANNER (Adaptive 1 or Multi-Room) --- */}
                     {activeSessions.length > 0 && ['teacher', 'super_admin'].includes(userRole) && (
@@ -723,13 +832,15 @@ const fetchArchive = async () => {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div className="flex gap-2 w-fit">
                                               
-                            {/* Existing Tabs */}
-                            <button 
-                                onClick={() => setActiveTab('curriculum')} 
-                                className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'curriculum' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-                            >
-                                <Book size={14}/> {t.curriculum_title}
-                            </button>
+                            {/* Kursmaterial */}
+                            {['teacher', 'super_admin'].includes(userRole) && (
+                                <button 
+                                    onClick={() => setActiveTab('curriculum')} 
+                                    className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'curriculum' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                >
+                                    <Book size={14}/> {t.curriculum_title}
+                                </button>
+                            )}
 
                             {/* NEW: Hub Manager Tab (Teachers Only) */}
                             {['teacher', 'super_admin'].includes(userRole) && (
@@ -1145,209 +1256,234 @@ const fetchArchive = async () => {
                                     </div>
                                 </div>
                             ) : (
-                                /* --- EXISTING FULL CURRICULUM VIEW (Free Play / Teacher) --- */
-                                <>
-                                    {/* HORIZONTAL CATEGORY TABS */}
-                                    <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
-                                        {Object.entries(CATEGORIES).map(([catKey, category]) => {
-                                            const isActive = expandedCategory === catKey;
-                                            const themeColorStr = category.color || 'emerald';
-                                            
-                                            return (
-                                                <div key={catKey} className={`theme-${themeColorStr}`}>
-                                                    <button 
-                                                        onClick={() => setExpandedCategory(catKey)}
-                                                        className={`flex items-center gap-2 px-5 py-3 rounded-[var(--radius-btn)] font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-sm border-2 cursor-pointer ${
-                                                            isActive 
-                                                                ? `bg-[var(--brand-solid)] text-white border-[var(--brand-solid)]` 
-                                                                : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'
-                                                        }`}
-                                                    >
-                                                        {isActive && <Award size={14} />}
-                                                        {category.label[lang]}
-                                                    </button>
-                                                </div>
-                                            );
-                                        })}
-                                        {/*  GUIDE / HELP BUTTON */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowDashboardTutorial(true)}
-                                            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-[var(--radius-btn)] bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-solid)] font-bold text-[10px] uppercase tracking-widest transition-all shadow-xs cursor-pointer shrink-0"
-                                            title={lang === 'sv' ? "Snabbguide & Hjälp" : "Quick Guide & Help"}
-                                        >
-                                            <HelpCircle size={14} className="text-amber-500" />
-                                            <span className="hidden sm:inline">{lang === 'sv' ? "Guide" : "Help"}</span>
-                                        </button>
-                                        <button 
-                                            onClick={onContentOpen} 
-                                            className="ml-auto shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-[var(--radius-btn)] bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-solid)] font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm group cursor-pointer"
-                                        >
-                                            <Map size={14} className="group-hover:scale-110 transition-transform" /> 
-                                            {t.content_map}
-                                            <ChevronRight size={14} className="opacity-40" />
-                                        </button>
-                                    </div>
+                                /* --- UNIFIED SEARCH-FIRST CURRICULUM VIEW (Free Play / Teacher) --- */
+                                <div className="space-y-6">
+                                    {/* Unified Spotlight Search & Diagnostic Workspace */}
+                                    <ConceptMapDashboard
+                                        lang={lang}
+                                        diagnosticTarget={diagnosticTarget}
+                                        onSetDiagnosticTarget={setDiagnosticTarget}
+                                        onSelect={onSelect}
+                                        onStart={onStart}
+                                    />
 
-                                    
-
-                                    {/* ACTIVE CATEGORY TOPICS GRID */}
-                                    <div className={`theme-${themeColorString} card p-6 sm:p-8 border-2 border-[var(--brand-border)]`}>
-                                        <div className="mb-6 flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-[var(--radius-btn)] flex items-center justify-center bg-[var(--brand-solid)] text-white shadow-md">
-                                                <Award size={20} />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight leading-none mb-1">
-                                                    {activeCategoryData.label[lang]}
-                                                </h3>
-                                                <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest leading-none">
-                                                    {t.topics_count(activeCategoryData.topics.length)}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {/* Backdrop to close open dropdown when clicking outside */}
-                                        {openDropdownTopicId && (
-                                            <div 
-                                                className="fixed inset-0 z-20" 
-                                                onClick={() => setOpenDropdownTopicId(null)} 
-                                            />
-                                        )}
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3.5">
-                                            {activeCategoryData.topics.map(topic => {
-                                                const isThisTopicSelected = selectedTopic === topic.id && selectedLevel > 0;
-                                                const isDropdownOpen = openDropdownTopicId === topic.id;
-                                                const availableLevels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(
-                                                    lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl]
-                                                );
-
-                                                const selectedMeta = isThisTopicSelected
-                                                    ? getLevelMetadata(topic.id, selectedLevel, lang)
-                                                    : null;
-
-                                                return (
-                                                    <div 
-                                                        key={topic.id} 
-                                                        className={`relative bg-[var(--bg-card)] rounded-[var(--radius-card)] p-5 border-2 transition-all group ${
-                                                            isThisTopicSelected 
-                                                                ? 'border-[var(--brand-solid)] shadow-md' 
-                                                                : 'border-[var(--border-main)] hover:border-[var(--brand-solid)] shadow-sm hover:shadow-lg'
-                                                        } ${isDropdownOpen ? 'z-30' : 'z-10'}`}
-                                                    >
-                                                        {/* Topic Title & Level Count */}
-                                                        <div className="font-bold text-[var(--text-main)] mb-3.5 flex items-center justify-between gap-2 text-sm leading-tight">
-                                                            <span>{topic.label[lang]}</span>
-                                                            <span className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-surface)] px-2 py-0.5 rounded-md border border-[var(--border-main)] shrink-0">
-                                                                {availableLevels.length} {lang === 'sv' ? 'nivåer' : 'levels'}
-                                                            </span>
-                                                        </div>
-
-                                                        {/* Custom Dropdown Trigger */}
-                                                        <div className="relative">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setOpenDropdownTopicId(isDropdownOpen ? null : topic.id)}
-                                                                className={`w-full p-3 pl-3.5 pr-3 bg-[var(--bg-surface)] border-2 rounded-[var(--radius-btn)] text-xs font-bold text-[var(--text-main)] flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
-                                                                    isDropdownOpen || isThisTopicSelected
-                                                                        ? 'border-[var(--brand-solid)] shadow-sm'
-                                                                        : 'border-[var(--border-strong)] hover:border-[var(--brand-solid)]'
+                                    {/* Category Tabs & Topic Grid (Visible whenever no diagnostic search target is active) */}
+                                    {!diagnosticTarget && (
+                                        <>
+                                            {/* CLEAN FULL-WIDTH HORIZONTAL CATEGORY TABS */}
+                                            <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+                                                {Object.entries(CATEGORIES).map(([catKey, category]) => {
+                                                    const isActive = expandedCategory === catKey;
+                                                    const themeColorStr = category.color || 'emerald';
+                                                    
+                                                    return (
+                                                        <div key={catKey} className={`theme-${themeColorStr}`}>
+                                                            <button 
+                                                                onClick={() => setExpandedCategory(catKey)}
+                                                                className={`flex items-center gap-2 px-5 py-3 rounded-[var(--radius-btn)] font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-sm border-2 cursor-pointer ${
+                                                                    isActive 
+                                                                        ? `bg-[var(--brand-solid)] text-white border-[var(--brand-solid)]` 
+                                                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'
                                                                 }`}
                                                             >
-                                                                <span className="truncate">
-                                                                    {isThisTopicSelected ? (
-                                                                        <>
-                                                                            <span className="font-black text-[var(--brand-text)]">
-                                                                                {lang === 'sv' ? `Nivå ${selectedLevel}` : `Level ${selectedLevel}`}
-                                                                            </span>
-                                                                            {selectedMeta?.description && (
-                                                                                <span className="text-[var(--text-muted)] font-semibold">
-                                                                                    {' '}— {selectedMeta.description}
-                                                                                </span>
-                                                                            )}
-                                                                        </>
-                                                                    ) : (
-                                                                        <span className="text-[var(--text-muted)]">{t.select_level}</span>
-                                                                    )}
-                                                                </span>
-                                                                <ChevronDown 
-                                                                    size={16} 
-                                                                    className={`shrink-0 text-[var(--text-muted)] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180 text-[var(--brand-solid)]' : ''}`} 
-                                                                />
+                                                                {isActive && <Award size={14} />}
+                                                                {category.label[lang]}
                                                             </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
 
-                                                            {/* Floating Rich Level Menu (Rendered ONLY when clicked) */}
-                                                            {isDropdownOpen && (
-                                                                <div className="absolute left-0 right-0 top-full mt-2 bg-[var(--bg-card)] border-2 border-[var(--brand-solid)] rounded-2xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)] animate-in fade-in slide-in-from-top-1 duration-150">
-                                                                    {availableLevels.map(lvl => {
-                                                                        const { description, mathExample, isSentence } = getLevelMetadata(topic.id, lvl, lang);
-                                                                        const isRowSelected = isThisTopicSelected && selectedLevel === lvl;
+                                            {/* ACTIVE CATEGORY TOPICS GRID */}
+                                            <div className={`theme-${themeColorString} card p-6 sm:p-8 border-2 border-[var(--brand-border)]`}>
+                                                <div className="mb-6 flex items-center gap-4">
+                                                    <div className="w-10 h-10 rounded-[var(--radius-btn)] flex items-center justify-center bg-[var(--brand-solid)] text-white shadow-md">
+                                                        <Award size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight leading-none mb-1">
+                                                            {activeCategoryData.label[lang]}
+                                                        </h3>
+                                                        <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest leading-none">
+                                                            {t.topics_count(activeCategoryData.topics.length)}
+                                                        </p>
+                                                    </div>
+                                                </div>
 
-                                                                        return (
-                                                                            <button
-                                                                                key={lvl}
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    onSelect(topic.id, lvl);
-                                                                                    setOpenDropdownTopicId(null);
-                                                                                }}
-                                                                                className={`w-full text-left p-3 transition-colors cursor-pointer flex flex-col gap-1.5 ${
-                                                                                    isRowSelected
-                                                                                        ? 'bg-[var(--brand-bg)]'
-                                                                                        : 'hover:bg-[var(--bg-surface)]'
-                                                                                }`}
-                                                                            >
-                                                                                <div className="flex items-center justify-between gap-2 w-full">
-                                                                                    <div className="flex items-center gap-2 min-w-0">
-                                                                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shrink-0 ${
-                                                                                            isRowSelected
-                                                                                                ? 'bg-[var(--brand-solid)] text-white'
-                                                                                                : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
-                                                                                        }`}>
-                                                                                            {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
-                                                                                        </span>
-                                                                                        <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                                                                                            {description}
-                                                                                        </span>
-                                                                                    </div>
+                                                {/* Backdrop to close open dropdown when clicking outside */}
+                                                {openDropdownTopicId && (
+                                                    <div 
+                                                        className="fixed inset-0 z-20" 
+                                                        onClick={() => setOpenDropdownTopicId(null)} 
+                                                    />
+                                                )}
 
-                                                                                    {mathExample && !isSentence && (
-                                                                                        <span className="shrink-0 px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-main)] text-xs font-bold text-[var(--text-main)]">
-                                                                                            <MathDisplay content={mathExample} />
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3.5">
+                                                    {activeCategoryData.topics.map(topic => {
+                                                        const isThisTopicSelected = selectedTopic === topic.id && selectedLevel > 0;
+                                                        const isDropdownOpen = openDropdownTopicId === topic.id;
+                                                        const availableLevels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(
+                                                            lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl]
+                                                        );
+
+                                                        // Middle diagnostic entry point so unsure users calibrate in 1 click instead of starting at L1
+                                                        const diagnosticStartLvl = availableLevels.length > 0
+                                                            ? availableLevels[Math.min(Math.floor((availableLevels.length - 1) / 2), 2)]
+                                                            : 1;
+
+                                                        const selectedMeta = isThisTopicSelected
+                                                            ? getLevelMetadata(topic.id, selectedLevel, lang)
+                                                            : null;
+
+                                                        return (
+                                                            <div 
+                                                                key={topic.id} 
+                                                                className={`relative bg-[var(--bg-card)] rounded-[var(--radius-card)] p-5 border-2 transition-all group ${
+                                                                    isThisTopicSelected 
+                                                                        ? 'border-[var(--brand-solid)] shadow-md' 
+                                                                        : 'border-[var(--border-main)] hover:border-[var(--brand-solid)] shadow-sm hover:shadow-lg'
+                                                                } ${isDropdownOpen ? 'z-30' : 'z-10'}`}
+                                                            >
+                                                                {/* Topic Title & Level Count */}
+                                                                <div className="font-bold text-[var(--text-main)] mb-3.5 flex items-center justify-between gap-2 text-sm leading-tight">
+                                                                    <span className="truncate">{topic.label[lang]}</span>
+                                                                    <span className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-surface)] px-2 py-0.5 rounded-md border border-[var(--border-main)] shrink-0">
+                                                                        {availableLevels.length} {lang === 'sv' ? 'nivåer' : 'levels'}
+                                                                    </span>
+                                                                </div>
+
+                                                                {/* Custom Dropdown Trigger */}
+                                                                <div className="relative">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setOpenDropdownTopicId(isDropdownOpen ? null : topic.id)}
+                                                                        className={`w-full p-3 pl-3.5 pr-3 bg-[var(--bg-surface)] border-2 rounded-[var(--radius-btn)] text-xs font-bold text-[var(--text-main)] flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
+                                                                            isDropdownOpen || isThisTopicSelected
+                                                                                ? 'border-[var(--brand-solid)] shadow-sm'
+                                                                                : 'border-[var(--border-strong)] hover:border-[var(--brand-solid)]'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="truncate">
+                                                                            {isThisTopicSelected ? (
+                                                                                <>
+                                                                                    <span className="font-black text-[var(--brand-text)]">
+                                                                                        {lang === 'sv' ? `Nivå ${selectedLevel}` : `Level ${selectedLevel}`}
+                                                                                    </span>
+                                                                                    {selectedMeta?.description && (
+                                                                                        <span className="text-[var(--text-muted)] font-semibold">
+                                                                                            {' '}— {selectedMeta.description}
                                                                                         </span>
                                                                                     )}
+                                                                                </>
+                                                                            ) : (
+                                                                                <span className="text-[var(--text-muted)]">{t.select_level}</span>
+                                                                            )}
+                                                                        </span>
+                                                                        <ChevronDown 
+                                                                            size={16} 
+                                                                            className={`shrink-0 text-[var(--text-muted)] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180 text-[var(--brand-solid)]' : ''}`} 
+                                                                        />
+                                                                    </button>
+
+                                                                    {/* Floating Rich Level Menu (Rendered ONLY when clicked) */}
+                                                                    {isDropdownOpen && (
+                                                                        <div className="absolute left-0 right-0 top-full mt-2 bg-[var(--bg-card)] border-2 border-[var(--brand-solid)] rounded-2xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)] animate-in fade-in slide-in-from-top-1 duration-150">
+                                                                            {/* Top Helper Row: Hitta rätt nivå (uses active category theme variables) */}
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    const targetLvl = isThisTopicSelected ? selectedLevel : diagnosticStartLvl;
+                                                                                    setOpenDropdownTopicId(null);
+                                                                                    setDiagnosticTarget({
+                                                                                        topicId: topic.id,
+                                                                                        level: targetLvl,
+                                                                                        isNewGoal: true
+                                                                                    });
+                                                                                    onSelect(topic.id, targetLvl);
+                                                                                }}
+                                                                                className="w-full text-left p-3 bg-[var(--brand-bg)] hover:bg-[var(--brand-solid)] transition-colors cursor-pointer flex items-center justify-between gap-2 group/finder"
+                                                                            >
+                                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                                    <Compass size={14} className="text-[var(--brand-text)] group-hover/finder:text-white shrink-0" />
+                                                                                    <span className="text-xs font-black text-[var(--brand-text)] group-hover/finder:text-white truncate">
+                                                                                        {lang === 'sv' ? 'Hitta rätt nivå...' : 'Find the right level...'}
+                                                                                    </span>
                                                                                 </div>
-
-                                                                                {mathExample && isSentence && (
-                                                                                    <div className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1 pl-1 italic">
-                                                                                        <MathDisplay content={mathExample} />
-                                                                                    </div>
-                                                                                )}
+                                                                                <span className="text-[10px] font-bold text-[var(--text-main)] group-hover/finder:text-white/90 shrink-0">
+                                                                                    {lang === 'sv' ? 'Testa exempel →' : 'Try example →'}
+                                                                                </span>
                                                                             </button>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            )}
-                                                        </div>
 
-                                                        {/* Selected Level Full Example Preview Pill */}
-                                                        {isThisTopicSelected && selectedMeta?.mathExample && (
-                                                            <div className="mt-3 p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)] flex items-start gap-2 animate-in fade-in duration-200">
-                                                                <span className="text-[10px] font-black uppercase tracking-wider text-[var(--brand-text)] bg-[var(--brand-bg)] border border-[var(--brand-border)] px-1.5 py-0.5 rounded shrink-0 mt-0.5">
-                                                                    Ex:
-                                                                </span>
-                                                                <div className="text-xs font-bold text-[var(--text-main)] leading-snug break-words min-w-0 flex-1">
-                                                                    <MathDisplay content={selectedMeta.mathExample} />
+                                                                            {availableLevels.map(lvl => {
+                                                                                const { description, mathExample, isSentence } = getLevelMetadata(topic.id, lvl, lang);
+                                                                                const isRowSelected = isThisTopicSelected && selectedLevel === lvl;
+
+                                                                                return (
+                                                                                    <button
+                                                                                        key={lvl}
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            onSelect(topic.id, lvl);
+                                                                                            setOpenDropdownTopicId(null);
+                                                                                        }}
+                                                                                        className={`w-full text-left p-3 transition-colors cursor-pointer flex flex-col gap-1.5 ${
+                                                                                            isRowSelected
+                                                                                                ? 'bg-[var(--brand-bg)]'
+                                                                                                : 'hover:bg-[var(--bg-surface)]'
+                                                                                        }`}
+                                                                                    >
+                                                                                        <div className="flex items-center justify-between gap-2 w-full">
+                                                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shrink-0 ${
+                                                                                                    isRowSelected
+                                                                                                        ? 'bg-[var(--brand-solid)] text-white'
+                                                                                                        : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
+                                                                                                }`}>
+                                                                                                    {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
+                                                                                                </span>
+                                                                                                <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                                                                                                    {description}
+                                                                                                </span>
+                                                                                            </div>
+
+                                                                                            {mathExample && !isSentence && (
+                                                                                                <span className="shrink-0 px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-main)] text-xs font-bold text-[var(--text-main)]">
+                                                                                                    <MathDisplay content={mathExample} />
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+
+                                                                                        {mathExample && isSentence && (
+                                                                                            <div className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1 pl-1 italic">
+                                                                                                <MathDisplay content={mathExample} />
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </button>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
+
+                                                                {/* Selected Level Full Example Preview Pill */}
+                                                                {isThisTopicSelected && selectedMeta?.mathExample && (
+                                                                    <div className="mt-3 p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)] flex items-start gap-2 animate-in fade-in duration-200">
+                                                                        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--brand-text)] bg-[var(--brand-bg)] border border-[var(--brand-border)] px-1.5 py-0.5 rounded shrink-0 mt-0.5">
+                                                                            Ex:
+                                                                        </span>
+                                                                        <div className="text-xs font-bold text-[var(--text-main)] leading-snug break-words min-w-0 flex-1">
+                                                                            <MathDisplay content={selectedMeta.mathExample} />
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             )}
                         </div>
                     ) : (
@@ -1415,7 +1551,7 @@ const fetchArchive = async () => {
                 {/* --- SMART FLOATING ACTION BUTTON --- */}
                 {activeTab === 'curriculum' && (
                     <div className={`fixed bottom-8 right-8 flex justify-end pointer-events-none z-30 transition-all duration-500 ${
-                        (selectedTopic || (activeBucket && activeBucket !== 'FREE_PLAY' && nextUnfinishedStep)) 
+                        (!diagnosticTarget && (selectedTopic || (activeBucket && activeBucket !== 'FREE_PLAY' && nextUnfinishedStep))) 
                             ? 'translate-y-0 opacity-100' 
                             : 'translate-y-20 opacity-0'
                     }`}>

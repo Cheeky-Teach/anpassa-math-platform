@@ -284,7 +284,7 @@ export default function CategoryClashEngine({
         })
     });
 
-    const broadcastRoomState = async (slotId, questionData, updatedTeams = teamsRef.current, updatedCleared = clearedTilesRef.current, updatedScores = studentScoresMap) => {
+    const broadcastRoomState = async (slotId, questionData, updatedTeams = teamsRef.current, updatedCleared = clearedTilesRef.current, updatedScores = studentScoresRef.current) => {
         if (!isLive) return;
 
         await broadcastState({
@@ -304,11 +304,6 @@ export default function CategoryClashEngine({
             }
         });
     };
-
-    useEffect(() => {
-        if (!isLive || mode !== 'play') return;
-        broadcastRoomState(activeSlotId, activeQuestion, teamsRef.current, clearedTilesRef.current, studentScoresMap);
-    }, [studentScoresMap]);
 
     useEffect(() => {
         const rawTiles = session?.active_question_data?.board?.tiles;
@@ -540,7 +535,8 @@ export default function CategoryClashEngine({
     }, [liveResponses]);
 
     // Live Analytics Derivations
-    const { leaderboard, streakList, totalClassScore, activeStudentCount } = useMemo(() => {
+    const studentScoresRef = useRef({});
+    const { leaderboard, studentScoresMap, streakList, totalClassScore, activeStudentCount } = useMemo(() => {
         const studentMap = {};
         const studentAnswersHistory = {};
 
@@ -617,6 +613,12 @@ export default function CategoryClashEngine({
             activeStudentCount: Object.keys(studentMap).length
         };
     }, [liveResponses, studentScoreAdjustments, dimensions.columns, pointScale, lang]);
+
+        useEffect(() => {
+            studentScoresRef.current = studentScoresMap;
+            if (!isLive || mode !== 'play') return;
+        broadcastRoomState(activeSlotId, activeQuestion, teamsRef.current, clearedTilesRef.current, studentScoresMap);
+    }, [studentScoresMap]);
 
     const handleAdjustSoloStudent = (displayName, delta) => {
         setStudentScoreAdjustments(prev => ({

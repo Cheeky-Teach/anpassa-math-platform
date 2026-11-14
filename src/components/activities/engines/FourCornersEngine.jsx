@@ -532,7 +532,8 @@ export default function FourCornersEngine({
     }, [liveVotes]);
 
     // 🟢 Pedagogical Scoring: Flat Base (100p) + Streak Bonuses
-    const { leaderboard, streakList, totalClassScore } = useMemo(() => {
+    const studentScoresRef = useRef({});
+    const { leaderboard, studentScoresMap, streakList, totalClassScore } = useMemo(() => {
         const studentMap = {};
         const studentHistory = {};
 
@@ -592,6 +593,7 @@ export default function FourCornersEngine({
 
         return {
             leaderboard: topPodium,
+            studentScoresMap,
             streakList: activeStreaks,
             totalClassScore: cumulativePoints
         };
@@ -607,7 +609,7 @@ export default function FourCornersEngine({
         return [];
     }, [currentRound]);
 
-    const broadcastRoomState = async (updatedRound, phase = 'commit', updatedScores = studentScoresMap) => {
+    const broadcastRoomState = async (updatedRound, phase = 'commit', updatedScores = studentScoresRef.current) => {
         if (!isLive) return;
 
         await broadcastState({
@@ -625,6 +627,12 @@ export default function FourCornersEngine({
             updated_at: new Date().toISOString()
         });
     };
+
+    useEffect(() => {
+        studentScoresRef.current = studentScoresMap;
+        if (!isLive || viewMode !== 'play') return;
+        broadcastRoomState(currentRound, revealedPhase, studentScoresMap);
+    }, [studentScoresMap]);
 
     useEffect(() => {
         if (!isLive || viewMode !== 'play') return;
