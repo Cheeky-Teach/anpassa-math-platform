@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     Search, Compass, Play, RefreshCw, X, CornerDownLeft,
     ArrowRight, RotateCcw, ChevronLeft, HelpCircle,
-    PieChart, Beaker, Grid3X3, BarChart3, Clock
+    PieChart, Grid3X3, Clock
 } from 'lucide-react';
 import { SKILL_GRAPH, CONCEPT_SEARCH_INDEX } from '../../constants/skillGraph';
 import { CATEGORIES } from '../../constants/localization';
@@ -27,6 +27,30 @@ const VISUAL_TOPICS = new Set([
 ]);
 
 const RECENT_STORAGE_KEY = 'concept_map_recent_nodes_v1';
+
+const RECOMMENDED_SEARCHES = [
+    // Arithmetic & Number Sense
+    { sv: 'Bråk', en: 'Fractions', querySv: 'bråk', queryEn: 'fractions' },
+    { sv: 'Procent', en: 'Percent', querySv: 'procent', queryEn: 'percent' },
+    { sv: 'Negativa tal', en: 'Negative numbers', querySv: 'negativa', queryEn: 'negative' },
+    { sv: 'Potenser', en: 'Exponents', querySv: 'potenser', queryEn: 'exponents' },
+    { sv: 'Prioriteringsregler', en: 'Order of operations', querySv: 'prioritering', queryEn: 'order' },
+
+    // Algebra
+    { sv: 'Ekvationer', en: 'Equations', querySv: 'ekvationer', queryEn: 'equations' },
+    { sv: 'Parenteser', en: 'Parentheses', querySv: 'parenteser', queryEn: 'parentheses' },
+    { sv: 'Förenkla uttryck', en: 'Simplify expressions', querySv: 'förenkla', queryEn: 'simplify' },
+
+    // Geometry
+    { sv: 'Pythagoras', en: 'Pythagoras', querySv: 'pythagoras', queryEn: 'pythagoras' },
+    { sv: 'Area & Omkrets', en: 'Area & Perimeter', querySv: 'area', queryEn: 'area' },
+    { sv: 'Vinklar', en: 'Angles', querySv: 'vinklar', queryEn: 'angles' },
+
+    // Functions & Statistics
+    { sv: 'Grafer & Räta linjen', en: 'Graphs & Linear functions', querySv: 'graf', queryEn: 'graph' },
+    { sv: 'Sannolikhet', en: 'Probability', querySv: 'sannolikhet', queryEn: 'probability' },
+    { sv: 'Medelvärde & Median', en: 'Mean & Median', querySv: 'medelvärde', queryEn: 'mean' }
+];
 
 export default function ConceptMapDashboard({
     lang = 'sv',
@@ -276,26 +300,26 @@ export default function ConceptMapDashboard({
     return (
         <div className="w-full space-y-5">
             {/* ===================================================================== */}
-            {/* 1. CARDLESS UNIFIED SPOTLIGHT SEARCH & QUICK-ACCESS DECK              */}
+            {/* 1. COMPACT SINGLE-ROW SEARCH & CORE STUDENT TOOLS DECK                */}
             {/* ===================================================================== */}
-            <div className="relative z-30 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+            <div className="relative z-30">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     {/* Back to Topic Grid button when Diagnostic Mode is open */}
                     {focusedNode && (
                         <button
                             type="button"
                             onClick={handleCloseDiagnostic}
-                            className="px-4 py-3 rounded-2xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] border border-[var(--border-strong)] hover:border-indigo-500 text-xs font-black uppercase tracking-wider text-[var(--text-main)] transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs"
+                            className="px-3.5 py-2.5 rounded-2xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] border border-[var(--border-strong)] hover:border-indigo-500 text-xs font-black uppercase tracking-wider text-[var(--text-main)] transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs"
                         >
                             <ChevronLeft size={15} />
                             <span>{lang === 'sv' ? 'Visa alla ämnen' : 'All Topics'}</span>
                         </button>
                     )}
 
-                    {/* Search Input */}
+                    {/* Search Input + Attached Spotlight Popover */}
                     <div className="relative flex-1">
-                        <div className="relative flex items-center">
-                            <Search size={18} className="absolute left-4 text-indigo-600 dark:text-indigo-400 pointer-events-none" />
+                        <div className="relative flex items-center z-20">
+                            <Search size={17} className="absolute left-3.5 text-indigo-600 dark:text-indigo-400 pointer-events-none" />
                             <input
                                 ref={searchInputRef}
                                 type="text"
@@ -307,121 +331,179 @@ export default function ConceptMapDashboard({
                                 }}
                                 placeholder={
                                     lang === 'sv'
-                                        ? 'Vad behöver du hjälp med? Sök t.ex. "parenteser", "bråk", "procent", "pythagoras"...'
-                                        : 'What do you need help with? Search e.g. "parentheses", "fractions", "percent"...'
+                                        ? 'Osäker på var du ska börja? Sök t.ex. "bråk", "procent", "ekvationer"...'
+                                        : 'Not sure where to start? Search e.g. "fractions", "percent", "equations"...'
                                 }
-                                className="w-full pl-11 pr-16 py-3.5 bg-[var(--bg-card)] border border-[var(--border-strong)] focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 rounded-2xl text-xs sm:text-sm font-bold text-[var(--text-main)] outline-none transition-all shadow-xs"
+                                className={`w-full pl-10 pr-14 py-2.5 bg-[var(--bg-card)] border border-indigo-500/45 hover:border-indigo-500 focus:border-indigo-500 focus:shadow-[0_0_26px_-2px_rgba(99,102,241,0.5)] focus:ring-4 focus:ring-indigo-500/15 rounded-2xl text-xs sm:text-sm font-bold text-[var(--text-main)] outline-none transition-all duration-300 ${
+                                    !searchQuery && !isSearchOpen ? 'animate-search-glow' : ''
+                                }`}
                             />
                             {searchQuery ? (
                                 <button
                                     type="button"
                                     onClick={() => {
                                         setSearchQuery('');
-                                        setIsSearchOpen(false);
+                                        searchInputRef.current?.focus();
                                     }}
-                                    className="absolute right-3.5 p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
+                                    className="absolute right-3 p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
                                 >
-                                    <X size={16} />
+                                    <X size={15} />
                                 </button>
                             ) : (
-                                <kbd className="hidden sm:inline-flex items-center absolute right-3.5 px-2 py-0.5 text-[10px] font-black text-[var(--text-muted)] bg-[var(--bg-card)] border border-[var(--border-main)] rounded-lg">
-                                    Enter
+                                <kbd className="hidden md:inline-flex items-center absolute right-3 px-2 py-0.5 text-[10px] font-black text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-lg">
+                                    ⌘K
                                 </kbd>
                             )}
-                        </div>                        
+                        </div>
 
-                        {/* Spotlight Dropdown Results */}
-                        {isSearchOpen && searchQuery.trim().length > 0 && (
+                        {/* Floating Spotlight Popover (Onboarding Prompt & Chips OR Live Results) */}
+                        {isSearchOpen && (
                             <>
                                 <div
                                     className="fixed inset-0 z-10"
                                     onClick={() => setIsSearchOpen(false)}
                                 />
-                                <div className="absolute left-0 right-0 top-full mt-2 z-20 bg-[var(--bg-card)] border-2 border-indigo-600 rounded-2xl shadow-2xl max-h-80 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)]">
-                                    {searchResults.length === 0 ? (
+                                <div className="absolute left-0 right-0 top-full mt-2 z-20 bg-[var(--bg-card)] border-2 border-indigo-600 rounded-2xl shadow-2xl max-h-96 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-1 duration-150">
+                                    {searchQuery.trim().length === 0 ? (
+                                        <div className="p-4 space-y-3.5">
+                                            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-500/30">
+                                                <Compass size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                                                <p className="text-xs font-semibold text-indigo-950 dark:text-indigo-100 leading-relaxed">
+                                                    {lang === 'sv'
+                                                        ? 'Skriv ett mattebegrepp eller klicka på ett förslag nedan för att se exempeluppgifter och hitta rätt nivå.'
+                                                        : 'Type a math concept or pick a suggestion below to preview sample problems and find your right level.'}
+                                                </p>
+                                            </div>
+
+                                            {/* Recommended Chips */}
+                                            <div className="space-y-1.5">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] block">
+                                                    {lang === 'sv' ? 'Populära sökningar' : 'Suggested searches'}
+                                                </span>
+                                                <div className="flex flex-wrap items-center gap-1.5">
+                                                    {RECOMMENDED_SEARCHES.map((chip) => {
+                                                        const queryVal = lang === 'sv' ? chip.querySv : chip.queryEn;
+                                                        return (
+                                                            <button
+                                                                key={chip.queryEn}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setSearchQuery(queryVal);
+                                                                    searchInputRef.current?.focus();
+                                                                }}
+                                                                className="px-2.5 py-1 rounded-xl text-xs font-bold bg-[var(--bg-surface)] hover:bg-indigo-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-indigo-600 transition-colors cursor-pointer"
+                                                            >
+                                                                # {lang === 'sv' ? chip.sv : chip.en}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            {/* Recently Explored History */}
+                                            {recentNodes.length > 0 && (
+                                                <div className="pt-3 border-t border-[var(--border-main)] space-y-1.5">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                                            {lang === 'sv' ? 'Senast utforskade' : 'Recently explored'}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={clearRecentHistory}
+                                                            className="text-[10px] font-bold text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                                                        >
+                                                            {lang === 'sv' ? 'Rensa historik' : 'Clear history'}
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex flex-wrap items-center gap-1.5">
+                                                        {recentNodes
+                                                            .map(item => SKILL_GRAPH[`${item.topicId}:${item.level}`])
+                                                            .filter(Boolean)
+                                                            .map(node => (
+                                                                <button
+                                                                    key={node.id}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        handleSelectNewGoal(node.topicId, node.level);
+                                                                        setIsSearchOpen(false);
+                                                                        setSearchQuery('');
+                                                                    }}
+                                                                    className="px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border-main)] hover:border-indigo-500 flex items-center gap-1.5"
+                                                                >
+                                                                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-600 text-white">
+                                                                        {lang === 'sv' ? `N${node.level}` : `L${node.level}`}
+                                                                    </span>
+                                                                    <span>{node.topicLabel?.[lang] || node.topicLabel?.sv}</span>
+                                                                </button>
+                                                            ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : searchResults.length === 0 ? (
                                         <div className="p-4 text-center text-xs font-bold text-[var(--text-muted)]">
                                             {lang === 'sv' ? 'Inga matchande begrepp hittades.' : 'No matching concepts found.'}
                                         </div>
                                     ) : (
-                                        searchResults.map(item => (
-                                            <button
-                                                key={item.id}
-                                                type="button"
-                                                onClick={() => {
-                                                    handleSelectNewGoal(item.topicId, item.level);
-                                                    setIsSearchOpen(false);
-                                                    setSearchQuery('');
-                                                }}
-                                                className="w-full text-left p-3.5 hover:bg-[var(--bg-surface)] transition-colors flex items-center justify-between gap-3 cursor-pointer"
-                                            >
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-600 text-white shrink-0">
-                                                            {lang === 'sv' ? `Nivå ${item.level}` : `Lvl ${item.level}`}
-                                                        </span>
-                                                        <span className="text-xs font-black text-[var(--text-main)]">
-                                                            {item.topicLabel?.[lang] || item.topicLabel?.sv}
-                                                        </span>
-                                                        <span className="text-xs font-semibold text-[var(--text-muted)] truncate">
-                                                            — {item.levelDesc?.[lang] || item.levelDesc?.sv}
-                                                        </span>
+                                        <div className="divide-y divide-[var(--border-main)]">
+                                            {searchResults.map(item => (
+                                                <button
+                                                    key={item.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        handleSelectNewGoal(item.topicId, item.level);
+                                                        setIsSearchOpen(false);
+                                                        setSearchQuery('');
+                                                    }}
+                                                    className="w-full text-left p-3.5 hover:bg-[var(--bg-surface)] transition-colors flex items-center justify-between gap-3 cursor-pointer"
+                                                >
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-600 text-white shrink-0">
+                                                                {lang === 'sv' ? `Nivå ${item.level}` : `Lvl ${item.level}`}
+                                                            </span>
+                                                            <span className="text-xs font-black text-[var(--text-main)]">
+                                                                {item.topicLabel?.[lang] || item.topicLabel?.sv}
+                                                            </span>
+                                                            <span className="text-xs font-semibold text-[var(--text-muted)] truncate">
+                                                                — {item.levelDesc?.[lang] || item.levelDesc?.sv}
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <CornerDownLeft size={14} className="text-[var(--text-muted)] shrink-0" />
-                                            </button>
-                                        ))
+                                                    <CornerDownLeft size={14} className="text-[var(--text-muted)] shrink-0" />
+                                                </button>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
                             </>
                         )}
                     </div>
-                </div>
-                
-                {/* Cardless Student Quick-Access Strip */}
-                {!focusedNode && studentTools && (
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            <button
-                                type="button"
-                                onClick={studentTools.onFractionLabOpen}
-                                className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-indigo-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-indigo-600 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group/tool"
-                            >
-                                <PieChart size={14} className="text-indigo-500 group-hover/tool:text-white" />
-                                <span>{lang === 'sv' ? 'Laborationer' : 'Manipulatives'}</span>
-                            </button>
 
-                            <button
-                                type="button"
-                                onClick={studentTools.onLabOpen}
-                                className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-indigo-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-indigo-600 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group/tool"
-                            >
-                                <Beaker size={14} className="text-indigo-500 group-hover/tool:text-white" />
-                                <span>Test Lab</span>
-                            </button>
-
+                    {/* Flanking Core Student Tools: Tabeller + Laborationer + Compact Timer */}
+                    {!focusedNode && studentTools && (
+                        <div className="flex items-center gap-2 shrink-0 justify-end">
                             <button
                                 type="button"
                                 onClick={studentTools.onTimesTableOpen}
-                                className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-emerald-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-emerald-600 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group/tool"
+                                className="px-3.5 py-2.5 rounded-2xl bg-[var(--bg-card)] hover:bg-emerald-600 text-[var(--text-main)] hover:text-white border border-[var(--border-strong)] hover:border-emerald-600 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group/tool"
                             >
-                                <Grid3X3 size={14} className="text-emerald-500 group-hover/tool:text-white" />
+                                <Grid3X3 size={15} className="text-emerald-600 dark:text-emerald-400 group-hover/tool:text-white" />
                                 <span>{lang === 'sv' ? 'Tabeller' : 'Tables'}</span>
                             </button>
 
                             <button
                                 type="button"
-                                onClick={studentTools.onStatsOpen}
-                                className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-amber-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-amber-600 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group/tool"
+                                onClick={studentTools.onFractionLabOpen}
+                                className="px-3.5 py-2.5 rounded-2xl bg-[var(--bg-card)] hover:bg-indigo-600 text-[var(--text-main)] hover:text-white border border-[var(--border-strong)] hover:border-indigo-600 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group/tool"
                             >
-                                <BarChart3 size={14} className="text-amber-500 group-hover/tool:text-white" />
-                                <span>{lang === 'sv' ? 'Statistik' : 'Statistics'}</span>
+                                <PieChart size={15} className="text-indigo-600 dark:text-indigo-400 group-hover/tool:text-white" />
+                                <span>{lang === 'sv' ? 'Laborationer' : 'Manipulatives'}</span>
                             </button>
-                        </div>
 
-                        <div className="flex items-center gap-1.5 ml-auto">
                             {/* Compact Timer Selector */}
-                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] shadow-2xs">
-                                <Clock size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-2.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-strong)] shadow-2xs">
+                                <Clock size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 <select
                                     value={studentTools.timerSettings.duration / 60}
                                     onChange={(e) => studentTools.toggleTimer(Number(e.target.value))}
@@ -429,7 +511,7 @@ export default function ConceptMapDashboard({
                                     aria-label="Timer"
                                 >
                                     <option value="0">{lang === 'sv' ? 'Timer av' : 'Timer Off'}</option>
-                                    {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
+                                    {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m}m</option>)}
                                 </select>
                                 {studentTools.timerSettings.duration > 0 && (
                                     <button
@@ -442,55 +524,9 @@ export default function ConceptMapDashboard({
                                     </button>
                                 )}
                             </div>
-
-                            <button
-                                type="button"
-                                onClick={studentTools.onHelpOpen}
-                                className="p-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] transition-colors cursor-pointer shadow-2xs"
-                                title={lang === 'sv' ? 'Snabbguide & Hjälp' : 'Quick Guide & Help'}
-                            >
-                                <HelpCircle size={15} className="text-amber-500" />
-                            </button>
                         </div>
-                    </div>
-                )}
-
-                {/* Saved Recent Levels from localStorage (Shown on initial screen when user has history) */}
-                {!focusedNode && recentNodes.length > 0 && (
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mr-1">
-                                {lang === 'sv' ? 'Senast utforskade:' : 'Recently explored:'}
-                            </span>
-                            {recentNodes
-                                .map(item => SKILL_GRAPH[`${item.topicId}:${item.level}`])
-                                .filter(Boolean)
-                                .map(node => (
-                                    <button
-                                        key={node.id}
-                                        type="button"
-                                        onClick={() => {
-                                            handleSelectNewGoal(node.topicId, node.level);
-                                            setSearchQuery('');
-                                        }}
-                                        className="px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer border bg-[var(--bg-card)] text-[var(--text-main)] border-[var(--border-main)] hover:border-indigo-500 flex items-center gap-1.5 shadow-2xs"
-                                    >
-                                        <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-indigo-600 text-white">
-                                            {lang === 'sv' ? `N${node.level}` : `L${node.level}`}
-                                        </span>
-                                        <span>{node.topicLabel?.[lang] || node.topicLabel?.sv}</span>
-                                    </button>
-                                ))}
-                        </div>
-                        <button
-                            type="button"
-                            onClick={clearRecentHistory}
-                            className="text-[10px] font-bold text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
-                        >
-                            {lang === 'sv' ? 'Rensa historik' : 'Clear history'}
-                        </button>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             {/* ===================================================================== */}
@@ -807,7 +843,7 @@ export default function ConceptMapDashboard({
                                                     key={prereq.id}
                                                     type="button"
                                                     onClick={() => handleStepToNode(prereq.topicId, prereq.level)}
-                                                    className="w-full p-3 text-left hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer group flex items-center justify-between gap-3"
+                                                    className="w-full p-3 text-left hover:bg-[var(--bg-card)] dark:hover:bg-amber-950/40 transition-colors cursor-pointer group flex items-center justify-between gap-3"
                                                 >
                                                     <div className="min-w-0 flex-1 space-y-1">
                                                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -869,7 +905,7 @@ export default function ConceptMapDashboard({
                                                     key={nextNode.id}
                                                     type="button"
                                                     onClick={() => handleStepToNode(nextNode.topicId, nextNode.level)}
-                                                    className="w-full p-3 text-left hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer group flex items-center justify-between gap-3"
+                                                    className="w-full p-3 text-left hover:bg-[var(--bg-card)] dark:hover:bg-emerald-950/40 transition-colors cursor-pointer group flex items-center justify-between gap-3"
                                                 >
                                                     <div className="min-w-0 flex-1 space-y-1">
                                                         <div className="flex items-center gap-1.5 flex-wrap">

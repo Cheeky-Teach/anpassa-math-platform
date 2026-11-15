@@ -176,16 +176,16 @@ body {
 /* ========================================= */
 .header-glass {
   background-color: var(--bg-card) !important;
-  margin: 1rem auto;
-  border-radius: var(--radius-card);
-  width: calc(100% - 2rem) !important;
+  margin: 0.5rem auto;
+  border-radius: 1rem;
+  width: calc(100% - 1.5rem) !important;
   max-width: 1400px;
   border: 1px solid var(--border-main) !important;
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  padding-top: 0.5rem !important;
-  padding-bottom: 0.5rem !important;
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
 }
 
 .header-glass h1,
@@ -470,4 +470,27 @@ html {
 .dark .content-modal-protect .math-content .katex * {
   --text-main: #0f172a !important;
   color: #0f172a !important;
+}
+
+/* =========================================================================
+   AMBIENT SEARCH BAR BREATHING GLOW
+   ========================================================================= */
+@keyframes searchGlowPulse {
+  0%, 100% {
+    box-shadow: 0 0 14px -3px rgba(99, 102, 241, 0.25);
+    border-color: rgba(99, 102, 241, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 24px -1px rgba(99, 102, 241, 0.55);
+    border-color: rgba(99, 102, 241, 0.85);
+  }
+}
+
+.animate-search-glow {
+  animation: searchGlowPulse 3.5s ease-in-out infinite;
+}
+
+.animate-search-glow:focus,
+.animate-search-glow:hover {
+  animation: none;
 }

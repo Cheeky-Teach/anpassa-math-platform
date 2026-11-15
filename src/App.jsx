@@ -1043,8 +1043,8 @@ function App() {
                     ui={ui} 
                 />            
                 {(view === 'dashboard' || view === 'practice' || view === 'times_table') && (
-                <header className="sticky top-0 z-10 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
-                    <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 py-1 flex flex-row items-center justify-between relative">
+                <header className="sticky top-2 z-40 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
+                    <div className="max-w-[1400px] mx-auto w-full px-3 sm:px-5 py-0 flex flex-row items-center justify-between relative">
                         <div className="flex-1 flex justify-start">
                             {view === 'practice' || view === 'times_table' ? (
                                 <button 
@@ -1055,15 +1055,15 @@ function App() {
                                             goHome(false);
                                         }
                                     }} 
-                                    className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-xs uppercase tracking-widest transition-all group shrink-0"
+                                    className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-[11px] uppercase tracking-widest transition-all group shrink-0"
                                 >
-                                    <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center shadow-sm border border-[var(--border-main)] group-hover:shadow-md">
-                                        <ChevronLeft size={16}/>
+                                    <div className="w-7 h-7 rounded-full bg-[var(--bg-card)] flex items-center justify-center shadow-sm border border-[var(--border-main)] group-hover:shadow-md">
+                                        <ChevronLeft size={14}/>
                                     </div>
                                     <span className="hidden sm:inline-block">{lang === 'sv' ? "Tillbaka" : "Back"}</span>
                                 </button>
                             ) : (
-                                <h1 className="text-2xl font-extrabold text-[#10b981] tracking-tighter cursor-pointer uppercase italic shrink-0" onClick={goHome}>
+                                <h1 className="text-lg sm:text-xl font-extrabold text-[#10b981] tracking-tighter cursor-pointer uppercase italic shrink-0" onClick={goHome}>
                                     ANPASSA
                                 </h1> 
                             )}
@@ -1071,17 +1071,17 @@ function App() {
 
                         {view === 'practice' && (
                             <div className="absolute left-1/2 -translate-x-1/2 flex items-center pointer-events-none text-center">
-                                <span className="text-emerald-600 dark:text-emerald-400 font-black tracking-[0.25em] uppercase text-sm sm:text-base select-none drop-shadow-2xs">
+                                <span className="text-emerald-600 dark:text-emerald-400 font-black tracking-[0.25em] uppercase text-xs sm:text-sm select-none drop-shadow-2xs">
                                     ANPASSA
                                 </span>
                             </div>
                         )}
                         
-                        <div className="flex-1 flex flex-row items-center gap-2 sm:gap-4 justify-end flex-wrap sm:flex-nowrap">
+                        <div className="flex-1 flex flex-row items-center gap-2 sm:gap-3 justify-end flex-wrap sm:flex-nowrap">
                             <PreferencesToggle />
                             
                             {session && (
-                                <button onClick={() => supabase.auth.signOut()} className="text-[10px] font-bold text-[var(--text-muted)] uppercase hover:text-[var(--theme-rose-text)] transition-colors ml-1 sm:ml-2">
+                                <button onClick={() => supabase.auth.signOut()} className="text-[10px] font-bold text-[var(--text-muted)] uppercase hover:text-[var(--theme-rose-text)] transition-colors ml-1">
                                     Logga ut
                                 </button>
                             )}

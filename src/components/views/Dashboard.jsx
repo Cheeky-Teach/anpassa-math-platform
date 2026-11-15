@@ -509,10 +509,10 @@ const fetchArchive = async () => {
 
     return (
         <div className="layout-wrapper relative z-10 animate-in fade-in pb-10">
-            <div className={`pt-6 w-full max-w-[1600px] mx-auto px-4 sm:px-6 ${
+            <div className={`pt-3.5 w-full max-w-[1600px] mx-auto px-4 sm:px-6 ${
                 isEducator
                     ? 'grid grid-cols-1 lg:grid-cols-[260px_1fr] xl:grid-cols-[276px_1fr] gap-6 lg:gap-7'
-                    : 'flex flex-col gap-5'
+                    : 'flex flex-col gap-3.5'
             }`}>           
                 {/* ========================================================= */}
                 {/* LEFT COLUMN: TEACHER COMMAND CENTER (EDUCATORS ONLY)      */}
@@ -832,7 +832,7 @@ const fetchArchive = async () => {
                             <TeacherHubManager lang={lang} teacherId={profile?.id} />
                         </div>
                     ) : activeTab === 'curriculum' ? (
-                        <div className="flex flex-col space-y-6 animate-in slide-in-from-right-4 duration-500">
+                        <div className="flex flex-col space-y-3.5 animate-in slide-in-from-right-4 duration-500">
                             
                             {/* --- UNIFIED SPOTLIGHT SEARCH, STUDENT TOOLS & DIAGNOSTIC WORKSPACE --- */}
                             <ConceptMapDashboard
@@ -843,13 +843,10 @@ const fetchArchive = async () => {
                                 onStart={onStart}
                                 studentTools={!isEducator ? {
                                     onFractionLabOpen,
-                                    onLabOpen,
                                     onTimesTableOpen,
-                                    onStatsOpen,
                                     timerSettings,
                                     toggleTimer,
-                                    resetTimer,
-                                    onHelpOpen: () => setShowDashboardTutorial(true)
+                                    resetTimer
                                 } : null}
                             />
 
@@ -1360,7 +1357,7 @@ const fetchArchive = async () => {
                                     /* --- CATEGORY TABS & TOPIC GRID (Free Play / Teacher) --- */
                                     <>
                                         {/* CLEAN FULL-WIDTH HORIZONTAL CATEGORY TABS */}
-                                        <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+                                        <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
                                             {Object.entries(CATEGORIES).map(([catKey, category]) => {
                                                 const isActive = expandedCategory === catKey;
                                                 const themeColorStr = category.color || 'emerald';
@@ -1369,7 +1366,7 @@ const fetchArchive = async () => {
                                                     <div key={catKey} className={`theme-${themeColorStr}`}>
                                                         <button 
                                                             onClick={() => setExpandedCategory(catKey)}
-                                                            className={`flex items-center gap-2 px-5 py-3 rounded-[var(--radius-btn)] font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-sm border-2 cursor-pointer ${
+                                                            className={`flex items-center gap-2 px-4 py-2.5 rounded-[var(--radius-btn)] font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-2xs border-2 cursor-pointer ${
                                                                 isActive 
                                                                     ? `bg-[var(--brand-solid)] text-white border-[var(--brand-solid)]` 
                                                                     : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'
@@ -1385,21 +1382,6 @@ const fetchArchive = async () => {
 
                                         {/* ACTIVE CATEGORY TOPICS GRID (Single-layer cards on canvas — no box-in-a-box) */}
                                         <div className={`theme-${themeColorString} space-y-4`}>
-                                            <div className="flex items-center justify-between gap-3 px-1">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--brand-solid)] text-white shadow-xs">
-                                                        <Award size={16} />
-                                                    </div>
-                                                    <div className="flex items-baseline gap-2.5 flex-wrap">
-                                                        <h3 className="text-lg font-bold text-[var(--text-main)] tracking-tight leading-none">
-                                                            {activeCategoryData.label[lang]}
-                                                        </h3>
-                                                        <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
-                                                            • {t.topics_count(activeCategoryData.topics.length)}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
 
                                             {/* Backdrop to close open dropdown when clicking outside */}
                                             {openDropdownTopicId && (
