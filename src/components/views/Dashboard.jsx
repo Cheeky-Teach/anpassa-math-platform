@@ -13,6 +13,7 @@ import { APP_UPDATES } from '@/constants/updates';
 import TeacherHubManager from './TeacherHubManager';
 import { CONTENT_MAP } from '../../constants/content_map.generated';
 import MathDisplay from '../shared/MathDisplay';
+import VisualRenderer from '../visuals/VisualRenderer';
 import DashboardTutorialModal from '../modals/DashboardTutorialModal';
 import CapacityModal from '../modals/CapacityModal';
 import { BookOpen } from 'lucide-react';
@@ -138,6 +139,34 @@ const Dashboard = ({
     const [activeInstructionModal, setActiveInstructionModal] = useState(null);
     const [collapsedPartSections, setCollapsedPartSections] = useState({});
     const [openDropdownTopicId, setOpenDropdownTopicId] = useState(null);
+    const [inspectedStepByPart, setInspectedStepByPart] = useState({}); // { [partId]: stepId }
+    const [partPreviewQuestion, setPartPreviewQuestion] = useState(null);
+    const [isFetchingPartPreview, setIsFetchingPartPreview] = useState(false);
+
+    const fetchPartStepSample = async (topicId, level, variationKey = null) => {
+        if (!topicId) {
+            setPartPreviewQuestion(null);
+            return;
+        }
+        setIsFetchingPartPreview(true);
+        try {
+            const url = variationKey
+                ? `/api/question?topic=${topicId}&variation=${variationKey}&lang=${lang}&wordProblem=false`
+                : `/api/question?topic=${topicId}&level=${level || 1}&lang=${lang}&wordProblem=false`;
+            const res = await fetch(url);
+            if (res.ok) {
+                const data = await res.json();
+                setPartPreviewQuestion(data);
+            } else {
+                setPartPreviewQuestion(null);
+            }
+        } catch (err) {
+            console.warn('Could not fetch part preview question:', err);
+            setPartPreviewQuestion(null);
+        } finally {
+            setIsFetchingPartPreview(false);
+        }
+    };
 
     const [diagnosticTarget, setDiagnosticTarget] = useState(null); // { topicId, level, isNewGoal } | null
     
@@ -683,84 +712,6 @@ const fetchArchive = async () => {
                 {/* ➡️ MAIN CONTENT (FULL WIDTH FOR STUDENTS/GUESTS)          */}
                 {/* ========================================================= */}
                 <main className="w-full min-w-0 flex flex-col">
-
-                    {/* STUDENT / GUEST COMPACT QUICK-ACCESS TOOLS STRIP */}
-                    {!isEducator && (
-                        <div className="mb-5 flex flex-wrap items-center justify-between gap-2.5 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl p-2.5 sm:px-4 shadow-2xs">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={onFractionLabOpen}
-                                    className="px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-indigo-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-indigo-600 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
-                                >
-                                    <PieChart size={15} className="text-indigo-500 group-hover:text-white" />
-                                    <span>{lang === 'sv' ? "Laborationer" : "Manipulatives"}</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={onLabOpen}
-                                    className="px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-indigo-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-indigo-600 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
-                                >
-                                    <Beaker size={15} className="text-indigo-500" />
-                                    <span>Test Lab</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={onTimesTableOpen}
-                                    className="px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-emerald-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-emerald-600 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
-                                >
-                                    <Grid3X3 size={15} className="text-emerald-500" />
-                                    <span>{t.times_table_title}</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={onStatsOpen}
-                                    className="px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-amber-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-amber-600 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
-                                >
-                                    <BarChart3 size={15} className="text-amber-500" />
-                                    <span>{t.stats_title}</span>
-                                </button>
-                            </div>
-
-                            <div className="flex items-center gap-2 ml-auto">
-                                {/* Compact Timer Pill */}
-                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)]">
-                                    <Clock size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                    <select
-                                        value={timerSettings.duration / 60}
-                                        onChange={(e) => toggleTimer(Number(e.target.value))}
-                                        className="bg-transparent text-xs font-bold text-[var(--text-main)] outline-none cursor-pointer"
-                                        aria-label={t.timer_title}
-                                    >
-                                        <option value="0">{t.timer_off}</option>
-                                        {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
-                                    </select>
-                                    {timerSettings.duration > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={resetTimer}
-                                            className="p-1 text-rose-600 dark:text-rose-400 hover:opacity-75 cursor-pointer"
-                                            title={t.timer_reset}
-                                        >
-                                            <RotateCcw size={13} />
-                                        </button>
-                                    )}
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setShowDashboardTutorial(true)}
-                                    className="p-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-main)] text-[var(--text-main)] transition-colors cursor-pointer"
-                                    title={lang === 'sv' ? "Snabbguide & Hjälp" : "Quick Guide & Help"}
-                                >
-                                    <HelpCircle size={16} className="text-amber-500" />
-                                </button>
-                            </div>
-                        </div>
-                    )}
                     
                     {/* --- ACTIVE SESSION RESUME BANNER (Adaptive 1 or Multi-Room) --- */}
                     {activeSessions.length > 0 && ['teacher', 'super_admin'].includes(userRole) && (
@@ -828,60 +779,52 @@ const fetchArchive = async () => {
                         </div>
                     )}
 
-                    {/* --- CONTENT TABS & MAP NAV --- */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                        <div className="flex gap-2 w-fit">
-                                              
-                            {/* Kursmaterial */}
-                            {['teacher', 'super_admin'].includes(userRole) && (
+                    {/* --- CONTENT TABS & MAP NAV (Educators Only) --- */}
+                    {isEducator && (
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                            <div className="flex gap-2 w-fit">
                                 <button 
                                     onClick={() => setActiveTab('curriculum')} 
                                     className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'curriculum' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                                 >
                                     <Book size={14}/> {t.curriculum_title}
                                 </button>
-                            )}
 
-                            {/* NEW: Hub Manager Tab (Teachers Only) */}
-                            {['teacher', 'super_admin'].includes(userRole) && (
                                 <button 
                                     onClick={() => setActiveTab('hub')} 
                                     className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'hub' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                                 >
                                     <Layers size={14}/> {lang === 'sv' ? "Grupper" : "Custom Unit"}
                                 </button>
-                            )}
 
-                            {['teacher', 'super_admin'].includes(userRole) && (
                                 <button 
                                     onClick={() => setActiveTab('archive')} 
                                     className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'archive' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                                 >
                                     <History size={14}/> {t.archive_title}
                                 </button>
-                            )}
-                        </div>
-                        {['teacher', 'super_admin'].includes(userRole) && (
-                                <div className="theme-orange">
-                                    <button 
-                                        onClick={() => setShowUpdateLog(true)} 
-                                        className="flex items-center gap-2 px-3.5 py-2.5 rounded-[var(--radius-btn)] bg-[var(--brand-bg)] border border-[var(--brand-border)] hover:border-[var(--brand-solid)] text-[var(--brand-text)] transition-all shadow-xs group cursor-pointer"
-                                        title={t.view_all}
-                                    >
-                                        <div className="flex items-center gap-1.5 font-black text-[10px] uppercase tracking-wider">
-                                            <Sparkles size={13} className="text-amber-500 fill-amber-500 group-hover:rotate-12 transition-transform" />
-                                            <span className="hidden md:inline text-[var(--text-muted)] font-bold">{t.news_title}:</span>
-                                            <span className="truncate max-w-[150px] lg:max-w-[200px] text-[var(--text-main)] font-black">
-                                                {latestUpdate.title[lang]}
-                                            </span>
-                                        </div>
-                                        <span className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--brand-border)] text-[9px] font-black tracking-normal">
-                                            v{latestUpdate.version}
+                            </div>
+
+                            <div className="theme-orange">
+                                <button 
+                                    onClick={() => setShowUpdateLog(true)} 
+                                    className="flex items-center gap-2 px-3.5 py-2.5 rounded-[var(--radius-btn)] bg-[var(--brand-bg)] border border-[var(--brand-border)] hover:border-[var(--brand-solid)] text-[var(--brand-text)] transition-all shadow-xs group cursor-pointer"
+                                    title={t.view_all}
+                                >
+                                    <div className="flex items-center gap-1.5 font-black text-[10px] uppercase tracking-wider">
+                                        <Sparkles size={13} className="text-amber-500 fill-amber-500 group-hover:rotate-12 transition-transform" />
+                                        <span className="hidden md:inline text-[var(--text-muted)] font-bold">{t.news_title}:</span>
+                                        <span className="truncate max-w-[150px] lg:max-w-[200px] text-[var(--text-main)] font-black">
+                                            {latestUpdate.title[lang]}
                                         </span>
-                                    </button>
-                                </div>
-                            )}   
-                    </div>
+                                    </div>
+                                    <span className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--brand-border)] text-[9px] font-black tracking-normal">
+                                        v{latestUpdate.version}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* --- TAB CONTENT --- */}
                     {activeTab === 'hub' ? (
@@ -889,601 +832,748 @@ const fetchArchive = async () => {
                             <TeacherHubManager lang={lang} teacherId={profile?.id} />
                         </div>
                     ) : activeTab === 'curriculum' ? (
-                        <div className="flex flex-col animate-in slide-in-from-right-4 duration-500">
+                        <div className="flex flex-col space-y-6 animate-in slide-in-from-right-4 duration-500">
                             
-                            {/* --- CURATED BUCKET ROADMAP: DEL 1, DEL 2, ETC. --- */}
-                            {userRole === 'student' && activeBucket && activeBucket !== 'FREE_PLAY' ? (
-                                <div className="space-y-6">
-                                    {/* Unit Header */}
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--bg-card)] p-6 rounded-[var(--radius-card)] border border-[var(--border-main)] shadow-sm">
-                                        {/*  100% Unit Completion Banner */}
-                                        {progressPercentage === 100 && (
-                                            <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 rounded-[var(--radius-card)] p-6 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in-95 duration-500">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
-                                                        <Award size={32} className="text-amber-300 drop-shadow-md" />
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-[12px] font-black uppercase tracking-widest text-emerald-100 block">
-                                                            {lang === 'sv' ? "Grattis! Enheten Slutförd" : "Congratulations! Unit Complete"}
-                                                        </span>
-                                                        <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight italic leading-tight">
-                                                            {lang === 'sv' ? "Alla moment är avklarade! 🏆" : "All parts completed! 🏆"}
-                                                        </h3>
-                                                        <p className="text-s font-semibold text-emerald-100/90 mt-1">
-                                                            {lang === 'sv' 
-                                                                ? `Du har gått igenom alla ${allUnitSteps.length} moment i ${activeBucket.name}.` 
-                                                                : `You have mastered all ${allUnitSteps.length} steps in ${activeBucket.name}.`}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={onBackToGateway}
-                                                    className="w-full sm:w-auto px-6 py-3 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
-                                                >
-                                                    {lang === 'sv' ? "Välj ny enhet ➡" : "Choose New Unit ➡"}
-                                                </button>
-                                            </div>
-                                        )}
-                                        <div className="flex-1 max-w-xl">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--brand-text)]">
-                                                {lang === 'sv' ? "Aktiv Enhet" : "Active Unit"}
-                                            </span>
-                                            <h2 className="text-2xl font-black uppercase italic text-[var(--text-main)] tracking-tight">
-                                                {activeBucket.name}
-                                            </h2>
-                                            
-                                            {/* Progress Readout */}
-                                            <div className="mt-3 space-y-1.5">
-                                                <div className="flex items-center justify-between text-[11px] font-bold text-[var(--text-muted)]">
-                                                    <span>
-                                                        {lang === 'sv' 
-                                                            ? `${completedCount} av ${allUnitSteps.length} steg klara` 
-                                                            : `${completedCount} of ${allUnitSteps.length} steps completed`}
-                                                    </span>
-                                                    <span className="font-black text-[var(--text-main)]">{progressPercentage}%</span>
-                                                </div>
-                                                {/* Progress Bar Track */}
-                                                <div className="w-full h-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-[var(--brand-solid)] transition-all duration-500 ease-out rounded-full"
-                                                        style={{ width: `${progressPercentage}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={onBackToGateway}
-                                            className="w-full sm:w-auto px-4 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-[var(--border-strong)] cursor-pointer"
-                                        >
-                                            <ChevronLeft size={16}/> {lang === 'sv' ? "Byt Område" : "Change Unit"}
-                                        </button>
-                                    </div>
-                                    {/* Parts Sequence (Connected Semantic Timeline) */}
+                            {/* --- UNIFIED SPOTLIGHT SEARCH, STUDENT TOOLS & DIAGNOSTIC WORKSPACE --- */}
+                            <ConceptMapDashboard
+                                lang={lang}
+                                diagnosticTarget={diagnosticTarget}
+                                onSetDiagnosticTarget={setDiagnosticTarget}
+                                onSelect={onSelect}
+                                onStart={onStart}
+                                studentTools={!isEducator ? {
+                                    onFractionLabOpen,
+                                    onLabOpen,
+                                    onTimesTableOpen,
+                                    onStatsOpen,
+                                    timerSettings,
+                                    toggleTimer,
+                                    resetTimer,
+                                    onHelpOpen: () => setShowDashboardTutorial(true)
+                                } : null}
+                            />
+
+                            {/* --- BELOW THE SEARCH DECK (Shown when not actively inspecting a diagnostic search result) --- */}
+                            {!diagnosticTarget && (
+                                userRole === 'student' && activeBucket && activeBucket !== 'FREE_PLAY' ? (
+                                    /* --- CURATED BUCKET ROADMAP: DEL 1, DEL 2, ETC. --- */
                                     <div className="space-y-6">
-                                        {curatedParts.map((part, pIdx) => {
-                                            const partSteps = part.steps || [];
-                                            const partCompletedCount = partSteps.filter(s => checkIsStepCompleted(s, completedStepIds)).length;
-                                            const isPartFullyCompleted = partSteps.length > 0 && partCompletedCount === partSteps.length;
-                                            const isPartCollapsed = collapsedPartSections[part.id] !== undefined 
-                                                ? Boolean(collapsedPartSections[part.id]) 
-                                                : true;
-
-                                            return (
-                                                <div 
-                                                    key={part.id || pIdx} 
-                                                    className="bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] overflow-hidden shadow-sm transition-all"
-                                                >
-                                                    {/* Part Header Strip */}
-                                                    <div 
-                                                        onClick={() => setCollapsedPartSections(prev => ({ ...prev, [part.id]: !prev[part.id] }))}
-                                                        className="bg-[var(--bg-surface)] px-5 py-3.5 border-b border-[var(--border-main)] flex items-center justify-between cursor-pointer select-none group"
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <span className={`w-7 h-7 rounded-lg text-white text-sm font-black flex items-center justify-center shrink-0 shadow-xs ${
-                                                                isPartFullyCompleted ? 'bg-emerald-600' : 'bg-[var(--brand-solid)]'
-                                                            }`}>
-                                                                {isPartFullyCompleted ? <Check size={14} strokeWidth={3} /> : pIdx + 1}
-                                                            </span>
-                                                            <div className="flex items-center gap-2">
-                                                                <h3 className="font-black text-m uppercase tracking-wider text-[var(--text-main)] group-hover:text-[var(--brand-text)] transition-colors">
-                                                                    {getPartDisplayTitle(part, pIdx, lang)}
-                                                                </h3>
-                                                                {isPartFullyCompleted && (
-                                                                    <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
-                                                                        {lang === 'sv' ? "Klar ✓" : "Done ✓"}
-                                                                    </span>
-                                                                )}
-                                                            </div>
+                                        {/* Unit Header */}
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--bg-card)] p-6 rounded-[var(--radius-card)] border border-[var(--border-main)] shadow-sm">
+                                            {/* 100% Unit Completion Banner */}
+                                            {progressPercentage === 100 && (
+                                                <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 rounded-[var(--radius-card)] p-6 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in-95 duration-500">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
+                                                            <Award size={32} className="text-amber-300 drop-shadow-md" />
                                                         </div>
-
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="text-s font-bold text-[var(--text-muted)] tracking-wider">
-                                                                {partCompletedCount}/{partSteps.length} {lang === 'sv' ? "klara" : "done"}
+                                                        <div>
+                                                            <span className="text-[12px] font-black uppercase tracking-widest text-emerald-100 block">
+                                                                {lang === 'sv' ? "Grattis! Enheten Slutförd" : "Congratulations! Unit Complete"}
                                                             </span>
-                                                            <div className="text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors p-1 rounded-md">
-                                                                {isPartCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-                                                            </div>
+                                                            <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight italic leading-tight">
+                                                                {lang === 'sv' ? "Alla moment är avklarade! 🏆" : "All parts completed! 🏆"}
+                                                            </h3>
+                                                            <p className="text-s font-semibold text-emerald-100/90 mt-1">
+                                                                {lang === 'sv' 
+                                                                    ? `Du har gått igenom alla ${allUnitSteps.length} moment i ${activeBucket.name}.` 
+                                                                    : `You have mastered all ${allUnitSteps.length} steps in ${activeBucket.name}.`}
+                                                            </p>
                                                         </div>
                                                     </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={onBackToGateway}
+                                                        className="w-full sm:w-auto px-6 py-3 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
+                                                    >
+                                                        {lang === 'sv' ? "Välj ny enhet ➡" : "Choose New Unit ➡"}
+                                                    </button>
+                                                </div>
+                                            )}
+                                            <div className="flex-1 max-w-xl">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--brand-text)]">
+                                                    {lang === 'sv' ? "Aktiv Enhet" : "Active Unit"}
+                                                </span>
+                                                <h2 className="text-2xl font-black uppercase italic text-[var(--text-main)] tracking-tight">
+                                                    {activeBucket.name}
+                                                </h2>
+                                                
+                                                {/* Progress Readout */}
+                                                <div className="mt-3 space-y-1.5">
+                                                    <div className="flex items-center justify-between text-[11px] font-bold text-[var(--text-muted)]">
+                                                        <span>
+                                                            {lang === 'sv' 
+                                                                ? `${completedCount} av ${allUnitSteps.length} steg klara` 
+                                                                : `${completedCount} of ${allUnitSteps.length} steps completed`}
+                                                        </span>
+                                                        <span className="font-black text-[var(--text-main)]">{progressPercentage}%</span>
+                                                    </div>
+                                                    {/* Progress Bar Track */}
+                                                    <div className="w-full h-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-[var(--brand-solid)] transition-all duration-500 ease-out rounded-full"
+                                                            style={{ width: `${progressPercentage}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={onBackToGateway}
+                                                className="w-full sm:w-auto px-4 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-[var(--border-strong)] cursor-pointer"
+                                            >
+                                                <ChevronLeft size={16}/> {lang === 'sv' ? "Byt Område" : "Change Unit"}
+                                            </button>
+                                        </div>
 
-                                                    {/* Steps Timeline Track */}
-                                                    {!isPartCollapsed && (
-                                                        <div className="p-4 sm:p-5">
-                                                            <div className="space-y-1">
-                                                                {partSteps.map((step, sIdx) => {
-                                                                    const isCompleted = checkIsStepCompleted(step, completedStepIds);
-                                                                    const isInstruction = step.type === 'instruction' || !!step.sheetId;
-                                                                    const isTest = step.type === 'test';
-                                                                    const isNextActive = nextUnfinishedStep?.id === step.id;
+                                        {/* Parts Sequence (Master-Detail: Left Timeline + Right Goldilocks Inspector Card) */}
+                                        <div className="space-y-4">
+                                            {curatedParts.map((part, pIdx) => {
+                                                const partSteps = part.steps || [];
+                                                const partCompletedCount = partSteps.filter(s => checkIsStepCompleted(s, completedStepIds)).length;
+                                                const isPartFullyCompleted = partSteps.length > 0 && partCompletedCount === partSteps.length;
+                                                const isPartCollapsed = collapsedPartSections[part.id] !== undefined 
+                                                    ? Boolean(collapsedPartSections[part.id]) 
+                                                    : true;
 
-                                                                    // Practice Level Details
-                                                                    const safeTopic = step.topic || step.topicId || part.topicId;
-                                                                    const isSelected = selectedTopic === safeTopic && selectedLevel === step.level;
-                                                                    const { description, mathExample } = getLevelMetadata(safeTopic, step.level, lang);
+                                                // Determine which step is currently being inspected in this part's right-hand preview card
+                                                const defaultStep = partSteps.find(s => !checkIsStepCompleted(s, completedStepIds)) || partSteps[0] || null;
+                                                const inspectedStep = partSteps.find(s => s.id === inspectedStepByPart[part.id]) || defaultStep;
 
-                                                                    return (
-                                                                        <div key={step.id || sIdx} className="relative flex items-stretch gap-3 sm:gap-4">
-                                                                            {/* 1. Left Dedicated Timeline Spine (Zero Bleed-Through) */}
-                                                                            <div className="flex flex-col items-center shrink-0 w-8 sm:w-9 select-none">
-                                                                                {/* Top Connector Segment */}
-                                                                                <div 
-                                                                                    className={`w-[2px] flex-1 ${
-                                                                                        sIdx === 0 
-                                                                                            ? 'bg-transparent' 
-                                                                                            : isCompleted 
-                                                                                                ? 'bg-emerald-500' 
-                                                                                                : 'bg-slate-300 dark:bg-slate-600'
-                                                                                    }`} 
-                                                                                />
+                                                const handleExpandOrTogglePart = () => {
+                                                    const willOpen = isPartCollapsed;
+                                                    setCollapsedPartSections(prev => ({ ...prev, [part.id]: !willOpen }));
+                                                    if (willOpen && defaultStep) {
+                                                        setInspectedStepByPart(prev => ({ ...prev, [part.id]: defaultStep.id }));
+                                                        if (defaultStep.type !== 'instruction' && !defaultStep.sheetId && defaultStep.type !== 'test') {
+                                                            const tId = defaultStep.topic || defaultStep.topicId || part.topicId;
+                                                            setHasUserManuallySelected(true);
+                                                            onSelect(tId, defaultStep.level);
+                                                            fetchPartStepSample(tId, defaultStep.level, defaultStep.variationKey);
+                                                        } else {
+                                                            setPartPreviewQuestion(null);
+                                                        }
+                                                    }
+                                                };
 
-                                                                                {/* Milestone Node Badge */}
-                                                                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-xs z-10 transition-colors my-1 ${
-                                                                                    isInstruction
-                                                                                        ? 'bg-indigo-600 text-white shadow-indigo-600/20'
-                                                                                        : isTest
-                                                                                            ? isCompleted ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'
-                                                                                            : isCompleted
-                                                                                                ? 'bg-emerald-600 text-white'
-                                                                                                : isSelected
-                                                                                                    ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/30'
-                                                                                                    : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-strong)]'
-                                                                                }`}>
-                                                                                    {isInstruction ? (
-                                                                                        <BookOpen size={15} />
-                                                                                    ) : isTest ? (
-                                                                                        <Beaker size={15} />
-                                                                                    ) : isCompleted ? (
-                                                                                        <Check size={14} strokeWidth={3} />
-                                                                                    ) : (
-                                                                                        sIdx + 1
+                                                const handleSelectStepForPreview = (step) => {
+                                                    setInspectedStepByPart(prev => ({ ...prev, [part.id]: step.id }));
+                                                    const isStepInst = step.type === 'instruction' || !!step.sheetId;
+                                                    const isStepTest = step.type === 'test';
+                                                    if (!isStepInst && !isStepTest) {
+                                                        const tId = step.topic || step.topicId || part.topicId;
+                                                        setHasUserManuallySelected(true);
+                                                        onSelect(tId, step.level);
+                                                        fetchPartStepSample(tId, step.level, step.variationKey);
+                                                    } else {
+                                                        setPartPreviewQuestion(null);
+                                                    }
+                                                };
+
+                                                // Compute metadata for the inspected step in the right column
+                                                const inspIsInstruction = inspectedStep && (inspectedStep.type === 'instruction' || !!inspectedStep.sheetId);
+                                                const inspIsTest = inspectedStep && inspectedStep.type === 'test';
+                                                const inspIsCompleted = inspectedStep ? checkIsStepCompleted(inspectedStep, completedStepIds) : false;
+                                                const inspTopicId = inspectedStep ? (inspectedStep.topic || inspectedStep.topicId || part.topicId) : null;
+                                                const inspMeta = (!inspIsInstruction && !inspIsTest && inspectedStep)
+                                                    ? getLevelMetadata(inspTopicId, inspectedStep.level, lang)
+                                                    : null;
+                                                const inspLiveDesc = typeof partPreviewQuestion?.renderData?.description === 'object'
+                                                    ? (partPreviewQuestion.renderData.description[lang] || partPreviewQuestion.renderData.description.sv || '')
+                                                    : (partPreviewQuestion?.renderData?.description || '');
+
+                                                return (
+                                                    <div 
+                                                        key={part.id || pIdx} 
+                                                        className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-main)] overflow-hidden shadow-xs transition-all"
+                                                    >
+                                                        {/* Part Header Strip */}
+                                                        <div 
+                                                            onClick={handleExpandOrTogglePart}
+                                                            className="bg-[var(--bg-surface)] px-5 py-3.5 border-b border-[var(--border-main)] flex items-center justify-between cursor-pointer select-none group"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <span className={`w-7 h-7 rounded-lg text-white text-sm font-black flex items-center justify-center shrink-0 shadow-2xs ${
+                                                                    isPartFullyCompleted ? 'bg-emerald-600' : 'bg-[var(--brand-solid)]'
+                                                                }`}>
+                                                                    {isPartFullyCompleted ? <Check size={14} strokeWidth={3} /> : pIdx + 1}
+                                                                </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <h3 className="font-black text-sm sm:text-base uppercase tracking-wider text-[var(--text-main)] group-hover:text-[var(--brand-text)] transition-colors">
+                                                                        {getPartDisplayTitle(part, pIdx, lang)}
+                                                                    </h3>
+                                                                    {isPartFullyCompleted && (
+                                                                        <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
+                                                                            {lang === 'sv' ? "Klar ✓" : "Done ✓"}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="text-xs font-bold text-[var(--text-muted)] tracking-wider">
+                                                                    {partCompletedCount}/{partSteps.length} {lang === 'sv' ? "klara" : "done"}
+                                                                </span>
+                                                                <div className="text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors p-1 rounded-md">
+                                                                    {isPartCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Master-Detail Expanded Body */}
+                                                        {!isPartCollapsed && (
+                                                            <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                                                                
+                                                                {/* LEFT COLUMN (6/12): STEP SELECTOR TIMELINE */}
+                                                                <div className="lg:col-span-6 space-y-1">
+                                                                    {partSteps.map((step, sIdx) => {
+                                                                        const isCompleted = checkIsStepCompleted(step, completedStepIds);
+                                                                        const isInstruction = step.type === 'instruction' || !!step.sheetId;
+                                                                        const isTest = step.type === 'test';
+                                                                        const isNextActive = nextUnfinishedStep?.id === step.id;
+                                                                        const isInspected = inspectedStep?.id === step.id;
+
+                                                                        const safeTopic = step.topic || step.topicId || part.topicId;
+                                                                        const { description } = getLevelMetadata(safeTopic, step.level, lang);
+
+                                                                        return (
+                                                                            <div key={step.id || sIdx} className="relative flex items-stretch gap-3">
+                                                                                {/* Timeline Spine */}
+                                                                                <div className="flex flex-col items-center shrink-0 w-7 select-none">
+                                                                                    <div 
+                                                                                        className={`w-[2px] flex-1 ${
+                                                                                            sIdx === 0 
+                                                                                                ? 'bg-transparent' 
+                                                                                                : isCompleted 
+                                                                                                    ? 'bg-emerald-500' 
+                                                                                                    : 'bg-slate-300 dark:bg-slate-600'
+                                                                                        }`} 
+                                                                                    />
+
+                                                                                    <div className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs shrink-0 z-10 transition-colors my-1 ${
+                                                                                        isInstruction
+                                                                                            ? 'bg-indigo-600 text-white'
+                                                                                            : isTest
+                                                                                                ? isCompleted ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'
+                                                                                                : isCompleted
+                                                                                                    ? 'bg-emerald-600 text-white'
+                                                                                                    : isInspected
+                                                                                                        ? 'bg-indigo-600 text-white ring-2 ring-indigo-500/30'
+                                                                                                        : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-strong)]'
+                                                                                    }`}>
+                                                                                        {isInstruction ? (
+                                                                                            <BookOpen size={13} />
+                                                                                        ) : isTest ? (
+                                                                                            <Beaker size={13} />
+                                                                                        ) : isCompleted ? (
+                                                                                            <Check size={13} strokeWidth={3} />
+                                                                                        ) : (
+                                                                                            sIdx + 1
+                                                                                        )}
+                                                                                    </div>
+
+                                                                                    <div 
+                                                                                        className={`w-[2px] flex-1 ${
+                                                                                            sIdx === partSteps.length - 1 
+                                                                                                ? 'bg-transparent' 
+                                                                                                : isCompleted && completedStepIds.includes(partSteps[sIdx + 1]?.id)
+                                                                                                    ? 'bg-emerald-500' 
+                                                                                                    : 'bg-slate-300 dark:bg-slate-600'
+                                                                                        }`} 
+                                                                                    />
+                                                                                </div>
+
+                                                                                {/* Step Selector Row */}
+                                                                                <div className="flex-1 min-w-0 py-1">
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => handleSelectStepForPreview(step)}
+                                                                                        className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-2.5 cursor-pointer ${
+                                                                                            isInspected
+                                                                                                ? isInstruction
+                                                                                                    ? 'bg-indigo-50/90 dark:bg-indigo-950/40 border-indigo-600 ring-2 ring-indigo-600/15 shadow-xs'
+                                                                                                    : isTest
+                                                                                                        ? 'bg-amber-50/90 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/15 shadow-xs'
+                                                                                                        : 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-600 ring-2 ring-emerald-600/15 shadow-xs'
+                                                                                                : 'bg-[var(--bg-surface)]/70 hover:bg-[var(--bg-surface)] border-[var(--border-main)] hover:border-[var(--border-strong)]'
+                                                                                        }`}
+                                                                                    >
+                                                                                        <div className="min-w-0 flex-1">
+                                                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                                                <span className="font-bold text-xs sm:text-sm text-[var(--text-main)] truncate">
+                                                                                                    {isInstruction
+                                                                                                        ? step.sheetTitle
+                                                                                                        : isTest
+                                                                                                            ? (step.title || (lang === 'sv' ? "Delprov" : "Checkpoint"))
+                                                                                                            : getTopicName(safeTopic, lang)}
+                                                                                                </span>
+
+                                                                                                {isInstruction ? (
+                                                                                                    <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0">
+                                                                                                        {lang === 'sv' ? "Genomgång" : "Walkthrough"}
+                                                                                                    </span>
+                                                                                                ) : isTest ? (
+                                                                                                    <span className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0">
+                                                                                                        {step.testMode === 'exam' ? (lang === 'sv' ? "Prov" : "Exam") : (lang === 'sv' ? "Delprov" : "Checkpoint")}
+                                                                                                    </span>
+                                                                                                ) : (
+                                                                                                    <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0">
+                                                                                                        {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
+                                                                                                    </span>
+                                                                                                )}
+
+                                                                                                {isNextActive && !isCompleted && (
+                                                                                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title={lang === 'sv' ? "Nästa rekommenderade steg" : "Next recommended step"} />
+                                                                                                )}
+                                                                                            </div>
+
+                                                                                            {!isInstruction && (
+                                                                                                <p className="text-[11px] font-medium text-[var(--text-muted)] truncate mt-0.5">
+                                                                                                    {isTest
+                                                                                                        ? `${step.questionCount || 10} ${lang === 'sv' ? "blandade frågor" : "mixed questions"}`
+                                                                                                        : description}
+                                                                                                </p>
+                                                                                            )}
+                                                                                        </div>
+
+                                                                                        <div className="flex items-center gap-1.5 shrink-0">
+                                                                                            {isCompleted && (
+                                                                                                <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                                                                                                    <Check size={11} strokeWidth={3} />
+                                                                                                </span>
+                                                                                            )}
+                                                                                            <ChevronRight size={15} className={`transition-transform ${isInspected ? 'text-[var(--text-main)] translate-x-0.5' : 'text-[var(--text-muted)]'}`} />
+                                                                                        </div>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+
+                                                                {/* RIGHT COLUMN (6/12): GOLDILOCKS-STYLE STEP INSPECTOR CARD */}
+                                                                {inspectedStep && (
+                                                                    <div className="lg:col-span-6 lg:sticky lg:top-6 bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-2xl p-5 space-y-4">
+                                                                        {inspIsInstruction ? (
+                                                                            /* --- WALKTHROUGH PREVIEW --- */
+                                                                            <>
+                                                                                <div className="flex items-start justify-between gap-3">
+                                                                                    <div>
+                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+                                                                                            {lang === 'sv' ? "Interaktiv Genomgång" : "Interactive Walkthrough"}
+                                                                                        </span>
+                                                                                        <h4 className="text-lg font-black text-[var(--text-main)] mt-0.5">
+                                                                                            {inspectedStep.sheetTitle}
+                                                                                        </h4>
+                                                                                    </div>
+                                                                                    {inspIsCompleted && (
+                                                                                        <span className="px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider shrink-0">
+                                                                                            {lang === 'sv' ? "Sedd ✓" : "Viewed ✓"}
+                                                                                        </span>
                                                                                     )}
                                                                                 </div>
 
-                                                                                {/* Bottom Connector Segment */}
-                                                                                <div 
-                                                                                    className={`w-[2px] flex-1 ${
-                                                                                        sIdx === partSteps.length - 1 
-                                                                                            ? 'bg-transparent' 
-                                                                                            : isCompleted && completedStepIds.includes(partSteps[sIdx + 1]?.id)
-                                                                                                ? 'bg-emerald-500' 
-                                                                                                : 'bg-slate-300 dark:bg-slate-600'
-                                                                                    }`} 
-                                                                                />
-                                                                            </div>
-
-                                                                            {/* 2. Right Interactive Card Container */}
-                                                                            <div className="flex-1 min-w-0 py-1">
-                                                                                {/* CASE A: WALKTHROUGH */}
-                                                                                {isInstruction ? (
-                                                                                    <div 
-                                                                                        onClick={() => handleOpenInstruction(step)}
-                                                                                        className={`relative group p-3 sm:p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 cursor-pointer shadow-xs active:scale-[0.99] ${
-                                                                                            isNextActive
-                                                                                                ? 'border-indigo-500 bg-indigo-50/90 dark:bg-indigo-950/40 ring-2 ring-indigo-500/20'
-                                                                                                : isCompleted
-                                                                                                    ? 'border-slate-200 dark:border-slate-800 bg-[var(--bg-card)] opacity-85'
-                                                                                                    : 'border-indigo-200 dark:border-indigo-900 bg-indigo-50/40 dark:bg-indigo-950/20 hover:border-indigo-400'
-                                                                                        }`}
-                                                                                    >
-                                                                                        <div className="min-w-0 flex-1">
-                                                                                            <div className="flex items-center gap-2 flex-wrap">
-                                                                                                <span className="font-black text-sm text-[var(--text-main)] truncate">
-                                                                                                    {step.sheetTitle}
-                                                                                                </span>
-                                                                                                <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-md shrink-0">
-                                                                                                    {lang === 'sv' ? "Genomgång" : "Walkthrough"}
-                                                                                                </span>
-                                                                                                {isNextActive && (
-                                                                                                    <span className="bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full animate-pulse">
-                                                                                                        {lang === 'sv' ? "Börja här" : "Start here"}
-                                                                                                    </span>
-                                                                                                )}
-                                                                                            </div>
-                                                                                        </div>
-
-                                                                                        <div className="flex items-center gap-2 shrink-0">
-                                                                                            {isCompleted && (
-                                                                                                <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                                                                                                    <Check size={14} strokeWidth={3} />
-                                                                                                </span>
-                                                                                            )}
-                                                                                            <button 
-                                                                                                type="button"
-                                                                                                className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ${
-                                                                                                    isCompleted 
-                                                                                                        ? 'bg-[var(--bg-surface)] text-[var(--text-muted)] hover:bg-indigo-600 hover:text-white' 
-                                                                                                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                                                                                                }`}
-                                                                                            >
-                                                                                                <Play size={12} fill="currentColor" />
-                                                                                                <span>{isCompleted ? (lang === 'sv' ? "Repetera" : "Review") : (lang === 'sv' ? "Titta" : "Watch")}</span>
-                                                                                            </button>
-                                                                                        </div>
+                                                                                <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] text-xs font-semibold text-[var(--text-muted)] leading-relaxed flex items-start gap-3">
+                                                                                    <div className="w-9 h-9 rounded-xl bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                                                                                        <BookOpen size={18} />
                                                                                     </div>
-                                                                                ) : isTest ? (
-                                                                                    /* CASE B: CHECKPOINT */
-                                                                                    <div 
-                                                                                        className={`relative group p-3 sm:p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 shadow-xs ${
-                                                                                            isNextActive
-                                                                                                ? 'border-amber-500 bg-amber-50/90 dark:bg-amber-950/40 ring-2 ring-amber-500/20'
-                                                                                                : isCompleted 
-                                                                                                    ? 'border-emerald-300 dark:border-emerald-800/80 bg-emerald-50/40 dark:bg-emerald-950/20' 
-                                                                                                    : 'border-amber-300 dark:border-amber-900 bg-amber-50/40 dark:bg-amber-950/20 hover:border-amber-400'
-                                                                                        }`}
-                                                                                    >
-                                                                                        <div className="min-w-0 flex-1">
-                                                                                            <div className="flex items-center gap-2 flex-wrap">
-                                                                                                <span className="font-black text-sm text-[var(--text-main)] truncate">
-                                                                                                    {step.title || (lang === 'sv' ? "Delprov" : "Checkpoint")}
-                                                                                                </span>
-                                                                                                <span className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-md shrink-0">
-                                                                                                    {step.testMode === 'exam' ? (lang === 'sv' ? "Prov" : "Exam") : (lang === 'sv' ? "Delprov" : "Checkpoint")}
-                                                                                                </span>
-                                                                                                {isNextActive && (
-                                                                                                    <span className="bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full animate-pulse">
-                                                                                                        {lang === 'sv' ? "Nästa test" : "Next test"}
-                                                                                                    </span>
+                                                                                    <div>
+                                                                                        <p className="text-[var(--text-main)] font-bold mb-0.5">
+                                                                                            {lang === 'sv' ? "Steg-för-steg förklaring" : "Step-by-step explanation"}
+                                                                                        </p>
+                                                                                        <p>
+                                                                                            {lang === 'sv'
+                                                                                                ? "Gå igenom metod och exempel i lugn och ro innan du börjar öva på egen hand."
+                                                                                                : "Review the method and worked examples at your own pace before practicing."}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleOpenInstruction(inspectedStep)}
+                                                                                    className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                                                                                >
+                                                                                    <Play size={14} fill="currentColor" />
+                                                                                    <span>
+                                                                                        {inspIsCompleted
+                                                                                            ? (lang === 'sv' ? "Repetera genomgång →" : "Review Walkthrough →")
+                                                                                            : (lang === 'sv' ? "Öppna genomgång →" : "Open Walkthrough →")}
+                                                                                    </span>
+                                                                                </button>
+                                                                            </>
+                                                                        ) : inspIsTest ? (
+                                                                            /* --- CHECKPOINT / TEST PREVIEW --- */
+                                                                            <>
+                                                                                <div className="flex items-start justify-between gap-3">
+                                                                                    <div>
+                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                                                                                            {inspectedStep.testMode === 'exam'
+                                                                                                ? (lang === 'sv' ? "Slutprov" : "Unit Exam")
+                                                                                                : (lang === 'sv' ? "Kunskapskontroll" : "Checkpoint Quiz")}
+                                                                                        </span>
+                                                                                        <h4 className="text-lg font-black text-[var(--text-main)] mt-0.5">
+                                                                                            {inspectedStep.title || (lang === 'sv' ? "Delprov" : "Checkpoint")}
+                                                                                        </h4>
+                                                                                    </div>
+                                                                                    <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider shrink-0">
+                                                                                        {inspectedStep.questionCount || 10} {lang === 'sv' ? "frågor" : "questions"}
+                                                                                    </span>
+                                                                                </div>
+
+                                                                                <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] text-xs font-semibold text-[var(--text-muted)] leading-relaxed flex items-start gap-3">
+                                                                                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                                                                                        <Beaker size={18} />
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <p className="text-[var(--text-main)] font-bold mb-0.5">
+                                                                                            {lang === 'sv' ? "Blandade uppgifter från delmomentet" : "Mixed problems from this section"}
+                                                                                        </p>
+                                                                                        <p>
+                                                                                            {lang === 'sv'
+                                                                                                ? "Testa dina kunskaper utan ledtrådar för att checka av att allt sitter."
+                                                                                                : "Test your understanding without hints to verify mastery."}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        if (onStartCheckpoint) {
+                                                                                            onStartCheckpoint(inspectedStep.configCode, inspectedStep.id);
+                                                                                        }
+                                                                                    }}
+                                                                                    className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-wider shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                                                                                >
+                                                                                    <Play size={14} fill="currentColor" />
+                                                                                    <span>
+                                                                                        {inspIsCompleted
+                                                                                            ? (lang === 'sv' ? "Gör om delprov →" : "Retake Checkpoint →")
+                                                                                            : (lang === 'sv' ? "Starta delprov →" : "Start Checkpoint →")}
+                                                                                    </span>
+                                                                                </button>
+                                                                            </>
+                                                                        ) : (
+                                                                            /* --- PRACTICE LEVEL GOLDILOCKS PREVIEW (No Too Hard / Too Easy buttons) --- */
+                                                                            <>
+                                                                                <div className="flex items-start justify-between gap-3">
+                                                                                    <div>
+                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">
+                                                                                            {lang === 'sv' ? "Övningsmoment" : "Practice Skill"}
+                                                                                        </span>
+                                                                                        <h4 className="text-lg font-black text-[var(--text-main)] tracking-tight mt-0.5">
+                                                                                            {getTopicName(inspTopicId, lang)}
+                                                                                        </h4>
+                                                                                        {inspMeta?.description && (
+                                                                                            <p className="text-xs font-bold text-[var(--text-muted)] mt-0.5">
+                                                                                                {inspMeta.description}
+                                                                                            </p>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <span className="px-3 py-1 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-wider shrink-0 shadow-2xs">
+                                                                                        {lang === 'sv' ? `Nivå ${inspectedStep.level}` : `Level ${inspectedStep.level}`}
+                                                                                    </span>
+                                                                                </div>
+
+                                                                                {/* Sample Problem Box ("Så här ser en uppgift ut:") */}
+                                                                                <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] space-y-2.5">
+                                                                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                                                                            {lang === 'sv' ? "Så här ser en uppgift ut:" : "Sample problem:"}
+                                                                                        </span>
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => fetchPartStepSample(inspTopicId, inspectedStep.level, inspectedStep.variationKey)}
+                                                                                            disabled={isFetchingPartPreview}
+                                                                                            className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-main)] hover:border-emerald-500 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                                                                        >
+                                                                                            <RotateCcw size={10} className={isFetchingPartPreview ? "animate-spin" : ""} />
+                                                                                            <span>{lang === 'sv' ? "Nytt exempel" : "New example"}</span>
+                                                                                        </button>
+                                                                                    </div>
+
+                                                                                    <div className="min-h-[100px] p-4 rounded-xl bg-[var(--bg-surface)]/60 border border-[var(--border-main)] flex flex-col justify-center items-center text-center overflow-visible">
+                                                                                        {isFetchingPartPreview ? (
+                                                                                            <span className="text-xs font-bold text-[var(--text-muted)] animate-pulse">
+                                                                                                {lang === 'sv' ? "Hämtar exempel..." : "Loading example..."}
+                                                                                            </span>
+                                                                                        ) : partPreviewQuestion?.renderData ? (
+                                                                                            <div className="space-y-3 w-full flex flex-col items-center">
+                                                                                                <div className="w-full max-w-[320px] flex justify-center items-center mx-auto overflow-visible empty:hidden whiteboard-protect rounded-xl">
+                                                                                                    <VisualRenderer
+                                                                                                        data={partPreviewQuestion.renderData}
+                                                                                                        isWordProblem={false}
+                                                                                                    />
+                                                                                                </div>
+
+                                                                                                {partPreviewQuestion.renderData.latex && (
+                                                                                                    <div className="text-lg sm:text-xl font-bold text-[var(--text-main)]">
+                                                                                                        <MathDisplay content={`$$${partPreviewQuestion.renderData.latex}$$`} />
+                                                                                                    </div>
+                                                                                                )}
+
+                                                                                                {inspLiveDesc && (
+                                                                                                    <div className="text-xs font-semibold text-[var(--text-main)] leading-relaxed max-w-md text-center">
+                                                                                                        <MathDisplay content={inspLiveDesc} />
+                                                                                                    </div>
                                                                                                 )}
                                                                                             </div>
-                                                                                            <span className="text-xs font-bold text-[var(--text-muted)] mt-1 block">
-                                                                                                {step.questionCount || 10} {lang === 'sv' ? "blandade frågor" : "mixed questions"}
+                                                                                        ) : inspMeta?.mathExample ? (
+                                                                                            <div className="text-base sm:text-lg font-bold text-[var(--text-main)] w-full">
+                                                                                                <MathDisplay content={inspMeta.mathExample} />
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            <span className="text-xs font-semibold text-[var(--text-muted)] italic">
+                                                                                                {inspMeta?.description}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        onSelect(inspTopicId, inspectedStep.level);
+                                                                                        if (onStart) onStart();
+                                                                                    }}
+                                                                                    className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                                                                                >
+                                                                                    <Play size={14} fill="currentColor" />
+                                                                                    <span>
+                                                                                        {inspIsCompleted
+                                                                                            ? (lang === 'sv' ? `Öva igen på Nivå ${inspectedStep.level} →` : `Practice Level ${inspectedStep.level} Again →`)
+                                                                                            : (lang === 'sv' ? `Börja öva Nivå ${inspectedStep.level} →` : `Start Practicing Level ${inspectedStep.level} →`)}
+                                                                                    </span>
+                                                                                </button>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    /* --- CATEGORY TABS & TOPIC GRID (Free Play / Teacher) --- */
+                                    <>
+                                        {/* CLEAN FULL-WIDTH HORIZONTAL CATEGORY TABS */}
+                                        <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+                                            {Object.entries(CATEGORIES).map(([catKey, category]) => {
+                                                const isActive = expandedCategory === catKey;
+                                                const themeColorStr = category.color || 'emerald';
+                                                
+                                                return (
+                                                    <div key={catKey} className={`theme-${themeColorStr}`}>
+                                                        <button 
+                                                            onClick={() => setExpandedCategory(catKey)}
+                                                            className={`flex items-center gap-2 px-5 py-3 rounded-[var(--radius-btn)] font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-sm border-2 cursor-pointer ${
+                                                                isActive 
+                                                                    ? `bg-[var(--brand-solid)] text-white border-[var(--brand-solid)]` 
+                                                                    : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'
+                                                            }`}
+                                                        >
+                                                            {isActive && <Award size={14} />}
+                                                            {category.label[lang]}
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* ACTIVE CATEGORY TOPICS GRID (Single-layer cards on canvas — no box-in-a-box) */}
+                                        <div className={`theme-${themeColorString} space-y-4`}>
+                                            <div className="flex items-center justify-between gap-3 px-1">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--brand-solid)] text-white shadow-xs">
+                                                        <Award size={16} />
+                                                    </div>
+                                                    <div className="flex items-baseline gap-2.5 flex-wrap">
+                                                        <h3 className="text-lg font-bold text-[var(--text-main)] tracking-tight leading-none">
+                                                            {activeCategoryData.label[lang]}
+                                                        </h3>
+                                                        <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+                                                            • {t.topics_count(activeCategoryData.topics.length)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Backdrop to close open dropdown when clicking outside */}
+                                            {openDropdownTopicId && (
+                                                <div 
+                                                    className="fixed inset-0 z-20" 
+                                                    onClick={() => setOpenDropdownTopicId(null)} 
+                                                />
+                                            )}
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                                                {activeCategoryData.topics.map(topic => {
+                                                    const isThisTopicSelected = selectedTopic === topic.id && selectedLevel > 0;
+                                                    const isDropdownOpen = openDropdownTopicId === topic.id;
+                                                    const availableLevels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(
+                                                        lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl]
+                                                    );
+
+                                                    // Middle diagnostic entry point so unsure users calibrate in 1 click instead of starting at L1
+                                                    const diagnosticStartLvl = availableLevels.length > 0
+                                                        ? availableLevels[Math.min(Math.floor((availableLevels.length - 1) / 2), 2)]
+                                                        : 1;
+
+                                                    const selectedMeta = isThisTopicSelected
+                                                        ? getLevelMetadata(topic.id, selectedLevel, lang)
+                                                        : null;
+
+                                                    return (
+                                                        <div 
+                                                            key={topic.id} 
+                                                            className={`relative bg-[var(--bg-card)] rounded-2xl p-4 sm:p-5 transition-all group ${
+                                                                isThisTopicSelected 
+                                                                    ? 'border-2 border-[var(--brand-solid)] shadow-md' 
+                                                                    : 'border border-[var(--border-main)] hover:border-[var(--brand-solid)] shadow-2xs hover:shadow-md'
+                                                            } ${isDropdownOpen ? 'z-30' : 'z-10'}`}
+                                                        >
+                                                            {/* Topic Title & Level Count */}
+                                                            <div className="font-bold text-[var(--text-main)] mb-3.5 flex items-center justify-between gap-2 text-sm leading-tight">
+                                                                <span className="truncate">{topic.label[lang]}</span>
+                                                                <span className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-surface)] px-2 py-0.5 rounded-md border border-[var(--border-main)] shrink-0">
+                                                                    {availableLevels.length} {lang === 'sv' ? 'nivåer' : 'levels'}
+                                                                </span>
+                                                            </div>
+
+                                                            {/* Custom Dropdown Trigger */}
+                                                            <div className="relative">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setOpenDropdownTopicId(isDropdownOpen ? null : topic.id)}
+                                                                    className={`w-full p-2.5 pl-3.5 pr-3 bg-[var(--bg-surface)] border rounded-xl text-xs font-bold text-[var(--text-main)] flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
+                                                                        isDropdownOpen || isThisTopicSelected
+                                                                            ? 'border-[var(--brand-solid)] shadow-sm'
+                                                                            : 'border-[var(--border-strong)] hover:border-[var(--brand-solid)]'
+                                                                    }`}
+                                                                >
+                                                                    <span className="truncate">
+                                                                        {isThisTopicSelected ? (
+                                                                            <>
+                                                                                <span className="font-black text-[var(--brand-text)]">
+                                                                                    {lang === 'sv' ? `Nivå ${selectedLevel}` : `Level ${selectedLevel}`}
+                                                                                </span>
+                                                                                {selectedMeta?.description && (
+                                                                                    <span className="text-[var(--text-muted)] font-semibold">
+                                                                                        {' '}— {selectedMeta.description}
+                                                                                    </span>
+                                                                                )}
+                                                                            </>
+                                                                        ) : (
+                                                                            <span className="text-[var(--text-muted)]">{t.select_level}</span>
+                                                                        )}
+                                                                    </span>
+                                                                    <ChevronDown 
+                                                                        size={16} 
+                                                                        className={`shrink-0 text-[var(--text-muted)] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180 text-[var(--brand-solid)]' : ''}`} 
+                                                                    />
+                                                                </button>
+
+                                                                {/* Floating Rich Level Menu (Rendered ONLY when clicked) */}
+                                                                {isDropdownOpen && (
+                                                                    <div className="absolute left-0 right-0 top-full mt-2 bg-[var(--bg-card)] border-2 border-[var(--brand-solid)] rounded-2xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)] animate-in fade-in slide-in-from-top-1 duration-150">
+                                                                        {/* Top Helper Row: Hitta rätt nivå (uses active category theme variables) */}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                const targetLvl = isThisTopicSelected ? selectedLevel : diagnosticStartLvl;
+                                                                                setOpenDropdownTopicId(null);
+                                                                                setDiagnosticTarget({
+                                                                                    topicId: topic.id,
+                                                                                    level: targetLvl,
+                                                                                    isNewGoal: true
+                                                                                });
+                                                                                onSelect(topic.id, targetLvl);
+                                                                            }}
+                                                                            className="w-full text-left p-3 bg-[var(--brand-bg)] hover:bg-[var(--brand-solid)] transition-colors cursor-pointer flex items-center justify-between gap-2 group/finder"
+                                                                        >
+                                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                                <Compass size={14} className="text-[var(--brand-text)] group-hover/finder:text-white shrink-0" />
+                                                                                <span className="text-xs font-black text-[var(--brand-text)] group-hover/finder:text-white truncate">
+                                                                                    {lang === 'sv' ? 'Hitta rätt nivå...' : 'Find the right level...'}
+                                                                                </span>
+                                                                            </div>
+                                                                            <span className="text-[10px] font-bold text-[var(--text-main)] group-hover/finder:text-white/90 shrink-0">
+                                                                                {lang === 'sv' ? 'Testa exempel →' : 'Try example →'}
+                                                                            </span>
+                                                                        </button>
+
+                                                                        {availableLevels.map(lvl => {
+                                                                            const { description, mathExample, isSentence } = getLevelMetadata(topic.id, lvl, lang);
+                                                                            const isRowSelected = isThisTopicSelected && selectedLevel === lvl;
+
+                                                                            return (
+                                                                                <button
+                                                                                    key={lvl}
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        onSelect(topic.id, lvl);
+                                                                                        setOpenDropdownTopicId(null);
+                                                                                    }}
+                                                                                    className={`w-full text-left p-3 transition-colors cursor-pointer flex flex-col gap-1.5 ${
+                                                                                        isRowSelected
+                                                                                            ? 'bg-[var(--brand-bg)]'
+                                                                                            : 'hover:bg-[var(--bg-surface)]'
+                                                                                    }`}
+                                                                                >
+                                                                                    <div className="flex items-center justify-between gap-2 w-full">
+                                                                                        <div className="flex items-center gap-2 min-w-0">
+                                                                                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shrink-0 ${
+                                                                                                isRowSelected
+                                                                                                    ? 'bg-[var(--brand-solid)] text-white'
+                                                                                                    : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
+                                                                                            }`}>
+                                                                                                {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
+                                                                                            </span>
+                                                                                            <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                                                                                                {description}
                                                                                             </span>
                                                                                         </div>
 
-                                                                                        <div className="flex items-center gap-2 shrink-0">
-                                                                                            {isCompleted && (
-                                                                                                <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                                                                                                    <Check size={14} strokeWidth={3} />
-                                                                                                </span>
-                                                                                            )}
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                onClick={() => {
-                                                                                                    if (onStartCheckpoint) {
-                                                                                                        onStartCheckpoint(step.configCode, step.id);
-                                                                                                    }
-                                                                                                }}
-                                                                                                className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95 ${
-                                                                                                    isCompleted 
-                                                                                                        ? 'bg-[var(--bg-surface)] text-[var(--text-muted)] hover:bg-amber-500 hover:text-white'
-                                                                                                        : 'bg-amber-500 hover:bg-amber-600 text-white'
-                                                                                                }`}
-                                                                                            >
-                                                                                                <Play size={12} fill="currentColor" />
-                                                                                                <span>{isCompleted ? (lang === 'sv' ? "Gör om" : "Retake") : (lang === 'sv' ? "Starta prov" : "Start test")}</span>
-                                                                                            </button>
-                                                                                        </div>
+                                                                                        {mathExample && !isSentence && (
+                                                                                            <span className="shrink-0 px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-main)] text-xs font-bold text-[var(--text-main)]">
+                                                                                                <MathDisplay content={mathExample} />
+                                                                                            </span>
+                                                                                        )}
                                                                                     </div>
-                                                                                ) : (
-                                                                                    /* CASE C: PRACTICE LEVEL */
-                                                                                    <div 
-                                                                                        onClick={() => {
-                                                                                            setHasUserManuallySelected(true);
-                                                                                            onSelect(safeTopic, step.level);
-                                                                                        }}
-                                                                                        className={`relative group p-3 sm:p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 cursor-pointer active:scale-[0.99] ${
-                                                                                            isSelected 
-                                                                                                ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20' 
-                                                                                                : isNextActive
-                                                                                                    ? 'border-emerald-400 dark:border-emerald-700 bg-emerald-50/40 dark:bg-emerald-950/20 ring-2 ring-emerald-500/20'
-                                                                                                    : isCompleted
-                                                                                                        ? 'bg-[var(--bg-card)] border-[var(--border-main)] opacity-85 hover:border-[var(--brand-solid)]'
-                                                                                                        : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:border-[var(--brand-solid)]'
-                                                                                        }`}
-                                                                                    >
-                                                                                        <div className="min-w-0 flex-1">
-                                                                                            <div className="flex items-center gap-2 flex-wrap">
-                                                                                                <span className="font-black text-sm sm:text-base text-[var(--text-main)] truncate">
-                                                                                                    {getTopicName(safeTopic, lang)}
-                                                                                                </span>
-                                                                                                <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-md shrink-0 border border-emerald-300/60 dark:border-emerald-800/60">
-                                                                                                    {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
-                                                                                                </span>
-                                                                                                {description && (
-                                                                                                    <span className="text-xs font-semibold text-[var(--text-muted)] truncate hidden md:inline">
-                                                                                                        • {description}
-                                                                                                    </span>
-                                                                                                )}
-                                                                                                {isNextActive && !isCompleted && (
-                                                                                                    <span className="bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full animate-pulse">
-                                                                                                        {lang === 'sv' ? "Öva nu" : "Practice now"}
-                                                                                                    </span>
-                                                                                                )}
-                                                                                            </div>
 
-                                                                                            {mathExample && (
-                                                                                                <div className="mt-1 text-xs sm:text-sm font-serif italic truncate flex items-center gap-2">
-                                                                                                    <span className="text-[10px] font-sans font-black uppercase tracking-wider text-[var(--text-muted)] not-italic bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-strong)] shrink-0">
-                                                                                                        Ex:
-                                                                                                    </span>
-                                                                                                    <span className="font-bold text-slate-900 dark:text-slate-100 not-italic">
-                                                                                                        <MathDisplay content={mathExample} />
-                                                                                                    </span>
-                                                                                                </div>
-                                                                                            )}
+                                                                                    {mathExample && isSentence && (
+                                                                                        <div className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1 pl-1 italic">
+                                                                                            <MathDisplay content={mathExample} />
                                                                                         </div>
-
-                                                                                        {/* Selection / Status Radio */}
-                                                                                        <div className="shrink-0 flex items-center">
-                                                                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                                                                                isCompleted
-                                                                                                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs'
-                                                                                                    : isSelected 
-                                                                                                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-600'
-                                                                                                        : 'border-[var(--border-strong)] group-hover:border-emerald-500'
-                                                                                            }`}>
-                                                                                                {isCompleted ? (
-                                                                                                    <Check size={14} strokeWidth={3} />
-                                                                                                ) : isSelected ? (
-                                                                                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
-                                                                                                ) : null}
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-                                                                })}
+                                                                                    )}
+                                                                                </button>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ) : (
-                                /* --- UNIFIED SEARCH-FIRST CURRICULUM VIEW (Free Play / Teacher) --- */
-                                <div className="space-y-6">
-                                    {/* Unified Spotlight Search & Diagnostic Workspace */}
-                                    <ConceptMapDashboard
-                                        lang={lang}
-                                        diagnosticTarget={diagnosticTarget}
-                                        onSetDiagnosticTarget={setDiagnosticTarget}
-                                        onSelect={onSelect}
-                                        onStart={onStart}
-                                    />
 
-                                    {/* Category Tabs & Topic Grid (Visible whenever no diagnostic search target is active) */}
-                                    {!diagnosticTarget && (
-                                        <>
-                                            {/* CLEAN FULL-WIDTH HORIZONTAL CATEGORY TABS */}
-                                            <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
-                                                {Object.entries(CATEGORIES).map(([catKey, category]) => {
-                                                    const isActive = expandedCategory === catKey;
-                                                    const themeColorStr = category.color || 'emerald';
-                                                    
-                                                    return (
-                                                        <div key={catKey} className={`theme-${themeColorStr}`}>
-                                                            <button 
-                                                                onClick={() => setExpandedCategory(catKey)}
-                                                                className={`flex items-center gap-2 px-5 py-3 rounded-[var(--radius-btn)] font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-sm border-2 cursor-pointer ${
-                                                                    isActive 
-                                                                        ? `bg-[var(--brand-solid)] text-white border-[var(--brand-solid)]` 
-                                                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'
-                                                                }`}
-                                                            >
-                                                                {isActive && <Award size={14} />}
-                                                                {category.label[lang]}
-                                                            </button>
+                                                            {/* Selected Level Full Example Preview Pill */}
+                                                            {isThisTopicSelected && selectedMeta?.mathExample && (
+                                                                <div className="mt-3 p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)] flex items-start gap-2 animate-in fade-in duration-200">
+                                                                    <span className="text-[10px] font-black uppercase tracking-wider text-[var(--brand-text)] bg-[var(--brand-bg)] border border-[var(--brand-border)] px-1.5 py-0.5 rounded shrink-0 mt-0.5">
+                                                                        Ex:
+                                                                    </span>
+                                                                    <div className="text-xs font-bold text-[var(--text-main)] leading-snug break-words min-w-0 flex-1">
+                                                                        <MathDisplay content={selectedMeta.mathExample} />
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     );
                                                 })}
                                             </div>
-
-                                            {/* ACTIVE CATEGORY TOPICS GRID */}
-                                            <div className={`theme-${themeColorString} card p-6 sm:p-8 border-2 border-[var(--brand-border)]`}>
-                                                <div className="mb-6 flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-[var(--radius-btn)] flex items-center justify-center bg-[var(--brand-solid)] text-white shadow-md">
-                                                        <Award size={20} />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight leading-none mb-1">
-                                                            {activeCategoryData.label[lang]}
-                                                        </h3>
-                                                        <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest leading-none">
-                                                            {t.topics_count(activeCategoryData.topics.length)}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Backdrop to close open dropdown when clicking outside */}
-                                                {openDropdownTopicId && (
-                                                    <div 
-                                                        className="fixed inset-0 z-20" 
-                                                        onClick={() => setOpenDropdownTopicId(null)} 
-                                                    />
-                                                )}
-
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3.5">
-                                                    {activeCategoryData.topics.map(topic => {
-                                                        const isThisTopicSelected = selectedTopic === topic.id && selectedLevel > 0;
-                                                        const isDropdownOpen = openDropdownTopicId === topic.id;
-                                                        const availableLevels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(
-                                                            lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl]
-                                                        );
-
-                                                        // Middle diagnostic entry point so unsure users calibrate in 1 click instead of starting at L1
-                                                        const diagnosticStartLvl = availableLevels.length > 0
-                                                            ? availableLevels[Math.min(Math.floor((availableLevels.length - 1) / 2), 2)]
-                                                            : 1;
-
-                                                        const selectedMeta = isThisTopicSelected
-                                                            ? getLevelMetadata(topic.id, selectedLevel, lang)
-                                                            : null;
-
-                                                        return (
-                                                            <div 
-                                                                key={topic.id} 
-                                                                className={`relative bg-[var(--bg-card)] rounded-[var(--radius-card)] p-5 border-2 transition-all group ${
-                                                                    isThisTopicSelected 
-                                                                        ? 'border-[var(--brand-solid)] shadow-md' 
-                                                                        : 'border-[var(--border-main)] hover:border-[var(--brand-solid)] shadow-sm hover:shadow-lg'
-                                                                } ${isDropdownOpen ? 'z-30' : 'z-10'}`}
-                                                            >
-                                                                {/* Topic Title & Level Count */}
-                                                                <div className="font-bold text-[var(--text-main)] mb-3.5 flex items-center justify-between gap-2 text-sm leading-tight">
-                                                                    <span className="truncate">{topic.label[lang]}</span>
-                                                                    <span className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-surface)] px-2 py-0.5 rounded-md border border-[var(--border-main)] shrink-0">
-                                                                        {availableLevels.length} {lang === 'sv' ? 'nivåer' : 'levels'}
-                                                                    </span>
-                                                                </div>
-
-                                                                {/* Custom Dropdown Trigger */}
-                                                                <div className="relative">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setOpenDropdownTopicId(isDropdownOpen ? null : topic.id)}
-                                                                        className={`w-full p-3 pl-3.5 pr-3 bg-[var(--bg-surface)] border-2 rounded-[var(--radius-btn)] text-xs font-bold text-[var(--text-main)] flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
-                                                                            isDropdownOpen || isThisTopicSelected
-                                                                                ? 'border-[var(--brand-solid)] shadow-sm'
-                                                                                : 'border-[var(--border-strong)] hover:border-[var(--brand-solid)]'
-                                                                        }`}
-                                                                    >
-                                                                        <span className="truncate">
-                                                                            {isThisTopicSelected ? (
-                                                                                <>
-                                                                                    <span className="font-black text-[var(--brand-text)]">
-                                                                                        {lang === 'sv' ? `Nivå ${selectedLevel}` : `Level ${selectedLevel}`}
-                                                                                    </span>
-                                                                                    {selectedMeta?.description && (
-                                                                                        <span className="text-[var(--text-muted)] font-semibold">
-                                                                                            {' '}— {selectedMeta.description}
-                                                                                        </span>
-                                                                                    )}
-                                                                                </>
-                                                                            ) : (
-                                                                                <span className="text-[var(--text-muted)]">{t.select_level}</span>
-                                                                            )}
-                                                                        </span>
-                                                                        <ChevronDown 
-                                                                            size={16} 
-                                                                            className={`shrink-0 text-[var(--text-muted)] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180 text-[var(--brand-solid)]' : ''}`} 
-                                                                        />
-                                                                    </button>
-
-                                                                    {/* Floating Rich Level Menu (Rendered ONLY when clicked) */}
-                                                                    {isDropdownOpen && (
-                                                                        <div className="absolute left-0 right-0 top-full mt-2 bg-[var(--bg-card)] border-2 border-[var(--brand-solid)] rounded-2xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)] animate-in fade-in slide-in-from-top-1 duration-150">
-                                                                            {/* Top Helper Row: Hitta rätt nivå (uses active category theme variables) */}
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    const targetLvl = isThisTopicSelected ? selectedLevel : diagnosticStartLvl;
-                                                                                    setOpenDropdownTopicId(null);
-                                                                                    setDiagnosticTarget({
-                                                                                        topicId: topic.id,
-                                                                                        level: targetLvl,
-                                                                                        isNewGoal: true
-                                                                                    });
-                                                                                    onSelect(topic.id, targetLvl);
-                                                                                }}
-                                                                                className="w-full text-left p-3 bg-[var(--brand-bg)] hover:bg-[var(--brand-solid)] transition-colors cursor-pointer flex items-center justify-between gap-2 group/finder"
-                                                                            >
-                                                                                <div className="flex items-center gap-2 min-w-0">
-                                                                                    <Compass size={14} className="text-[var(--brand-text)] group-hover/finder:text-white shrink-0" />
-                                                                                    <span className="text-xs font-black text-[var(--brand-text)] group-hover/finder:text-white truncate">
-                                                                                        {lang === 'sv' ? 'Hitta rätt nivå...' : 'Find the right level...'}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <span className="text-[10px] font-bold text-[var(--text-main)] group-hover/finder:text-white/90 shrink-0">
-                                                                                    {lang === 'sv' ? 'Testa exempel →' : 'Try example →'}
-                                                                                </span>
-                                                                            </button>
-
-                                                                            {availableLevels.map(lvl => {
-                                                                                const { description, mathExample, isSentence } = getLevelMetadata(topic.id, lvl, lang);
-                                                                                const isRowSelected = isThisTopicSelected && selectedLevel === lvl;
-
-                                                                                return (
-                                                                                    <button
-                                                                                        key={lvl}
-                                                                                        type="button"
-                                                                                        onClick={() => {
-                                                                                            onSelect(topic.id, lvl);
-                                                                                            setOpenDropdownTopicId(null);
-                                                                                        }}
-                                                                                        className={`w-full text-left p-3 transition-colors cursor-pointer flex flex-col gap-1.5 ${
-                                                                                            isRowSelected
-                                                                                                ? 'bg-[var(--brand-bg)]'
-                                                                                                : 'hover:bg-[var(--bg-surface)]'
-                                                                                        }`}
-                                                                                    >
-                                                                                        <div className="flex items-center justify-between gap-2 w-full">
-                                                                                            <div className="flex items-center gap-2 min-w-0">
-                                                                                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shrink-0 ${
-                                                                                                    isRowSelected
-                                                                                                        ? 'bg-[var(--brand-solid)] text-white'
-                                                                                                        : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
-                                                                                                }`}>
-                                                                                                    {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
-                                                                                                </span>
-                                                                                                <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                                                                                                    {description}
-                                                                                                </span>
-                                                                                            </div>
-
-                                                                                            {mathExample && !isSentence && (
-                                                                                                <span className="shrink-0 px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-main)] text-xs font-bold text-[var(--text-main)]">
-                                                                                                    <MathDisplay content={mathExample} />
-                                                                                                </span>
-                                                                                            )}
-                                                                                        </div>
-
-                                                                                        {mathExample && isSentence && (
-                                                                                            <div className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1 pl-1 italic">
-                                                                                                <MathDisplay content={mathExample} />
-                                                                                            </div>
-                                                                                        )}
-                                                                                    </button>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Selected Level Full Example Preview Pill */}
-                                                                {isThisTopicSelected && selectedMeta?.mathExample && (
-                                                                    <div className="mt-3 p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)] flex items-start gap-2 animate-in fade-in duration-200">
-                                                                        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--brand-text)] bg-[var(--brand-bg)] border border-[var(--brand-border)] px-1.5 py-0.5 rounded shrink-0 mt-0.5">
-                                                                            Ex:
-                                                                        </span>
-                                                                        <div className="text-xs font-bold text-[var(--text-main)] leading-snug break-words min-w-0 flex-1">
-                                                                            <MathDisplay content={selectedMeta.mathExample} />
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+                                        </div>
+                                    </>
+                                )
                             )}
                         </div>
                     ) : (

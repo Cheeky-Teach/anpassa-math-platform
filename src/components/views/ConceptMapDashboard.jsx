@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     Search, Compass, Play, RefreshCw, X, CornerDownLeft,
-    ArrowRight, RotateCcw, ChevronLeft, HelpCircle
+    ArrowRight, RotateCcw, ChevronLeft, HelpCircle,
+    PieChart, Beaker, Grid3X3, BarChart3, Clock
 } from 'lucide-react';
 import { SKILL_GRAPH, CONCEPT_SEARCH_INDEX } from '../../constants/skillGraph';
 import { CATEGORIES } from '../../constants/localization';
@@ -32,7 +33,8 @@ export default function ConceptMapDashboard({
     diagnosticTarget = null,
     onSetDiagnosticTarget,
     onSelect,
-    onStart
+    onStart,
+    studentTools = null
 }) {
     // Anchored Original Goal so stepping through prerequisites never loses track of what the user came for
     const [originalGoal, setOriginalGoal] = useState(null); // { topicId, level }
@@ -274,16 +276,16 @@ export default function ConceptMapDashboard({
     return (
         <div className="w-full space-y-5">
             {/* ===================================================================== */}
-            {/* 1. UNIFIED SPOTLIGHT SEARCH BAR (ALWAYS VISIBLE AT TOP OF CURRICULUM) */}
+            {/* 1. CARDLESS UNIFIED SPOTLIGHT SEARCH & QUICK-ACCESS DECK              */}
             {/* ===================================================================== */}
-            <div className="bg-[var(--bg-card)] border-2 border-[var(--border-main)] rounded-3xl p-4 sm:p-5 shadow-xs relative z-30 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="relative z-30 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
                     {/* Back to Topic Grid button when Diagnostic Mode is open */}
                     {focusedNode && (
                         <button
                             type="button"
                             onClick={handleCloseDiagnostic}
-                            className="px-4 py-3 rounded-2xl bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border-2 border-[var(--border-strong)] hover:border-indigo-500 text-xs font-black uppercase tracking-wider text-[var(--text-main)] transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                            className="px-4 py-3 rounded-2xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] border border-[var(--border-strong)] hover:border-indigo-500 text-xs font-black uppercase tracking-wider text-[var(--text-main)] transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs"
                         >
                             <ChevronLeft size={15} />
                             <span>{lang === 'sv' ? 'Visa alla ämnen' : 'All Topics'}</span>
@@ -308,7 +310,7 @@ export default function ConceptMapDashboard({
                                         ? 'Vad behöver du hjälp med? Sök t.ex. "parenteser", "bråk", "procent", "pythagoras"...'
                                         : 'What do you need help with? Search e.g. "parentheses", "fractions", "percent"...'
                                 }
-                                className="w-full pl-11 pr-16 py-3.5 bg-[var(--bg-surface)] border-2 border-[var(--border-strong)] focus:border-indigo-600 rounded-2xl text-xs sm:text-sm font-bold text-[var(--text-main)] outline-none transition-all shadow-inner"
+                                className="w-full pl-11 pr-16 py-3.5 bg-[var(--bg-card)] border border-[var(--border-strong)] focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 rounded-2xl text-xs sm:text-sm font-bold text-[var(--text-main)] outline-none transition-all shadow-xs"
                             />
                             {searchQuery ? (
                                 <button
@@ -323,11 +325,10 @@ export default function ConceptMapDashboard({
                                 </button>
                             ) : (
                                 <kbd className="hidden sm:inline-flex items-center absolute right-3.5 px-2 py-0.5 text-[10px] font-black text-[var(--text-muted)] bg-[var(--bg-card)] border border-[var(--border-main)] rounded-lg">
-                                    ⌘K
+                                    Enter
                                 </kbd>
                             )}
-                        </div>
-                        
+                        </div>                        
 
                         {/* Spotlight Dropdown Results */}
                         {isSearchOpen && searchQuery.trim().length > 0 && (
@@ -375,10 +376,88 @@ export default function ConceptMapDashboard({
                         )}
                     </div>
                 </div>
+                
+                {/* Cardless Student Quick-Access Strip */}
+                {!focusedNode && studentTools && (
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <button
+                                type="button"
+                                onClick={studentTools.onFractionLabOpen}
+                                className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-indigo-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-indigo-600 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group/tool"
+                            >
+                                <PieChart size={14} className="text-indigo-500 group-hover/tool:text-white" />
+                                <span>{lang === 'sv' ? 'Laborationer' : 'Manipulatives'}</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={studentTools.onLabOpen}
+                                className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-indigo-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-indigo-600 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group/tool"
+                            >
+                                <Beaker size={14} className="text-indigo-500 group-hover/tool:text-white" />
+                                <span>Test Lab</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={studentTools.onTimesTableOpen}
+                                className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-emerald-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-emerald-600 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group/tool"
+                            >
+                                <Grid3X3 size={14} className="text-emerald-500 group-hover/tool:text-white" />
+                                <span>{lang === 'sv' ? 'Tabeller' : 'Tables'}</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={studentTools.onStatsOpen}
+                                className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-amber-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-amber-600 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group/tool"
+                            >
+                                <BarChart3 size={14} className="text-amber-500 group-hover/tool:text-white" />
+                                <span>{lang === 'sv' ? 'Statistik' : 'Statistics'}</span>
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 ml-auto">
+                            {/* Compact Timer Selector */}
+                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] shadow-2xs">
+                                <Clock size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <select
+                                    value={studentTools.timerSettings.duration / 60}
+                                    onChange={(e) => studentTools.toggleTimer(Number(e.target.value))}
+                                    className="bg-transparent text-xs font-bold text-[var(--text-main)] outline-none cursor-pointer"
+                                    aria-label="Timer"
+                                >
+                                    <option value="0">{lang === 'sv' ? 'Timer av' : 'Timer Off'}</option>
+                                    {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
+                                </select>
+                                {studentTools.timerSettings.duration > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={studentTools.resetTimer}
+                                        className="p-0.5 text-rose-600 dark:text-rose-400 hover:opacity-75 cursor-pointer"
+                                        title={lang === 'sv' ? 'Nollställ' : 'Reset'}
+                                    >
+                                        <RotateCcw size={12} />
+                                    </button>
+                                )}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={studentTools.onHelpOpen}
+                                className="p-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] transition-colors cursor-pointer shadow-2xs"
+                                title={lang === 'sv' ? 'Snabbguide & Hjälp' : 'Quick Guide & Help'}
+                            >
+                                <HelpCircle size={15} className="text-amber-500" />
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Saved Recent Levels from localStorage (Shown on initial screen when user has history) */}
                 {!focusedNode && recentNodes.length > 0 && (
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-1.5">
                             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mr-1">
                                 {lang === 'sv' ? 'Senast utforskade:' : 'Recently explored:'}
@@ -394,7 +473,7 @@ export default function ConceptMapDashboard({
                                             handleSelectNewGoal(node.topicId, node.level);
                                             setSearchQuery('');
                                         }}
-                                        className="px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer border bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border-main)] hover:border-indigo-500 flex items-center gap-1.5"
+                                        className="px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer border bg-[var(--bg-card)] text-[var(--text-main)] border-[var(--border-main)] hover:border-indigo-500 flex items-center gap-1.5 shadow-2xs"
                                     >
                                         <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-indigo-600 text-white">
                                             {lang === 'sv' ? `N${node.level}` : `L${node.level}`}
@@ -452,7 +531,7 @@ export default function ConceptMapDashboard({
                     {/* TWO-COLUMN SPLIT WORKSPACE: LEFT (7/12) GOLDILOCKS DIAGNOSTIC | RIGHT (5/12) VERTICAL TIMELINE */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                         {/* LEFT COLUMN: GOLDILOCKS DIAGNOSTIC STAGE */}
-                        <div className="lg:col-span-7 bg-[var(--bg-card)] border-2 border-indigo-600 rounded-3xl p-5 sm:p-7 shadow-lg ring-4 ring-indigo-600/10 space-y-5">
+                        <div className="lg:col-span-7 bg-[var(--bg-card)] border-2 border-indigo-600 rounded-2xl p-5 sm:p-6 shadow-md ring-4 ring-indigo-600/10 space-y-5">
                             {/* Active Topic & Level Header */}
                             <div className="flex items-start justify-between gap-3">
                                 <div>
@@ -692,7 +771,7 @@ export default function ConceptMapDashboard({
                         </div>
 
                         {/* RIGHT COLUMN: CONNECTED VERTICAL TIMELINE / STEPPER */}
-                        <div className="lg:col-span-5 bg-[var(--bg-card)] border-2 border-[var(--border-main)] rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+                        <div className="lg:col-span-5 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
                             <div className="border-b border-[var(--border-main)] pb-3">
                                 <h4 className="text-xs font-black uppercase tracking-widest text-[var(--text-main)]">
                                     {lang === 'sv' ? 'Din väg hit & vidare' : 'Your Path Here & Forward'}
