@@ -1,6 +1,6 @@
 /**
  * AUTO-GENERATED BEGREPPSKARTA / CONCEPT MAP GRAPH
- * Generated on: 2026-11-13T23:12:44.761Z
+ * Generated on: 2026-11-15T12:19:46.082Z
  * Do not edit manually — generated via scripts/generateContentMap.js
  */
 export const SKILL_GRAPH = {
@@ -18,7 +18,7 @@ export const SKILL_GRAPH = {
             "sv": "Enkla steg (x+a=b)",
             "en": "One Step"
         },
-        "example": "$$x - 18 = -7$$",
+        "example": "$$3x = 9$$",
         "sampleVariationKey": "onestep_calc",
         "prerequisites": [
             "basic_arithmetic:1",
@@ -46,7 +46,7 @@ export const SKILL_GRAPH = {
             "sv": "Två steg (ax+b=c)",
             "en": "Two Steps"
         },
-        "example": "$$2x + 5 = 29$$",
+        "example": "$$6x + 9 = 21$$",
         "sampleVariationKey": "twostep_calc",
         "prerequisites": [
             "equations:1",
@@ -77,7 +77,7 @@ export const SKILL_GRAPH = {
             "sv": "Med Parenteser",
             "en": "With Parentheses"
         },
-        "example": "$$4(x + 6) = 44$$",
+        "example": "$$4(x + 5) = 48$$",
         "sampleVariationKey": "paren_calc",
         "prerequisites": [
             "equations:2",
@@ -102,7 +102,7 @@ export const SKILL_GRAPH = {
             "sv": "Variabel på båda sidor",
             "en": "Variables on both sides"
         },
-        "example": "$$9x + 4 = 2x + 46$$",
+        "example": "$$10x + 6 = 5x + 46$$",
         "sampleVariationKey": "bothsides_calc",
         "prerequisites": [
             "equations:3",
@@ -128,7 +128,7 @@ export const SKILL_GRAPH = {
             "sv": "Skriv Ekvation (Problem)",
             "en": "Write Equation (Word Problems)"
         },
-        "example": "$$9x + 4 = 2x + 46$$",
+        "example": "$$10x + 6 = 5x + 46$$",
         "sampleVariationKey": "bothsides_calc",
         "prerequisites": [
             "equations:4"
@@ -152,7 +152,7 @@ export const SKILL_GRAPH = {
             "sv": "Lös Problem (Ekvation)",
             "en": "Solve Word Problems"
         },
-        "example": "$$9x + 4 = 2x + 46$$",
+        "example": "$$10x + 6 = 5x + 46$$",
         "sampleVariationKey": "bothsides_calc",
         "prerequisites": [
             "equations:5"
@@ -176,7 +176,7 @@ export const SKILL_GRAPH = {
             "sv": "Blandade Ekvationer",
             "en": "Mixed Equations"
         },
-        "example": "$$9x + 4 = 2x + 46$$",
+        "example": "$$10x + 6 = 5x + 46$$",
         "sampleVariationKey": "bothsides_calc",
         "prerequisites": [
             "equations:6"
@@ -198,7 +198,7 @@ export const SKILL_GRAPH = {
             "sv": "Skriv: Fast + Rörlig",
             "en": "Write: Fixed + Variable"
         },
-        "example": "$$12x+49=265$$",
+        "example": "$$22x+59=257$$",
         "sampleVariationKey": "rate_fixed_add_write",
         "prerequisites": [
             "equations:2"
@@ -220,7 +220,7 @@ export const SKILL_GRAPH = {
             "sv": "Förenkla Uttryck (Enkel)",
             "en": "Simplify Expressions (Easy)"
         },
-        "example": "$$18x + 12 + 5x - 5$$",
+        "example": "$$14x + 16 - 4x + 7$$",
         "sampleVariationKey": "combine_standard_mixed",
         "prerequisites": [
             "basic_arithmetic:1",
@@ -251,7 +251,7 @@ export const SKILL_GRAPH = {
             "sv": "Prioriteringsregler med x",
             "en": "Order of Ops with x"
         },
-        "example": "$$6 \\cdot 5x - 4x - 5$$",
+        "example": "$$2x - 5 \\cdot 2x + 10$$",
         "sampleVariationKey": "combine_mult_mixed",
         "prerequisites": [
             "expressions:1",
@@ -277,7 +277,7 @@ export const SKILL_GRAPH = {
             "sv": "Parenteser (Addition)",
             "en": "Parentheses (Addition)"
         },
-        "example": "$$20x + (4x + 3)$$",
+        "example": "$$11x + (3x + 4)$$",
         "sampleVariationKey": "distribute_plus",
         "prerequisites": [
             "expressions:2",
@@ -305,7 +305,7 @@ export const SKILL_GRAPH = {
             "sv": "Parenteser (Multiplikation)",
             "en": "Parentheses (Multiplication)"
         },
-        "example": "$$3(x + 5) - 2(x + 5)$$",
+        "example": "$$2(x + 2) + 4(x + 4)$$",
         "sampleVariationKey": "distribute_double",
         "prerequisites": [
             "expressions:3"
@@ -329,7 +329,7 @@ export const SKILL_GRAPH = {
             "sv": "Parenteser (Subtraktion)",
             "en": "Parentheses (Subtraction)"
         },
-        "example": "$$20x - (4x + 5)$$",
+        "example": "$$12x - (2x + 2)$$",
         "sampleVariationKey": "sub_block_plus",
         "prerequisites": [
             "expressions:4",
@@ -355,7 +355,7 @@ export const SKILL_GRAPH = {
             "sv": "Blandade Nivåer",
             "en": "Mixed Levels"
         },
-        "example": "$$20x - (4x + 5)$$",
+        "example": "$$12x - (2x + 2)$$",
         "sampleVariationKey": "sub_block_plus",
         "prerequisites": [
             "expressions:5"
@@ -402,7 +402,7 @@ export const SKILL_GRAPH = {
             "sv": "Omkrets: Lös ut x",
             "en": "Perimeter: Solve for x"
         },
-        "example": "En liksidig triangels omkrets är 21 cm. Beräkna x.",
+        "example": "En liksidig triangels omkrets är 264 cm. Beräkna x.",
         "sampleVariationKey": "perimeter_solve",
         "prerequisites": [
             "algebraic_geometry:1",
@@ -453,7 +453,7 @@ export const SKILL_GRAPH = {
             "sv": "Area: Lös ut x",
             "en": "Area: Solve for x"
         },
-        "example": "Triangelns area är 175 cm². Beräkna x.",
+        "example": "Rektangelns area är 497 cm². Beräkna x.",
         "sampleVariationKey": "area_solve",
         "prerequisites": [
             "algebraic_geometry:3",
@@ -550,7 +550,7 @@ export const SKILL_GRAPH = {
             "sv": "Beräkna höga figurer",
             "en": "Calculate High Terms"
         },
-        "example": "Vilket värde har tal nummer 50 i mönstret: 8, 17, 26... ?",
+        "example": "Vilket värde har tal nummer 50 i mönstret: 3, 8, 13... ?",
         "sampleVariationKey": "high_term",
         "prerequisites": [
             "patterns:1",
@@ -625,7 +625,7 @@ export const SKILL_GRAPH = {
             "sv": "Lös ut n (baklänges)",
             "en": "Solve for n"
         },
-        "example": "I ett mönster med formeln $V = 8n + 3$, vilket figurnummer (n) har värdet 307?",
+        "example": "I ett mönster med formeln $V = 4n + 2$, vilket figurnummer (n) har värdet 158?",
         "sampleVariationKey": "reverse_calc",
         "prerequisites": [
             "patterns:4",
@@ -752,8 +752,8 @@ export const SKILL_GRAPH = {
             "sv": "Koordinater & Parallella linjer",
             "en": "Coordinates & Parallel Lines"
         },
-        "example": "Ligger punkten $(4, -4)$ på linjen $y=-x$?",
-        "sampleVariationKey": "point_on_line",
+        "example": "Bestäm linjens ekvation på formen y = kx + m.",
+        "sampleVariationKey": "eq_standard",
         "prerequisites": [
             "graphs:4"
         ],
@@ -798,7 +798,7 @@ export const SKILL_GRAPH = {
             "sv": "Addition (Uppställning)",
             "en": "Addition (Vertical)"
         },
-        "example": "$$\\begin{array}{rr} & 20 \\\\ + & 10 \\\\ \\hline \\end{array}$$",
+        "example": "$$\\begin{array}{rr} & 143 \\\\ + & 130 \\\\ \\hline \\end{array}$$",
         "sampleVariationKey": "add_std_vertical",
         "prerequisites": [],
         "unlocks": [
@@ -824,7 +824,7 @@ export const SKILL_GRAPH = {
             "sv": "Subtraktion (Uppställning)",
             "en": "Subtraction (Vertical)"
         },
-        "example": "$$\\begin{array}{rr} & 198 \\\\ - & 90 \\\\ \\hline \\end{array}$$",
+        "example": "$$\\begin{array}{rr} & 93 \\\\ - & 68 \\\\ \\hline \\end{array}$$",
         "sampleVariationKey": "sub_std_vertical",
         "prerequisites": [
             "basic_arithmetic:1"
@@ -849,7 +849,7 @@ export const SKILL_GRAPH = {
             "sv": "Decimaltal (+/-)",
             "en": "Decimals (+/-)"
         },
-        "example": "$$13,2 + 3,47$$",
+        "example": "$$38,8 + 2,72$$",
         "sampleVariationKey": "dec_add_vertical",
         "prerequisites": [
             "basic_arithmetic:2"
@@ -873,7 +873,7 @@ export const SKILL_GRAPH = {
             "sv": "Multiplikation (Enkel)",
             "en": "Multiplication (Simple)"
         },
-        "example": "$$9 \\cdot 6$$",
+        "example": "$$4 \\cdot 4$$",
         "sampleVariationKey": "mult_table_std",
         "prerequisites": [
             "basic_arithmetic:3"
@@ -902,7 +902,7 @@ export const SKILL_GRAPH = {
             "sv": "Multiplikation (Medel)",
             "en": "Multiplication (Medium)"
         },
-        "example": "$$\\begin{array}{rr} & 38 \\\\ \\times & 5 \\\\ \\hline \\end{array}$$",
+        "example": "$$\\begin{array}{rr} & 13 \\\\ \\times & 5 \\\\ \\hline \\end{array}$$",
         "sampleVariationKey": "mult_2x1_vertical",
         "prerequisites": [
             "basic_arithmetic:4"
@@ -928,7 +928,7 @@ export const SKILL_GRAPH = {
             "sv": "Multiplikation (Svår)",
             "en": "Multiplication (Hard)"
         },
-        "example": "$$0,81 \\cdot 8$$",
+        "example": "$$0,35 \\cdot 7$$",
         "sampleVariationKey": "mult_decimal_std",
         "prerequisites": [
             "basic_arithmetic:5"
@@ -955,7 +955,7 @@ export const SKILL_GRAPH = {
             "sv": "Kort Division",
             "en": "Short Division"
         },
-        "example": "$$\\frac{21}{7}$$",
+        "example": "$$\\frac{30}{6}$$",
         "sampleVariationKey": "div_basic_std",
         "prerequisites": [
             "basic_arithmetic:6"
@@ -984,8 +984,8 @@ export const SKILL_GRAPH = {
             "sv": "Delbarhetsregler",
             "en": "Divisibility Rules"
         },
-        "example": "Vilket av följande tal är delbart med 5?",
-        "sampleVariationKey": "div_rule_check",
+        "example": "$$53\\_$$",
+        "sampleVariationKey": "div_rule_missing",
         "prerequisites": [
             "basic_arithmetic:7"
         ],
@@ -1008,7 +1008,7 @@ export const SKILL_GRAPH = {
             "sv": "Division med Decimaler",
             "en": "Division with Decimals"
         },
-        "example": "$$\\frac{4,8}{4}$$",
+        "example": "$$\\frac{0,72}{6}$$",
         "sampleVariationKey": "div_decimal_dividend",
         "prerequisites": [
             "basic_arithmetic:8"
@@ -1032,7 +1032,7 @@ export const SKILL_GRAPH = {
             "sv": "Blandade Heltal",
             "en": "Mixed Integers"
         },
-        "example": "$$\\frac{4,8}{4}$$",
+        "example": "$$\\frac{0,72}{6}$$",
         "sampleVariationKey": "div_decimal_dividend",
         "prerequisites": [
             "basic_arithmetic:9"
@@ -1056,7 +1056,7 @@ export const SKILL_GRAPH = {
             "sv": "Blandade Decimaltal",
             "en": "Mixed Decimals"
         },
-        "example": "$$\\frac{4,8}{4}$$",
+        "example": "$$\\frac{0,72}{6}$$",
         "sampleVariationKey": "div_decimal_dividend",
         "prerequisites": [
             "basic_arithmetic:10"
@@ -1078,7 +1078,7 @@ export const SKILL_GRAPH = {
             "sv": "Heltal (Position)",
             "en": "Whole Numbers (Place Value)"
         },
-        "example": "Vilket värde har siffran 8 i talet 8152?",
+        "example": "Vilket värde har siffran 3 i talet 31476?",
         "sampleVariationKey": "pv_whole_value",
         "prerequisites": [],
         "unlocks": [
@@ -1100,7 +1100,7 @@ export const SKILL_GRAPH = {
             "sv": "Decimaltal (Position)",
             "en": "Decimals (Place Value)"
         },
-        "example": "Vilket värde har siffran 3 i talet 285,3? Svara i decimalform.",
+        "example": "Vilket värde har siffran 8 i talet 39,648? Svara i decimalform.",
         "sampleVariationKey": "pv_dec_value",
         "prerequisites": [
             "place_value:1"
@@ -1126,7 +1126,7 @@ export const SKILL_GRAPH = {
             "sv": "Avrundning",
             "en": "Rounding"
         },
-        "example": "Avrunda talet 9008,81 till närmaste hundratal. (Svara som ett heltal utan kommatecken)",
+        "example": "Avrunda talet 9845,2 till närmaste tiotal. (Svara som ett heltal utan kommatecken)",
         "sampleVariationKey": "pv_round_whole",
         "prerequisites": [
             "place_value:2"
@@ -1148,7 +1148,7 @@ export const SKILL_GRAPH = {
             "sv": "Prioritering: Grund",
             "en": "Order: Basics"
         },
-        "example": "$$7 · 4 + 9$$",
+        "example": "$$6 · 2 - 4$$",
         "sampleVariationKey": "order_basic",
         "prerequisites": [
             "basic_arithmetic:4",
@@ -1176,7 +1176,7 @@ export const SKILL_GRAPH = {
             "sv": "Prioritering: Parenteser",
             "en": "Order: Parentheses"
         },
-        "example": "$$6 + 4 \\cdot (7 - 3)$$",
+        "example": "$$9 + 2 \\cdot (9 - 4)$$",
         "sampleVariationKey": "order_paren",
         "prerequisites": [
             "order_of_operations:1"
@@ -1200,7 +1200,7 @@ export const SKILL_GRAPH = {
             "sv": "Prioritering: Bråkstreck",
             "en": "Order: Fraction Bars"
         },
-        "example": "$$(8 + 5) · 2 + 7 · 6 + 40$$",
+        "example": "$$9 · 5 + 34 - (2 + 7) · 5$$",
         "sampleVariationKey": "order_fraction",
         "prerequisites": [
             "order_of_operations:2"
@@ -1224,7 +1224,7 @@ export const SKILL_GRAPH = {
             "sv": "Prioritering: Potenser",
             "en": "Order: Powers"
         },
-        "example": "$$16 - \\frac{3 + 15}{9} - 3^{2}$$",
+        "example": "$$22 + 6^{2} - 8 · 4$$",
         "sampleVariationKey": "order_powers",
         "prerequisites": [
             "order_of_operations:3",
@@ -1275,7 +1275,7 @@ export const SKILL_GRAPH = {
             "sv": "Svårare Addition/Subtraktion",
             "en": "Harder Add/Sub"
         },
-        "example": "$$4 + 5 - 5 + 5$$",
+        "example": "$$1 + (-5) - (-4) + (-3)$$",
         "sampleVariationKey": "fluency_chain_4",
         "prerequisites": [
             "negatives:1"
@@ -1301,7 +1301,7 @@ export const SKILL_GRAPH = {
             "sv": "Multiplikation",
             "en": "Multiplication"
         },
-        "example": "$$(-6) \\cdot (-8)$$",
+        "example": "$$(-4) \\cdot (-3)$$",
         "sampleVariationKey": "mult_same_sign",
         "prerequisites": [
             "negatives:2"
@@ -1325,7 +1325,7 @@ export const SKILL_GRAPH = {
             "sv": "Division",
             "en": "Division"
         },
-        "example": "$$\\frac{-8}{-2}$$",
+        "example": "$$\\frac{24}{6}$$",
         "sampleVariationKey": "div_same_sign",
         "prerequisites": [
             "negatives:3"
@@ -1350,7 +1350,7 @@ export const SKILL_GRAPH = {
             "sv": "Blandade + - x /",
             "en": "Mixed: + - x /"
         },
-        "example": "$$\\frac{-8}{-2}$$",
+        "example": "$$\\frac{24}{6}$$",
         "sampleVariationKey": "div_same_sign",
         "prerequisites": [
             "negatives:4"
@@ -1374,7 +1374,7 @@ export const SKILL_GRAPH = {
             "sv": "Prioriteringsregler: Negativa tal",
             "en": "Order of Ops with Negative Numbers"
         },
-        "example": "$$\\frac{-11  +  (-5)  \\cdot  (-1)}{-6}$$",
+        "example": "$$\\frac{-22  +  2  \\cdot  5}{-4}$$",
         "sampleVariationKey": "neg_order_frac_basic",
         "prerequisites": [
             "negatives:5"
@@ -1396,7 +1396,7 @@ export const SKILL_GRAPH = {
             "sv": "Visuella Bråk",
             "en": "Visual Fractions"
         },
-        "example": "Du har 20 kulor. Hur många kulor motsvarar 1/10?",
+        "example": "Du har 12 kulor. Hur många kulor motsvarar 1/3?",
         "sampleVariationKey": "visual_inverse",
         "prerequisites": [
             "basic_arithmetic:7"
@@ -1421,7 +1421,7 @@ export const SKILL_GRAPH = {
             "sv": "Beräkna delen",
             "en": "Parts of a Quantity"
         },
-        "example": "Om en 1/10 av ett okänt tal är 49, vad är då hela talet totalt?",
+        "example": "Om en 1/4 av ett okänt tal är 35, vad är då hela talet totalt?",
         "sampleVariationKey": "part_inverse",
         "prerequisites": [
             "fractions_basics:1"
@@ -1445,8 +1445,8 @@ export const SKILL_GRAPH = {
             "sv": "Blandad & Bråkform",
             "en": "Mixed & Improper"
         },
-        "example": "Mellan vilka två hela siffror ligger bråket $\\frac{15}{4}$?",
-        "sampleVariationKey": "mixed_bounds",
+        "example": "$$\\frac{16}{6}$$",
+        "sampleVariationKey": "mixed_missing",
         "prerequisites": [
             "fractions_basics:2"
         ],
@@ -1470,7 +1470,7 @@ export const SKILL_GRAPH = {
             "sv": "Förlänga & Förkorta",
             "en": "Simplify & Extend"
         },
-        "example": "$$\\frac{2}{9} = \\frac{?}{36}$$",
+        "example": "$$\\frac{3}{7} = \\frac{?}{21}$$",
         "sampleVariationKey": "simplify_missing",
         "prerequisites": [
             "fractions_basics:3"
@@ -1497,8 +1497,8 @@ export const SKILL_GRAPH = {
             "sv": "Bråk & Decimaltal",
             "en": "Fractions & Decimals"
         },
-        "example": "$$\\frac{2}{5} \\quad \\bigcirc \\quad 0,45$$",
-        "sampleVariationKey": "decimal_inequality",
+        "example": "$$\\frac{4}{5}$$",
+        "sampleVariationKey": "decimal_to_dec",
         "prerequisites": [
             "fractions_basics:4"
         ],
@@ -1522,7 +1522,7 @@ export const SKILL_GRAPH = {
             "sv": "Addition & Subtraktion (Lika)",
             "en": "Add & Sub (Same Denom)"
         },
-        "example": "$$\\frac{8}{10} + \\frac{x}{10} = \\frac{9}{10}$$",
+        "example": "$$\\frac{3}{5} + \\frac{x}{5} = \\frac{4}{5}$$",
         "sampleVariationKey": "add_missing",
         "prerequisites": [
             "fractions_basics:4"
@@ -1551,8 +1551,8 @@ export const SKILL_GRAPH = {
             "sv": "Addition & Subtraktion (Olika)",
             "en": "Add & Sub (Diff Denom)"
         },
-        "example": "Hitta den minsta gemensamma nämnaren (MGN) för 3 och 5.",
-        "sampleVariationKey": "lcd_find",
+        "example": "$$\\frac{3}{8} + \\frac{3}{6}$$",
+        "sampleVariationKey": "add_diff_denom",
         "prerequisites": [
             "fraction_arith:1",
             "fractions_basics:4"
@@ -1576,7 +1576,7 @@ export const SKILL_GRAPH = {
             "sv": "Blandad form (+ och -)",
             "en": "Mixed Numbers (+ and -)"
         },
-        "example": "$$4\\frac{1}{4} + 1\\frac{1}{4}$$",
+        "example": "$$3\\frac{1}{2} + 2\\frac{1}{5}$$",
         "sampleVariationKey": "mixed_est",
         "prerequisites": [
             "fraction_arith:2",
@@ -1601,7 +1601,7 @@ export const SKILL_GRAPH = {
             "sv": "Multiplikation",
             "en": "Multiplication"
         },
-        "example": "$$\\frac{8}{3} \\cdot \\frac{1}{3}$$",
+        "example": "$$\\frac{6}{7} \\cdot \\frac{6}{10}$$",
         "sampleVariationKey": "mult_scaling",
         "prerequisites": [
             "fraction_arith:3"
@@ -1628,7 +1628,7 @@ export const SKILL_GRAPH = {
             "sv": "Division",
             "en": "Division"
         },
-        "example": "$$\\frac{4}{12} \\div \\frac{1}{10}$$",
+        "example": "$$\\frac{5}{7} \\div \\frac{5}{5}$$",
         "sampleVariationKey": "div_operator",
         "prerequisites": [
             "fraction_arith:4"
@@ -1652,7 +1652,7 @@ export const SKILL_GRAPH = {
             "sv": "Negativa Bråk",
             "en": "Negative Fractions"
         },
-        "example": "$$\\frac{3}{5} + \\left(-\\frac{2}{3}\\right)$$",
+        "example": "$$\\frac{1}{2} - \\left(-\\frac{3}{4}\\right)$$",
         "sampleVariationKey": "neg_frac_add_sub",
         "prerequisites": [
             "fraction_arith:5",
@@ -1705,7 +1705,7 @@ export const SKILL_GRAPH = {
             "sv": "Potenser & Negativa Bråk",
             "en": "Powers & Negative Fractions"
         },
-        "example": "$$\\left(-\\frac{1}{3}\\right)^{2} - \\frac{1}{6}$$",
+        "example": "$$\\left(-\\frac{1}{2}\\right)^{3} - \\frac{3}{8}$$",
         "sampleVariationKey": "frac_exp_sign",
         "prerequisites": [
             "fraction_arith:7",
@@ -1756,7 +1756,7 @@ export const SKILL_GRAPH = {
             "sv": "Huvudräkning",
             "en": "Mental Math"
         },
-        "example": "$$20\\% \\cdot 50$$",
+        "example": "$$25\\% \\cdot 1600$$",
         "sampleVariationKey": "benchmark_calc",
         "prerequisites": [
             "percent:1",
@@ -1781,7 +1781,7 @@ export const SKILL_GRAPH = {
             "sv": "Beräkna andelen",
             "en": "Find the Rate / Percentage"
         },
-        "example": "$$\\frac{90}{150}$$",
+        "example": "$$\\frac{16}{40}$$",
         "sampleVariationKey": "find_percent_basic",
         "prerequisites": [
             "percent:2"
@@ -1806,7 +1806,7 @@ export const SKILL_GRAPH = {
             "sv": "Beräkna delen & Byggstenar",
             "en": "Calculate Part of a Whole"
         },
-        "example": "$$40\\% \\cdot 840$$",
+        "example": "$$40\\% \\cdot 30$$",
         "sampleVariationKey": "composition",
         "prerequisites": [
             "percent:3"
@@ -1830,7 +1830,7 @@ export const SKILL_GRAPH = {
             "sv": "Procentuell förändring",
             "en": "Percentage Change"
         },
-        "example": "$$\\frac{25}{25}$$",
+        "example": "$$\\frac{6}{40}$$",
         "sampleVariationKey": "change_calc",
         "prerequisites": [
             "percent:4"
@@ -1855,7 +1855,7 @@ export const SKILL_GRAPH = {
             "sv": "Beräkna det hela (100%)",
             "en": "Find the Whole (Reverse %)"
         },
-        "example": "$$1\\% = 8$$",
+        "example": "$$4\\% = 21$$",
         "sampleVariationKey": "reverse_find_whole",
         "prerequisites": [
             "percent:5"
@@ -1877,7 +1877,7 @@ export const SKILL_GRAPH = {
             "sv": "Begrepp & Omvandling",
             "en": "Concepts & Conversion"
         },
-        "example": "Ett värde ökar med 89%. Vilken förändringsfaktor motsvarar denna ökning?",
+        "example": "Ett värde ökar med 85%. Vilken förändringsfaktor motsvarar denna ökning?",
         "sampleVariationKey": "pct_to_factor_inc",
         "prerequisites": [
             "percent:5",
@@ -1902,7 +1902,7 @@ export const SKILL_GRAPH = {
             "sv": "Beräkna det nya värdet",
             "en": "Calculate New Value"
         },
-        "example": "Ett värde på 1550 kr ska höjas med 82%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
+        "example": "Ett värde på 950 kr ska höjas med 6%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
         "sampleVariationKey": "apply_factor_inc",
         "prerequisites": [
             "change_factor:1"
@@ -1926,7 +1926,7 @@ export const SKILL_GRAPH = {
             "sv": "Hitta ursprungsvärdet",
             "en": "Find Original Value"
         },
-        "example": "Efter en höjning med 50% är det nya priset 600 kr. Vad var priset från början?",
+        "example": "Efter en höjning med 15% är det nya priset 368 kr. Vad var priset från början?",
         "sampleVariationKey": "find_original_inc",
         "prerequisites": [
             "change_factor:2"
@@ -1950,7 +1950,7 @@ export const SKILL_GRAPH = {
             "sv": "Sammansatt förändringsfaktor",
             "en": "Compound Change Factor"
         },
-        "example": "Ett pris ändras i två steg: först en ökning med 40%, därefter en minskning med 25%. Beräkna den totala förändringsfaktorn.",
+        "example": "Ett pris ändras i två steg: först en ökning med 4%, därefter en minskning med 12%. Beräkna den totala förändringsfaktorn.",
         "sampleVariationKey": "sequential_factors",
         "prerequisites": [
             "change_factor:3"
@@ -1974,7 +1974,7 @@ export const SKILL_GRAPH = {
             "sv": "Total förändring & Upprepad förändring",
             "en": "Net Change & Repeated Change"
         },
-        "example": "Ett pris höjs först med 5% och sänks därefter med 40%. Med hur många procent har priset förändrats totalt?",
+        "example": "Ett pris sänks först med 40% och sänks därefter med 5%. Med hur många procent har priset förändrats totalt?",
         "sampleVariationKey": "sequential_total_pct",
         "prerequisites": [
             "change_factor:4",
@@ -1997,7 +1997,7 @@ export const SKILL_GRAPH = {
             "sv": "Grunder & x^0",
             "en": "Foundations & x^0"
         },
-        "example": "$$161^{0}$$",
+        "example": "$$287^{0}$$",
         "sampleVariationKey": "zero_rule",
         "prerequisites": [
             "basic_arithmetic:4"
@@ -2028,7 +2028,7 @@ export const SKILL_GRAPH = {
             "sv": "Tiopotenser",
             "en": "Powers of 10"
         },
-        "example": "$$10^{4}$$",
+        "example": "$$10^{5}$$",
         "sampleVariationKey": "ten_positive_exponent",
         "prerequisites": [
             "exponents:1",
@@ -2053,7 +2053,7 @@ export const SKILL_GRAPH = {
             "sv": "Grundpotensform",
             "en": "Scientific Notation"
         },
-        "example": "Skriv talet 2 000 i grundpotensform.",
+        "example": "Skriv talet 2 400 000 i grundpotensform.",
         "sampleVariationKey": "scientific_to_form",
         "prerequisites": [
             "exponents:2",
@@ -2078,7 +2078,7 @@ export const SKILL_GRAPH = {
             "sv": "Kvadratrötter",
             "en": "Square Roots"
         },
-        "example": "$$\\sqrt{36}$$",
+        "example": "$$\\sqrt{49}$$",
         "sampleVariationKey": "root_calc",
         "prerequisites": [
             "exponents:3"
@@ -2103,7 +2103,7 @@ export const SKILL_GRAPH = {
             "sv": "Potenslagar (Enkel)",
             "en": "Exponent Laws (Basic)"
         },
-        "example": "$$x^{9} \\cdot x^{10}$$",
+        "example": "$$x^{6} \\cdot x^{8}$$",
         "sampleVariationKey": "law_multiplication",
         "prerequisites": [
             "exponents:4"
@@ -2127,7 +2127,7 @@ export const SKILL_GRAPH = {
             "sv": "Potenslagar (Avancerad)",
             "en": "Exponent Laws (Adv)"
         },
-        "example": "$$(x^{3})^{3}$$",
+        "example": "$$(x^{5})^{3}$$",
         "sampleVariationKey": "law_power_of_power",
         "prerequisites": [
             "exponents:5"
@@ -2151,7 +2151,7 @@ export const SKILL_GRAPH = {
             "sv": "Räkna med grundpotens",
             "en": "Calculate with Scientific Notation"
         },
-        "example": "$$2 \\cdot 10^{8} \\cdot 7 \\cdot 10^{-4}$$",
+        "example": "$$2 \\cdot 10^{2} \\cdot 6 \\cdot 10^{-5}$$",
         "sampleVariationKey": "scientific_mult",
         "prerequisites": [
             "exponents:6"
@@ -2173,7 +2173,7 @@ export const SKILL_GRAPH = {
             "sv": "Mult/Div med 10, 100, 1000",
             "en": "Mult/Div by 10, 100, 1000"
         },
-        "example": "$$0,17 \\cdot 10000$$",
+        "example": "$$49 \\cdot 10000$$",
         "sampleVariationKey": "big_mult_std",
         "prerequisites": [
             "place_value:2",
@@ -2200,8 +2200,8 @@ export const SKILL_GRAPH = {
             "sv": "Begreppsförståelse",
             "en": "Conceptual Understanding"
         },
-        "example": "Att multiplicera med 0,01 ger exakt samma svar som att dividera med...",
-        "sampleVariationKey": "reciprocal_equivalence",
+        "example": "$$49 \\cdot 10000$$",
+        "sampleVariationKey": "big_mult_std",
         "prerequisites": [
             "ten_powers:1"
         ],
@@ -2224,7 +2224,7 @@ export const SKILL_GRAPH = {
             "sv": "Blandade Faktorer (0.1, 100...)",
             "en": "Mixed Factors"
         },
-        "example": "$$0,38 \\cdot 0,1$$",
+        "example": "$$2 \\cdot 0,1$$",
         "sampleVariationKey": "decimal_mult_std",
         "prerequisites": [
             "ten_powers:2"
@@ -2248,7 +2248,7 @@ export const SKILL_GRAPH = {
             "sv": "Längd",
             "en": "Length"
         },
-        "example": "$$79,8 \\text{ mm} = \\text{\\_\\_\\_} \\text{ m}$$",
+        "example": "$$266 \\text{ m} = \\text{\\_\\_\\_} \\text{ cm}$$",
         "sampleVariationKey": "len_basic",
         "prerequisites": [
             "ten_powers:1"
@@ -2274,7 +2274,7 @@ export const SKILL_GRAPH = {
             "sv": "Vikt",
             "en": "Weight"
         },
-        "example": "$$176 \\text{ hg} = \\text{\\_\\_\\_} \\text{ g}$$",
+        "example": "$$108 \\text{ hg} = \\text{\\_\\_\\_} \\text{ g}$$",
         "sampleVariationKey": "weight_basic",
         "prerequisites": [
             "unit_conversion:1"
@@ -2298,7 +2298,7 @@ export const SKILL_GRAPH = {
             "sv": "Volym (L)",
             "en": "Volume (L)"
         },
-        "example": "$$15,5 \\text{ cl} = \\text{\\_\\_\\_} \\text{ l}$$",
+        "example": "$$195 \\text{ cl} = \\text{\\_\\_\\_} \\text{ l}$$",
         "sampleVariationKey": "vol_basic",
         "prerequisites": [
             "unit_conversion:2"
@@ -2323,7 +2323,7 @@ export const SKILL_GRAPH = {
             "sv": "Blandad (1-3)",
             "en": "Mixed (1-3)"
         },
-        "example": "$$15,5 \\text{ cl} = \\text{\\_\\_\\_} \\text{ l}$$",
+        "example": "$$195 \\text{ cl} = \\text{\\_\\_\\_} \\text{ l}$$",
         "sampleVariationKey": "vol_basic",
         "prerequisites": [
             "unit_conversion:3"
@@ -2501,8 +2501,8 @@ export const SKILL_GRAPH = {
             "sv": "Vinkeltyper",
             "en": "Types of Angles"
         },
-        "example": "Vad kallas denna typ av vinkel?",
-        "sampleVariationKey": "classification_visual",
+        "example": "",
+        "sampleVariationKey": null,
         "prerequisites": [],
         "unlocks": [
             "angles:2"
@@ -2643,8 +2643,8 @@ export const SKILL_GRAPH = {
             "sv": "Begrepp & Uppställning",
             "en": "Concept & Setup"
         },
-        "example": "Vilken sida är hypotenusan i triangeln?",
-        "sampleVariationKey": "pyth_identify_hypotenuse",
+        "example": "Vad är arean på den markerade kvadraten (?)",
+        "sampleVariationKey": "pyth_area_proof",
         "prerequisites": [
             "exponents:1",
             "geometry:3"
@@ -2719,8 +2719,8 @@ export const SKILL_GRAPH = {
             "sv": "Är den rätvinklig? (Omvänd sats)",
             "en": "Is it Right-Angled? (Converse)"
         },
-        "example": "En triangel har sidorna 12 cm, 16 cm och 19 cm. Är den rätvinklig?",
-        "sampleVariationKey": "pyth_converse_check",
+        "example": "En snickare mäter upp kateterna 6 cm och 8 cm i ett hörn. Hur lång måste diagonalen vara för att vinkeln ska vara exakt 90°?",
+        "sampleVariationKey": "pyth_carpenter_rule",
         "prerequisites": [
             "pythagoras:3"
         ],
@@ -2770,7 +2770,7 @@ export const SKILL_GRAPH = {
             "sv": "Sammansatt & Rymddiagonal",
             "en": "Composite & 3D Diagonals"
         },
-        "example": "En likbent triangel har basen 10 cm och två sidor på 13 cm vardera. Beräkna triangelns area.",
+        "example": "En likbent triangel har basen 6 cm och två sidor på 5 cm vardera. Beräkna triangelns area.",
         "sampleVariationKey": "pyth_isosceles_height",
         "prerequisites": [
             "pythagoras:5"
@@ -2792,8 +2792,8 @@ export const SKILL_GRAPH = {
             "sv": "Är de likformiga?",
             "en": "Are they similar?"
         },
-        "example": "Avgör om de två rektanglarna nedan är likformiga (perfekta kopior).",
-        "sampleVariationKey": "sim_rect_check",
+        "example": "",
+        "sampleVariationKey": null,
         "prerequisites": [
             "fraction_arith:1",
             "geometry:2"
@@ -2890,8 +2890,8 @@ export const SKILL_GRAPH = {
             "sv": "Begrepp & Skalriktning",
             "en": "Concepts & Direction"
         },
-        "example": "Anger skalan 2:1 en förstoring eller en förminskning?",
-        "sampleVariationKey": "scale_direction_type",
+        "example": "En karta är ritad i skala 1:10. Hur många centimeter i verkligheten motsvarar 1 cm på kartan?",
+        "sampleVariationKey": "scale_reading_val",
         "prerequisites": [
             "unit_conversion:1",
             "basic_arithmetic:4"
@@ -2915,7 +2915,7 @@ export const SKILL_GRAPH = {
             "sv": "Förminskning (Verklig längd)",
             "en": "Reduction (Real Length)"
         },
-        "example": "En ritning har skalan 1:50. En sträcka på ritningen är 2 cm. Hur lång är sträckan i verkligheten? Svara i centimeter.",
+        "example": "En ritning har skalan 1:10. En sträcka på ritningen är 7 cm. Hur lång är sträckan i verkligheten? Svara i centimeter.",
         "sampleVariationKey": "reduction_calc_direct",
         "prerequisites": [
             "scale:1",
@@ -2941,7 +2941,7 @@ export const SKILL_GRAPH = {
             "sv": "Förstoring (Bildens mått)",
             "en": "Enlargement (Image Size)"
         },
-        "example": "Ett litet föremål är 7 mm i verkligheten. Hur långt blir föremålet på en bild i skala 6:1? Svara i millimeter.",
+        "example": "Ett litet föremål är 3 mm i verkligheten. Hur långt blir föremålet på en bild i skala 8:1? Svara i millimeter.",
         "sampleVariationKey": "enlargement_calc_direct",
         "prerequisites": [
             "scale:2"
@@ -2965,7 +2965,7 @@ export const SKILL_GRAPH = {
             "sv": "Bestäm Skalan",
             "en": "Determine Scale"
         },
-        "example": "En sträcka är 20 m i verkligheten och 4 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
+        "example": "En sträcka är 0.3 m i verkligheten och 2 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
         "sampleVariationKey": "determine_scale_blueprint",
         "prerequisites": [
             "scale:3",
@@ -3042,7 +3042,7 @@ export const SKILL_GRAPH = {
             "sv": "Areaskala & Omvänd Areaskala",
             "en": "Area Scale & Inverse"
         },
-        "example": "Två likformiga rektanglar har längdskalan 1:10. Den mindre rektangeln har arean 20 cm². Beräkna arean av den större rektangeln.",
+        "example": "Två likformiga rektanglar har längdskalan 1:2. Den mindre rektangeln har arean 5 cm². Beräkna arean av den större rektangeln.",
         "sampleVariationKey": "area_scale_direct",
         "prerequisites": [
             "scale:6",
@@ -3069,7 +3069,7 @@ export const SKILL_GRAPH = {
             "sv": "Volymskala & Omvänd Volymskala",
             "en": "Volume Scale & Inverse"
         },
-        "example": "Två likformiga cylindrar har längdskalan 1:2. Den mindre rymmer 15 liter. Hur många liter rymmer den större cylindern?",
+        "example": "Två likformiga cylindrar har längdskalan 1:5. Den mindre rymmer 3 liter. Hur många liter rymmer den större cylindern?",
         "sampleVariationKey": "volume_scale_direct",
         "prerequisites": [
             "scale:7",
@@ -3197,7 +3197,7 @@ export const SKILL_GRAPH = {
             "sv": "Klot & Sammansatta",
             "en": "Sphere & Composite"
         },
-        "example": "Beräkna klotets volym med radien 7 cm.",
+        "example": "Beräkna klotets volym med radien 11 cm.",
         "sampleVariationKey": "vol_sphere_std",
         "prerequisites": [
             "volume:4"
@@ -3221,7 +3221,7 @@ export const SKILL_GRAPH = {
             "sv": "Blandade Volymer",
             "en": "Mixed Volumes"
         },
-        "example": "Pyramiden har en kvadratisk basyta. Beräkna pyramidens volym.",
+        "example": "Beräkna den sammansatta figurens totala volym.",
         "sampleVariationKey": "vol_sphere_diameter",
         "prerequisites": [
             "volume:5"
@@ -3245,7 +3245,7 @@ export const SKILL_GRAPH = {
             "sv": "Enhetsomvandling",
             "en": "Unit Conversion"
         },
-        "example": "En pool har formen av ett rätblock med bredden 10 cm, höjden 5 cm och djupet 4 cm. Vad är dess volym i liter?",
+        "example": "Ett limstift har formen av ett cylinder med radien 5 dm och höjden 5 dm. Vad är dess volym i liter?",
         "sampleVariationKey": "vol_units_liter",
         "prerequisites": [
             "volume:6",
@@ -3296,7 +3296,7 @@ export const SKILL_GRAPH = {
             "sv": "Typvärde & Variationsbredd",
             "en": "Mode & Range"
         },
-        "example": "Kolla igenom åldrar listan: 12, 14, 11, 13, 11, 11, 12. Vilket är typvärdet?",
+        "example": "Kolla igenom poäng listan: 25, 21, 22, 12, 20, 25, 25. Vilket är typvärdet?",
         "sampleVariationKey": "find_mode",
         "prerequisites": [],
         "unlocks": [
@@ -3318,7 +3318,7 @@ export const SKILL_GRAPH = {
             "sv": "Medelvärde",
             "en": "Mean"
         },
-        "example": "Beräkna medelvärdet för följande poäng: 24, 23, 10, 12, 24.",
+        "example": "Beräkna medelvärdet för följande temperaturer: 12, 13, 17, 12, 22.",
         "sampleVariationKey": "calc_mean",
         "prerequisites": [
             "statistics:1",
@@ -3346,7 +3346,7 @@ export const SKILL_GRAPH = {
             "sv": "Median",
             "en": "Median"
         },
-        "example": "Bestäm medianen för följande temperaturer: 22, 17, 22, 15, 13.",
+        "example": "Bestäm medianen för följande poäng: 24, 8, 18, 24, 18, 19, 21.",
         "sampleVariationKey": "median_odd",
         "prerequisites": [
             "statistics:2"
@@ -3370,7 +3370,7 @@ export const SKILL_GRAPH = {
             "sv": "Baklänges medelvärde",
             "en": "Reverse Mean"
         },
-        "example": "Medelvärdet av fyra tal är 13. Tre av talen är 8, 17 och 13. Vilket är det fjärde talet?",
+        "example": "Medelvärdet av fyra tal är 18. Tre av talen är 11, 17 och 12. Vilket är det fjärde talet?",
         "sampleVariationKey": "reverse_mean_calc",
         "prerequisites": [
             "statistics:3",
@@ -3396,7 +3396,7 @@ export const SKILL_GRAPH = {
             "sv": "Tabell och Diagram",
             "en": "Tables and Graphs"
         },
-        "example": "Hur många observationer (totalt antal) visas i frekvenstabellen?",
+        "example": "Hur många observationer (totalt antal) visas i stolpdiagrammet?",
         "sampleVariationKey": "freq_count",
         "prerequisites": [
             "statistics:4"
@@ -3444,8 +3444,8 @@ export const SKILL_GRAPH = {
             "sv": "Sannolikhetsskalan & Visuella utfall",
             "en": "Probability Scale & Visual Outcomes"
         },
-        "example": "Hur sannolikt är det: \"att få krona när du kastar ett vanligt mynt\"?",
-        "sampleVariationKey": "prob_scale_vocab",
+        "example": "Hjulet har 10 lika stora fält. 2 av fälten är grön. Vad är sannolikheten att pilen stannar på grön? Svar med bråk i enklaste form.",
+        "sampleVariationKey": "prob_visual_spinner",
         "prerequisites": [
             "fractions_basics:1",
             "fractions_basics:4"
@@ -3469,7 +3469,7 @@ export const SKILL_GRAPH = {
             "sv": "De tre uttrycksformerna (Bråk, Decimal, %)",
             "en": "The Three Forms (Fraction, Decimal, %)"
         },
-        "example": "Sannolikheten för en vinst i ett lotteri är 2/5. Vad är sannolikheten uttryckt i procent?",
+        "example": "Sannolikheten för en vinst i ett lotteri är 1/20. Vad är sannolikheten uttryckt i procent?",
         "sampleVariationKey": "prob_rep_to_percent",
         "prerequisites": [
             "probability:1",
@@ -3495,7 +3495,7 @@ export const SKILL_GRAPH = {
             "sv": "Likformiga utfall (Tärning & Kortlek)",
             "en": "Uniform Outcomes (Dice & Card Deck)"
         },
-        "example": "Vad är sannolikheten att få en 4:a vid ett kast med en vanlig sexsidig tärning? Svar med bråk i enklaste form.",
+        "example": "Vad är sannolikheten att få en 3:a vid ett kast med en vanlig sexsidig tärning? Svar med bråk i enklaste form.",
         "sampleVariationKey": "prob_dice_single",
         "prerequisites": [
             "probability:2"
@@ -3519,7 +3519,7 @@ export const SKILL_GRAPH = {
             "sv": "Komplementhändelse (INTE och ELLER)",
             "en": "Complementary Events (NOT and OR)"
         },
-        "example": "Chansen att vinna i ett lotteri är 45%. Vad är sannolikheten att man INTE vinner?",
+        "example": "Chansen att vinna i ett lotteri är 40%. Vad är sannolikheten att man INTE vinner?",
         "sampleVariationKey": "prob_comp_lottery",
         "prerequisites": [
             "probability:3",
@@ -3545,7 +3545,7 @@ export const SKILL_GRAPH = {
             "sv": "Kombinatorik & Multiplikationsprincipen",
             "en": "Combinatorics & Multiplication Principle"
         },
-        "example": "En restaurangmeny erbjuder 5 förrätter, 5 varmrätter och 4 efterrätter. På hur många olika sätt kan du komponera en trerättersmiddag?",
+        "example": "En restaurangmeny erbjuder 4 förrätter, 5 varmrätter och 4 efterrätter. På hur många olika sätt kan du komponera en trerättersmiddag?",
         "sampleVariationKey": "prob_comb_multiplication",
         "prerequisites": [
             "probability:4",
@@ -3570,7 +3570,7 @@ export const SKILL_GRAPH = {
             "sv": "Flerstegsförsök – Med återläggning",
             "en": "Multi-Stage – With Replacement"
         },
-        "example": "Du kastar ett mynt 3 gånger. Vad är sannolikheten att få krona alla 3 gånger? Svar med bråk i enklaste form.",
+        "example": "Du kastar ett mynt 2 gånger. Vad är sannolikheten att få krona alla 2 gånger? Svar med bråk i enklaste form.",
         "sampleVariationKey": "prob_indep_coins",
         "prerequisites": [
             "probability:5",
@@ -3595,7 +3595,7 @@ export const SKILL_GRAPH = {
             "sv": "Flerstegsförsök – Utan återläggning & Träd",
             "en": "Multi-Stage – Without Replacement & Trees"
         },
-        "example": "I en påse finns 4 röda och 6 blåa kulor. Du drar två kulor utan återläggning. Vad är sannolikheten att få en röd först och sedan en blå? Svar med bråk i enklaste form.",
+        "example": "I en påse finns 4 röda och 5 blåa kulor. Du drar två kulor utan återläggning. Vad är sannolikheten att få en röd först och sedan en blå? Svar med bråk i enklaste form.",
         "sampleVariationKey": "prob_dep_tree_branch",
         "prerequisites": [
             "probability:6",
@@ -3624,7 +3624,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Enkla steg (x+a=b)",
             "en": "One Step"
         },
-        "example": "$$x - 18 = -7$$",
+        "example": "$$3x = 9$$",
         "keywords": "equations ekvationer equations enkla steg (x+a=b) one step nivå 1 level 1"
     },
     {
@@ -3644,7 +3644,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Två steg (ax+b=c)",
             "en": "Two Steps"
         },
-        "example": "$$2x + 5 = 29$$",
+        "example": "$$6x + 9 = 21$$",
         "keywords": "equations ekvationer equations två steg (ax+b=c) two steps nivå 2 level 2"
     },
     {
@@ -3664,7 +3664,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Med Parenteser",
             "en": "With Parentheses"
         },
-        "example": "$$4(x + 6) = 44$$",
+        "example": "$$4(x + 5) = 48$$",
         "keywords": "equations ekvationer equations med parenteser with parentheses nivå 3 level 3"
     },
     {
@@ -3684,7 +3684,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Variabel på båda sidor",
             "en": "Variables on both sides"
         },
-        "example": "$$9x + 4 = 2x + 46$$",
+        "example": "$$10x + 6 = 5x + 46$$",
         "keywords": "equations ekvationer equations variabel på båda sidor variables on both sides nivå 4 level 4"
     },
     {
@@ -3704,7 +3704,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Skriv Ekvation (Problem)",
             "en": "Write Equation (Word Problems)"
         },
-        "example": "$$9x + 4 = 2x + 46$$",
+        "example": "$$10x + 6 = 5x + 46$$",
         "keywords": "equations ekvationer equations skriv ekvation (problem) write equation (word problems) nivå 5 level 5"
     },
     {
@@ -3724,7 +3724,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Lös Problem (Ekvation)",
             "en": "Solve Word Problems"
         },
-        "example": "$$9x + 4 = 2x + 46$$",
+        "example": "$$10x + 6 = 5x + 46$$",
         "keywords": "equations ekvationer equations lös problem (ekvation) solve word problems nivå 6 level 6"
     },
     {
@@ -3744,7 +3744,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Blandade Ekvationer",
             "en": "Mixed Equations"
         },
-        "example": "$$9x + 4 = 2x + 46$$",
+        "example": "$$10x + 6 = 5x + 46$$",
         "keywords": "equations ekvationer equations blandade ekvationer mixed equations nivå 7 level 7"
     },
     {
@@ -3764,7 +3764,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Skriv: Fast + Rörlig",
             "en": "Write: Fixed + Variable"
         },
-        "example": "$$12x+49=265$$",
+        "example": "$$22x+59=257$$",
         "keywords": "equations_word ekvationer: problemlösning equations: problem solving skriv: fast + rörlig write: fixed + variable nivå 1 level 1"
     },
     {
@@ -3784,7 +3784,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Förenkla Uttryck (Enkel)",
             "en": "Simplify Expressions (Easy)"
         },
-        "example": "$$18x + 12 + 5x - 5$$",
+        "example": "$$14x + 16 - 4x + 7$$",
         "keywords": "expressions uttryck expressions förenkla uttryck (enkel) simplify expressions (easy) nivå 1 level 1"
     },
     {
@@ -3804,7 +3804,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Prioriteringsregler med x",
             "en": "Order of Ops with x"
         },
-        "example": "$$6 \\cdot 5x - 4x - 5$$",
+        "example": "$$2x - 5 \\cdot 2x + 10$$",
         "keywords": "expressions uttryck expressions prioriteringsregler med x order of ops with x nivå 2 level 2"
     },
     {
@@ -3824,7 +3824,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Parenteser (Addition)",
             "en": "Parentheses (Addition)"
         },
-        "example": "$$20x + (4x + 3)$$",
+        "example": "$$11x + (3x + 4)$$",
         "keywords": "expressions uttryck expressions parenteser (addition) parentheses (addition) nivå 3 level 3"
     },
     {
@@ -3844,7 +3844,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Parenteser (Multiplikation)",
             "en": "Parentheses (Multiplication)"
         },
-        "example": "$$3(x + 5) - 2(x + 5)$$",
+        "example": "$$2(x + 2) + 4(x + 4)$$",
         "keywords": "expressions uttryck expressions parenteser (multiplikation) parentheses (multiplication) nivå 4 level 4"
     },
     {
@@ -3864,7 +3864,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Parenteser (Subtraktion)",
             "en": "Parentheses (Subtraction)"
         },
-        "example": "$$20x - (4x + 5)$$",
+        "example": "$$12x - (2x + 2)$$",
         "keywords": "expressions uttryck expressions parenteser (subtraktion) parentheses (subtraction) nivå 5 level 5"
     },
     {
@@ -3884,7 +3884,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Blandade Nivåer",
             "en": "Mixed Levels"
         },
-        "example": "$$20x - (4x + 5)$$",
+        "example": "$$12x - (2x + 2)$$",
         "keywords": "expressions uttryck expressions blandade nivåer mixed levels nivå 6 level 6"
     },
     {
@@ -3924,7 +3924,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Omkrets: Lös ut x",
             "en": "Perimeter: Solve for x"
         },
-        "example": "En liksidig triangels omkrets är 21 cm. Beräkna x.",
+        "example": "En liksidig triangels omkrets är 264 cm. Beräkna x.",
         "keywords": "algebraic_geometry geometri med algebra geometry with algebra omkrets: lös ut x perimeter: solve for x nivå 2 level 2"
     },
     {
@@ -3964,7 +3964,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Area: Lös ut x",
             "en": "Area: Solve for x"
         },
-        "example": "Triangelns area är 175 cm². Beräkna x.",
+        "example": "Rektangelns area är 497 cm². Beräkna x.",
         "keywords": "algebraic_geometry geometri med algebra geometry with algebra area: lös ut x area: solve for x nivå 4 level 4"
     },
     {
@@ -4044,7 +4044,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Beräkna höga figurer",
             "en": "Calculate High Terms"
         },
-        "example": "Vilket värde har tal nummer 50 i mönstret: 8, 17, 26... ?",
+        "example": "Vilket värde har tal nummer 50 i mönstret: 3, 8, 13... ?",
         "keywords": "patterns algebraiska mönster algebraic patterns beräkna höga figurer calculate high terms nivå 2 level 2"
     },
     {
@@ -4104,7 +4104,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Lös ut n (baklänges)",
             "en": "Solve for n"
         },
-        "example": "I ett mönster med formeln $V = 8n + 3$, vilket figurnummer (n) har värdet 307?",
+        "example": "I ett mönster med formeln $V = 4n + 2$, vilket figurnummer (n) har värdet 158?",
         "keywords": "patterns algebraiska mönster algebraic patterns lös ut n (baklänges) solve for n nivå 5 level 5"
     },
     {
@@ -4204,7 +4204,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Koordinater & Parallella linjer",
             "en": "Coordinates & Parallel Lines"
         },
-        "example": "Ligger punkten $(4, -4)$ på linjen $y=-x$?",
+        "example": "Bestäm linjens ekvation på formen y = kx + m.",
         "keywords": "graphs räta linjens ekvation linear equations & graphs koordinater & parallella linjer coordinates & parallel lines nivå 5 level 5"
     },
     {
@@ -4244,7 +4244,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Addition (Uppställning)",
             "en": "Addition (Vertical)"
         },
-        "example": "$$\\begin{array}{rr} & 20 \\\\ + & 10 \\\\ \\hline \\end{array}$$",
+        "example": "$$\\begin{array}{rr} & 143 \\\\ + & 130 \\\\ \\hline \\end{array}$$",
         "keywords": "basic_arithmetic de fyra räknesätten basic counting addition (uppställning) addition (vertical) nivå 1 level 1"
     },
     {
@@ -4264,7 +4264,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Subtraktion (Uppställning)",
             "en": "Subtraction (Vertical)"
         },
-        "example": "$$\\begin{array}{rr} & 198 \\\\ - & 90 \\\\ \\hline \\end{array}$$",
+        "example": "$$\\begin{array}{rr} & 93 \\\\ - & 68 \\\\ \\hline \\end{array}$$",
         "keywords": "basic_arithmetic de fyra räknesätten basic counting subtraktion (uppställning) subtraction (vertical) nivå 2 level 2"
     },
     {
@@ -4284,7 +4284,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Decimaltal (+/-)",
             "en": "Decimals (+/-)"
         },
-        "example": "$$13,2 + 3,47$$",
+        "example": "$$38,8 + 2,72$$",
         "keywords": "basic_arithmetic de fyra räknesätten basic counting decimaltal (+/-) decimals (+/-) nivå 3 level 3"
     },
     {
@@ -4304,7 +4304,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Multiplikation (Enkel)",
             "en": "Multiplication (Simple)"
         },
-        "example": "$$9 \\cdot 6$$",
+        "example": "$$4 \\cdot 4$$",
         "keywords": "basic_arithmetic de fyra räknesätten basic counting multiplikation (enkel) multiplication (simple) nivå 4 level 4"
     },
     {
@@ -4324,7 +4324,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Multiplikation (Medel)",
             "en": "Multiplication (Medium)"
         },
-        "example": "$$\\begin{array}{rr} & 38 \\\\ \\times & 5 \\\\ \\hline \\end{array}$$",
+        "example": "$$\\begin{array}{rr} & 13 \\\\ \\times & 5 \\\\ \\hline \\end{array}$$",
         "keywords": "basic_arithmetic de fyra räknesätten basic counting multiplikation (medel) multiplication (medium) nivå 5 level 5"
     },
     {
@@ -4344,7 +4344,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Multiplikation (Svår)",
             "en": "Multiplication (Hard)"
         },
-        "example": "$$0,81 \\cdot 8$$",
+        "example": "$$0,35 \\cdot 7$$",
         "keywords": "basic_arithmetic de fyra räknesätten basic counting multiplikation (svår) multiplication (hard) nivå 6 level 6"
     },
     {
@@ -4364,7 +4364,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Kort Division",
             "en": "Short Division"
         },
-        "example": "$$\\frac{21}{7}$$",
+        "example": "$$\\frac{30}{6}$$",
         "keywords": "basic_arithmetic de fyra räknesätten basic counting kort division short division nivå 7 level 7"
     },
     {
@@ -4384,7 +4384,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Delbarhetsregler",
             "en": "Divisibility Rules"
         },
-        "example": "Vilket av följande tal är delbart med 5?",
+        "example": "$$53\\_$$",
         "keywords": "basic_arithmetic de fyra räknesätten basic counting delbarhetsregler divisibility rules nivå 8 level 8"
     },
     {
@@ -4404,7 +4404,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Division med Decimaler",
             "en": "Division with Decimals"
         },
-        "example": "$$\\frac{4,8}{4}$$",
+        "example": "$$\\frac{0,72}{6}$$",
         "keywords": "basic_arithmetic de fyra räknesätten basic counting division med decimaler division with decimals nivå 9 level 9"
     },
     {
@@ -4424,7 +4424,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Blandade Heltal",
             "en": "Mixed Integers"
         },
-        "example": "$$\\frac{4,8}{4}$$",
+        "example": "$$\\frac{0,72}{6}$$",
         "keywords": "basic_arithmetic de fyra räknesätten basic counting blandade heltal mixed integers nivå 10 level 10"
     },
     {
@@ -4444,7 +4444,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Blandade Decimaltal",
             "en": "Mixed Decimals"
         },
-        "example": "$$\\frac{4,8}{4}$$",
+        "example": "$$\\frac{0,72}{6}$$",
         "keywords": "basic_arithmetic de fyra räknesätten basic counting blandade decimaltal mixed decimals nivå 11 level 11"
     },
     {
@@ -4464,7 +4464,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Heltal (Position)",
             "en": "Whole Numbers (Place Value)"
         },
-        "example": "Vilket värde har siffran 8 i talet 8152?",
+        "example": "Vilket värde har siffran 3 i talet 31476?",
         "keywords": "place_value positionssystemet & avrundning place value & rounding heltal (position) whole numbers (place value) nivå 1 level 1"
     },
     {
@@ -4484,7 +4484,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Decimaltal (Position)",
             "en": "Decimals (Place Value)"
         },
-        "example": "Vilket värde har siffran 3 i talet 285,3? Svara i decimalform.",
+        "example": "Vilket värde har siffran 8 i talet 39,648? Svara i decimalform.",
         "keywords": "place_value positionssystemet & avrundning place value & rounding decimaltal (position) decimals (place value) nivå 2 level 2"
     },
     {
@@ -4504,7 +4504,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Avrundning",
             "en": "Rounding"
         },
-        "example": "Avrunda talet 9008,81 till närmaste hundratal. (Svara som ett heltal utan kommatecken)",
+        "example": "Avrunda talet 9845,2 till närmaste tiotal. (Svara som ett heltal utan kommatecken)",
         "keywords": "place_value positionssystemet & avrundning place value & rounding avrundning rounding nivå 3 level 3"
     },
     {
@@ -4524,7 +4524,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Prioritering: Grund",
             "en": "Order: Basics"
         },
-        "example": "$$7 · 4 + 9$$",
+        "example": "$$6 · 2 - 4$$",
         "keywords": "order_of_operations prioriteringsregler order of operations prioritering: grund order: basics nivå 1 level 1"
     },
     {
@@ -4544,7 +4544,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Prioritering: Parenteser",
             "en": "Order: Parentheses"
         },
-        "example": "$$6 + 4 \\cdot (7 - 3)$$",
+        "example": "$$9 + 2 \\cdot (9 - 4)$$",
         "keywords": "order_of_operations prioriteringsregler order of operations prioritering: parenteser order: parentheses nivå 2 level 2"
     },
     {
@@ -4564,7 +4564,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Prioritering: Bråkstreck",
             "en": "Order: Fraction Bars"
         },
-        "example": "$$(8 + 5) · 2 + 7 · 6 + 40$$",
+        "example": "$$9 · 5 + 34 - (2 + 7) · 5$$",
         "keywords": "order_of_operations prioriteringsregler order of operations prioritering: bråkstreck order: fraction bars nivå 3 level 3"
     },
     {
@@ -4584,7 +4584,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Prioritering: Potenser",
             "en": "Order: Powers"
         },
-        "example": "$$16 - \\frac{3 + 15}{9} - 3^{2}$$",
+        "example": "$$22 + 6^{2} - 8 · 4$$",
         "keywords": "order_of_operations prioriteringsregler order of operations prioritering: potenser order: powers nivå 4 level 4"
     },
     {
@@ -4624,7 +4624,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Svårare Addition/Subtraktion",
             "en": "Harder Add/Sub"
         },
-        "example": "$$4 + 5 - 5 + 5$$",
+        "example": "$$1 + (-5) - (-4) + (-3)$$",
         "keywords": "negatives negativa tal negative numbers svårare addition/subtraktion harder add/sub nivå 2 level 2"
     },
     {
@@ -4644,7 +4644,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Multiplikation",
             "en": "Multiplication"
         },
-        "example": "$$(-6) \\cdot (-8)$$",
+        "example": "$$(-4) \\cdot (-3)$$",
         "keywords": "negatives negativa tal negative numbers multiplikation multiplication nivå 3 level 3"
     },
     {
@@ -4664,7 +4664,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Division",
             "en": "Division"
         },
-        "example": "$$\\frac{-8}{-2}$$",
+        "example": "$$\\frac{24}{6}$$",
         "keywords": "negatives negativa tal negative numbers division division nivå 4 level 4"
     },
     {
@@ -4684,7 +4684,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Blandade + - x /",
             "en": "Mixed: + - x /"
         },
-        "example": "$$\\frac{-8}{-2}$$",
+        "example": "$$\\frac{24}{6}$$",
         "keywords": "negatives negativa tal negative numbers blandade + - x / mixed: + - x / nivå 5 level 5"
     },
     {
@@ -4704,7 +4704,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Prioriteringsregler: Negativa tal",
             "en": "Order of Ops with Negative Numbers"
         },
-        "example": "$$\\frac{-11  +  (-5)  \\cdot  (-1)}{-6}$$",
+        "example": "$$\\frac{-22  +  2  \\cdot  5}{-4}$$",
         "keywords": "negatives negativa tal negative numbers prioriteringsregler: negativa tal order of ops with negative numbers nivå 6 level 6"
     },
     {
@@ -4724,7 +4724,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Visuella Bråk",
             "en": "Visual Fractions"
         },
-        "example": "Du har 20 kulor. Hur många kulor motsvarar 1/10?",
+        "example": "Du har 12 kulor. Hur många kulor motsvarar 1/3?",
         "keywords": "fractions_basics bråk: grunder fractions: basics visuella bråk visual fractions nivå 1 level 1"
     },
     {
@@ -4744,7 +4744,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Beräkna delen",
             "en": "Parts of a Quantity"
         },
-        "example": "Om en 1/10 av ett okänt tal är 49, vad är då hela talet totalt?",
+        "example": "Om en 1/4 av ett okänt tal är 35, vad är då hela talet totalt?",
         "keywords": "fractions_basics bråk: grunder fractions: basics beräkna delen parts of a quantity nivå 2 level 2"
     },
     {
@@ -4764,7 +4764,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Blandad & Bråkform",
             "en": "Mixed & Improper"
         },
-        "example": "Mellan vilka två hela siffror ligger bråket $\\frac{15}{4}$?",
+        "example": "$$\\frac{16}{6}$$",
         "keywords": "fractions_basics bråk: grunder fractions: basics blandad & bråkform mixed & improper nivå 3 level 3"
     },
     {
@@ -4784,7 +4784,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Förlänga & Förkorta",
             "en": "Simplify & Extend"
         },
-        "example": "$$\\frac{2}{9} = \\frac{?}{36}$$",
+        "example": "$$\\frac{3}{7} = \\frac{?}{21}$$",
         "keywords": "fractions_basics bråk: grunder fractions: basics förlänga & förkorta simplify & extend nivå 4 level 4"
     },
     {
@@ -4804,7 +4804,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Bråk & Decimaltal",
             "en": "Fractions & Decimals"
         },
-        "example": "$$\\frac{2}{5} \\quad \\bigcirc \\quad 0,45$$",
+        "example": "$$\\frac{4}{5}$$",
         "keywords": "fractions_basics bråk: grunder fractions: basics bråk & decimaltal fractions & decimals nivå 5 level 5"
     },
     {
@@ -4824,7 +4824,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Addition & Subtraktion (Lika)",
             "en": "Add & Sub (Same Denom)"
         },
-        "example": "$$\\frac{8}{10} + \\frac{x}{10} = \\frac{9}{10}$$",
+        "example": "$$\\frac{3}{5} + \\frac{x}{5} = \\frac{4}{5}$$",
         "keywords": "fraction_arith bråk: räkna fractions: arithmetic addition & subtraktion (lika) add & sub (same denom) nivå 1 level 1"
     },
     {
@@ -4844,7 +4844,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Addition & Subtraktion (Olika)",
             "en": "Add & Sub (Diff Denom)"
         },
-        "example": "Hitta den minsta gemensamma nämnaren (MGN) för 3 och 5.",
+        "example": "$$\\frac{3}{8} + \\frac{3}{6}$$",
         "keywords": "fraction_arith bråk: räkna fractions: arithmetic addition & subtraktion (olika) add & sub (diff denom) nivå 2 level 2"
     },
     {
@@ -4864,7 +4864,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Blandad form (+ och -)",
             "en": "Mixed Numbers (+ and -)"
         },
-        "example": "$$4\\frac{1}{4} + 1\\frac{1}{4}$$",
+        "example": "$$3\\frac{1}{2} + 2\\frac{1}{5}$$",
         "keywords": "fraction_arith bråk: räkna fractions: arithmetic blandad form (+ och -) mixed numbers (+ and -) nivå 3 level 3"
     },
     {
@@ -4884,7 +4884,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Multiplikation",
             "en": "Multiplication"
         },
-        "example": "$$\\frac{8}{3} \\cdot \\frac{1}{3}$$",
+        "example": "$$\\frac{6}{7} \\cdot \\frac{6}{10}$$",
         "keywords": "fraction_arith bråk: räkna fractions: arithmetic multiplikation multiplication nivå 4 level 4"
     },
     {
@@ -4904,7 +4904,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Division",
             "en": "Division"
         },
-        "example": "$$\\frac{4}{12} \\div \\frac{1}{10}$$",
+        "example": "$$\\frac{5}{7} \\div \\frac{5}{5}$$",
         "keywords": "fraction_arith bråk: räkna fractions: arithmetic division division nivå 5 level 5"
     },
     {
@@ -4924,7 +4924,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Negativa Bråk",
             "en": "Negative Fractions"
         },
-        "example": "$$\\frac{3}{5} + \\left(-\\frac{2}{3}\\right)$$",
+        "example": "$$\\frac{1}{2} - \\left(-\\frac{3}{4}\\right)$$",
         "keywords": "fraction_arith bråk: räkna fractions: arithmetic negativa bråk negative fractions nivå 6 level 6"
     },
     {
@@ -4964,7 +4964,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Potenser & Negativa Bråk",
             "en": "Powers & Negative Fractions"
         },
-        "example": "$$\\left(-\\frac{1}{3}\\right)^{2} - \\frac{1}{6}$$",
+        "example": "$$\\left(-\\frac{1}{2}\\right)^{3} - \\frac{3}{8}$$",
         "keywords": "fraction_arith bråk: räkna fractions: arithmetic potenser & negativa bråk powers & negative fractions nivå 8 level 8"
     },
     {
@@ -5004,7 +5004,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Huvudräkning",
             "en": "Mental Math"
         },
-        "example": "$$20\\% \\cdot 50$$",
+        "example": "$$25\\% \\cdot 1600$$",
         "keywords": "percent procent percentage huvudräkning mental math nivå 2 level 2"
     },
     {
@@ -5024,7 +5024,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Beräkna andelen",
             "en": "Find the Rate / Percentage"
         },
-        "example": "$$\\frac{90}{150}$$",
+        "example": "$$\\frac{16}{40}$$",
         "keywords": "percent procent percentage beräkna andelen find the rate / percentage nivå 3 level 3"
     },
     {
@@ -5044,7 +5044,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Beräkna delen & Byggstenar",
             "en": "Calculate Part of a Whole"
         },
-        "example": "$$40\\% \\cdot 840$$",
+        "example": "$$40\\% \\cdot 30$$",
         "keywords": "percent procent percentage beräkna delen & byggstenar calculate part of a whole nivå 4 level 4"
     },
     {
@@ -5064,7 +5064,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Procentuell förändring",
             "en": "Percentage Change"
         },
-        "example": "$$\\frac{25}{25}$$",
+        "example": "$$\\frac{6}{40}$$",
         "keywords": "percent procent percentage procentuell förändring percentage change nivå 5 level 5"
     },
     {
@@ -5084,7 +5084,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Beräkna det hela (100%)",
             "en": "Find the Whole (Reverse %)"
         },
-        "example": "$$1\\% = 8$$",
+        "example": "$$4\\% = 21$$",
         "keywords": "percent procent percentage beräkna det hela (100%) find the whole (reverse %) nivå 6 level 6"
     },
     {
@@ -5104,7 +5104,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Begrepp & Omvandling",
             "en": "Concepts & Conversion"
         },
-        "example": "Ett värde ökar med 89%. Vilken förändringsfaktor motsvarar denna ökning?",
+        "example": "Ett värde ökar med 85%. Vilken förändringsfaktor motsvarar denna ökning?",
         "keywords": "change_factor förändringsfaktor change factor begrepp & omvandling concepts & conversion nivå 1 level 1"
     },
     {
@@ -5124,7 +5124,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Beräkna det nya värdet",
             "en": "Calculate New Value"
         },
-        "example": "Ett värde på 1550 kr ska höjas med 82%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
+        "example": "Ett värde på 950 kr ska höjas med 6%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
         "keywords": "change_factor förändringsfaktor change factor beräkna det nya värdet calculate new value nivå 2 level 2"
     },
     {
@@ -5144,7 +5144,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Hitta ursprungsvärdet",
             "en": "Find Original Value"
         },
-        "example": "Efter en höjning med 50% är det nya priset 600 kr. Vad var priset från början?",
+        "example": "Efter en höjning med 15% är det nya priset 368 kr. Vad var priset från början?",
         "keywords": "change_factor förändringsfaktor change factor hitta ursprungsvärdet find original value nivå 3 level 3"
     },
     {
@@ -5164,7 +5164,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Sammansatt förändringsfaktor",
             "en": "Compound Change Factor"
         },
-        "example": "Ett pris ändras i två steg: först en ökning med 40%, därefter en minskning med 25%. Beräkna den totala förändringsfaktorn.",
+        "example": "Ett pris ändras i två steg: först en ökning med 4%, därefter en minskning med 12%. Beräkna den totala förändringsfaktorn.",
         "keywords": "change_factor förändringsfaktor change factor sammansatt förändringsfaktor compound change factor nivå 4 level 4"
     },
     {
@@ -5184,7 +5184,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Total förändring & Upprepad förändring",
             "en": "Net Change & Repeated Change"
         },
-        "example": "Ett pris höjs först med 5% och sänks därefter med 40%. Med hur många procent har priset förändrats totalt?",
+        "example": "Ett pris sänks först med 40% och sänks därefter med 5%. Med hur många procent har priset förändrats totalt?",
         "keywords": "change_factor förändringsfaktor change factor total förändring & upprepad förändring net change & repeated change nivå 5 level 5"
     },
     {
@@ -5204,7 +5204,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Grunder & x^0",
             "en": "Foundations & x^0"
         },
-        "example": "$$161^{0}$$",
+        "example": "$$287^{0}$$",
         "keywords": "exponents potenser & rötter exponents & roots grunder & x^0 foundations & x^0 nivå 1 level 1"
     },
     {
@@ -5224,7 +5224,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Tiopotenser",
             "en": "Powers of 10"
         },
-        "example": "$$10^{4}$$",
+        "example": "$$10^{5}$$",
         "keywords": "exponents potenser & rötter exponents & roots tiopotenser powers of 10 nivå 2 level 2"
     },
     {
@@ -5244,7 +5244,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Grundpotensform",
             "en": "Scientific Notation"
         },
-        "example": "Skriv talet 2 000 i grundpotensform.",
+        "example": "Skriv talet 2 400 000 i grundpotensform.",
         "keywords": "exponents potenser & rötter exponents & roots grundpotensform scientific notation nivå 3 level 3"
     },
     {
@@ -5264,7 +5264,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Kvadratrötter",
             "en": "Square Roots"
         },
-        "example": "$$\\sqrt{36}$$",
+        "example": "$$\\sqrt{49}$$",
         "keywords": "exponents potenser & rötter exponents & roots kvadratrötter square roots nivå 4 level 4"
     },
     {
@@ -5284,7 +5284,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Potenslagar (Enkel)",
             "en": "Exponent Laws (Basic)"
         },
-        "example": "$$x^{9} \\cdot x^{10}$$",
+        "example": "$$x^{6} \\cdot x^{8}$$",
         "keywords": "exponents potenser & rötter exponents & roots potenslagar (enkel) exponent laws (basic) nivå 5 level 5"
     },
     {
@@ -5304,7 +5304,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Potenslagar (Avancerad)",
             "en": "Exponent Laws (Adv)"
         },
-        "example": "$$(x^{3})^{3}$$",
+        "example": "$$(x^{5})^{3}$$",
         "keywords": "exponents potenser & rötter exponents & roots potenslagar (avancerad) exponent laws (adv) nivå 6 level 6"
     },
     {
@@ -5324,7 +5324,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Räkna med grundpotens",
             "en": "Calculate with Scientific Notation"
         },
-        "example": "$$2 \\cdot 10^{8} \\cdot 7 \\cdot 10^{-4}$$",
+        "example": "$$2 \\cdot 10^{2} \\cdot 6 \\cdot 10^{-5}$$",
         "keywords": "exponents potenser & rötter exponents & roots räkna med grundpotens calculate with scientific notation nivå 7 level 7"
     },
     {
@@ -5344,7 +5344,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Mult/Div med 10, 100, 1000",
             "en": "Mult/Div by 10, 100, 1000"
         },
-        "example": "$$0,17 \\cdot 10000$$",
+        "example": "$$49 \\cdot 10000$$",
         "keywords": "ten_powers 10, 100, 1000 10, 100, 1000 mult/div med 10, 100, 1000 mult/div by 10, 100, 1000 nivå 1 level 1"
     },
     {
@@ -5364,7 +5364,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Begreppsförståelse",
             "en": "Conceptual Understanding"
         },
-        "example": "Att multiplicera med 0,01 ger exakt samma svar som att dividera med...",
+        "example": "$$49 \\cdot 10000$$",
         "keywords": "ten_powers 10, 100, 1000 10, 100, 1000 begreppsförståelse conceptual understanding nivå 2 level 2"
     },
     {
@@ -5384,7 +5384,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Blandade Faktorer (0.1, 100...)",
             "en": "Mixed Factors"
         },
-        "example": "$$0,38 \\cdot 0,1$$",
+        "example": "$$2 \\cdot 0,1$$",
         "keywords": "ten_powers 10, 100, 1000 10, 100, 1000 blandade faktorer (0.1, 100...) mixed factors nivå 3 level 3"
     },
     {
@@ -5404,7 +5404,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Längd",
             "en": "Length"
         },
-        "example": "$$79,8 \\text{ mm} = \\text{\\_\\_\\_} \\text{ m}$$",
+        "example": "$$266 \\text{ m} = \\text{\\_\\_\\_} \\text{ cm}$$",
         "keywords": "unit_conversion enhetsomvandling unit conversions längd length nivå 1 level 1"
     },
     {
@@ -5424,7 +5424,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Vikt",
             "en": "Weight"
         },
-        "example": "$$176 \\text{ hg} = \\text{\\_\\_\\_} \\text{ g}$$",
+        "example": "$$108 \\text{ hg} = \\text{\\_\\_\\_} \\text{ g}$$",
         "keywords": "unit_conversion enhetsomvandling unit conversions vikt weight nivå 2 level 2"
     },
     {
@@ -5444,7 +5444,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Volym (L)",
             "en": "Volume (L)"
         },
-        "example": "$$15,5 \\text{ cl} = \\text{\\_\\_\\_} \\text{ l}$$",
+        "example": "$$195 \\text{ cl} = \\text{\\_\\_\\_} \\text{ l}$$",
         "keywords": "unit_conversion enhetsomvandling unit conversions volym (l) volume (l) nivå 3 level 3"
     },
     {
@@ -5464,7 +5464,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Blandad (1-3)",
             "en": "Mixed (1-3)"
         },
-        "example": "$$15,5 \\text{ cl} = \\text{\\_\\_\\_} \\text{ l}$$",
+        "example": "$$195 \\text{ cl} = \\text{\\_\\_\\_} \\text{ l}$$",
         "keywords": "unit_conversion enhetsomvandling unit conversions blandad (1-3) mixed (1-3) nivå 4 level 4"
     },
     {
@@ -5604,7 +5604,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Vinkeltyper",
             "en": "Types of Angles"
         },
-        "example": "Vad kallas denna typ av vinkel?",
+        "example": "",
         "keywords": "angles vinklar angles vinkeltyper types of angles nivå 1 level 1"
     },
     {
@@ -5724,7 +5724,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Begrepp & Uppställning",
             "en": "Concept & Setup"
         },
-        "example": "Vilken sida är hypotenusan i triangeln?",
+        "example": "Vad är arean på den markerade kvadraten (?)",
         "keywords": "pythagoras pythagoras sats pythagoras begrepp & uppställning concept & setup nivå 1 level 1"
     },
     {
@@ -5784,7 +5784,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Är den rätvinklig? (Omvänd sats)",
             "en": "Is it Right-Angled? (Converse)"
         },
-        "example": "En triangel har sidorna 12 cm, 16 cm och 19 cm. Är den rätvinklig?",
+        "example": "En snickare mäter upp kateterna 6 cm och 8 cm i ett hörn. Hur lång måste diagonalen vara för att vinkeln ska vara exakt 90°?",
         "keywords": "pythagoras pythagoras sats pythagoras är den rätvinklig? (omvänd sats) is it right-angled? (converse) nivå 4 level 4"
     },
     {
@@ -5824,7 +5824,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Sammansatt & Rymddiagonal",
             "en": "Composite & 3D Diagonals"
         },
-        "example": "En likbent triangel har basen 10 cm och två sidor på 13 cm vardera. Beräkna triangelns area.",
+        "example": "En likbent triangel har basen 6 cm och två sidor på 5 cm vardera. Beräkna triangelns area.",
         "keywords": "pythagoras pythagoras sats pythagoras sammansatt & rymddiagonal composite & 3d diagonals nivå 6 level 6"
     },
     {
@@ -5844,7 +5844,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Är de likformiga?",
             "en": "Are they similar?"
         },
-        "example": "Avgör om de två rektanglarna nedan är likformiga (perfekta kopior).",
+        "example": "",
         "keywords": "similarity likformighet similar shapes är de likformiga? are they similar? nivå 1 level 1"
     },
     {
@@ -5924,7 +5924,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Begrepp & Skalriktning",
             "en": "Concepts & Direction"
         },
-        "example": "Anger skalan 2:1 en förstoring eller en förminskning?",
+        "example": "En karta är ritad i skala 1:10. Hur många centimeter i verkligheten motsvarar 1 cm på kartan?",
         "keywords": "scale skala scale begrepp & skalriktning concepts & direction nivå 1 level 1"
     },
     {
@@ -5944,7 +5944,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Förminskning (Verklig längd)",
             "en": "Reduction (Real Length)"
         },
-        "example": "En ritning har skalan 1:50. En sträcka på ritningen är 2 cm. Hur lång är sträckan i verkligheten? Svara i centimeter.",
+        "example": "En ritning har skalan 1:10. En sträcka på ritningen är 7 cm. Hur lång är sträckan i verkligheten? Svara i centimeter.",
         "keywords": "scale skala scale förminskning (verklig längd) reduction (real length) nivå 2 level 2"
     },
     {
@@ -5964,7 +5964,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Förstoring (Bildens mått)",
             "en": "Enlargement (Image Size)"
         },
-        "example": "Ett litet föremål är 7 mm i verkligheten. Hur långt blir föremålet på en bild i skala 6:1? Svara i millimeter.",
+        "example": "Ett litet föremål är 3 mm i verkligheten. Hur långt blir föremålet på en bild i skala 8:1? Svara i millimeter.",
         "keywords": "scale skala scale förstoring (bildens mått) enlargement (image size) nivå 3 level 3"
     },
     {
@@ -5984,7 +5984,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Bestäm Skalan",
             "en": "Determine Scale"
         },
-        "example": "En sträcka är 20 m i verkligheten och 4 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
+        "example": "En sträcka är 0.3 m i verkligheten och 2 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
         "keywords": "scale skala scale bestäm skalan determine scale nivå 4 level 4"
     },
     {
@@ -6044,7 +6044,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Areaskala & Omvänd Areaskala",
             "en": "Area Scale & Inverse"
         },
-        "example": "Två likformiga rektanglar har längdskalan 1:10. Den mindre rektangeln har arean 20 cm². Beräkna arean av den större rektangeln.",
+        "example": "Två likformiga rektanglar har längdskalan 1:2. Den mindre rektangeln har arean 5 cm². Beräkna arean av den större rektangeln.",
         "keywords": "scale skala scale areaskala & omvänd areaskala area scale & inverse nivå 7 level 7"
     },
     {
@@ -6064,7 +6064,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Volymskala & Omvänd Volymskala",
             "en": "Volume Scale & Inverse"
         },
-        "example": "Två likformiga cylindrar har längdskalan 1:2. Den mindre rymmer 15 liter. Hur många liter rymmer den större cylindern?",
+        "example": "Två likformiga cylindrar har längdskalan 1:5. Den mindre rymmer 3 liter. Hur många liter rymmer den större cylindern?",
         "keywords": "scale skala scale volymskala & omvänd volymskala volume scale & inverse nivå 8 level 8"
     },
     {
@@ -6164,7 +6164,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Klot & Sammansatta",
             "en": "Sphere & Composite"
         },
-        "example": "Beräkna klotets volym med radien 7 cm.",
+        "example": "Beräkna klotets volym med radien 11 cm.",
         "keywords": "volume volym volume klot & sammansatta sphere & composite nivå 5 level 5"
     },
     {
@@ -6184,7 +6184,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Blandade Volymer",
             "en": "Mixed Volumes"
         },
-        "example": "Pyramiden har en kvadratisk basyta. Beräkna pyramidens volym.",
+        "example": "Beräkna den sammansatta figurens totala volym.",
         "keywords": "volume volym volume blandade volymer mixed volumes nivå 6 level 6"
     },
     {
@@ -6204,7 +6204,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Enhetsomvandling",
             "en": "Unit Conversion"
         },
-        "example": "En pool har formen av ett rätblock med bredden 10 cm, höjden 5 cm och djupet 4 cm. Vad är dess volym i liter?",
+        "example": "Ett limstift har formen av ett cylinder med radien 5 dm och höjden 5 dm. Vad är dess volym i liter?",
         "keywords": "volume volym volume enhetsomvandling unit conversion nivå 7 level 7"
     },
     {
@@ -6244,7 +6244,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Typvärde & Variationsbredd",
             "en": "Mode & Range"
         },
-        "example": "Kolla igenom åldrar listan: 12, 14, 11, 13, 11, 11, 12. Vilket är typvärdet?",
+        "example": "Kolla igenom poäng listan: 25, 21, 22, 12, 20, 25, 25. Vilket är typvärdet?",
         "keywords": "statistics statistik statistics typvärde & variationsbredd mode & range nivå 1 level 1"
     },
     {
@@ -6264,7 +6264,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Medelvärde",
             "en": "Mean"
         },
-        "example": "Beräkna medelvärdet för följande poäng: 24, 23, 10, 12, 24.",
+        "example": "Beräkna medelvärdet för följande temperaturer: 12, 13, 17, 12, 22.",
         "keywords": "statistics statistik statistics medelvärde mean nivå 2 level 2"
     },
     {
@@ -6284,7 +6284,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Median",
             "en": "Median"
         },
-        "example": "Bestäm medianen för följande temperaturer: 22, 17, 22, 15, 13.",
+        "example": "Bestäm medianen för följande poäng: 24, 8, 18, 24, 18, 19, 21.",
         "keywords": "statistics statistik statistics median median nivå 3 level 3"
     },
     {
@@ -6304,7 +6304,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Baklänges medelvärde",
             "en": "Reverse Mean"
         },
-        "example": "Medelvärdet av fyra tal är 13. Tre av talen är 8, 17 och 13. Vilket är det fjärde talet?",
+        "example": "Medelvärdet av fyra tal är 18. Tre av talen är 11, 17 och 12. Vilket är det fjärde talet?",
         "keywords": "statistics statistik statistics baklänges medelvärde reverse mean nivå 4 level 4"
     },
     {
@@ -6324,7 +6324,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Tabell och Diagram",
             "en": "Tables and Graphs"
         },
-        "example": "Hur många observationer (totalt antal) visas i frekvenstabellen?",
+        "example": "Hur många observationer (totalt antal) visas i stolpdiagrammet?",
         "keywords": "statistics statistik statistics tabell och diagram tables and graphs nivå 5 level 5"
     },
     {
@@ -6364,7 +6364,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Sannolikhetsskalan & Visuella utfall",
             "en": "Probability Scale & Visual Outcomes"
         },
-        "example": "Hur sannolikt är det: \"att få krona när du kastar ett vanligt mynt\"?",
+        "example": "Hjulet har 10 lika stora fält. 2 av fälten är grön. Vad är sannolikheten att pilen stannar på grön? Svar med bråk i enklaste form.",
         "keywords": "probability sannolikhet probability sannolikhetsskalan & visuella utfall probability scale & visual outcomes nivå 1 level 1"
     },
     {
@@ -6384,7 +6384,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "De tre uttrycksformerna (Bråk, Decimal, %)",
             "en": "The Three Forms (Fraction, Decimal, %)"
         },
-        "example": "Sannolikheten för en vinst i ett lotteri är 2/5. Vad är sannolikheten uttryckt i procent?",
+        "example": "Sannolikheten för en vinst i ett lotteri är 1/20. Vad är sannolikheten uttryckt i procent?",
         "keywords": "probability sannolikhet probability de tre uttrycksformerna (bråk, decimal, %) the three forms (fraction, decimal, %) nivå 2 level 2"
     },
     {
@@ -6404,7 +6404,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Likformiga utfall (Tärning & Kortlek)",
             "en": "Uniform Outcomes (Dice & Card Deck)"
         },
-        "example": "Vad är sannolikheten att få en 4:a vid ett kast med en vanlig sexsidig tärning? Svar med bråk i enklaste form.",
+        "example": "Vad är sannolikheten att få en 3:a vid ett kast med en vanlig sexsidig tärning? Svar med bråk i enklaste form.",
         "keywords": "probability sannolikhet probability likformiga utfall (tärning & kortlek) uniform outcomes (dice & card deck) nivå 3 level 3"
     },
     {
@@ -6424,7 +6424,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Komplementhändelse (INTE och ELLER)",
             "en": "Complementary Events (NOT and OR)"
         },
-        "example": "Chansen att vinna i ett lotteri är 45%. Vad är sannolikheten att man INTE vinner?",
+        "example": "Chansen att vinna i ett lotteri är 40%. Vad är sannolikheten att man INTE vinner?",
         "keywords": "probability sannolikhet probability komplementhändelse (inte och eller) complementary events (not and or) nivå 4 level 4"
     },
     {
@@ -6444,7 +6444,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Kombinatorik & Multiplikationsprincipen",
             "en": "Combinatorics & Multiplication Principle"
         },
-        "example": "En restaurangmeny erbjuder 5 förrätter, 5 varmrätter och 4 efterrätter. På hur många olika sätt kan du komponera en trerättersmiddag?",
+        "example": "En restaurangmeny erbjuder 4 förrätter, 5 varmrätter och 4 efterrätter. På hur många olika sätt kan du komponera en trerättersmiddag?",
         "keywords": "probability sannolikhet probability kombinatorik & multiplikationsprincipen combinatorics & multiplication principle nivå 5 level 5"
     },
     {
@@ -6464,7 +6464,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Flerstegsförsök – Med återläggning",
             "en": "Multi-Stage – With Replacement"
         },
-        "example": "Du kastar ett mynt 3 gånger. Vad är sannolikheten att få krona alla 3 gånger? Svar med bråk i enklaste form.",
+        "example": "Du kastar ett mynt 2 gånger. Vad är sannolikheten att få krona alla 2 gånger? Svar med bråk i enklaste form.",
         "keywords": "probability sannolikhet probability flerstegsförsök – med återläggning multi-stage – with replacement nivå 6 level 6"
     },
     {
@@ -6484,7 +6484,7 @@ export const CONCEPT_SEARCH_INDEX = [
             "sv": "Flerstegsförsök – Utan återläggning & Träd",
             "en": "Multi-Stage – Without Replacement & Trees"
         },
-        "example": "I en påse finns 4 röda och 6 blåa kulor. Du drar två kulor utan återläggning. Vad är sannolikheten att få en röd först och sedan en blå? Svar med bråk i enklaste form.",
+        "example": "I en påse finns 4 röda och 5 blåa kulor. Du drar två kulor utan återläggning. Vad är sannolikheten att få en röd först och sedan en blå? Svar med bråk i enklaste form.",
         "keywords": "probability sannolikhet probability flerstegsförsök – utan återläggning & träd multi-stage – without replacement & trees nivå 7 level 7"
     }
 ];

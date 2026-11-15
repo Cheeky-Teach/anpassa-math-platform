@@ -1,6 +1,6 @@
 /**
  * AUTO-GENERATED CONTENT MAP (Static Snapshot with Live Examples)
- * Generated on: 2026-11-13T23:12:44.757Z
+ * Generated on: 2026-11-15T12:19:46.078Z
  */
 export const CONTENT_MAP = [
     {
@@ -25,7 +25,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$x - 18 = -7$$",
+                        "ex": "$$3x = 9$$",
                         "desc": {
                             "sv": "Ensteg: Beräkning",
                             "en": "One-step: Calculation"
@@ -54,7 +54,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$2x + 5 = 29$$",
+                        "ex": "$$6x + 9 = 21$$",
                         "desc": {
                             "sv": "Tvåsteg: Beräkning",
                             "en": "Two-step: Calculation"
@@ -78,34 +78,12 @@ export const CONTENT_MAP = [
                                     "sv": "ax + b = c eller ax - b = c",
                                     "en": "ax + b = c or ax - b = c"
                                 }
-                            },
-                            {
-                                "key": "twostep_write_problem",
-                                "name": {
-                                    "sv": "Formulera: Ekvation",
-                                    "en": "Formulate: Equation"
-                                },
-                                "desc": {
-                                    "sv": "Skriv ekvationen utifrån en text",
-                                    "en": "Write equation from a story"
-                                }
-                            },
-                            {
-                                "key": "twostep_solve_problem",
-                                "name": {
-                                    "sv": "Lös: Verklighetsproblem",
-                                    "en": "Solve: Word Problems"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna x utifrån en text",
-                                    "en": "Calculate x from a story"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$4(x + 6) = 44$$",
+                        "ex": "$$4(x + 5) = 48$$",
                         "desc": {
                             "sv": "Parenteser: Beräkning",
                             "en": "Parentheses: Calculation"
@@ -134,7 +112,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$9x + 4 = 2x + 46$$",
+                        "ex": "$$10x + 6 = 5x + 46$$",
                         "desc": {
                             "sv": "X på båda sidor",
                             "en": "X on both sides"
@@ -176,7 +154,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$12x+49=265$$",
+                        "ex": "$$22x+59=257$$",
                         "desc": {
                             "sv": "Skriv: Fast + Rörlig",
                             "en": "Write: Fixed + Variable"
@@ -206,83 +184,6 @@ export const CONTENT_MAP = [
                                     "sv": "Teckna ekvation",
                                     "en": "Formulate equation"
                                 }
-                            },
-                            {
-                                "key": "rate_fixed_add_solve",
-                                "name": {
-                                    "sv": "Lös: Fast + Rörlig",
-                                    "en": "Solve: Fixed + Variable"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna x givet total",
-                                    "en": "Calculate x given total"
-                                }
-                            },
-                            {
-                                "key": "rate_fixed_sub_write",
-                                "name": {
-                                    "sv": "Skriv: Rabatt/Minskning",
-                                    "en": "Write: Discount/Decrease"
-                                },
-                                "desc": {
-                                    "sv": "Teckna ekvation",
-                                    "en": "Formulate equation"
-                                }
-                            },
-                            {
-                                "key": "rate_fixed_sub_solve",
-                                "name": {
-                                    "sv": "Lös: Rabatt/Minskning",
-                                    "en": "Solve: Discount/Decrease"
-                                },
-                                "desc": {
-                                    "sv": "Hitta antal efter rabatt",
-                                    "en": "Find count after discount"
-                                }
-                            },
-                            {
-                                "key": "compare_word_sum_write",
-                                "name": {
-                                    "sv": "Skriv: Jämförelse (Summa)",
-                                    "en": "Write: Comparison (Sum)"
-                                },
-                                "desc": {
-                                    "sv": "x + (x+a) = Total",
-                                    "en": "x + (x+a) = Total"
-                                }
-                            },
-                            {
-                                "key": "compare_word_sum_solve",
-                                "name": {
-                                    "sv": "Lös: Jämförelse (Summa)",
-                                    "en": "Solve: Comparison (Sum)"
-                                },
-                                "desc": {
-                                    "sv": "Hitta delarna",
-                                    "en": "Find the parts"
-                                }
-                            },
-                            {
-                                "key": "compare_word_diff_write",
-                                "name": {
-                                    "sv": "Skriv: Jämförelse (Diff)",
-                                    "en": "Write: Comparison (Diff)"
-                                },
-                                "desc": {
-                                    "sv": "x + (x-a) = Total",
-                                    "en": "x + (x-a) = Total"
-                                }
-                            },
-                            {
-                                "key": "compare_word_diff_solve",
-                                "name": {
-                                    "sv": "Lös: Jämförelse (Diff)",
-                                    "en": "Solve: Comparison (Diff)"
-                                },
-                                "desc": {
-                                    "sv": "Hitta delarna",
-                                    "en": "Find the parts"
-                                }
                             }
                         ]
                     }
@@ -301,7 +202,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$18x + 12 + 5x - 5$$",
+                        "ex": "$$14x + 16 - 4x + 7$$",
                         "desc": {
                             "sv": "Förenkla uttryck",
                             "en": "Simplify expressions"
@@ -330,7 +231,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$6 \\cdot 5x - 4x - 5$$",
+                        "ex": "$$2x - 5 \\cdot 2x + 10$$",
                         "desc": {
                             "sv": "Prioritering: Multiplikation",
                             "en": "Order: Multiplication"
@@ -354,34 +255,12 @@ export const CONTENT_MAP = [
                                     "sv": "Förenkla med multiplikation (t.ex. 3 * 4x)",
                                     "en": "Simplify with multiplication"
                                 }
-                            },
-                            {
-                                "key": "combine_div_mixed",
-                                "name": {
-                                    "sv": "Prioritering: Division",
-                                    "en": "Order: Division"
-                                },
-                                "desc": {
-                                    "sv": "Förenkla med bråk/division",
-                                    "en": "Simplify with division"
-                                }
-                            },
-                            {
-                                "key": "combine_mult_div_boss",
-                                "name": {
-                                    "sv": "Prioritering: Mult & Div",
-                                    "en": "Order: Mult & Div"
-                                },
-                                "desc": {
-                                    "sv": "Blandad prioritering med x-termer",
-                                    "en": "Mixed order with x-terms"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$20x + (4x + 3)$$",
+                        "ex": "$$11x + (3x + 4)$$",
                         "desc": {
                             "sv": "Parentes (+)",
                             "en": "Parentheses (+)"
@@ -405,23 +284,12 @@ export const CONTENT_MAP = [
                                     "sv": "Multiplicera in i parentes",
                                     "en": "Multiply into parentheses"
                                 }
-                            },
-                            {
-                                "key": "distribute_minus",
-                                "name": {
-                                    "sv": "Parentes (-)",
-                                    "en": "Parentheses (-)"
-                                },
-                                "desc": {
-                                    "sv": "Multiplicera med negativt tecken",
-                                    "en": "Multiply with negative sign"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$3(x + 5) - 2(x + 5)$$",
+                        "ex": "$$2(x + 2) + 4(x + 4)$$",
                         "desc": {
                             "sv": "Dubbla parenteser",
                             "en": "Double parentheses"
@@ -445,23 +313,12 @@ export const CONTENT_MAP = [
                                     "sv": "Expandera två parenteser",
                                     "en": "Expand two parentheses"
                                 }
-                            },
-                            {
-                                "key": "distribute_combine_std",
-                                "name": {
-                                    "sv": "Expandera & Förenkla",
-                                    "en": "Expand & Simplify"
-                                },
-                                "desc": {
-                                    "sv": "Förenkla uttryck med parenteser",
-                                    "en": "Simplify expressions with parentheses"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$20x - (4x + 5)$$",
+                        "ex": "$$12x - (2x + 2)$$",
                         "desc": {
                             "sv": "Minusparentes (+)",
                             "en": "Minus parentheses (+)"
@@ -484,17 +341,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "-(ax + b)",
                                     "en": "-(ax + b)"
-                                }
-                            },
-                            {
-                                "key": "sub_block_minus",
-                                "name": {
-                                    "sv": "Minusparentes (-)",
-                                    "en": "Minus parentheses (-)"
-                                },
-                                "desc": {
-                                    "sv": "-(ax - b)",
-                                    "en": "-(ax - b)"
                                 }
                             }
                         ]
@@ -543,7 +389,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "En liksidig triangels omkrets är 21 cm. Beräkna x.",
+                        "ex": "En liksidig triangels omkrets är 264 cm. Beräkna x.",
                         "desc": {
                             "sv": "Omkrets: Lös ut x",
                             "en": "Perimeter: Solve for x"
@@ -601,7 +447,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "Triangelns area är 175 cm². Beräkna x.",
+                        "ex": "Rektangelns area är 497 cm². Beräkna x.",
                         "desc": {
                             "sv": "Area: Lös ut x",
                             "en": "Area: Solve for x"
@@ -725,34 +571,12 @@ export const CONTENT_MAP = [
                                     "sv": "Aritmetisk vs Geometrisk",
                                     "en": "Arithmetic vs Geometric"
                                 }
-                            },
-                            {
-                                "key": "seq_diff",
-                                "name": {
-                                    "sv": "Hitta differensen",
-                                    "en": "Find the difference"
-                                },
-                                "desc": {
-                                    "sv": "Ökning per steg",
-                                    "en": "Increase per step"
-                                }
-                            },
-                            {
-                                "key": "seq_next",
-                                "name": {
-                                    "sv": "Nästa tal",
-                                    "en": "Next number"
-                                },
-                                "desc": {
-                                    "sv": "Fortsätt talföljden",
-                                    "en": "Continue the sequence"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 2,
-                        "ex": "Vilket värde har tal nummer 50 i mönstret: 8, 17, 26... ?",
+                        "ex": "Vilket värde har tal nummer 50 i mönstret: 3, 8, 13... ?",
                         "desc": {
                             "sv": "Hitta tal n",
                             "en": "Find term n"
@@ -805,28 +629,6 @@ export const CONTENT_MAP = [
                                     "sv": "Koppla bild till uttryck",
                                     "en": "Link image to expression"
                                 }
-                            },
-                            {
-                                "key": "visual_calc",
-                                "name": {
-                                    "sv": "Mönster: Figurberäkning",
-                                    "en": "Pattern: Figure Calculation"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna värdet för figur n",
-                                    "en": "Calculate value for figure n"
-                                }
-                            },
-                            {
-                                "key": "find_formula",
-                                "name": {
-                                    "sv": "Skriv formeln",
-                                    "en": "Write the formula"
-                                },
-                                "desc": {
-                                    "sv": "Skapa y = kn + m",
-                                    "en": "Create y = kn + m"
-                                }
                             }
                         ]
                     },
@@ -856,23 +658,12 @@ export const CONTENT_MAP = [
                                     "sv": "Hitta mönster i värdetabell",
                                     "en": "Find patterns in value tables"
                                 }
-                            },
-                            {
-                                "key": "table_fill",
-                                "name": {
-                                    "sv": "Fyll i tabell",
-                                    "en": "Fill in table"
-                                },
-                                "desc": {
-                                    "sv": "Använd formeln",
-                                    "en": "Use the formula"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 5,
-                        "ex": "I ett mönster med formeln $V = 8n + 3$, vilket figurnummer (n) har värdet 307?",
+                        "ex": "I ett mönster med formeln $V = 4n + 2$, vilket figurnummer (n) har värdet 158?",
                         "desc": {
                             "sv": "Hitta n (Ekvation)",
                             "en": "Find n (Equation)"
@@ -967,39 +758,6 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna k-värdet för en stigande rät linje",
                                     "en": "Calculate the k-value for a rising straight line"
                                 }
-                            },
-                            {
-                                "key": "slope_pos_frac",
-                                "name": {
-                                    "sv": "Positiv lutning (Bråk)",
-                                    "en": "Positive Slope (Frac)"
-                                },
-                                "desc": {
-                                    "sv": "Hitta lutningen som ett bråk k = dy/dx",
-                                    "en": "Find the slope as a fraction k = dy/dx"
-                                }
-                            },
-                            {
-                                "key": "slope_neg_int",
-                                "name": {
-                                    "sv": "Negativ lutning (Heltal)",
-                                    "en": "Negative Slope (Int)"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna k-värdet för en fallande rät linje",
-                                    "en": "Calculate the k-value for a falling straight line"
-                                }
-                            },
-                            {
-                                "key": "slope_neg_frac",
-                                "name": {
-                                    "sv": "Negativ lutning (Bråk)",
-                                    "en": "Negative Slope (Frac)"
-                                },
-                                "desc": {
-                                    "sv": "Bestäm fallande lutning som ett bråk",
-                                    "en": "Determine falling slope as a fraction"
-                                }
                             }
                         ]
                     },
@@ -1028,17 +786,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Bestäm y = kx + m utifrån en värdetabell",
                                     "en": "Determine y = kx + m from a table of values"
-                                }
-                            },
-                            {
-                                "key": "table_fill_function",
-                                "name": {
-                                    "sv": "Fyll i värdetabell",
-                                    "en": "Complete Table"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna saknat y-värde i tabell givet formeln",
-                                    "en": "Calculate missing y in a table given the formula"
                                 }
                             }
                         ]
@@ -1069,79 +816,6 @@ export const CONTENT_MAP = [
                                     "sv": "Skriv fullständiga formeln y = kx + m utifrån grafen",
                                     "en": "Write the full formula y = kx + m from the graph"
                                 }
-                            },
-                            {
-                                "key": "eq_no_m",
-                                "name": {
-                                    "sv": "Ekvation utan m",
-                                    "en": "Equation without m"
-                                },
-                                "desc": {
-                                    "sv": "Formel för linjer som går genom origo (y = kx)",
-                                    "en": "Formula for lines passing through origin (y = kx)"
-                                }
-                            },
-                            {
-                                "key": "eq_horizontal",
-                                "name": {
-                                    "sv": "Horisontell linje",
-                                    "en": "Horizontal line"
-                                },
-                                "desc": {
-                                    "sv": "Formel för linjer utan lutning (y = m)",
-                                    "en": "Formula for lines with no slope (y = m)"
-                                }
-                            },
-                            {
-                                "key": "graph_eval_point",
-                                "name": {
-                                    "sv": "Läs av punkt på graf",
-                                    "en": "Read point from graph"
-                                },
-                                "desc": {
-                                    "sv": "Hitta y-värdet för ett givet x på linjen",
-                                    "en": "Find y-value for a given x on the line"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "lvl": 5,
-                        "ex": "Ligger punkten $(4, -4)$ på linjen $y=-x$?",
-                        "desc": {
-                            "sv": "Ligger punkten på linjen?",
-                            "en": "Is Point on Line?"
-                        },
-                        "student_desc": {
-                            "sv": "Koordinater & Parallella linjer",
-                            "en": "Coordinates & Parallel Lines"
-                        },
-                        "teacher_desc": {
-                            "sv": "Verifiera om en punkt uppfyller ekvationen (Ja/Nej)",
-                            "en": "Check if a coordinate satisfies the equation (Yes/No)"
-                        },
-                        "variations": [
-                            {
-                                "key": "point_on_line",
-                                "name": {
-                                    "sv": "Ligger punkten på linjen?",
-                                    "en": "Is Point on Line?"
-                                },
-                                "desc": {
-                                    "sv": "Verifiera om en punkt uppfyller ekvationen (Ja/Nej)",
-                                    "en": "Check if a coordinate satisfies the equation (Yes/No)"
-                                }
-                            },
-                            {
-                                "key": "parallel_lines_id",
-                                "name": {
-                                    "sv": "Parallella linjer",
-                                    "en": "Parallel Lines"
-                                },
-                                "desc": {
-                                    "sv": "Hitta linjen med identiskt k-värde",
-                                    "en": "Identify line with matching slope"
-                                }
                             }
                         ]
                     },
@@ -1170,28 +844,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Avläs m-värde på axlar med stora tal (t.ex. kr, km)",
                                     "en": "Read m-value on scaled axes"
-                                }
-                            },
-                            {
-                                "key": "scaled_slope",
-                                "name": {
-                                    "sv": "Lutning / Enhetspris",
-                                    "en": "Slope / Unit Rate"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna k-värde på axlar med anpassade skalsteg",
-                                    "en": "Calculate rate of change on scaled axes"
-                                }
-                            },
-                            {
-                                "key": "scaled_equation",
-                                "name": {
-                                    "sv": "Linjens ekvation (Verklig skala)",
-                                    "en": "Line Equation (Scaled)"
-                                },
-                                "desc": {
-                                    "sv": "Bestäm y = kx + m på grafer med verkliga enheter",
-                                    "en": "Determine y = kx + m on real-world graphs"
                                 }
                             }
                         ]
@@ -1222,7 +874,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$\\begin{array}{rr} & 20 \\\\ + & 10 \\\\ \\hline \\end{array}$$",
+                        "ex": "$$\\begin{array}{rr} & 143 \\\\ + & 130 \\\\ \\hline \\end{array}$$",
                         "desc": {
                             "sv": "Addition: Uppställning",
                             "en": "Addition: Column Method"
@@ -1246,34 +898,12 @@ export const CONTENT_MAP = [
                                     "sv": "Stora tal",
                                     "en": "Large numbers"
                                 }
-                            },
-                            {
-                                "key": "add_missing_variable",
-                                "name": {
-                                    "sv": "Addition: Hitta termen",
-                                    "en": "Addition: Find the term"
-                                },
-                                "desc": {
-                                    "sv": "a + x = b",
-                                    "en": "a + x = b"
-                                }
-                            },
-                            {
-                                "key": "add_std_horizontal",
-                                "name": {
-                                    "sv": "Addition: Vågrät",
-                                    "en": "Addition: Horizontal"
-                                },
-                                "desc": {
-                                    "sv": "Standardberäkning",
-                                    "en": "Standard calculation"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$\\begin{array}{rr} & 198 \\\\ - & 90 \\\\ \\hline \\end{array}$$",
+                        "ex": "$$\\begin{array}{rr} & 93 \\\\ - & 68 \\\\ \\hline \\end{array}$$",
                         "desc": {
                             "sv": "Subtraktion: Uppställning",
                             "en": "Subtraction: Column Method"
@@ -1297,34 +927,12 @@ export const CONTENT_MAP = [
                                     "sv": "Växling",
                                     "en": "Borrowing"
                                 }
-                            },
-                            {
-                                "key": "sub_missing_variable",
-                                "name": {
-                                    "sv": "Subtraktion: Hitta termen",
-                                    "en": "Subtraction: Find the term"
-                                },
-                                "desc": {
-                                    "sv": "a - x = b",
-                                    "en": "a - x = b"
-                                }
-                            },
-                            {
-                                "key": "sub_std_horizontal",
-                                "name": {
-                                    "sv": "Subtraktion: Vågrät",
-                                    "en": "Subtraction: Horizontal"
-                                },
-                                "desc": {
-                                    "sv": "Standardberäkning",
-                                    "en": "Standard calculation"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$13,2 + 3,47$$",
+                        "ex": "$$38,8 + 2,72$$",
                         "desc": {
                             "sv": "Decimaler: Addition",
                             "en": "Decimals: Addition"
@@ -1348,23 +956,12 @@ export const CONTENT_MAP = [
                                     "sv": "Passa kommatecknet",
                                     "en": "Align decimal point"
                                 }
-                            },
-                            {
-                                "key": "dec_sub_vertical",
-                                "name": {
-                                    "sv": "Decimaler: Subtraktion",
-                                    "en": "Decimals: Subtraction"
-                                },
-                                "desc": {
-                                    "sv": "Passa kommatecknet",
-                                    "en": "Align decimal point"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$9 \\cdot 6$$",
+                        "ex": "$$4 \\cdot 4$$",
                         "desc": {
                             "sv": "Multiplikationstabell",
                             "en": "Multiplication Table"
@@ -1388,23 +985,12 @@ export const CONTENT_MAP = [
                                     "sv": "Standardträning",
                                     "en": "Standard practice"
                                 }
-                            },
-                            {
-                                "key": "mult_commutative",
-                                "name": {
-                                    "sv": "Kommutativa lagen",
-                                    "en": "Commutative Law"
-                                },
-                                "desc": {
-                                    "sv": "a * b = b * a",
-                                    "en": "a * b = b * a"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$\\begin{array}{rr} & 38 \\\\ \\times & 5 \\\\ \\hline \\end{array}$$",
+                        "ex": "$$\\begin{array}{rr} & 13 \\\\ \\times & 5 \\\\ \\hline \\end{array}$$",
                         "desc": {
                             "sv": "Mult: Uppställning",
                             "en": "Mult: Column Method"
@@ -1428,23 +1014,12 @@ export const CONTENT_MAP = [
                                     "sv": "Två siffror * en siffra",
                                     "en": "Two digits * one digit"
                                 }
-                            },
-                            {
-                                "key": "mult_distributive",
-                                "name": {
-                                    "sv": "Distributiva lagen",
-                                    "en": "Distributive Law"
-                                },
-                                "desc": {
-                                    "sv": "Dela upp faktorer",
-                                    "en": "Split factors"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$0,81 \\cdot 8$$",
+                        "ex": "$$0,35 \\cdot 7$$",
                         "desc": {
                             "sv": "Decimalmultiplikation",
                             "en": "Decimal Multiplication"
@@ -1468,23 +1043,12 @@ export const CONTENT_MAP = [
                                     "sv": "Räkna decimaler",
                                     "en": "Count decimals"
                                 }
-                            },
-                            {
-                                "key": "mult_decimal_placement",
-                                "name": {
-                                    "sv": "Placera kommatecknet",
-                                    "en": "Place decimal point"
-                                },
-                                "desc": {
-                                    "sv": "Uppskattning",
-                                    "en": "Estimation"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 7,
-                        "ex": "$$\\frac{21}{7}$$",
+                        "ex": "$$\\frac{30}{6}$$",
                         "desc": {
                             "sv": "Division: Enkel",
                             "en": "Division: Basic"
@@ -1508,47 +1072,25 @@ export const CONTENT_MAP = [
                                     "sv": "Exakta svar",
                                     "en": "Exact calculations"
                                 }
-                            },
-                            {
-                                "key": "div_inverse_logic",
-                                "name": {
-                                    "sv": "Division via multiplikation",
-                                    "en": "Division via mult"
-                                },
-                                "desc": {
-                                    "sv": "Samband",
-                                    "en": "Connection"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 8,
-                        "ex": "Vilket av följande tal är delbart med 5?",
+                        "ex": "$$53\\_$$",
                         "desc": {
-                            "sv": "Delbarhet: Flerval",
-                            "en": "Divisibility: MCQ"
+                            "sv": "Delbarhet: Saknad siffra",
+                            "en": "Divisibility: Missing Digit"
                         },
                         "student_desc": {
                             "sv": "Delbarhetsregler",
                             "en": "Divisibility Rules"
                         },
                         "teacher_desc": {
-                            "sv": "Vilket tal är delbart med n?",
-                            "en": "Which number is divisible?"
+                            "sv": "Hitta rätt siffra",
+                            "en": "Find the correct digit"
                         },
                         "variations": [
-                            {
-                                "key": "div_rule_check",
-                                "name": {
-                                    "sv": "Delbarhet: Flerval",
-                                    "en": "Divisibility: MCQ"
-                                },
-                                "desc": {
-                                    "sv": "Vilket tal är delbart med n?",
-                                    "en": "Which number is divisible?"
-                                }
-                            },
                             {
                                 "key": "div_rule_missing",
                                 "name": {
@@ -1559,23 +1101,12 @@ export const CONTENT_MAP = [
                                     "sv": "Hitta rätt siffra",
                                     "en": "Find the correct digit"
                                 }
-                            },
-                            {
-                                "key": "div_rule_tf",
-                                "name": {
-                                    "sv": "Delbarhet: Sant/Falskt",
-                                    "en": "Divisibility: T/F"
-                                },
-                                "desc": {
-                                    "sv": "Logik för 2, 3, 5 och 10",
-                                    "en": "Logic for 2, 3, 5 and 10"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 9,
-                        "ex": "$$\\frac{4,8}{4}$$",
+                        "ex": "$$\\frac{0,72}{6}$$",
                         "desc": {
                             "sv": "Division: Decimal i täljaren",
                             "en": "Division: Decimal in dividend"
@@ -1599,17 +1130,6 @@ export const CONTENT_MAP = [
                                     "sv": "Dela ett decimaltal",
                                     "en": "Divide a decimal"
                                 }
-                            },
-                            {
-                                "key": "div_decimal_divisor",
-                                "name": {
-                                    "sv": "Division: Decimal i nämnaren",
-                                    "en": "Division: Decimal in divisor"
-                                },
-                                "desc": {
-                                    "sv": "Dela med ett decimaltal",
-                                    "en": "Divide by a decimal"
-                                }
                             }
                         ]
                     }
@@ -1628,7 +1148,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Vilket värde har siffran 8 i talet 8152?",
+                        "ex": "Vilket värde har siffran 3 i talet 31476?",
                         "desc": {
                             "sv": "Heltal: Siffrans värde",
                             "en": "Whole: Digit value"
@@ -1652,34 +1172,12 @@ export const CONTENT_MAP = [
                                     "sv": "Vilket värde har siffran?",
                                     "en": "What value does the digit have?"
                                 }
-                            },
-                            {
-                                "key": "pv_whole_digit",
-                                "name": {
-                                    "sv": "Heltal: Vilken siffra",
-                                    "en": "Whole: Which digit"
-                                },
-                                "desc": {
-                                    "sv": "Vilken siffra står på platsen?",
-                                    "en": "Which digit is in the place?"
-                                }
-                            },
-                            {
-                                "key": "pv_whole_build",
-                                "name": {
-                                    "sv": "Heltal: Bygg talet",
-                                    "en": "Whole: Build number"
-                                },
-                                "desc": {
-                                    "sv": "Skriv talet utifrån beskrivning",
-                                    "en": "Write number from description"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 2,
-                        "ex": "Vilket värde har siffran 3 i talet 285,3? Svara i decimalform.",
+                        "ex": "Vilket värde har siffran 8 i talet 39,648? Svara i decimalform.",
                         "desc": {
                             "sv": "Decimal: Siffrans värde",
                             "en": "Dec: Digit value"
@@ -1703,34 +1201,12 @@ export const CONTENT_MAP = [
                                     "sv": "Inkluderar decimaler",
                                     "en": "Includes decimals"
                                 }
-                            },
-                            {
-                                "key": "pv_dec_digit",
-                                "name": {
-                                    "sv": "Decimal: Vilken siffra",
-                                    "en": "Dec: Which digit"
-                                },
-                                "desc": {
-                                    "sv": "Inkluderar decimaler",
-                                    "en": "Includes decimals"
-                                }
-                            },
-                            {
-                                "key": "pv_dec_build",
-                                "name": {
-                                    "sv": "Decimal: Bygg talet",
-                                    "en": "Dec: Build number"
-                                },
-                                "desc": {
-                                    "sv": "Bygg med decimaler",
-                                    "en": "Build with decimals"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "Avrunda talet 9008,81 till närmaste hundratal. (Svara som ett heltal utan kommatecken)",
+                        "ex": "Avrunda talet 9845,2 till närmaste tiotal. (Svara som ett heltal utan kommatecken)",
                         "desc": {
                             "sv": "Avrunda till heltal",
                             "en": "Round to whole"
@@ -1754,17 +1230,6 @@ export const CONTENT_MAP = [
                                     "sv": "Avrunda tiotal, hundratal",
                                     "en": "Round tens, hundreds"
                                 }
-                            },
-                            {
-                                "key": "pv_round_dec",
-                                "name": {
-                                    "sv": "Avrunda decimaltal",
-                                    "en": "Round decimals"
-                                },
-                                "desc": {
-                                    "sv": "Avrunda tiondel, hundradel",
-                                    "en": "Round tenths, hundredths"
-                                }
                             }
                         ]
                     }
@@ -1783,7 +1248,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$7 · 4 + 9$$",
+                        "ex": "$$6 · 2 - 4$$",
                         "desc": {
                             "sv": "Prioritering: Grund",
                             "en": "Order: Basic"
@@ -1812,7 +1277,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$6 + 4 \\cdot (7 - 3)$$",
+                        "ex": "$$9 + 2 \\cdot (9 - 4)$$",
                         "desc": {
                             "sv": "Prioritering: Parenteser",
                             "en": "Order: Parentheses"
@@ -1841,7 +1306,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$(8 + 5) · 2 + 7 · 6 + 40$$",
+                        "ex": "$$9 · 5 + 34 - (2 + 7) · 5$$",
                         "desc": {
                             "sv": "Prioritering: Bråkstreck",
                             "en": "Order: Fraction Bar"
@@ -1870,7 +1335,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$16 - \\frac{3 + 15}{9} - 3^{2}$$",
+                        "ex": "$$22 + 6^{2} - 8 · 4$$",
                         "desc": {
                             "sv": "Prioritering: Potenser",
                             "en": "Order: Powers"
@@ -1912,7 +1377,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 2,
-                        "ex": "$$4 + 5 - 5 + 5$$",
+                        "ex": "$$1 + (-5) - (-4) + (-3)$$",
                         "desc": {
                             "sv": "Add/Sub Kedja (4)",
                             "en": "Add/Sub Chain (4)"
@@ -1936,56 +1401,12 @@ export const CONTENT_MAP = [
                                     "sv": "Flerstegsräkning",
                                     "en": "Multi-step calculation"
                                 }
-                            },
-                            {
-                                "key": "fluency_chain_5",
-                                "name": {
-                                    "sv": "Add/Sub Kedja (5)",
-                                    "en": "Add/Sub Chain (5)"
-                                },
-                                "desc": {
-                                    "sv": "Långa uttryck",
-                                    "en": "Long expressions"
-                                }
-                            },
-                            {
-                                "key": "fluency_double_neg",
-                                "name": {
-                                    "sv": "Dubbla minustecken",
-                                    "en": "Double negative signs"
-                                },
-                                "desc": {
-                                    "sv": "-(-a) = +a",
-                                    "en": "-(-a) = +a"
-                                }
-                            },
-                            {
-                                "key": "fluency_plus_neg",
-                                "name": {
-                                    "sv": "Plus minus",
-                                    "en": "Plus minus"
-                                },
-                                "desc": {
-                                    "sv": "+(-a) = -a",
-                                    "en": "+(-a) = -a"
-                                }
-                            },
-                            {
-                                "key": "fluency_transform_match",
-                                "name": {
-                                    "sv": "Matcha uttryck",
-                                    "en": "Match expressions"
-                                },
-                                "desc": {
-                                    "sv": "Olika skrivsätt",
-                                    "en": "Different notations"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$(-6) \\cdot (-8)$$",
+                        "ex": "$$(-4) \\cdot (-3)$$",
                         "desc": {
                             "sv": "Multiplikation: Lika tecken",
                             "en": "Multiplication: Same Sign"
@@ -2009,45 +1430,12 @@ export const CONTENT_MAP = [
                                     "sv": "Multiplikation med lika tecken",
                                     "en": "Multiply with same signs"
                                 }
-                            },
-                            {
-                                "key": "mult_diff_sign",
-                                "name": {
-                                    "sv": "Multiplikation: Olika tecken",
-                                    "en": "Multiplication: Diff Sign"
-                                },
-                                "desc": {
-                                    "sv": "Multiplicera med olika tecken",
-                                    "en": "Multiply with different signs"
-                                }
-                            },
-                            {
-                                "key": "mult_inverse_missing",
-                                "name": {
-                                    "sv": "Mult: Saknad faktor",
-                                    "en": "Mult: Missing factor"
-                                },
-                                "desc": {
-                                    "sv": "a * ? = b",
-                                    "en": "a * ? = b"
-                                }
-                            },
-                            {
-                                "key": "mult_chain",
-                                "name": {
-                                    "sv": "Mult: Kedja",
-                                    "en": "Mult: Chain"
-                                },
-                                "desc": {
-                                    "sv": "Jämnt/Udda antal minus",
-                                    "en": "Even/Odd number of minuses"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\frac{-8}{-2}$$",
+                        "ex": "$$\\frac{24}{6}$$",
                         "desc": {
                             "sv": "Division: Samma tecken",
                             "en": "Division: Same signs"
@@ -2071,34 +1459,12 @@ export const CONTENT_MAP = [
                                     "sv": "Svaret blir positivt",
                                     "en": "Answer is positive"
                                 }
-                            },
-                            {
-                                "key": "div_diff_sign",
-                                "name": {
-                                    "sv": "Division: Olika tecken",
-                                    "en": "Division: Different signs"
-                                },
-                                "desc": {
-                                    "sv": "Svaret blir negativt",
-                                    "en": "Answer is negative"
-                                }
-                            },
-                            {
-                                "key": "div_check_logic",
-                                "name": {
-                                    "sv": "Division: Kontroll",
-                                    "en": "Division: Checking"
-                                },
-                                "desc": {
-                                    "sv": "Använd multiplikation",
-                                    "en": "Use multiplication"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$\\frac{-11  +  (-5)  \\cdot  (-1)}{-6}$$",
+                        "ex": "$$\\frac{-22  +  2  \\cdot  5}{-4}$$",
                         "desc": {
                             "sv": "Prioritering: Bråk & Mult",
                             "en": "Order: Fractions & Mult"
@@ -2122,17 +1488,6 @@ export const CONTENT_MAP = [
                                     "sv": "Räkna ut täljaren först (inkluderar multiplikation)",
                                     "en": "Calculate numerator first (includes multiplication)"
                                 }
-                            },
-                            {
-                                "key": "neg_order_frac_paren",
-                                "name": {
-                                    "sv": "Prioritering: Bråk & Parentes",
-                                    "en": "Order: Fractions & Parentheses"
-                                },
-                                "desc": {
-                                    "sv": "Räkna ut parentesen i täljaren först",
-                                    "en": "Calculate parentheses in numerator first"
-                                }
                             }
                         ]
                     }
@@ -2151,7 +1506,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Du har 20 kulor. Hur många kulor motsvarar 1/10?",
+                        "ex": "Du har 12 kulor. Hur många kulor motsvarar 1/3?",
                         "desc": {
                             "sv": "Bild: Hitta helheten",
                             "en": "Visual: Find whole"
@@ -2175,23 +1530,12 @@ export const CONTENT_MAP = [
                                     "sv": "Givet del, sök helhet",
                                     "en": "Given part, seek whole"
                                 }
-                            },
-                            {
-                                "key": "visual_calc",
-                                "name": {
-                                    "sv": "Bild: Beräkna andel",
-                                    "en": "Visual: Calculate share"
-                                },
-                                "desc": {
-                                    "sv": "Färgad del av total",
-                                    "en": "Colored part of total"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 2,
-                        "ex": "Om en 1/10 av ett okänt tal är 49, vad är då hela talet totalt?",
+                        "ex": "Om en 1/4 av ett okänt tal är 35, vad är då hela talet totalt?",
                         "desc": {
                             "sv": "Hitta helheten",
                             "en": "Find the whole"
@@ -2215,58 +1559,25 @@ export const CONTENT_MAP = [
                                     "sv": "1/n är x, vad är allt?",
                                     "en": "1/n is x, what is total?"
                                 }
-                            },
-                            {
-                                "key": "part_compare",
-                                "name": {
-                                    "sv": "Jämför andelar",
-                                    "en": "Compare shares"
-                                },
-                                "desc": {
-                                    "sv": "Vilken del är störst?",
-                                    "en": "Which part is largest?"
-                                }
-                            },
-                            {
-                                "key": "part_calc",
-                                "name": {
-                                    "sv": "Beräkna del av antal",
-                                    "en": "Calculate part of count"
-                                },
-                                "desc": {
-                                    "sv": "1/n av x",
-                                    "en": "1/n of x"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "Mellan vilka två hela siffror ligger bråket $\\frac{15}{4}$?",
+                        "ex": "$$\\frac{16}{6}$$",
                         "desc": {
-                            "sv": "Storleksbedömning",
-                            "en": "Size assessment"
+                            "sv": "Blandad form: Pussel",
+                            "en": "Mixed form: Puzzle"
                         },
                         "student_desc": {
                             "sv": "Blandad & Bråkform",
                             "en": "Mixed & Improper"
                         },
                         "teacher_desc": {
-                            "sv": "Större/Mindre än heltal",
-                            "en": "Greater/Smaller than integer"
+                            "sv": "Hitta saknad täljare/nämnare",
+                            "en": "Find missing numerator/denominator"
                         },
                         "variations": [
-                            {
-                                "key": "mixed_bounds",
-                                "name": {
-                                    "sv": "Storleksbedömning",
-                                    "en": "Size assessment"
-                                },
-                                "desc": {
-                                    "sv": "Större/Mindre än heltal",
-                                    "en": "Greater/Smaller than integer"
-                                }
-                            },
                             {
                                 "key": "mixed_missing",
                                 "name": {
@@ -2277,34 +1588,12 @@ export const CONTENT_MAP = [
                                     "sv": "Hitta saknad täljare/nämnare",
                                     "en": "Find missing numerator/denominator"
                                 }
-                            },
-                            {
-                                "key": "mixed_convert_imp",
-                                "name": {
-                                    "sv": "Till bråkform",
-                                    "en": "To improper fraction"
-                                },
-                                "desc": {
-                                    "sv": "Blandad -> Bråk",
-                                    "en": "Mixed -> Improper"
-                                }
-                            },
-                            {
-                                "key": "mixed_convert_mix",
-                                "name": {
-                                    "sv": "Till blandad form",
-                                    "en": "To mixed form"
-                                },
-                                "desc": {
-                                    "sv": "Bråk -> Blandad",
-                                    "en": "Improper -> Mixed"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\frac{2}{9} = \\frac{?}{36}$$",
+                        "ex": "$$\\frac{3}{7} = \\frac{?}{21}$$",
                         "desc": {
                             "sv": "Likvärdiga bråk",
                             "en": "Equivalent fractions"
@@ -2328,47 +1617,25 @@ export const CONTENT_MAP = [
                                     "sv": "Förlängning/Förkortning",
                                     "en": "Extension/Simplification"
                                 }
-                            },
-                            {
-                                "key": "simplify_calc",
-                                "name": {
-                                    "sv": "Förkorta bråk",
-                                    "en": "Simplify fraction"
-                                },
-                                "desc": {
-                                    "sv": "Enklaste form",
-                                    "en": "Simplest form"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$\\frac{2}{5} \\quad \\bigcirc \\quad 0,45$$",
+                        "ex": "$$\\frac{4}{5}$$",
                         "desc": {
-                            "sv": "Jämför bråk/decimal",
-                            "en": "Compare fraction/decimal"
+                            "sv": "Bråk till decimal",
+                            "en": "Fraction to decimal"
                         },
                         "student_desc": {
                             "sv": "Bråk & Decimaltal",
                             "en": "Fractions & Decimals"
                         },
                         "teacher_desc": {
-                            "sv": "Större, mindre, lika",
-                            "en": "Greater, smaller, equal"
+                            "sv": "Ex: 1/4 = 0,25",
+                            "en": "Ex: 1/4 = 0.25"
                         },
                         "variations": [
-                            {
-                                "key": "decimal_inequality",
-                                "name": {
-                                    "sv": "Jämför bråk/decimal",
-                                    "en": "Compare fraction/decimal"
-                                },
-                                "desc": {
-                                    "sv": "Större, mindre, lika",
-                                    "en": "Greater, smaller, equal"
-                                }
-                            },
                             {
                                 "key": "decimal_to_dec",
                                 "name": {
@@ -2378,39 +1645,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Ex: 1/4 = 0,25",
                                     "en": "Ex: 1/4 = 0.25"
-                                }
-                            },
-                            {
-                                "key": "decimal_to_frac",
-                                "name": {
-                                    "sv": "Decimal till bråk",
-                                    "en": "Decimal to fraction"
-                                },
-                                "desc": {
-                                    "sv": "Ex: 0,5 = 1/2",
-                                    "en": "Ex: 0.5 = 1/2"
-                                }
-                            },
-                            {
-                                "key": "equivalence_basic_frac",
-                                "name": {
-                                    "sv": "Basfakta: Bråk till %",
-                                    "en": "Basic Facts: Fraction to %"
-                                },
-                                "desc": {
-                                    "sv": "Ex: 1/4 = 25%",
-                                    "en": "Ex: 1/4 = 25%"
-                                }
-                            },
-                            {
-                                "key": "equivalence_basic_dec",
-                                "name": {
-                                    "sv": "Basfakta: Decimal till %",
-                                    "en": "Basic Facts: Decimal to %"
-                                },
-                                "desc": {
-                                    "sv": "Ex: 0,2 = 20%",
-                                    "en": "Ex: 0.2 = 20%"
                                 }
                             }
                         ]
@@ -2430,7 +1664,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$\\frac{8}{10} + \\frac{x}{10} = \\frac{9}{10}$$",
+                        "ex": "$$\\frac{3}{5} + \\frac{x}{5} = \\frac{4}{5}$$",
                         "desc": {
                             "sv": "Addition: Pussel",
                             "en": "Addition: Puzzle"
@@ -2454,58 +1688,25 @@ export const CONTENT_MAP = [
                                     "sv": "Hitta saknad term",
                                     "en": "Find missing term"
                                 }
-                            },
-                            {
-                                "key": "add_calc",
-                                "name": {
-                                    "sv": "Bråkaddition: Lika nämnare",
-                                    "en": "Fraction Addition: Same Denominator"
-                                },
-                                "desc": {
-                                    "sv": "Addera bråk med gemensam nämnare och svara i enklaste form",
-                                    "en": "Add fractions with a common denominator and simplify the answer"
-                                }
-                            },
-                            {
-                                "key": "sub_calc",
-                                "name": {
-                                    "sv": "Bråksubtraktion: Lika nämnare",
-                                    "en": "Fraction Subtraction: Same Denominator"
-                                },
-                                "desc": {
-                                    "sv": "Subtrahera bråk med gemensam nämnare och svara i enklaste form",
-                                    "en": "Subtract fractions with a common denominator and simplify the answer"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 2,
-                        "ex": "Hitta den minsta gemensamma nämnaren (MGN) för 3 och 5.",
+                        "ex": "$$\\frac{3}{8} + \\frac{3}{6}$$",
                         "desc": {
-                            "sv": "Hitta MGN",
-                            "en": "Find LCD"
+                            "sv": "Bråkaddition: Olika nämnare",
+                            "en": "Fraction Addition: Different Denominators"
                         },
                         "student_desc": {
                             "sv": "Addition & Subtraktion (Olika)",
                             "en": "Add & Sub (Diff Denom)"
                         },
                         "teacher_desc": {
-                            "sv": "Minsta gemensamma nämnare",
-                            "en": "Lowest common denominator"
+                            "sv": "Hitta MGN för att addera bråk med olika nämnare",
+                            "en": "Find the LCD to add fractions with different denominators"
                         },
                         "variations": [
-                            {
-                                "key": "lcd_find",
-                                "name": {
-                                    "sv": "Hitta MGN",
-                                    "en": "Find LCD"
-                                },
-                                "desc": {
-                                    "sv": "Minsta gemensamma nämnare",
-                                    "en": "Lowest common denominator"
-                                }
-                            },
                             {
                                 "key": "add_diff_denom",
                                 "name": {
@@ -2516,23 +1717,12 @@ export const CONTENT_MAP = [
                                     "sv": "Hitta MGN för att addera bråk med olika nämnare",
                                     "en": "Find the LCD to add fractions with different denominators"
                                 }
-                            },
-                            {
-                                "key": "sub_diff_denom",
-                                "name": {
-                                    "sv": "Bråksubtraktion: Olika nämnare",
-                                    "en": "Fraction Subtraction: Different Denominators"
-                                },
-                                "desc": {
-                                    "sv": "Hitta MGN för att subtrahera bråk med olika nämnare",
-                                    "en": "Find the LCD to subtract fractions with different denominators"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$4\\frac{1}{4} + 1\\frac{1}{4}$$",
+                        "ex": "$$3\\frac{1}{2} + 2\\frac{1}{5}$$",
                         "desc": {
                             "sv": "Uppskatta summa",
                             "en": "Estimate Sum"
@@ -2556,56 +1746,12 @@ export const CONTENT_MAP = [
                                     "sv": "Uppskatta värdet av blandade bråk",
                                     "en": "Estimate the value of mixed fractions"
                                 }
-                            },
-                            {
-                                "key": "mixed_add_same",
-                                "name": {
-                                    "sv": "Addition: Blandad (Lika nämnare)",
-                                    "en": "Addition: Mixed (Same denom)"
-                                },
-                                "desc": {
-                                    "sv": "Addera blandade bråk med samma nämnare",
-                                    "en": "Add mixed fractions with same denominator"
-                                }
-                            },
-                            {
-                                "key": "mixed_sub_same",
-                                "name": {
-                                    "sv": "Subtraktion: Blandad (Lika nämnare)",
-                                    "en": "Subtraction: Mixed (Same denom)"
-                                },
-                                "desc": {
-                                    "sv": "Subtrahera blandade bråk med samma nämnare",
-                                    "en": "Subtract mixed fractions with same denominator"
-                                }
-                            },
-                            {
-                                "key": "mixed_add_diff",
-                                "name": {
-                                    "sv": "Addition: Blandad (Olika)",
-                                    "en": "Addition: Mixed Form (Diff denom)"
-                                },
-                                "desc": {
-                                    "sv": "Addera bråk i blandad form",
-                                    "en": "Add fractions in mixed form"
-                                }
-                            },
-                            {
-                                "key": "mixed_sub_diff",
-                                "name": {
-                                    "sv": "Subtraktion: Blandad (Olika)",
-                                    "en": "Subtraction: Mixed Form (Diff denom)"
-                                },
-                                "desc": {
-                                    "sv": "Subtrahera bråk i blandad form",
-                                    "en": "Subtract fractions in mixed form"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\frac{8}{3} \\cdot \\frac{1}{3}$$",
+                        "ex": "$$\\frac{6}{7} \\cdot \\frac{6}{10}$$",
                         "desc": {
                             "sv": "Multiplikation: Skalning",
                             "en": "Mult: Scaling"
@@ -2629,34 +1775,12 @@ export const CONTENT_MAP = [
                                     "sv": "Större eller mindre?",
                                     "en": "Larger or smaller?"
                                 }
-                            },
-                            {
-                                "key": "mult_area",
-                                "name": {
-                                    "sv": "Areaberäkning (Bråk)",
-                                    "en": "Area Calculation (Fractions)"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna area med bråk",
-                                    "en": "Calculate area using fractions"
-                                }
-                            },
-                            {
-                                "key": "mult_calc",
-                                "name": {
-                                    "sv": "Bråkmultiplikation",
-                                    "en": "Fraction Multiplication"
-                                },
-                                "desc": {
-                                    "sv": "Multiplicera täljare för sig och nämnare för sig",
-                                    "en": "Multiply numerators and denominators separately"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$\\frac{4}{12} \\div \\frac{1}{10}$$",
+                        "ex": "$$\\frac{5}{7} \\div \\frac{5}{5}$$",
                         "desc": {
                             "sv": "Division: Koncept",
                             "en": "Division: Concept"
@@ -2680,34 +1804,12 @@ export const CONTENT_MAP = [
                                     "sv": "Förstå bråkdivision",
                                     "en": "Understand fraction division"
                                 }
-                            },
-                            {
-                                "key": "div_reciprocal",
-                                "name": {
-                                    "sv": "Inverterade tal",
-                                    "en": "Reciprocal numbers"
-                                },
-                                "desc": {
-                                    "sv": "Vänd på bråket",
-                                    "en": "Flip the fraction"
-                                }
-                            },
-                            {
-                                "key": "div_calc",
-                                "name": {
-                                    "sv": "Bråkdivision",
-                                    "en": "Fraction Division"
-                                },
-                                "desc": {
-                                    "sv": "Dividera bråk genom att multiplicera med inverterat",
-                                    "en": "Divide fractions by multiplying by the reciprocal"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$\\frac{3}{5} + \\left(-\\frac{2}{3}\\right)$$",
+                        "ex": "$$\\frac{1}{2} - \\left(-\\frac{3}{4}\\right)$$",
                         "desc": {
                             "sv": "Negativa bråk (+/-)",
                             "en": "Negative Fractions (+/-)"
@@ -2730,17 +1832,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Addera och subtrahera negativa bråk",
                                     "en": "Add and subtract negative fractions"
-                                }
-                            },
-                            {
-                                "key": "neg_frac_mult_div",
-                                "name": {
-                                    "sv": "Negativa bråk (*/÷)",
-                                    "en": "Negative Fractions (*/÷)"
-                                },
-                                "desc": {
-                                    "sv": "Multiplicera och dividera negativa bråk",
-                                    "en": "Multiply and divide negative fractions"
                                 }
                             }
                         ]
@@ -2771,23 +1862,12 @@ export const CONTENT_MAP = [
                                     "sv": "Bråk med flera räknesätt",
                                     "en": "Fractions with multiple operations"
                                 }
-                            },
-                            {
-                                "key": "frac_order_paren",
-                                "name": {
-                                    "sv": "Prio: Parenteser",
-                                    "en": "Order: Parentheses"
-                                },
-                                "desc": {
-                                    "sv": "Bråk med parenteser",
-                                    "en": "Fractions with parentheses"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 8,
-                        "ex": "$$\\left(-\\frac{1}{3}\\right)^{2} - \\frac{1}{6}$$",
+                        "ex": "$$\\left(-\\frac{1}{2}\\right)^{3} - \\frac{3}{8}$$",
                         "desc": {
                             "sv": "Potenser av negativa bråk",
                             "en": "Powers of negative fractions"
@@ -2810,28 +1890,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Teckenregler för bråk i kvadrat/kubik",
                                     "en": "Sign rules for squared/cubed fractions"
-                                }
-                            },
-                            {
-                                "key": "frac_square_result",
-                                "name": {
-                                    "sv": "Förenkla & Kvadrera",
-                                    "en": "Simplify & Square"
-                                },
-                                "desc": {
-                                    "sv": "Räkna ut parentesen, kvadrera sedan resultatet",
-                                    "en": "Solve parentheses, then square result"
-                                }
-                            },
-                            {
-                                "key": "frac_complex_fraction",
-                                "name": {
-                                    "sv": "Komplexa bråk (Division)",
-                                    "en": "Complex Fractions (Division)"
-                                },
-                                "desc": {
-                                    "sv": "Förenkla täljaren och sen dividera",
-                                    "en": "Simplify numerator then divide"
                                 }
                             }
                         ]
@@ -2875,45 +1933,12 @@ export const CONTENT_MAP = [
                                     "sv": "Tolka figurer",
                                     "en": "Interpret figures"
                                 }
-                            },
-                            {
-                                "key": "equivalence",
-                                "name": {
-                                    "sv": "Decimal-Procent",
-                                    "en": "Decimal-Percent"
-                                },
-                                "desc": {
-                                    "sv": "Samband",
-                                    "en": "Relationships"
-                                }
-                            },
-                            {
-                                "key": "equivalence_basic_frac",
-                                "name": {
-                                    "sv": "Basfakta: Bråk till %",
-                                    "en": "Basic Facts: Fraction to %"
-                                },
-                                "desc": {
-                                    "sv": "Ex: 1/4 = 25%",
-                                    "en": "Ex: 1/4 = 25%"
-                                }
-                            },
-                            {
-                                "key": "equivalence_basic_dec",
-                                "name": {
-                                    "sv": "Basfakta: Decimal till %",
-                                    "en": "Basic Facts: Decimal to %"
-                                },
-                                "desc": {
-                                    "sv": "Ex: 0,2 = 20%",
-                                    "en": "Ex: 0.2 = 20%"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$20\\% \\cdot 50$$",
+                        "ex": "$$25\\% \\cdot 1600$$",
                         "desc": {
                             "sv": "Huvudräkning (Bas)",
                             "en": "Mental Math (Basic)"
@@ -2937,34 +1962,12 @@ export const CONTENT_MAP = [
                                     "sv": "10%, 25%, 50%",
                                     "en": "10%, 25%, 50%"
                                 }
-                            },
-                            {
-                                "key": "benchmark_inverse",
-                                "name": {
-                                    "sv": "Om x är.. Vad blir 100%",
-                                    "en": "If x is ... What is 100%"
-                                },
-                                "desc": {
-                                    "sv": "Om 10% är 5, vad är allt?",
-                                    "en": "If 10% is 5, what is total?"
-                                }
-                            },
-                            {
-                                "key": "benchmark_commutative",
-                                "name": {
-                                    "sv": "Kommutativa lagen",
-                                    "en": "Commutative property"
-                                },
-                                "desc": {
-                                    "sv": "A% av B = B% av A",
-                                    "en": "A% of B = B% of A"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$\\frac{90}{150}$$",
+                        "ex": "$$\\frac{16}{40}$$",
                         "desc": {
                             "sv": "Andelen (Grund)",
                             "en": "Find Percent (Basic)"
@@ -2988,45 +1991,12 @@ export const CONTENT_MAP = [
                                     "sv": "Hur många procent?",
                                     "en": "How many percent?"
                                 }
-                            },
-                            {
-                                "key": "find_percent_test",
-                                "name": {
-                                    "sv": "Andel: Provresultat",
-                                    "en": "Rate: Test scores"
-                                },
-                                "desc": {
-                                    "sv": "Delen / Det hela",
-                                    "en": "Part / Whole"
-                                }
-                            },
-                            {
-                                "key": "find_percent_discount",
-                                "name": {
-                                    "sv": "Andel: Rabatter",
-                                    "en": "Rate: Discounts"
-                                },
-                                "desc": {
-                                    "sv": "Prissänkning i procent",
-                                    "en": "Price drop in percent"
-                                }
-                            },
-                            {
-                                "key": "find_percent_group",
-                                "name": {
-                                    "sv": "Andelen (Grupp)",
-                                    "en": "Percent: Group"
-                                },
-                                "desc": {
-                                    "sv": "Andel av en grupp",
-                                    "en": "Share of a group"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$40\\% \\cdot 840$$",
+                        "ex": "$$40\\% \\cdot 30$$",
                         "desc": {
                             "sv": "Sammansatta procent",
                             "en": "Composite percentages"
@@ -3050,45 +2020,12 @@ export const CONTENT_MAP = [
                                     "sv": "20%, 30%, 70%",
                                     "en": "20%, 30%, 70%"
                                 }
-                            },
-                            {
-                                "key": "decomposition",
-                                "name": {
-                                    "sv": "Beräkna (5%, 15%)",
-                                    "en": "Calculate (5%, 15%)"
-                                },
-                                "desc": {
-                                    "sv": "Bygg med 10% och 5%",
-                                    "en": "Build using 10% and 5%"
-                                }
-                            },
-                            {
-                                "key": "estimation",
-                                "name": {
-                                    "sv": "Uppskatta procent",
-                                    "en": "Estimate percent"
-                                },
-                                "desc": {
-                                    "sv": "Ungefärlig beräkning",
-                                    "en": "Approximate calculation"
-                                }
-                            },
-                            {
-                                "key": "calc_any_percent",
-                                "name": {
-                                    "sv": "Beräkna delen",
-                                    "en": "Calculate part of a whole"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna delen med procent och det hela",
-                                    "en": "Calculate a part using percent and the total"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$\\frac{25}{25}$$",
+                        "ex": "$$\\frac{6}{40}$$",
                         "desc": {
                             "sv": "Beräkna förändring",
                             "en": "Calculate change"
@@ -3112,34 +2049,12 @@ export const CONTENT_MAP = [
                                     "sv": "Skillnad / Ursprungsvärde",
                                     "en": "Difference / Original"
                                 }
-                            },
-                            {
-                                "key": "change_multiplier",
-                                "name": {
-                                    "sv": "Förändringsfaktor",
-                                    "en": "Change Factor"
-                                },
-                                "desc": {
-                                    "sv": "1,0 +/- %",
-                                    "en": "1.0 +/- %"
-                                }
-                            },
-                            {
-                                "key": "change_trap",
-                                "name": {
-                                    "sv": "Hitta felet: Förändring",
-                                    "en": "Find error: Change"
-                                },
-                                "desc": {
-                                    "sv": "Vanliga misstag vid %-förändring",
-                                    "en": "Common mistakes in % change"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$1\\% = 8$$",
+                        "ex": "$$4\\% = 21$$",
                         "desc": {
                             "sv": "Hitta det hela",
                             "en": "Find the whole"
@@ -3163,17 +2078,6 @@ export const CONTENT_MAP = [
                                     "sv": "Givet delen, hitta 100%",
                                     "en": "Given the part, find 100%"
                                 }
-                            },
-                            {
-                                "key": "reverse_scaling",
-                                "name": {
-                                    "sv": "Det hela (Skalning)",
-                                    "en": "Find whole (Scaling)"
-                                },
-                                "desc": {
-                                    "sv": "Skala upp till 100%",
-                                    "en": "Scale up to 100%"
-                                }
                             }
                         ]
                     }
@@ -3192,7 +2096,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Ett värde ökar med 89%. Vilken förändringsfaktor motsvarar denna ökning?",
+                        "ex": "Ett värde ökar med 85%. Vilken förändringsfaktor motsvarar denna ökning?",
                         "desc": {
                             "sv": "Ökning till Faktor",
                             "en": "Increase to Factor"
@@ -3216,45 +2120,12 @@ export const CONTENT_MAP = [
                                     "sv": "+20% -> 1,20",
                                     "en": "+20% -> 1.20"
                                 }
-                            },
-                            {
-                                "key": "pct_to_factor_dec",
-                                "name": {
-                                    "sv": "Minskning till Faktor",
-                                    "en": "Decrease to Factor"
-                                },
-                                "desc": {
-                                    "sv": "-20% -> 0,80",
-                                    "en": "-20% -> 0.80"
-                                }
-                            },
-                            {
-                                "key": "factor_to_pct_inc",
-                                "name": {
-                                    "sv": "Faktor till Ökning",
-                                    "en": "Factor to Increase"
-                                },
-                                "desc": {
-                                    "sv": "1,20 -> +20%",
-                                    "en": "1.20 -> +20%"
-                                }
-                            },
-                            {
-                                "key": "factor_to_pct_dec",
-                                "name": {
-                                    "sv": "Faktor till Minskning",
-                                    "en": "Factor to Decrease"
-                                },
-                                "desc": {
-                                    "sv": "0,80 -> -20%",
-                                    "en": "0.80 -> -20%"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 2,
-                        "ex": "Ett värde på 1550 kr ska höjas med 82%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
+                        "ex": "Ett värde på 950 kr ska höjas med 6%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
                         "desc": {
                             "sv": "Beräkna nytt (Ökning)",
                             "en": "Calc new (Increase)"
@@ -3278,23 +2149,12 @@ export const CONTENT_MAP = [
                                     "sv": "Startvärde · Ökningsfaktor",
                                     "en": "Initial value · Growth factor"
                                 }
-                            },
-                            {
-                                "key": "apply_factor_dec",
-                                "name": {
-                                    "sv": "Beräkna nytt (Minskning)",
-                                    "en": "Calc new (Decrease)"
-                                },
-                                "desc": {
-                                    "sv": "Startvärde · Minskningsfaktor",
-                                    "en": "Initial value · Decay factor"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "Efter en höjning med 50% är det nya priset 600 kr. Vad var priset från början?",
+                        "ex": "Efter en höjning med 15% är det nya priset 368 kr. Vad var priset från början?",
                         "desc": {
                             "sv": "Hitta gamla (Ökning)",
                             "en": "Find old (Increase)"
@@ -3318,23 +2178,12 @@ export const CONTENT_MAP = [
                                     "sv": "Nytt värde / Ökningsfaktor",
                                     "en": "New value / Growth factor"
                                 }
-                            },
-                            {
-                                "key": "find_original_dec",
-                                "name": {
-                                    "sv": "Hitta gamla (Minskning)",
-                                    "en": "Find old (Decrease)"
-                                },
-                                "desc": {
-                                    "sv": "Nytt värde / Minskningsfaktor",
-                                    "en": "New value / Decay factor"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 4,
-                        "ex": "Ett pris ändras i två steg: först en ökning med 40%, därefter en minskning med 25%. Beräkna den totala förändringsfaktorn.",
+                        "ex": "Ett pris ändras i två steg: först en ökning med 4%, därefter en minskning med 12%. Beräkna den totala förändringsfaktorn.",
                         "desc": {
                             "sv": "Total faktor",
                             "en": "Total factor"
@@ -3363,7 +2212,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "Ett pris höjs först med 5% och sänks därefter med 40%. Med hur många procent har priset förändrats totalt?",
+                        "ex": "Ett pris sänks först med 40% och sänks därefter med 5%. Med hur många procent har priset förändrats totalt?",
                         "desc": {
                             "sv": "Total förändring (%)",
                             "en": "Total change (%)"
@@ -3387,17 +2236,6 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna den totala procentuella ändringen",
                                     "en": "Calculate total percentage change"
                                 }
-                            },
-                            {
-                                "key": "repeated_change_years",
-                                "name": {
-                                    "sv": "Upprepad förändring (År)",
-                                    "en": "Repeated change (Years)"
-                                },
-                                "desc": {
-                                    "sv": "Värdeändring över flera perioder (C · a^t)",
-                                    "en": "Change over multiple periods (C · a^t)"
-                                }
                             }
                         ]
                     }
@@ -3416,7 +2254,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$161^{0}$$",
+                        "ex": "$$287^{0}$$",
                         "desc": {
                             "sv": "Noll-regeln",
                             "en": "Zero rule"
@@ -3440,23 +2278,12 @@ export const CONTENT_MAP = [
                                     "sv": "x^0 = 1",
                                     "en": "x^0 = 1"
                                 }
-                            },
-                            {
-                                "key": "power_of_one",
-                                "name": {
-                                    "sv": "Upphöjt till 1",
-                                    "en": "Power of one"
-                                },
-                                "desc": {
-                                    "sv": "x^1 = x",
-                                    "en": "x^1 = x"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$10^{4}$$",
+                        "ex": "$$10^{5}$$",
                         "desc": {
                             "sv": "Tiopotenser (Pos)",
                             "en": "Powers of ten (Pos)"
@@ -3480,34 +2307,12 @@ export const CONTENT_MAP = [
                                     "sv": "Skriv en positiv tiopotens som ett heltal",
                                     "en": "Write a positive power of ten as an integer"
                                 }
-                            },
-                            {
-                                "key": "ten_negative_exponent",
-                                "name": {
-                                    "sv": "Tiopotenser (Neg)",
-                                    "en": "Powers of ten (Neg)"
-                                },
-                                "desc": {
-                                    "sv": "Omvandla en negativ tiopotens till ett decimaltal",
-                                    "en": "Convert a negative power of ten to a decimal"
-                                }
-                            },
-                            {
-                                "key": "ten_inverse_counting",
-                                "name": {
-                                    "sv": "Räkna nollor",
-                                    "en": "Count zeros"
-                                },
-                                "desc": {
-                                    "sv": "Skriv ett tal som en tiopotens genom att räkna nollor",
-                                    "en": "Write a number as a power of ten by counting zeros"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "Skriv talet 2 000 i grundpotensform.",
+                        "ex": "Skriv talet 2 400 000 i grundpotensform.",
                         "desc": {
                             "sv": "Till Grundpotensform",
                             "en": "To Scientific Notation"
@@ -3531,34 +2336,12 @@ export const CONTENT_MAP = [
                                     "sv": "Skriv om stora tal i grundpotensform",
                                     "en": "Rewrite large numbers in scientific notation"
                                 }
-                            },
-                            {
-                                "key": "scientific_missing_mantissa",
-                                "name": {
-                                    "sv": "Hitta mantissan",
-                                    "en": "Find mantissa"
-                                },
-                                "desc": {
-                                    "sv": "Bestäm saknat värde a i a * 10^n",
-                                    "en": "Determine missing value a in a * 10^n"
-                                }
-                            },
-                            {
-                                "key": "scientific_missing_exponent",
-                                "name": {
-                                    "sv": "Hitta exponenten",
-                                    "en": "Find exponent"
-                                },
-                                "desc": {
-                                    "sv": "Bestäm n i a * 10^n",
-                                    "en": "Determine n in a * 10^n"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\sqrt{36}$$",
+                        "ex": "$$\\sqrt{49}$$",
                         "desc": {
                             "sv": "Kvadratrötter",
                             "en": "Square roots"
@@ -3582,23 +2365,12 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna det positiva talet som multiplicerat med sig självt blir x",
                                     "en": "Calculate the positive square root of a number"
                                 }
-                            },
-                            {
-                                "key": "root_inverse_algebra",
-                                "name": {
-                                    "sv": "Ekvation x^2",
-                                    "en": "Equation x^2"
-                                },
-                                "desc": {
-                                    "sv": "Lös andragradsekvationer på formen x^2 = a",
-                                    "en": "Solve basic quadratic equations of form x^2 = a"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$x^{9} \\cdot x^{10}$$",
+                        "ex": "$$x^{6} \\cdot x^{8}$$",
                         "desc": {
                             "sv": "Lag: Multiplikation",
                             "en": "Law: Multiplication"
@@ -3622,45 +2394,12 @@ export const CONTENT_MAP = [
                                     "sv": "Addera exponenter",
                                     "en": "Add exponents"
                                 }
-                            },
-                            {
-                                "key": "law_division",
-                                "name": {
-                                    "sv": "Lag: Division",
-                                    "en": "Law: Division"
-                                },
-                                "desc": {
-                                    "sv": "Subtrahera exponenter",
-                                    "en": "Subtract exponents"
-                                }
-                            },
-                            {
-                                "key": "law_addition_trap",
-                                "name": {
-                                    "sv": "Hitta felet: Addition",
-                                    "en": "Find error: Addition"
-                                },
-                                "desc": {
-                                    "sv": "Potenslagar gäller ej addition",
-                                    "en": "Power laws do not apply to addition"
-                                }
-                            },
-                            {
-                                "key": "law_mult_div_combined",
-                                "name": {
-                                    "sv": "Lag: Mult & Div",
-                                    "en": "Law: Mult & Div"
-                                },
-                                "desc": {
-                                    "sv": "Blandade regler",
-                                    "en": "Mixed rules"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$(x^{3})^{3}$$",
+                        "ex": "$$(x^{5})^{3}$$",
                         "desc": {
                             "sv": "Lag: Potens av potens",
                             "en": "Law: Power of power"
@@ -3684,34 +2423,12 @@ export const CONTENT_MAP = [
                                     "sv": "Multiplicera exponenter",
                                     "en": "Multiply exponents"
                                 }
-                            },
-                            {
-                                "key": "law_inverse_algebra",
-                                "name": {
-                                    "sv": "Ekvation: Exponent",
-                                    "en": "Equation: Exponent"
-                                },
-                                "desc": {
-                                    "sv": "Hitta den saknade exponenten",
-                                    "en": "Find the missing exponent"
-                                }
-                            },
-                            {
-                                "key": "law_all_combined",
-                                "name": {
-                                    "sv": "Blandade Lagar",
-                                    "en": "Mixed Laws"
-                                },
-                                "desc": {
-                                    "sv": "Avancerad förenkling",
-                                    "en": "Advanced simplification"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 7,
-                        "ex": "$$2 \\cdot 10^{8} \\cdot 7 \\cdot 10^{-4}$$",
+                        "ex": "$$2 \\cdot 10^{2} \\cdot 6 \\cdot 10^{-5}$$",
                         "desc": {
                             "sv": "Multiplikation (Grundpotens)",
                             "en": "Multiplication (Scientific)"
@@ -3735,17 +2452,6 @@ export const CONTENT_MAP = [
                                     "sv": "Multiplicera två tal i grundpotensform",
                                     "en": "Multiply two numbers in scientific notation"
                                 }
-                            },
-                            {
-                                "key": "scientific_div",
-                                "name": {
-                                    "sv": "Division (Grundpotens)",
-                                    "en": "Division (Scientific)"
-                                },
-                                "desc": {
-                                    "sv": "Dividera två tal i grundpotensform",
-                                    "en": "Divide two numbers in scientific notation"
-                                }
                             }
                         ]
                     }
@@ -3764,7 +2470,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$0,17 \\cdot 10000$$",
+                        "ex": "$$49 \\cdot 10000$$",
                         "desc": {
                             "sv": "Multiplikation: Stora tal",
                             "en": "Multiplication: Large numbers"
@@ -3788,74 +2494,12 @@ export const CONTENT_MAP = [
                                     "sv": "Multiplicera decimaltal med 10, 100, 1000",
                                     "en": "Multiply decimals by 10, 100, 1000"
                                 }
-                            },
-                            {
-                                "key": "big_div_std",
-                                "name": {
-                                    "sv": "Division: Stora tal",
-                                    "en": "Division: Large numbers"
-                                },
-                                "desc": {
-                                    "sv": "Dividera decimaltal med 10, 100, 1000",
-                                    "en": "Divide decimals by 10, 100, 1000"
-                                }
-                            },
-                            {
-                                "key": "big_missing_factor",
-                                "name": {
-                                    "sv": "Hitta 10-faktorn",
-                                    "en": "Find 10-factor"
-                                },
-                                "desc": {
-                                    "sv": "Vad multiplicerades?",
-                                    "en": "What was multiplied?"
-                                }
-                            },
-                            {
-                                "key": "power_discovery",
-                                "name": {
-                                    "sv": "Potensform",
-                                    "en": "Power form"
-                                },
-                                "desc": {
-                                    "sv": "Skriv som 10^n",
-                                    "en": "Write as 10^n"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "lvl": 2,
-                        "ex": "Att multiplicera med 0,01 ger exakt samma svar som att dividera med...",
-                        "desc": {
-                            "sv": "Inverser (0,1/0,01)",
-                            "en": "Reciprocals (0.1/0.01)"
-                        },
-                        "student_desc": {
-                            "sv": "Begreppsförståelse",
-                            "en": "Conceptual Understanding"
-                        },
-                        "teacher_desc": {
-                            "sv": "0,1 = 1/10",
-                            "en": "0.1 = 1/10"
-                        },
-                        "variations": [
-                            {
-                                "key": "reciprocal_equivalence",
-                                "name": {
-                                    "sv": "Inverser (0,1/0,01)",
-                                    "en": "Reciprocals (0.1/0.01)"
-                                },
-                                "desc": {
-                                    "sv": "0,1 = 1/10",
-                                    "en": "0.1 = 1/10"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$0,38 \\cdot 0,1$$",
+                        "ex": "$$2 \\cdot 0,1$$",
                         "desc": {
                             "sv": "Multiplikation: Små tal",
                             "en": "Multiplication: Small numbers"
@@ -3878,28 +2522,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Multiplicera med decimala tiopotenser (0,1, 0,01)",
                                     "en": "Multiply by decimal powers of ten (0.1, 0.01)"
-                                }
-                            },
-                            {
-                                "key": "decimal_div_std",
-                                "name": {
-                                    "sv": "Division: Små tal",
-                                    "en": "Division: Small numbers"
-                                },
-                                "desc": {
-                                    "sv": "Dividera med decimala tiopotenser (0,1, 0,01)",
-                                    "en": "Divide by decimal powers of ten (0.1, 0.01)"
-                                }
-                            },
-                            {
-                                "key": "decimal_logic_trap",
-                                "name": {
-                                    "sv": "Logisk fälla (Decimaler)",
-                                    "en": "Logical trap (Decimals)"
-                                },
-                                "desc": {
-                                    "sv": "Analysera decimalmultiplikationens effekt",
-                                    "en": "Analyze decimal multiplication effects"
                                 }
                             }
                         ]
@@ -3930,7 +2552,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$79,8 \\text{ mm} = \\text{\\_\\_\\_} \\text{ m}$$",
+                        "ex": "$$266 \\text{ m} = \\text{\\_\\_\\_} \\text{ cm}$$",
                         "desc": {
                             "sv": "Längd: Grundläggande",
                             "en": "Length: Basic"
@@ -3954,34 +2576,12 @@ export const CONTENT_MAP = [
                                     "sv": "m, dm, cm, mm",
                                     "en": "m, dm, cm, mm"
                                 }
-                            },
-                            {
-                                "key": "len_decimals",
-                                "name": {
-                                    "sv": "Längd: Decimaler",
-                                    "en": "Length: Decimals"
-                                },
-                                "desc": {
-                                    "sv": "Omvandla med decimaltal",
-                                    "en": "Convert with decimals"
-                                }
-                            },
-                            {
-                                "key": "len_km_m",
-                                "name": {
-                                    "sv": "Längd: km till m",
-                                    "en": "Length: km to m"
-                                },
-                                "desc": {
-                                    "sv": "Stora avstånd",
-                                    "en": "Large distances"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$176 \\text{ hg} = \\text{\\_\\_\\_} \\text{ g}$$",
+                        "ex": "$$108 \\text{ hg} = \\text{\\_\\_\\_} \\text{ g}$$",
                         "desc": {
                             "sv": "Vikt: Grundläggande",
                             "en": "Weight: Basic"
@@ -4005,34 +2605,12 @@ export const CONTENT_MAP = [
                                     "sv": "kg, hg, g",
                                     "en": "kg, hg, g"
                                 }
-                            },
-                            {
-                                "key": "weight_decimals",
-                                "name": {
-                                    "sv": "Vikt: Decimaler",
-                                    "en": "Weight: Decimals"
-                                },
-                                "desc": {
-                                    "sv": "Omvandla med decimaltal",
-                                    "en": "Convert with decimals"
-                                }
-                            },
-                            {
-                                "key": "weight_ton_kg",
-                                "name": {
-                                    "sv": "Vikt: Ton till kg",
-                                    "en": "Weight: Ton to kg"
-                                },
-                                "desc": {
-                                    "sv": "Stora vikter",
-                                    "en": "Large weights"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$15,5 \\text{ cl} = \\text{\\_\\_\\_} \\text{ l}$$",
+                        "ex": "$$195 \\text{ cl} = \\text{\\_\\_\\_} \\text{ l}$$",
                         "desc": {
                             "sv": "Volym: Grundläggande",
                             "en": "Volume: Basic"
@@ -4055,17 +2633,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "l, dl, cl, ml",
                                     "en": "l, dl, cl, ml"
-                                }
-                            },
-                            {
-                                "key": "vol_decimals",
-                                "name": {
-                                    "sv": "Volym: Decimaler",
-                                    "en": "Volume: Decimals"
-                                },
-                                "desc": {
-                                    "sv": "Omvandla med decimaltal",
-                                    "en": "Convert with decimals"
                                 }
                             }
                         ]
@@ -4109,39 +2676,6 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna omkretsen av en kvadrat utifrån en känd sida",
                                     "en": "Calculate the perimeter of a square from a known side length"
                                 }
-                            },
-                            {
-                                "key": "perimeter_rect",
-                                "name": {
-                                    "sv": "Omkrets: Rektangel",
-                                    "en": "Perimeter: Rectangle"
-                                },
-                                "desc": {
-                                    "sv": "2b + 2h",
-                                    "en": "2w + 2h"
-                                }
-                            },
-                            {
-                                "key": "perimeter_parallel",
-                                "name": {
-                                    "sv": "Omkrets: Parallellogram",
-                                    "en": "Perimeter: Parallelogram"
-                                },
-                                "desc": {
-                                    "sv": "Samma som rektangel",
-                                    "en": "Same as rectangle"
-                                }
-                            },
-                            {
-                                "key": "perimeter_inverse",
-                                "name": {
-                                    "sv": "Omkrets: Omvänd rektangel",
-                                    "en": "Perimeter: Inverse Rectangle"
-                                },
-                                "desc": {
-                                    "sv": "Hitta den saknade höjden i en rektangel utifrån omkrets och bas",
-                                    "en": "Find the missing height of a rectangle using perimeter and base"
-                                }
                             }
                         ]
                     },
@@ -4170,50 +2704,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "s * s",
                                     "en": "s * s"
-                                }
-                            },
-                            {
-                                "key": "area_rect",
-                                "name": {
-                                    "sv": "Area: Rektangel & Parallellogram",
-                                    "en": "Area: Rectangle & Parallelogram"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna ytan på en fyrhörning genom basen gånger höjden",
-                                    "en": "Calculate the surface area of a quadrilateral using base times height"
-                                }
-                            },
-                            {
-                                "key": "area_parallel",
-                                "name": {
-                                    "sv": "Area: Parallellogram",
-                                    "en": "Area: Parallelogram"
-                                },
-                                "desc": {
-                                    "sv": "Vinkelrät höjd",
-                                    "en": "Perpendicular height"
-                                }
-                            },
-                            {
-                                "key": "area_inverse",
-                                "name": {
-                                    "sv": "Area: Omvänd",
-                                    "en": "Area: Inverse"
-                                },
-                                "desc": {
-                                    "sv": "Hitta saknad sida från area",
-                                    "en": "Find missing side from area"
-                                }
-                            },
-                            {
-                                "key": "area_trap",
-                                "name": {
-                                    "sv": "Area: Parallelltrapets",
-                                    "en": "Area: Trapezoid"
-                                },
-                                "desc": {
-                                    "sv": "((a+b)*h)/2",
-                                    "en": "((a+b)*h)/2"
                                 }
                             }
                         ]
@@ -4244,50 +2734,6 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna triangelns area genom basen gånger höjden delat på två",
                                     "en": "Calculate triangle area using base times height divided by two"
                                 }
-                            },
-                            {
-                                "key": "inverse_triangle",
-                                "name": {
-                                    "sv": "Triangel: Omvänd",
-                                    "en": "Triangle: Inverse"
-                                },
-                                "desc": {
-                                    "sv": "Hitta bas/höjd från area",
-                                    "en": "Find base/height from area"
-                                }
-                            },
-                            {
-                                "key": "perimeter_triangle_right",
-                                "name": {
-                                    "sv": "Omkrets: Rätvinklig triangel",
-                                    "en": "Perimeter: Right triangle"
-                                },
-                                "desc": {
-                                    "sv": "Summa av sidor",
-                                    "en": "Sum of sides"
-                                }
-                            },
-                            {
-                                "key": "perimeter_triangle_iso",
-                                "name": {
-                                    "sv": "Omkrets: Likbent triangel",
-                                    "en": "Perimeter: Isosceles triangle"
-                                },
-                                "desc": {
-                                    "sv": "Två lika sidor",
-                                    "en": "Two equal sides"
-                                }
-                            },
-                            {
-                                "key": "perimeter_triangle_scalene",
-                                "name": {
-                                    "sv": "Omkrets: Oliksidig triangel",
-                                    "en": "Perimeter: Scalene triangle"
-                                },
-                                "desc": {
-                                    "sv": "Tre olika sidor",
-                                    "en": "Three different sides"
-                                }
                             }
                         ]
                     },
@@ -4316,28 +2762,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Addera delarna",
                                     "en": "Add the parts"
-                                }
-                            },
-                            {
-                                "key": "combined_l_shape",
-                                "name": {
-                                    "sv": "Area: L-formad figur",
-                                    "en": "Area: L-Shaped Figure"
-                                },
-                                "desc": {
-                                    "sv": "Dela upp en sammansatt vinkelformad yta i två rektanglar",
-                                    "en": "Divide a composite L-shaped area into two separate rectangles"
-                                }
-                            },
-                            {
-                                "key": "combined_house",
-                                "name": {
-                                    "sv": "Sammansatt: Hus",
-                                    "en": "Combined: House"
-                                },
-                                "desc": {
-                                    "sv": "Kvadrat och triangel",
-                                    "en": "Square and triangle"
                                 }
                             }
                         ]
@@ -4368,61 +2792,6 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna cirkelns yta utifrån radie eller diameter",
                                     "en": "Calculate the area of a circle using radius or diameter"
                                 }
-                            },
-                            {
-                                "key": "circle_perimeter",
-                                "name": {
-                                    "sv": "Omkrets: Cirkel",
-                                    "en": "Perimeter: Circle"
-                                },
-                                "desc": {
-                                    "sv": "pi*diameter",
-                                    "en": "pi*diameter"
-                                }
-                            },
-                            {
-                                "key": "semicircle_area",
-                                "name": {
-                                    "sv": "Area: Halvcirkel",
-                                    "en": "Area: Semicircle"
-                                },
-                                "desc": {
-                                    "sv": "Hälften av pi*r^2",
-                                    "en": "Half of pi*r^2"
-                                }
-                            },
-                            {
-                                "key": "semicircle_perimeter",
-                                "name": {
-                                    "sv": "Omkrets: Halvcirkel",
-                                    "en": "Perimeter: Semicircle"
-                                },
-                                "desc": {
-                                    "sv": "Båge + Diameter",
-                                    "en": "Arc + Diameter"
-                                }
-                            },
-                            {
-                                "key": "area_quarter",
-                                "name": {
-                                    "sv": "Area: Kvartscirkel",
-                                    "en": "Area: Quarter circle"
-                                },
-                                "desc": {
-                                    "sv": "Area av 1/4 cirkel",
-                                    "en": "Area of 1/4 circle"
-                                }
-                            },
-                            {
-                                "key": "perimeter_quarter",
-                                "name": {
-                                    "sv": "Omkrets: Kvartscirkel",
-                                    "en": "Perimeter: Quarter circle"
-                                },
-                                "desc": {
-                                    "sv": "Båge + 2 Radier",
-                                    "en": "Arc + 2 Radii"
-                                }
                             }
                         ]
                     },
@@ -4452,39 +2821,6 @@ export const CONTENT_MAP = [
                                     "sv": "Rektangel + Triangel",
                                     "en": "Rectangle + Triangle"
                                 }
-                            },
-                            {
-                                "key": "perimeter_portal",
-                                "name": {
-                                    "sv": "Omkrets: Portal",
-                                    "en": "Perimeter: Portal"
-                                },
-                                "desc": {
-                                    "sv": "Rektangel + Halvcirkel",
-                                    "en": "Rectangle + Semicircle"
-                                }
-                            },
-                            {
-                                "key": "area_house",
-                                "name": {
-                                    "sv": "Area: Sammansatt Hus",
-                                    "en": "Area: Composite House"
-                                },
-                                "desc": {
-                                    "sv": "Avancerad area genom att addera en hussida med ett triangulärt tak",
-                                    "en": "Advanced area by adding a rectangular wall base with a triangular roof"
-                                }
-                            },
-                            {
-                                "key": "area_portal",
-                                "name": {
-                                    "sv": "Area: Portal",
-                                    "en": "Area: Portal"
-                                },
-                                "desc": {
-                                    "sv": "Rektangel + Halvcirkel",
-                                    "en": "Rectangle + Semicircle"
-                                }
                             }
                         ]
                     }
@@ -4501,57 +2837,6 @@ export const CONTENT_MAP = [
                     "en": "Angles"
                 },
                 "levels": [
-                    {
-                        "lvl": 1,
-                        "ex": "Vad kallas denna typ av vinkel?",
-                        "desc": {
-                            "sv": "Vinkeltyper",
-                            "en": "Angle types"
-                        },
-                        "student_desc": {
-                            "sv": "Vinkeltyper",
-                            "en": "Types of Angles"
-                        },
-                        "teacher_desc": {
-                            "sv": "Spetsig, Rät, Trubbig",
-                            "en": "Acute, Right, Obtuse"
-                        },
-                        "variations": [
-                            {
-                                "key": "classification_visual",
-                                "name": {
-                                    "sv": "Vinkeltyper",
-                                    "en": "Angle types"
-                                },
-                                "desc": {
-                                    "sv": "Spetsig, Rät, Trubbig",
-                                    "en": "Acute, Right, Obtuse"
-                                }
-                            },
-                            {
-                                "key": "classification_inverse_numeric",
-                                "name": {
-                                    "sv": "Klassificera via gradtal",
-                                    "en": "Classify by degrees"
-                                },
-                                "desc": {
-                                    "sv": "Bedöm vinkel utifrån tal",
-                                    "en": "Judge angle from number"
-                                }
-                            },
-                            {
-                                "key": "classification_check_acute",
-                                "name": {
-                                    "sv": "Är det spetsig?",
-                                    "en": "Is it acute?"
-                                },
-                                "desc": {
-                                    "sv": "<90 grader",
-                                    "en": "<90 degrees"
-                                }
-                            }
-                        ]
-                    },
                     {
                         "lvl": 2,
                         "ex": "Beräkna x.",
@@ -4577,17 +2862,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Summa 180 eller 90",
                                     "en": "Sum 180 or 90"
-                                }
-                            },
-                            {
-                                "key": "comp_supp_inverse",
-                                "name": {
-                                    "sv": "Hitta saknad grannvinkel",
-                                    "en": "Find missing neighbor"
-                                },
-                                "desc": {
-                                    "sv": "Räkna ut vinkeln",
-                                    "en": "Calculate the angle"
                                 }
                             }
                         ]
@@ -4647,17 +2921,6 @@ export const CONTENT_MAP = [
                                     "sv": "Alltid 180 grader",
                                     "en": "Always 180 degrees"
                                 }
-                            },
-                            {
-                                "key": "triangle_isosceles",
-                                "name": {
-                                    "sv": "Likbent triangel",
-                                    "en": "Isosceles triangle"
-                                },
-                                "desc": {
-                                    "sv": "Basvinklar är lika",
-                                    "en": "Base angles are equal"
-                                }
                             }
                         ]
                     },
@@ -4686,28 +2949,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Formel: (n-2)*180",
                                     "en": "Formula: (n-2)*180"
-                                }
-                            },
-                            {
-                                "key": "quad_missing",
-                                "name": {
-                                    "sv": "Fyrhörning (Saknad)",
-                                    "en": "Quadrilateral (Missing)"
-                                },
-                                "desc": {
-                                    "sv": "Summa 360 grader",
-                                    "en": "Sum 360 degrees"
-                                }
-                            },
-                            {
-                                "key": "polygon_inverse",
-                                "name": {
-                                    "sv": "Månghörning (Saknad)",
-                                    "en": "Polygon (Missing)"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna sista vinkeln",
-                                    "en": "Calculate the last angle"
                                 }
                             }
                         ]
@@ -4756,31 +2997,20 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Vilken sida är hypotenusan i triangeln?",
+                        "ex": "Vad är arean på den markerade kvadraten (?)",
                         "desc": {
-                            "sv": "Identifiera Hypotenusan",
-                            "en": "Identify Hypotenuse"
+                            "sv": "Area: Kvadrat på sidorna",
+                            "en": "Area: Squares on Sides"
                         },
                         "student_desc": {
                             "sv": "Begrepp & Uppställning",
                             "en": "Concept & Setup"
                         },
                         "teacher_desc": {
-                            "sv": "Vilken sida står mittemot den räta vinkeln?",
-                            "en": "Which side is opposite the right angle?"
+                            "sv": "Sambandet A + B = C för kvadrater på sidorna",
+                            "en": "The relation A + B = C for squares on sides"
                         },
                         "variations": [
-                            {
-                                "key": "pyth_identify_hypotenuse",
-                                "name": {
-                                    "sv": "Identifiera Hypotenusan",
-                                    "en": "Identify Hypotenuse"
-                                },
-                                "desc": {
-                                    "sv": "Vilken sida står mittemot den räta vinkeln?",
-                                    "en": "Which side is opposite the right angle?"
-                                }
-                            },
                             {
                                 "key": "pyth_area_proof",
                                 "name": {
@@ -4790,17 +3020,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Sambandet A + B = C för kvadrater på sidorna",
                                     "en": "The relation A + B = C for squares on sides"
-                                }
-                            },
-                            {
-                                "key": "pyth_correct_setup",
-                                "name": {
-                                    "sv": "Rätt Ekvationsuppställning",
-                                    "en": "Correct Equation Setup"
-                                },
-                                "desc": {
-                                    "sv": "Välj rätt formel: a² + b² = c²",
-                                    "en": "Choose correct formula: a² + b² = c²"
                                 }
                             }
                         ]
@@ -4831,28 +3050,6 @@ export const CONTENT_MAP = [
                                     "sv": "Klassiska heltalslösningar (t.ex. 3, 4 -> 5)",
                                     "en": "Pythagorean triples (e.g. 3, 4 -> 5)"
                                 }
-                            },
-                            {
-                                "key": "pyth_hyp_decimal",
-                                "name": {
-                                    "sv": "Beräkna hypotenusa (Avrundat)",
-                                    "en": "Calculate Hypotenuse (Dec)"
-                                },
-                                "desc": {
-                                    "sv": "Dra roten ur och avrunda till en decimal",
-                                    "en": "Take square root and round to 1 decimal"
-                                }
-                            },
-                            {
-                                "key": "pyth_hyp_equation_solve",
-                                "name": {
-                                    "sv": "Lös ut c²",
-                                    "en": "Solve for c²"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna c² innan rotutdragning",
-                                    "en": "Calculate c² before taking the root"
-                                }
                             }
                         ]
                     },
@@ -4882,58 +3079,25 @@ export const CONTENT_MAP = [
                                     "sv": "Subtrahera a² = c² - b²",
                                     "en": "Subtract a² = c² - b²"
                                 }
-                            },
-                            {
-                                "key": "pyth_leg_decimal",
-                                "name": {
-                                    "sv": "Beräkna katet (Avrundat)",
-                                    "en": "Calculate Leg (Dec)"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna saknad katet med avrundning",
-                                    "en": "Calculate missing leg with rounding"
-                                }
-                            },
-                            {
-                                "key": "pyth_leg_trap",
-                                "name": {
-                                    "sv": "Hitta felet: Katet",
-                                    "en": "Find error: Leg"
-                                },
-                                "desc": {
-                                    "sv": "Vanligt misstag: addera istället för subtrahera",
-                                    "en": "Common mistake: adding instead of subtracting"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 4,
-                        "ex": "En triangel har sidorna 12 cm, 16 cm och 19 cm. Är den rätvinklig?",
+                        "ex": "En snickare mäter upp kateterna 6 cm och 8 cm i ett hörn. Hur lång måste diagonalen vara för att vinkeln ska vara exakt 90°?",
                         "desc": {
-                            "sv": "Är triangeln rätvinklig?",
-                            "en": "Is the Triangle Right-Angled?"
+                            "sv": "Snickarmetoden (3-4-5)",
+                            "en": "Carpenter Rule (3-4-5)"
                         },
                         "student_desc": {
                             "sv": "Är den rätvinklig? (Omvänd sats)",
                             "en": "Is it Right-Angled? (Converse)"
                         },
                         "teacher_desc": {
-                            "sv": "Stämmer a² + b² = c²? (Ja / Nej)",
-                            "en": "Does a² + b² = c² hold? (Yes / No)"
+                            "sv": "Praktisk rätvinkelkontroll med multiplar av 3-4-5",
+                            "en": "Practical right-angle check with 3-4-5 multiples"
                         },
                         "variations": [
-                            {
-                                "key": "pyth_converse_check",
-                                "name": {
-                                    "sv": "Är triangeln rätvinklig?",
-                                    "en": "Is the Triangle Right-Angled?"
-                                },
-                                "desc": {
-                                    "sv": "Stämmer a² + b² = c²? (Ja / Nej)",
-                                    "en": "Does a² + b² = c² hold? (Yes / No)"
-                                }
-                            },
                             {
                                 "key": "pyth_carpenter_rule",
                                 "name": {
@@ -4943,17 +3107,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Praktisk rätvinkelkontroll med multiplar av 3-4-5",
                                     "en": "Practical right-angle check with 3-4-5 multiples"
-                                }
-                            },
-                            {
-                                "key": "pyth_converse_which_is_right",
-                                "name": {
-                                    "sv": "Vilken vinkel är 90°?",
-                                    "en": "Which Angle is 90°?"
-                                },
-                                "desc": {
-                                    "sv": "Avgör vilken vinkel som är rät utifrån sidlängderna",
-                                    "en": "Determine which angle is 90° from side lengths"
                                 }
                             }
                         ]
@@ -4984,34 +3137,12 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna sträckan mellan två punkter via dx och dy",
                                     "en": "Calculate distance between points using dx and dy"
                                 }
-                            },
-                            {
-                                "key": "pyth_coord_dist_dec",
-                                "name": {
-                                    "sv": "Avstånd i koordinatsystem (Decimal)",
-                                    "en": "Distance in Grid (Dec)"
-                                },
-                                "desc": {
-                                    "sv": "Avstånd mellan två godtyckliga koordinater",
-                                    "en": "Distance between arbitrary coordinates"
-                                }
-                            },
-                            {
-                                "key": "pyth_coord_find_delta",
-                                "name": {
-                                    "sv": "Skapa kateterna (Δx och Δy)",
-                                    "en": "Find Legs (Δx and Δy)"
-                                },
-                                "desc": {
-                                    "sv": "Bestäm bas och höjd utifrån punkternas koordinater",
-                                    "en": "Determine base and height from coordinates"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 6,
-                        "ex": "En likbent triangel har basen 10 cm och två sidor på 13 cm vardera. Beräkna triangelns area.",
+                        "ex": "En likbent triangel har basen 6 cm och två sidor på 5 cm vardera. Beräkna triangelns area.",
                         "desc": {
                             "sv": "Likbent triangel: Höjd & Area",
                             "en": "Isosceles Triangle: Height & Area"
@@ -5035,28 +3166,6 @@ export const CONTENT_MAP = [
                                     "sv": "Dela basen mitt itu för att hitta höjden och beräkna arean",
                                     "en": "Split base in half to find height and calculate area"
                                 }
-                            },
-                            {
-                                "key": "pyth_rect_diagonal",
-                                "name": {
-                                    "sv": "Rektangelns Diagonal",
-                                    "en": "Rectangle Diagonal"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna diagonalen tvärs över en rektangel",
-                                    "en": "Calculate path across a rectangle"
-                                }
-                            },
-                            {
-                                "key": "pyth_3d_box_diagonal",
-                                "name": {
-                                    "sv": "Rymddiagonal i rätblock",
-                                    "en": "3D Space Diagonal (Cuboid)"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna rymddiagonalen d = √(l² + b² + h²)",
-                                    "en": "Calculate space diagonal d = √(l² + b² + h²)"
-                                }
                             }
                         ]
                     }
@@ -5073,57 +3182,6 @@ export const CONTENT_MAP = [
                     "en": "Similar Shapes"
                 },
                 "levels": [
-                    {
-                        "lvl": 1,
-                        "ex": "Avgör om de två rektanglarna nedan är likformiga (perfekta kopior).",
-                        "desc": {
-                            "sv": "Likformig rektangel",
-                            "en": "Similar rectangle"
-                        },
-                        "student_desc": {
-                            "sv": "Är de likformiga?",
-                            "en": "Are they similar?"
-                        },
-                        "teacher_desc": {
-                            "sv": "Är de likformiga?",
-                            "en": "Are they similar?"
-                        },
-                        "variations": [
-                            {
-                                "key": "sim_rect_check",
-                                "name": {
-                                    "sv": "Likformig rektangel",
-                                    "en": "Similar rectangle"
-                                },
-                                "desc": {
-                                    "sv": "Är de likformiga?",
-                                    "en": "Are they similar?"
-                                }
-                            },
-                            {
-                                "key": "sim_tri_angle_check",
-                                "name": {
-                                    "sv": "Trianglar (Vinklar)",
-                                    "en": "Triangles (Angles)"
-                                },
-                                "desc": {
-                                    "sv": "Kontrollera likformighet via vinklar",
-                                    "en": "Check similarity via angles"
-                                }
-                            },
-                            {
-                                "key": "sim_tri_side_check",
-                                "name": {
-                                    "sv": "Trianglar (Sidor)",
-                                    "en": "Triangles (Sides)"
-                                },
-                                "desc": {
-                                    "sv": "Kontrollera likformighet via sidor",
-                                    "en": "Check similarity via sides"
-                                }
-                            }
-                        ]
-                    },
                     {
                         "lvl": 2,
                         "ex": "Beräkna den saknade sidan x i de likformiga figurerna.",
@@ -5149,28 +3207,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Använd skalfaktor uppåt",
                                     "en": "Use scale factor upwards"
-                                }
-                            },
-                            {
-                                "key": "sim_calc_small",
-                                "name": {
-                                    "sv": "Beräkna liten sida",
-                                    "en": "Calculate small side"
-                                },
-                                "desc": {
-                                    "sv": "Använd skalfaktor nedåt",
-                                    "en": "Use scale factor downwards"
-                                }
-                            },
-                            {
-                                "key": "sim_find_k",
-                                "name": {
-                                    "sv": "Bestäm skalfaktor",
-                                    "en": "Determine scale factor"
-                                },
-                                "desc": {
-                                    "sv": "Hitta k utifrån två kända sidor",
-                                    "en": "Find k from two known sides"
                                 }
                             }
                         ]
@@ -5201,17 +3237,6 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna totala längder",
                                     "en": "Calculate total lengths"
                                 }
-                            },
-                            {
-                                "key": "transversal_extension",
-                                "name": {
-                                    "sv": "Transversalsatsen",
-                                    "en": "Transversal Theorem"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna delsträckor",
-                                    "en": "Calculate partial lengths"
-                                }
                             }
                         ]
                     }
@@ -5230,31 +3255,20 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Anger skalan 2:1 en förstoring eller en förminskning?",
+                        "ex": "En karta är ritad i skala 1:10. Hur många centimeter i verkligheten motsvarar 1 cm på kartan?",
                         "desc": {
-                            "sv": "Skalriktning (Förstoring/Förminskning)",
-                            "en": "Scale Direction (Enlarge/Reduce)"
+                            "sv": "Tolka 1 cm på kartan",
+                            "en": "Interpret 1 cm on map"
                         },
                         "student_desc": {
                             "sv": "Begrepp & Skalriktning",
                             "en": "Concepts & Direction"
                         },
                         "teacher_desc": {
-                            "sv": "Avgör om skalan anger förstoring eller förminskning",
-                            "en": "Determine whether scale is enlargement or reduction"
+                            "sv": "Vad motsvarar 1 cm på ritningen i verkligheten?",
+                            "en": "What does 1 cm represent in reality?"
                         },
                         "variations": [
-                            {
-                                "key": "scale_direction_type",
-                                "name": {
-                                    "sv": "Skalriktning (Förstoring/Förminskning)",
-                                    "en": "Scale Direction (Enlarge/Reduce)"
-                                },
-                                "desc": {
-                                    "sv": "Avgör om skalan anger förstoring eller förminskning",
-                                    "en": "Determine whether scale is enlargement or reduction"
-                                }
-                            },
                             {
                                 "key": "scale_reading_val",
                                 "name": {
@@ -5270,7 +3284,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "En ritning har skalan 1:50. En sträcka på ritningen är 2 cm. Hur lång är sträckan i verkligheten? Svara i centimeter.",
+                        "ex": "En ritning har skalan 1:10. En sträcka på ritningen är 7 cm. Hur lång är sträckan i verkligheten? Svara i centimeter.",
                         "desc": {
                             "sv": "Förminskning: Beräkna cm",
                             "en": "Reduction: Calculate cm"
@@ -5294,23 +3308,12 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna verklig längd i centimeter",
                                     "en": "Calculate real length in centimeters"
                                 }
-                            },
-                            {
-                                "key": "reduction_cm_to_m",
-                                "name": {
-                                    "sv": "Förminskning: Omvandla till meter",
-                                    "en": "Reduction: Convert to meters"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna verklig längd och svara i meter",
-                                    "en": "Calculate real length and convert to meters"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "Ett litet föremål är 7 mm i verkligheten. Hur långt blir föremålet på en bild i skala 6:1? Svara i millimeter.",
+                        "ex": "Ett litet föremål är 3 mm i verkligheten. Hur långt blir föremålet på en bild i skala 8:1? Svara i millimeter.",
                         "desc": {
                             "sv": "Förstoring: Beräkna mm",
                             "en": "Enlargement: Calculate mm"
@@ -5334,23 +3337,12 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna bildens mått i millimeter",
                                     "en": "Calculate image length in millimeters"
                                 }
-                            },
-                            {
-                                "key": "enlargement_mm_to_cm",
-                                "name": {
-                                    "sv": "Förstoring: Omvandla till cm",
-                                    "en": "Enlargement: Convert to cm"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna bildens mått och svara i centimeter",
-                                    "en": "Calculate image length and convert to centimeters"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 4,
-                        "ex": "En sträcka är 20 m i verkligheten och 4 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
+                        "ex": "En sträcka är 0.3 m i verkligheten och 2 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
                         "desc": {
                             "sv": "Bestäm skala (Ritning/Hus)",
                             "en": "Determine Scale (Blueprint)"
@@ -5373,17 +3365,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Omvandla m till cm och förenkla till 1:k",
                                     "en": "Convert m to cm and reduce to 1:k"
-                                }
-                            },
-                            {
-                                "key": "determine_scale_map",
-                                "name": {
-                                    "sv": "Bestäm skala (Karta/Terräng)",
-                                    "en": "Determine Scale (Map)"
-                                },
-                                "desc": {
-                                    "sv": "Omvandla km till cm och förenkla till 1:k",
-                                    "en": "Convert km to cm and reduce to 1:k"
                                 }
                             }
                         ]
@@ -5414,17 +3395,6 @@ export const CONTENT_MAP = [
                                     "sv": "Hitta den okända basen via längdskalan",
                                     "en": "Find missing base using the scale factor"
                                 }
-                            },
-                            {
-                                "key": "similarity_tri_height",
-                                "name": {
-                                    "sv": "Likformig höjd (x)",
-                                    "en": "Similar Height (x)"
-                                },
-                                "desc": {
-                                    "sv": "Hitta den okända höjden via längdskalan",
-                                    "en": "Find missing height using the scale factor"
-                                }
                             }
                         ]
                     },
@@ -5454,23 +3424,12 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna basen med topptriangelsatsen",
                                     "en": "Calculate base using the triangle proportionality theorem"
                                 }
-                            },
-                            {
-                                "key": "nested_topptriangel_side",
-                                "name": {
-                                    "sv": "Topptriangel: Sida (x)",
-                                    "en": "Top Triangle: Side (x)"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna delsträcka längs transversalen",
-                                    "en": "Calculate segment length along transversal"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 7,
-                        "ex": "Två likformiga rektanglar har längdskalan 1:10. Den mindre rektangeln har arean 20 cm². Beräkna arean av den större rektangeln.",
+                        "ex": "Två likformiga rektanglar har längdskalan 1:2. Den mindre rektangeln har arean 5 cm². Beräkna arean av den större rektangeln.",
                         "desc": {
                             "sv": "Areaskala (Direkt: k²)",
                             "en": "Area Scale (Direct: k²)"
@@ -5494,23 +3453,12 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna ny area med areaskalan k²",
                                     "en": "Calculate new area using area scale k²"
                                 }
-                            },
-                            {
-                                "key": "area_scale_inverse",
-                                "name": {
-                                    "sv": "Omvänd areaskala (√Areaskala)",
-                                    "en": "Inverse Area Scale (√Area Scale)"
-                                },
-                                "desc": {
-                                    "sv": "Bestäm längdskala och sidlängd utifrån kända areor",
-                                    "en": "Find linear scale and side length from known areas"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 8,
-                        "ex": "Två likformiga cylindrar har längdskalan 1:2. Den mindre rymmer 15 liter. Hur många liter rymmer den större cylindern?",
+                        "ex": "Två likformiga cylindrar har längdskalan 1:5. Den mindre rymmer 3 liter. Hur många liter rymmer den större cylindern?",
                         "desc": {
                             "sv": "Volymskala (Direkt: k³)",
                             "en": "Volume Scale (Direct: k³)"
@@ -5533,17 +3481,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Beräkna ny volym med volymskalan k³",
                                     "en": "Calculate new volume using volume scale k³"
-                                }
-                            },
-                            {
-                                "key": "volume_scale_inverse",
-                                "name": {
-                                    "sv": "Omvänd volymskala (∛Volymskala)",
-                                    "en": "Inverse Volume Scale (∛Volume Scale)"
-                                },
-                                "desc": {
-                                    "sv": "Bestäm längdskala och höjd utifrån kända volymer",
-                                    "en": "Find linear scale and height from known volumes"
                                 }
                             }
                         ]
@@ -5587,28 +3524,6 @@ export const CONTENT_MAP = [
                                     "sv": "Längd · Bredd · Höjd",
                                     "en": "Length · Width · Height"
                                 }
-                            },
-                            {
-                                "key": "vol_cuboid_inverse",
-                                "name": {
-                                    "sv": "Rätblock: Invers",
-                                    "en": "Cuboid: Inverse"
-                                },
-                                "desc": {
-                                    "sv": "Hitta saknad sida från volymen",
-                                    "en": "Find missing side from volume"
-                                }
-                            },
-                            {
-                                "key": "vol_cuboid_scaling",
-                                "name": {
-                                    "sv": "Rätblock: Skalning",
-                                    "en": "Cuboid: Scaling"
-                                },
-                                "desc": {
-                                    "sv": "Hur ändras volymen om sidorna dubblas?",
-                                    "en": "How does volume change if sides double?"
-                                }
                             }
                         ]
                     },
@@ -5637,17 +3552,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Basytan (triangel) · höjden",
                                     "en": "Base area (triangle) · height"
-                                }
-                            },
-                            {
-                                "key": "vol_tri_prism_inverse",
-                                "name": {
-                                    "sv": "Prisma: Invers",
-                                    "en": "Prism: Inverse"
-                                },
-                                "desc": {
-                                    "sv": "Hitta saknad längd/höjd",
-                                    "en": "Find missing length/height"
                                 }
                             }
                         ]
@@ -5678,28 +3582,6 @@ export const CONTENT_MAP = [
                                     "sv": "π · r² · h",
                                     "en": "π · r² · h"
                                 }
-                            },
-                            {
-                                "key": "vol_cyl_est",
-                                "name": {
-                                    "sv": "Cylinder: Uppskattning",
-                                    "en": "Cylinder: Estimation"
-                                },
-                                "desc": {
-                                    "sv": "Rimlighetsbedömning (π ≈ 3)",
-                                    "en": "Reasonableness check (π ≈ 3)"
-                                }
-                            },
-                            {
-                                "key": "vol_cyl_inverse",
-                                "name": {
-                                    "sv": "Cylinder: Invers",
-                                    "en": "Cylinder: Inverse"
-                                },
-                                "desc": {
-                                    "sv": "Hitta radie eller höjd",
-                                    "en": "Find radius or height"
-                                }
                             }
                         ]
                     },
@@ -5729,34 +3611,12 @@ export const CONTENT_MAP = [
                                     "sv": "(Basytan · h) / 3",
                                     "en": "(Base area · h) / 3"
                                 }
-                            },
-                            {
-                                "key": "vol_cone_rule3",
-                                "name": {
-                                    "sv": "Kon: Tredjedelsregeln",
-                                    "en": "Cone: Rule of Thirds"
-                                },
-                                "desc": {
-                                    "sv": "En kon är 1/3 av en cylinder",
-                                    "en": "A cone is 1/3 of a cylinder"
-                                }
-                            },
-                            {
-                                "key": "vol_cone_std",
-                                "name": {
-                                    "sv": "Volym: Kon",
-                                    "en": "Volume: Cone"
-                                },
-                                "desc": {
-                                    "sv": "(π · r² · h) / 3",
-                                    "en": "(π · r² · h) / 3"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 5,
-                        "ex": "Beräkna klotets volym med radien 7 cm.",
+                        "ex": "Beräkna klotets volym med radien 11 cm.",
                         "desc": {
                             "sv": "Volym: Klot",
                             "en": "Volume: Sphere"
@@ -5780,34 +3640,12 @@ export const CONTENT_MAP = [
                                     "sv": "(4 · π · r³) / 3",
                                     "en": "(4 · π · r³) / 3"
                                 }
-                            },
-                            {
-                                "key": "vol_silo_std",
-                                "name": {
-                                    "sv": "Sammansatt: Silo",
-                                    "en": "Composite: Silo"
-                                },
-                                "desc": {
-                                    "sv": "Cylinder + Halvklot",
-                                    "en": "Cylinder + Hemisphere"
-                                }
-                            },
-                            {
-                                "key": "vol_icecream_std",
-                                "name": {
-                                    "sv": "Sammansatt: Glass",
-                                    "en": "Composite: Ice cream"
-                                },
-                                "desc": {
-                                    "sv": "Kon + Halvklot (från radie)",
-                                    "en": "Cone + Hemisphere (from radius)"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 6,
-                        "ex": "Pyramiden har en kvadratisk basyta. Beräkna pyramidens volym.",
+                        "ex": "Beräkna den sammansatta figurens totala volym.",
                         "desc": {
                             "sv": "Klot från diameter",
                             "en": "Sphere from diameter"
@@ -5831,23 +3669,12 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna volym utifrån diametern",
                                     "en": "Calculate volume using diameter"
                                 }
-                            },
-                            {
-                                "key": "vol_icecream_diameter",
-                                "name": {
-                                    "sv": "Glass från diameter",
-                                    "en": "Ice cream from diameter"
-                                },
-                                "desc": {
-                                    "sv": "Kon + Halvklot utifrån diametern",
-                                    "en": "Cone + Hemisphere using diameter"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 7,
-                        "ex": "En pool har formen av ett rätblock med bredden 10 cm, höjden 5 cm och djupet 4 cm. Vad är dess volym i liter?",
+                        "ex": "Ett limstift har formen av ett cylinder med radien 5 dm och höjden 5 dm. Vad är dess volym i liter?",
                         "desc": {
                             "sv": "Enheter: Liter & dm³",
                             "en": "Units: Liters & dm³"
@@ -5870,39 +3697,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Sambandet 1 dm³ = 1 liter",
                                     "en": "Connection 1 dm³ = 1 liter"
-                                }
-                            },
-                            {
-                                "key": "vol_units_m3",
-                                "name": {
-                                    "sv": "Enheter: Kubikmeter",
-                                    "en": "Units: Cubic meters"
-                                },
-                                "desc": {
-                                    "sv": "1 m³ = 1000 liter",
-                                    "en": "1 m³ = 1000 liters"
-                                }
-                            },
-                            {
-                                "key": "vol_unit_conv",
-                                "name": {
-                                    "sv": "Direkt Enhetsomvandling",
-                                    "en": "Direct Unit Conversion"
-                                },
-                                "desc": {
-                                    "sv": "Omvandla mellan volym/rymdmått",
-                                    "en": "Convert between volume units"
-                                }
-                            },
-                            {
-                                "key": "vol_word_unit",
-                                "name": {
-                                    "sv": "Textproblem: Enheter",
-                                    "en": "Word Problem: Units"
-                                },
-                                "desc": {
-                                    "sv": "Volymberäkning med enhetsbyte",
-                                    "en": "Volume calc with unit change"
                                 }
                             }
                         ]
@@ -5933,39 +3727,6 @@ export const CONTENT_MAP = [
                                     "sv": "Area av alla 6 sidor",
                                     "en": "Area of all 6 sides"
                                 }
-                            },
-                            {
-                                "key": "sa_cylinder",
-                                "name": {
-                                    "sv": "Begränsningsarea: Cylinder",
-                                    "en": "Surface Area: Cylinder"
-                                },
-                                "desc": {
-                                    "sv": "Två basytor + mantelarea",
-                                    "en": "Two bases + lateral area"
-                                }
-                            },
-                            {
-                                "key": "sa_cone",
-                                "name": {
-                                    "sv": "Begränsningsarea: Kon",
-                                    "en": "Surface Area: Cone"
-                                },
-                                "desc": {
-                                    "sv": "Basyta + mantelarea (πrs)",
-                                    "en": "Base + lateral area (πrs)"
-                                }
-                            },
-                            {
-                                "key": "sa_sphere",
-                                "name": {
-                                    "sv": "Begränsningsarea: Klot",
-                                    "en": "Surface Area: Sphere"
-                                },
-                                "desc": {
-                                    "sv": "4 · π · r²",
-                                    "en": "4 · π · r²"
-                                }
                             }
                         ]
                     }
@@ -5995,7 +3756,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Kolla igenom åldrar listan: 12, 14, 11, 13, 11, 11, 12. Vilket är typvärdet?",
+                        "ex": "Kolla igenom poäng listan: 25, 21, 22, 12, 20, 25, 25. Vilket är typvärdet?",
                         "desc": {
                             "sv": "Typvärde",
                             "en": "Mode"
@@ -6019,34 +3780,12 @@ export const CONTENT_MAP = [
                                     "sv": "Det vanligaste värdet",
                                     "en": "The most common value"
                                 }
-                            },
-                            {
-                                "key": "find_range",
-                                "name": {
-                                    "sv": "Variationsbredd",
-                                    "en": "Range"
-                                },
-                                "desc": {
-                                    "sv": "Största minus minsta värdet",
-                                    "en": "Largest minus smallest value"
-                                }
-                            },
-                            {
-                                "key": "find_min_max",
-                                "name": {
-                                    "sv": "Minsta & Största",
-                                    "en": "Min & Max"
-                                },
-                                "desc": {
-                                    "sv": "Identifiera extremvärden",
-                                    "en": "Identify extreme values"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 2,
-                        "ex": "Beräkna medelvärdet för följande poäng: 24, 23, 10, 12, 24.",
+                        "ex": "Beräkna medelvärdet för följande temperaturer: 12, 13, 17, 12, 22.",
                         "desc": {
                             "sv": "Beräkna medelvärde",
                             "en": "Calculate mean"
@@ -6070,23 +3809,12 @@ export const CONTENT_MAP = [
                                     "sv": "Summan delat på antalet",
                                     "en": "Sum divided by count"
                                 }
-                            },
-                            {
-                                "key": "mean_negatives",
-                                "name": {
-                                    "sv": "Medelvärde (Negativa tal)",
-                                    "en": "Mean (Negative numbers)"
-                                },
-                                "desc": {
-                                    "sv": "Medelvärde med minusgrader/skulder",
-                                    "en": "Mean involving negatives"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "Bestäm medianen för följande temperaturer: 22, 17, 22, 15, 13.",
+                        "ex": "Bestäm medianen för följande poäng: 24, 8, 18, 24, 18, 19, 21.",
                         "desc": {
                             "sv": "Median (Udda antal)",
                             "en": "Median (Odd count)"
@@ -6110,23 +3838,12 @@ export const CONTENT_MAP = [
                                     "sv": "Mittersta värdet i storleksordning",
                                     "en": "Middle value in order"
                                 }
-                            },
-                            {
-                                "key": "median_even",
-                                "name": {
-                                    "sv": "Median (Jämnt antal)",
-                                    "en": "Median (Even count)"
-                                },
-                                "desc": {
-                                    "sv": "Medelvärdet av de två mittersta",
-                                    "en": "Mean of the two middle values"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 4,
-                        "ex": "Medelvärdet av fyra tal är 13. Tre av talen är 8, 17 och 13. Vilket är det fjärde talet?",
+                        "ex": "Medelvärdet av fyra tal är 18. Tre av talen är 11, 17 och 12. Vilket är det fjärde talet?",
                         "desc": {
                             "sv": "Hitta saknat värde",
                             "en": "Find missing value"
@@ -6150,23 +3867,12 @@ export const CONTENT_MAP = [
                                     "sv": "Givet medelvärdet, hitta x",
                                     "en": "Given the mean, find x"
                                 }
-                            },
-                            {
-                                "key": "mean_target_score",
-                                "name": {
-                                    "sv": "Målpoäng",
-                                    "en": "Target score"
-                                },
-                                "desc": {
-                                    "sv": "Vad krävs för att höja snittet?",
-                                    "en": "What is needed to raise the average?"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 5,
-                        "ex": "Hur många observationer (totalt antal) visas i frekvenstabellen?",
+                        "ex": "Hur många observationer (totalt antal) visas i stolpdiagrammet?",
                         "desc": {
                             "sv": "Tabell: Antal observationer",
                             "en": "Table: Total count"
@@ -6189,50 +3895,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Summera frekvenserna",
                                     "en": "Sum the frequencies"
-                                }
-                            },
-                            {
-                                "key": "freq_mode",
-                                "name": {
-                                    "sv": "Tabell: Typvärde",
-                                    "en": "Table: Mode"
-                                },
-                                "desc": {
-                                    "sv": "Hitta värdet med högst frekvens",
-                                    "en": "Find value with highest frequency"
-                                }
-                            },
-                            {
-                                "key": "freq_range",
-                                "name": {
-                                    "sv": "Tabell: Variationsbredd",
-                                    "en": "Table: Range"
-                                },
-                                "desc": {
-                                    "sv": "Största x minus minsta x",
-                                    "en": "Largest x minus smallest x"
-                                }
-                            },
-                            {
-                                "key": "freq_mean",
-                                "name": {
-                                    "sv": "Tabell: Medelvärde",
-                                    "en": "Table: Mean"
-                                },
-                                "desc": {
-                                    "sv": "Frekvens multiplicerat med värde",
-                                    "en": "Frequency multiplied by value"
-                                }
-                            },
-                            {
-                                "key": "freq_median",
-                                "name": {
-                                    "sv": "Tabell: Median",
-                                    "en": "Table: Median"
-                                },
-                                "desc": {
-                                    "sv": "Hitta mittenvärdet i tabellen",
-                                    "en": "Find middle value in table"
                                 }
                             }
                         ]
@@ -6263,28 +3925,6 @@ export const CONTENT_MAP = [
                                     "sv": "Hur ändras medelvärdet?",
                                     "en": "How does the mean change?"
                                 }
-                            },
-                            {
-                                "key": "real_weighted_avg",
-                                "name": {
-                                    "sv": "Vägt medelvärde",
-                                    "en": "Weighted average"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna snitt med olika vikter/grupper",
-                                    "en": "Calculate average of different groups"
-                                }
-                            },
-                            {
-                                "key": "real_weighted_missing",
-                                "name": {
-                                    "sv": "Vägt medelvärde (Saknat)",
-                                    "en": "Weighted avg (Missing)"
-                                },
-                                "desc": {
-                                    "sv": "Hitta saknad vikt eller gruppsnitt",
-                                    "en": "Find missing weight or group average"
-                                }
                             }
                         ]
                     }
@@ -6303,31 +3943,20 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Hur sannolikt är det: \"att få krona när du kastar ett vanligt mynt\"?",
+                        "ex": "Hjulet har 10 lika stora fält. 2 av fälten är grön. Vad är sannolikheten att pilen stannar på grön? Svar med bråk i enklaste form.",
                         "desc": {
-                            "sv": "Sannolikhetsskalan",
-                            "en": "Probability Scale"
+                            "sv": "Lyckohjul (Bråk)",
+                            "en": "Spinner (Fraction)"
                         },
                         "student_desc": {
                             "sv": "Sannolikhetsskalan & Visuella utfall",
                             "en": "Probability Scale & Visual Outcomes"
                         },
                         "teacher_desc": {
-                            "sv": "Omöjligt, hälften/hälften eller säkert",
-                            "en": "Impossible, even chance, or certain"
+                            "sv": "Beräkna andel av fält i enklaste form",
+                            "en": "Calculate slice probability in simplest form"
                         },
                         "variations": [
-                            {
-                                "key": "prob_scale_vocab",
-                                "name": {
-                                    "sv": "Sannolikhetsskalan",
-                                    "en": "Probability Scale"
-                                },
-                                "desc": {
-                                    "sv": "Omöjligt, hälften/hälften eller säkert",
-                                    "en": "Impossible, even chance, or certain"
-                                }
-                            },
                             {
                                 "key": "prob_visual_spinner",
                                 "name": {
@@ -6338,23 +3967,12 @@ export const CONTENT_MAP = [
                                     "sv": "Beräkna andel av fält i enklaste form",
                                     "en": "Calculate slice probability in simplest form"
                                 }
-                            },
-                            {
-                                "key": "prob_visual_marbles",
-                                "name": {
-                                    "sv": "Kulor i skål (Bråk)",
-                                    "en": "Marbles in Bowl (Fraction)"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna sannolikhet för färg i enklaste form",
-                                    "en": "Calculate marble probability in simplest form"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 2,
-                        "ex": "Sannolikheten för en vinst i ett lotteri är 2/5. Vad är sannolikheten uttryckt i procent?",
+                        "ex": "Sannolikheten för en vinst i ett lotteri är 1/20. Vad är sannolikheten uttryckt i procent?",
                         "desc": {
                             "sv": "Uttryck i procent",
                             "en": "Express as Percent"
@@ -6378,34 +3996,12 @@ export const CONTENT_MAP = [
                                     "sv": "Omvandla bråk till procent",
                                     "en": "Convert fraction probability to percent"
                                 }
-                            },
-                            {
-                                "key": "prob_rep_to_decimal",
-                                "name": {
-                                    "sv": "Uttryck i decimalform",
-                                    "en": "Express as Decimal"
-                                },
-                                "desc": {
-                                    "sv": "Omvandla bråk till decimaltal",
-                                    "en": "Convert fraction probability to decimal"
-                                }
-                            },
-                            {
-                                "key": "prob_rep_to_fraction",
-                                "name": {
-                                    "sv": "Uttryck som förkortat bråk",
-                                    "en": "Express as Simplest Fraction"
-                                },
-                                "desc": {
-                                    "sv": "Omvandla procent till förkortat bråk",
-                                    "en": "Convert percent to simplest fraction"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 3,
-                        "ex": "Vad är sannolikheten att få en 4:a vid ett kast med en vanlig sexsidig tärning? Svar med bråk i enklaste form.",
+                        "ex": "Vad är sannolikheten att få en 3:a vid ett kast med en vanlig sexsidig tärning? Svar med bråk i enklaste form.",
                         "desc": {
                             "sv": "Tärning: Enskild siffra",
                             "en": "Dice: Single Number"
@@ -6429,67 +4025,12 @@ export const CONTENT_MAP = [
                                     "sv": "Sannolikhet att slå ett specifikt tal",
                                     "en": "Probability of rolling a specific number"
                                 }
-                            },
-                            {
-                                "key": "prob_dice_parity",
-                                "name": {
-                                    "sv": "Tärning: Jämnt/Udda",
-                                    "en": "Dice: Even/Odd"
-                                },
-                                "desc": {
-                                    "sv": "Sannolikhet för paritet i enklaste form",
-                                    "en": "Probability of parity in simplest form"
-                                }
-                            },
-                            {
-                                "key": "prob_dice_threshold",
-                                "name": {
-                                    "sv": "Tärning: Större/Mindre än",
-                                    "en": "Dice: Greater/Less Than"
-                                },
-                                "desc": {
-                                    "sv": "Intervallutfall på tärning",
-                                    "en": "Range outcomes on a standard die"
-                                }
-                            },
-                            {
-                                "key": "prob_cards_suit",
-                                "name": {
-                                    "sv": "Kortlek: Färg",
-                                    "en": "Cards: Suit"
-                                },
-                                "desc": {
-                                    "sv": "Hjärter, spader, ruter eller klöver",
-                                    "en": "Hearts, spades, diamonds, or clubs"
-                                }
-                            },
-                            {
-                                "key": "prob_cards_face",
-                                "name": {
-                                    "sv": "Kortlek: Klädda kort",
-                                    "en": "Cards: Face Cards"
-                                },
-                                "desc": {
-                                    "sv": "Knekt, dam eller kung ur 52 kort",
-                                    "en": "Jack, Queen, or King from 52 cards"
-                                }
-                            },
-                            {
-                                "key": "prob_cards_rank",
-                                "name": {
-                                    "sv": "Kortlek: Valör",
-                                    "en": "Cards: Rank"
-                                },
-                                "desc": {
-                                    "sv": "Ess, kungar, sjuor etc.",
-                                    "en": "Aces, Kings, 7s, etc."
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 4,
-                        "ex": "Chansen att vinna i ett lotteri är 45%. Vad är sannolikheten att man INTE vinner?",
+                        "ex": "Chansen att vinna i ett lotteri är 40%. Vad är sannolikheten att man INTE vinner?",
                         "desc": {
                             "sv": "Komplement: Lotteri",
                             "en": "Complement: Lottery"
@@ -6513,45 +4054,12 @@ export const CONTENT_MAP = [
                                     "sv": "Sannolikheten att INTE vinna (100% - P)",
                                     "en": "Probability of NOT winning (100% - P)"
                                 }
-                            },
-                            {
-                                "key": "prob_comp_cards_dice",
-                                "name": {
-                                    "sv": "Komplement: Tärning & Kort",
-                                    "en": "Complement: Dice & Cards"
-                                },
-                                "desc": {
-                                    "sv": "Sannolikheten att INTE få ett utfall (1 - P)",
-                                    "en": "Probability of NOT getting an outcome (1 - P)"
-                                }
-                            },
-                            {
-                                "key": "prob_or_disjoint",
-                                "name": {
-                                    "sv": "Disjunkta utfall (ELLER)",
-                                    "en": "Disjoint Events (OR)"
-                                },
-                                "desc": {
-                                    "sv": "P(A eller B) = P(A) + P(B)",
-                                    "en": "P(A or B) = P(A) + P(B)"
-                                }
-                            },
-                            {
-                                "key": "prob_ternary_remainder",
-                                "name": {
-                                    "sv": "Resten av gruppen",
-                                    "en": "Remainder of Group"
-                                },
-                                "desc": {
-                                    "sv": "Beräkna sannolikhet för den tredje dolda gruppen",
-                                    "en": "Calculate probability for third remaining group"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 5,
-                        "ex": "En restaurangmeny erbjuder 5 förrätter, 5 varmrätter och 4 efterrätter. På hur många olika sätt kan du komponera en trerättersmiddag?",
+                        "ex": "En restaurangmeny erbjuder 4 förrätter, 5 varmrätter och 4 efterrätter. På hur många olika sätt kan du komponera en trerättersmiddag?",
                         "desc": {
                             "sv": "Multiplikationsprincipen",
                             "en": "Multiplication Principle"
@@ -6575,23 +4083,12 @@ export const CONTENT_MAP = [
                                     "sv": "Menyer, outfits och kombinationer",
                                     "en": "Menus, outfits, and combinations"
                                 }
-                            },
-                            {
-                                "key": "prob_comb_pathways",
-                                "name": {
-                                    "sv": "Räkna vägar (Nätverk)",
-                                    "en": "Pathways (Network)"
-                                },
-                                "desc": {
-                                    "sv": "Vägar från A till B med avspärrningar",
-                                    "en": "Routes from A to B with blocked segments"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 6,
-                        "ex": "Du kastar ett mynt 3 gånger. Vad är sannolikheten att få krona alla 3 gånger? Svar med bråk i enklaste form.",
+                        "ex": "Du kastar ett mynt 2 gånger. Vad är sannolikheten att få krona alla 2 gånger? Svar med bråk i enklaste form.",
                         "desc": {
                             "sv": "Flera myntkast",
                             "en": "Multiple Coin Tosses"
@@ -6615,34 +4112,12 @@ export const CONTENT_MAP = [
                                     "sv": "Oberoende kast i följd",
                                     "en": "Independent consecutive tosses"
                                 }
-                            },
-                            {
-                                "key": "prob_indep_dice_sum",
-                                "name": {
-                                    "sv": "Kasta två tärningar (Summa)",
-                                    "en": "Two Dice (Sum)"
-                                },
-                                "desc": {
-                                    "sv": "Sannolikhet för en viss summa av 36 utfall",
-                                    "en": "Probability of a specific sum out of 36 outcomes"
-                                }
-                            },
-                            {
-                                "key": "prob_indep_with_replacement",
-                                "name": {
-                                    "sv": "Med återläggning",
-                                    "en": "With Replacement"
-                                },
-                                "desc": {
-                                    "sv": "Dragning där totalen förblir densamma",
-                                    "en": "Draws where the total remains unchanged"
-                                }
                             }
                         ]
                     },
                     {
                         "lvl": 7,
-                        "ex": "I en påse finns 4 röda och 6 blåa kulor. Du drar två kulor utan återläggning. Vad är sannolikheten att få en röd först och sedan en blå? Svar med bråk i enklaste form.",
+                        "ex": "I en påse finns 4 röda och 5 blåa kulor. Du drar två kulor utan återläggning. Vad är sannolikheten att få en röd först och sedan en blå? Svar med bråk i enklaste form.",
                         "desc": {
                             "sv": "Utan återläggning (Trädgren)",
                             "en": "Without Replacement (Branch)"
@@ -6665,28 +4140,6 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Nämnaren minskar med 1 vid andra draget",
                                     "en": "Denominator reduces by 1 on the second draw"
-                                }
-                            },
-                            {
-                                "key": "prob_dep_one_of_each",
-                                "name": {
-                                    "sv": "En av varje färg",
-                                    "en": "One of Each Kind"
-                                },
-                                "desc": {
-                                    "sv": "Addera båda gynnsamma ordningarna P(A,B) + P(B,A)",
-                                    "en": "Sum both favorable orders P(A,B) + P(B,A)"
-                                }
-                            },
-                            {
-                                "key": "prob_dep_at_least_one",
-                                "name": {
-                                    "sv": "Minst en (Komplement)",
-                                    "en": "At Least One (Complement)"
-                                },
-                                "desc": {
-                                    "sv": "Problemlösning via 1 - P(ingen)",
-                                    "en": "Problem solving via 1 - P(none)"
                                 }
                             }
                         ]

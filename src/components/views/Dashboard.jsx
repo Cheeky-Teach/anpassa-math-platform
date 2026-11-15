@@ -179,7 +179,7 @@ const Dashboard = ({
             stats_title: "Statistik", stats_desc: "Dina framsteg",
             curriculum_title: "Kursmaterial", archive_title: "Lektionsarkiv",
             topics_count: (count) => `${count} delmoment`, select_level: "Välj nivå",
-            start_btn: "Börja öva", resources: "Resurser", content_map: "Innehållskarta",
+            start_btn: "Börja öva", resources: "Resurser", content_map: "Innehåll",
             lgr_link: "LGR 22 Koppling", about_link: "Om skaparen", brand_motto: "Rätt stöd. Direkt.",
             profile_btn: "Inställningar", profile_desc: "Konto & Skola",
             archive_empty: "Inga avslutade lektioner de senaste 7 dagar.", relaunch_btn: "Kör igen",

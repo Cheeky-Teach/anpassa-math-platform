@@ -1070,13 +1070,10 @@ function App() {
                         </div>
 
                         {view === 'practice' && (
-                            <div className={`theme-${activeThemeColor} absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none text-center w-full max-w-[200px] sm:max-w-[300px]`}>
-                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--brand-text)] opacity-80 truncate w-full">
-                                    {activeCategoryLabel}
+                            <div className="absolute left-1/2 -translate-x-1/2 flex items-center pointer-events-none text-center">
+                                <span className="text-emerald-600 dark:text-emerald-400 font-black tracking-[0.25em] uppercase text-sm sm:text-base select-none drop-shadow-2xs">
+                                    ANPASSA
                                 </span>
-                                <h2 className="text-sm sm:text-base font-black uppercase tracking-tighter text-[var(--text-main)] italic leading-none mt-0.5 truncate w-full">
-                                    {activeTopicLabel}
-                                </h2>
                             </div>
                         )}
                         

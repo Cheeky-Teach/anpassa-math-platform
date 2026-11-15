@@ -241,47 +241,58 @@ async function generateContentMap() {
             for (const variation of topicData.variations) {
                 const lvl = variation.level || 1;
                 
-                // Skip concept/theory/MCQ variations to stick strictly to calculate types
+                // 1. Expanded keyword filter to skip concepts, theories, and LCD finding
                 const k = variation.key.toLowerCase();
-                const filterPattern = /(^|_)(concept|theory|foundations|begrepp|mcq|choice|spot|lie)(_|$)/;
-                const isConceptOrMCQ = filterPattern.test(k);
-                if (isConceptOrMCQ) continue;
+                const filterPattern = /(^|_)(concept|theory|foundations|begrepp|mcq|choice|spot|lie|lcd_find)(_|$)/;
+                if (filterPattern.test(k)) continue;
 
-                if (!levelMap[lvl]) {
-                    let liveExampleLatex = "";
-                    let liveExampleDesc = "";
+                // If we already locked in a valid calculation variation for this level, skip subsequent ones
+                if (levelMap[lvl] && levelMap[lvl]._calculationVerified) continue;
 
-                    // Fetch a live example from your local server API
-                    try {
-                        const url = `${API_BASE}?topic=${topicId}&variation=${variation.key}&lang=sv&wordProblem=false`;
-                        const res = await fetch(url);
-                        if (res.ok) {
-                            const data = await res.json();
+                let liveExampleLatex = "";
+                let liveExampleDesc = "";
+                let isMultipleChoiceOrConcept = false;
+
+                // Fetch a live example from your local server API to inspect its structure
+                try {
+                    const url = `${API_BASE}?topic=${topicId}&variation=${variation.key}&lang=sv&wordProblem=false`;
+                    const res = await fetch(url);
+                    if (res.ok) {
+                        const data = await res.json();
+                        
+                        // 2. Inspect API response payload for MCQ or choice properties
+                        const answerType = data?.renderData?.answerType || data?.responseSpec?.type;
+                        const hasOptions = Array.isArray(data?.renderData?.options) && data.renderData.options.length > 0;
+
+                        if (answerType === 'multiple_choice' || answerType === 'single_choice' || hasOptions) {
+                            isMultipleChoiceOrConcept = true;
+                        } else {
                             liveExampleLatex = data?.renderData?.latex ? `$$${data.renderData.latex}$$` : "";
                             liveExampleDesc = data?.renderData?.description?.sv || data?.renderData?.description || "";
                         }
-                    } catch (err) {
-                        console.warn(`⚠️ Could not fetch example for ${topicId} [lvl ${lvl}]: ${err.message}`);
                     }
-
-                    levelMap[lvl] = {
-                        lvl: lvl,
-                        ex: liveExampleLatex || liveExampleDesc || variation.desc?.sv || variation.name?.sv || "Matematikuppgift",
-                        desc: variation.name,
-                        student_desc: LEVEL_DESCRIPTIONS[topicId]?.[lvl] || { sv: variation.name, en: variation.name },
-                        teacher_desc: variation.desc,
-                        variations: []
-                    };
+                } catch (err) {
+                    console.warn(`⚠️ Could not fetch example for ${topicId} [lvl ${lvl}]: ${err.message}`);
                 }
 
-                levelMap[lvl].variations.push({
-                    key: variation.key,
-                    name: variation.name,
-                    desc: variation.desc
-                });
+                // If it turned out to be an MCQ or concept type upon inspection, skip it
+                if (isMultipleChoiceOrConcept) continue;
+
+                levelMap[lvl] = {
+                    lvl: lvl,
+                    ex: liveExampleLatex || liveExampleDesc || variation.desc?.sv || variation.name?.sv || "Matematikuppgift",
+                    desc: variation.name,
+                    student_desc: LEVEL_DESCRIPTIONS[topicId]?.[lvl] || { sv: variation.name, en: variation.name },
+                    teacher_desc: variation.desc,
+                    variations: [{ key: variation.key, name: variation.name, desc: variation.desc }],
+                    _calculationVerified: true // Marks this level as successfully populated with a calculation
+                };
             }
 
-            const levelsArray = Object.values(levelMap).sort((a, b) => a.lvl - b.lvl);
+            // Clean up the temporary internal flag before mapping to array
+            const levelsArray = Object.values(levelMap)
+                .map(({ _calculationVerified, ...rest }) => rest)
+                .sort((a, b) => a.lvl - b.lvl);
 
             categoryObj.topics.push({
                 id: topicId,
