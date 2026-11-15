@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { 
   ChevronLeft, ChevronDown, ChevronUp, ChevronRight, Zap, Play, Clock, Book, Map, Info, 
-  Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings, User, 
-  History, Target, LayoutGrid, RotateCcw, FileSpreadsheet, MoreHorizontal,
-  PlayCircle, CheckCircle2, AlertCircle, Grid3X3, Monitor, Beaker, Newspaper, X, 
-  ArrowUpRight, Layers, PieChart, HelpCircle, Check, Compass
+  Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings, 
+  History, Target, LayoutGrid, RotateCcw, FileSpreadsheet,
+  PlayCircle, Grid3X3, Beaker, Newspaper, X, 
+  Layers, PieChart, HelpCircle, Check, Compass, BookOpen
 } from 'lucide-react';
 
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
@@ -16,9 +16,7 @@ import MathDisplay from '../shared/MathDisplay';
 import VisualRenderer from '../visuals/VisualRenderer';
 import DashboardTutorialModal from '../modals/DashboardTutorialModal';
 import CapacityModal from '../modals/CapacityModal';
-import { BookOpen } from 'lucide-react';
 import InstructionSlideModal from '../modals/InstructionSlideModal';
-
 import ConceptMapDashboard from './ConceptMapDashboard';
 
 // Helper to look up topic name safely
@@ -95,7 +93,6 @@ const normalizePartsPayload = (rawPayload = [], lang = 'sv') => {
         }));
     }
 
-    // Auto-group legacy flat payloads
     const grouped = {};
     const parts = [];
 
@@ -139,9 +136,10 @@ const Dashboard = ({
     const [activeInstructionModal, setActiveInstructionModal] = useState(null);
     const [collapsedPartSections, setCollapsedPartSections] = useState({});
     const [openDropdownTopicId, setOpenDropdownTopicId] = useState(null);
-    const [inspectedStepByPart, setInspectedStepByPart] = useState({}); // { [partId]: stepId }
+    const [inspectedStepByPart, setInspectedStepByPart] = useState({});
     const [partPreviewQuestion, setPartPreviewQuestion] = useState(null);
     const [isFetchingPartPreview, setIsFetchingPartPreview] = useState(false);
+    const [diagnosticTarget, setDiagnosticTarget] = useState(null);
 
     const fetchPartStepSample = async (topicId, level, variationKey = null) => {
         if (!topicId) {
@@ -168,47 +166,38 @@ const Dashboard = ({
         }
     };
 
-    const [diagnosticTarget, setDiagnosticTarget] = useState(null); // { topicId, level, isNewGoal } | null
-    
-
     const TEXT = {
         sv: {
-            tools_section: "Verktyg", class_code_label: "Din klasskod", connected_code_label: "Ansluten till kod",
+            tools_section: "Verktyg", class_code_label: "Klasskod", connected_code_label: "Ansluten till kod",
             timer_title: "Timer", timer_off: "Timer av", timer_reset: "Nollställ",
-            studio_title: "Question Studio / Presentera", studio_desc: "Skapa material",
+            studio_title: "Question Studio", studio_desc: "Skapa material & tavla",
             stats_title: "Statistik", stats_desc: "Dina framsteg",
             curriculum_title: "Kursmaterial", archive_title: "Lektionsarkiv",
             topics_count: (count) => `${count} delmoment`, select_level: "Välj nivå",
             start_btn: "Börja öva", resources: "Resurser", content_map: "Innehåll",
-            lgr_link: "LGR 22 Koppling", about_link: "Om skaparen", brand_motto: "Rätt stöd. Direkt.",
-            profile_btn: "Inställningar", profile_desc: "Konto & Skola",
-            archive_empty: "Inga avslutade lektioner de senaste 7 dagar.", relaunch_btn: "Kör igen",
-            view_report: "Visa rapport", resume_h: "Lektion pågår", resume_btn: "Återuppta",
-            accuracy_label: "Träffsäkerhet", edit_btn: "Öppna i Studio",
-            type_donow: "Do Now Grid", type_worksheet: "Arbetsblad",
-            times_table_title: "Tabeller", times_table_desc: "Multiplikation",
-            news_title: "Senaste uppdatering", view_all: "Visa logg",
+            lgr_link: "LGR 22", about_link: "Om skaparen",
+            profile_btn: "Inställningar", archive_empty: "Inga avslutade lektioner de senaste 7 dagarna.",
+            relaunch_btn: "Kör igen", view_report: "Visa rapport", resume_h: "Lektion pågår",
+            resume_btn: "Återuppta", accuracy_label: "Träffsäkerhet", edit_btn: "Öppna i Studio",
+            times_table_title: "Tabeller", news_title: "Nyheter", view_all: "Visa logg",
             active_sessions_count: (count) => `${count} pågående lektioner`,
             click_to_resume: "Klicka för att återuppta",
             untitled_session: "Namnlös lektion",
             pin_label: "PIN"
         },
         en: {
-            tools_section: "Tools", class_code_label: "Your Class Code", connected_code_label: "Connected to code",
+            tools_section: "Tools", class_code_label: "Class Code", connected_code_label: "Connected to code",
             timer_title: "Timer", timer_off: "Timer Off", timer_reset: "Reset",
-            studio_title: "Question Studio / Slides", studio_desc: "Create material",
+            studio_title: "Question Studio", studio_desc: "Create material & slides",
             stats_title: "Statistics", stats_desc: "Your progress",
             curriculum_title: "Course Material", archive_title: "Session Archive",
-            topics_count: (count) => `${count} topics`, select_level: "Select Level",
+            topics_count: (count) => `${count} topics`, select_level: "Select level",
             start_btn: "Start practicing", resources: "Resources", content_map: "Content Map",
-            lgr_link: "Curriculum Links", about_link: "About Creator", brand_motto: "Right support. Instantly.",
-            profile_btn: "Settings", profile_desc: "Account & School",
-            archive_empty: "No finished sessions in the last 7 days.", relaunch_btn: "Relaunch",
-            view_report: "View Report", resume_h: "Session in Progress", resume_btn: "Resume",
-            accuracy_label: "Accuracy", edit_btn: "Open in Studio",
-            type_donow: "Do Now Grid", type_worksheet: "Worksheet",
-            times_table_title: "Tables", times_table_desc: "Multiplication",
-            news_title: "Latest Update", view_all: "View log",
+            lgr_link: "Curriculum", about_link: "About",
+            profile_btn: "Settings", archive_empty: "No finished sessions in the last 7 days.",
+            relaunch_btn: "Relaunch", view_report: "View Report", resume_h: "Session in Progress",
+            resume_btn: "Resume", accuracy_label: "Accuracy", edit_btn: "Open in Studio",
+            times_table_title: "Tables", news_title: "Updates", view_all: "View log",
             active_sessions_count: (count) => `${count} active sessions`,
             click_to_resume: "Click to resume",
             untitled_session: "Untitled session",
@@ -220,11 +209,8 @@ const Dashboard = ({
     const latestUpdate = APP_UPDATES[0];
 
     const storageKey = `has_seen_dashboard_guide_${userRole}`;
-    const [showDashboardTutorial, setShowDashboardTutorial] = useState(() => {
-        return !localStorage.getItem(storageKey);
-    });
+    const [showDashboardTutorial, setShowDashboardTutorial] = useState(() => !localStorage.getItem(storageKey));
 
-    //  Keyed completion storage for the active unit
     const storageKeyProgress = useMemo(() => {
         const studentId = profile?.id || 'guest_student';
         const bucketId = activeBucket?.id || 'default_bucket';
@@ -240,7 +226,6 @@ const Dashboard = ({
         }
     });
 
-    // Sync state changes back to storage
     const markStepComplete = (stepId) => {
         if (!stepId) return;
         setCompletedStepIds(prev => {
@@ -255,48 +240,15 @@ const Dashboard = ({
         });
     };
 
-    // Completes all matching steps by topic + level even if started out of order
-    const handlePracticeSessionFinished = (completedTopic, completedLevel, explicitStepId = null) => {
-        const matchingSteps = allUnitSteps.filter(s => 
-            s.type === 'practice' && 
-            (s.topic === completedTopic || s.topicId === completedTopic) && 
-            Number(s.level) === Number(completedLevel)
-        );
-
-        const idsToMark = new Set();
-        if (explicitStepId) idsToMark.add(explicitStepId);
-        matchingSteps.forEach(s => idsToMark.add(s.id));
-        idsToMark.add(`${completedTopic}_${completedLevel}`);
-
-        setCompletedStepIds(prev => {
-            const next = Array.from(new Set([...prev, ...idsToMark]));
-            try {
-                localStorage.setItem(storageKeyProgress, JSON.stringify(next));
-            } catch (e) {
-                console.error("Failed to save progress:", e);
-            }
-            return next;
-        });
-    };
-    
-    // Helper to determine if a step is complete by ID or by (topic + level)
     const checkIsStepCompleted = (step, completedIds = []) => {
         if (!step) return false;
+        if (step.id && completedIds.includes(step.id)) return true;
 
-        // 1. Exact step ID match
-        if (step.id && completedIds.includes(step.id)) {
-            return true;
-        }
-
-        // 2. Practice step topic + level match
         if (step.type === 'practice') {
             const stepTopic = step.topic || step.topicId;
             const stepLevel = Number(step.level);
-
             return completedIds.some(id => {
-                // Direct ID match
                 if (id === step.id) return true;
-                // Compound key match e.g. "step_prac_arithmetic_2" or "arithmetic_2"
                 if (typeof id === 'string') {
                     if (id === `${stepTopic}_${stepLevel}`) return true;
                     if (id === `step_prac_${stepTopic}_${stepLevel}`) return true;
@@ -305,37 +257,22 @@ const Dashboard = ({
                 return false;
             });
         }
-
         return false;
     };
 
-    // Flatten all steps across parts to calculate progression metrics
-    // 1. First, declare curatedParts
     const curatedParts = useMemo(() => {
         if (!activeBucket || activeBucket === 'FREE_PLAY') return [];
         return normalizePartsPayload(activeBucket.payload, lang);
     }, [activeBucket, lang]);
 
-    // 2. Now allUnitSteps can safely access curatedParts!
-    const allUnitSteps = useMemo(() => {
-        return curatedParts.flatMap(part => part.steps || []);
-    }, [curatedParts]);
+    const allUnitSteps = useMemo(() => curatedParts.flatMap(part => part.steps || []), [curatedParts]);
+    const completedCount = useMemo(() => allUnitSteps.filter(s => completedStepIds.includes(s.id)).length, [allUnitSteps, completedStepIds]);
+    const progressPercentage = allUnitSteps.length > 0 ? Math.round((completedCount / allUnitSteps.length) * 100) : 0;
 
-    const completedCount = useMemo(() => {
-        return allUnitSteps.filter(s => completedStepIds.includes(s.id)).length;
-    }, [allUnitSteps, completedStepIds]);
-
-    const progressPercentage = allUnitSteps.length > 0 
-        ? Math.round((completedCount / allUnitSteps.length) * 100) 
-    : 0;
-
-    // Find the immediate next unfinished step in sequence
     const nextUnfinishedStep = useMemo(() => {
         return allUnitSteps.find(step => !checkIsStepCompleted(step, completedStepIds)) || null;
     }, [allUnitSteps, completedStepIds]);
 
-
-    // Helper to find the next logical step after the current one
     const getNextStep = (currentStepId) => {
         const currentIndex = allUnitSteps.findIndex(s => s.id === currentStepId);
         if (currentIndex !== -1 && currentIndex + 1 < allUnitSteps.length) {
@@ -356,11 +293,9 @@ const Dashboard = ({
         }
     }, [activeTab]);
 
-    // 🟢 Auto-align active selection with next unfinished milestone
     const [lastAutoAlignedStepId, setLastAutoAlignedStepId] = useState(null);
     const [hasUserManuallySelected, setHasUserManuallySelected] = useState(false);
 
-    // Reset manual selection flag if the unit changes
     useEffect(() => {
         setHasUserManuallySelected(false);
         setLastAutoAlignedStepId(null);
@@ -368,8 +303,7 @@ const Dashboard = ({
 
     useEffect(() => {
         if (userRole !== 'student' || !activeBucket || activeBucket === 'FREE_PLAY') return;
-        if (!nextUnfinishedStep) return;
-        if (hasUserManuallySelected) return; // 🟢 Stop overriding if the user clicked something!
+        if (!nextUnfinishedStep || hasUserManuallySelected) return;
 
         if (lastAutoAlignedStepId !== nextUnfinishedStep.id) {
             if (nextUnfinishedStep.type === 'practice') {
@@ -381,36 +315,25 @@ const Dashboard = ({
     }, [activeBucket, userRole, nextUnfinishedStep, lastAutoAlignedStepId, onSelect, hasUserManuallySelected]);
 
     const handleOpenInstruction = async (step) => {
-    if (step.sheetId) {
-        try {
-            const teacherCode = profile?.connected_code || profile?.class_code || activeBucket?.class_code || activeBucket?.teacher_code || null;
-
-            const { data: sheetPacket, error } = await supabase.rpc('get_student_presentation', {
-                p_sheet_id: step.sheetId,
-                p_teacher_code: teacherCode
-            });
-
-            if (error) throw error;
-
-            if (sheetPacket) {
-                const slides = sheetPacket.slides || (step.slideData ? [step.slideData] : []);
-                const livePacket = sheetPacket.livePacket || sheetPacket.items || [];
-
-                setActiveInstructionModal({
-                    ...step,
-                    slides,
-                    livePacket,
-                    slideIndex: step.slideIndex || 0
+        if (step.sheetId) {
+            try {
+                const teacherCode = profile?.connected_code || profile?.class_code || activeBucket?.class_code || activeBucket?.teacher_code || null;
+                const { data: sheetPacket, error } = await supabase.rpc('get_student_presentation', {
+                    p_sheet_id: step.sheetId,
+                    p_teacher_code: teacherCode
                 });
-                return;
+                if (error) throw error;
+                if (sheetPacket) {
+                    const slides = sheetPacket.slides || (step.slideData ? [step.slideData] : []);
+                    const livePacket = sheetPacket.livePacket || sheetPacket.items || [];
+                    setActiveInstructionModal({ ...step, slides, livePacket, slideIndex: step.slideIndex || 0 });
+                    return;
+                }
+            } catch (err) {
+                console.error("Failed to load presentation via RPC:", err.message);
             }
-        } catch (err) {
-            console.error("Failed to load presentation via RPC:", err.message);
         }
-    }
-
-    // Fallback
-    setActiveInstructionModal(step);
+        setActiveInstructionModal(step);
     };
     
     const fetchActiveSession = async () => {
@@ -429,8 +352,7 @@ const Dashboard = ({
     const formatSubscriptionDate = (dateString, lang = 'sv') => {
         if (!dateString) return null;
         const endDate = new Date(dateString);
-        const now = new Date();
-        const isExpired = endDate < now;
+        const isExpired = endDate < new Date();
         const formattedDate = endDate.toLocaleDateString(lang === 'sv' ? 'sv-SE' : 'en-US', {
             year: 'numeric', month: 'short', day: 'numeric'
         });
@@ -441,77 +363,57 @@ const Dashboard = ({
             isExpired
         };
     };
-    
-    // Replace your existing fetchArchive function in Dashboard.jsx with this:
 
-const fetchArchive = async () => {
-    setIsLoadingArchive(true);
-    try {
-        const cutoff = new Date(Date.now() - 192 * 60 * 60 * 1000).toISOString();
-        const { data, error } = await supabase
-            .from('rooms')
-            .select('*, responses(is_correct, student_alias)')
-            .eq('teacher_id', profile.id)
-            .eq('status', 'closed')
-            .gt('created_at', cutoff)
-            .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-
-        const processed = (data || []).map(room => {
-            const total = room.responses?.length || 0;
-            const correct = room.responses?.filter(r => r.is_correct).length || 0;
-            const uniqueStudents = new Set(room.responses?.map(r => r.student_alias)).size;
-            const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-            // 🟢 Use the database `expires_at` column directly
-            const expirationDate = room.expires_at ? new Date(room.expires_at) : null;
-            const isExpired = expirationDate ? expirationDate < new Date() : false;
+    const fetchArchive = async () => {
+        setIsLoadingArchive(true);
+        try {
+            const cutoff = new Date(Date.now() - 192 * 60 * 60 * 1000).toISOString();
+            const { data, error } = await supabase
+                .from('rooms')
+                .select('*, responses(is_correct, student_alias)')
+                .eq('teacher_id', profile.id)
+                .eq('status', 'closed')
+                .gt('created_at', cutoff)
+                .order('created_at', { ascending: false });
             
-            const formattedExpires = expirationDate ? expirationDate.toLocaleDateString(lang === 'sv' ? 'sv-SE' : 'en-US', {
-                month: 'short', day: 'numeric'
-            }) : '';
+            if (error) throw error;
 
-            return { 
-                ...room, 
-                accuracy, 
-                studentCount: uniqueStudents,
-                expirationText: isExpired 
-                    ? (lang === 'sv' ? "Utgick" : "Expired") 
-                    : (lang === 'sv' ? `Raderas ${formattedExpires}` : `Expires ${formattedExpires}`)
-            };
-        });
+            const processed = (data || []).map(room => {
+                const total = room.responses?.length || 0;
+                const correct = room.responses?.filter(r => r.is_correct).length || 0;
+                const uniqueStudents = new Set(room.responses?.map(r => r.student_alias)).size;
+                const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
 
-        setArchivedSessions(processed);
-    } catch (err) { console.error("Archive Fetch Error:", err); }
-    finally { setIsLoadingArchive(false); }
-};
+                const expirationDate = room.expires_at ? new Date(room.expires_at) : null;
+                const isExpired = expirationDate ? expirationDate < new Date() : false;
+                const formattedExpires = expirationDate ? expirationDate.toLocaleDateString(lang === 'sv' ? 'sv-SE' : 'en-US', {
+                    month: 'short', day: 'numeric'
+                }) : '';
+
+                return { 
+                    ...room, 
+                    accuracy, 
+                    studentCount: uniqueStudents,
+                    expirationText: isExpired 
+                        ? (lang === 'sv' ? "Utgick" : "Expired") 
+                        : (lang === 'sv' ? `Raderas ${formattedExpires}` : `Expires ${formattedExpires}`)
+                };
+            });
+
+            setArchivedSessions(processed);
+        } catch (err) { console.error("Archive Fetch Error:", err); }
+        finally { setIsLoadingArchive(false); }
+    };
 
     const activeCategoryData = CATEGORIES[expandedCategory];
-    const themeColorString = activeCategoryData?.color || 'emerald';
-
-    // --- GROUP CURATED PAYLOAD ---
-    let groupedCuratedPayload = {};
-    if (activeBucket && activeBucket !== 'FREE_PLAY') {
-        groupedCuratedPayload = activeBucket.payload.reduce((acc, item) => {
-            if (!acc[item.topic]) acc[item.topic] = [];
-            acc[item.topic].push(item.level);
-            return acc;
-        }, {});
-        
-        // Sort the levels numerically inside each topic
-        Object.keys(groupedCuratedPayload).forEach(topic => {
-            groupedCuratedPayload[topic].sort((a, b) => a - b);
-        });
-    }
-
+    const themeColorString = activeCategoryData?.color === 'indigo' ? 'cobalt' : (activeCategoryData?.color || 'emerald');
     const isEducator = ['teacher', 'super_admin'].includes(userRole);
 
     return (
-        <div className="layout-wrapper relative z-10 animate-in fade-in pb-10">
-            <div className={`pt-3.5 w-full max-w-[1600px] mx-auto px-4 sm:px-6 ${
+        <div className="layout-wrapper relative z-10 animate-in fade-in pb-12">
+            <div className={`pt-3 w-full max-w-[1400px] mx-auto px-4 sm:px-6 ${
                 isEducator
-                    ? 'grid grid-cols-1 lg:grid-cols-[260px_1fr] xl:grid-cols-[276px_1fr] gap-6 lg:gap-7'
+                    ? 'grid grid-cols-1 lg:grid-cols-[260px_1fr] xl:grid-cols-[276px_1fr] gap-6'
                     : 'flex flex-col gap-3.5'
             }`}>           
                 {/* ========================================================= */}
@@ -519,221 +421,231 @@ const fetchArchive = async () => {
                 {/* ========================================================= */}
                 {isEducator && (
                     <aside className="w-full flex flex-col gap-3.5">
-                        {/* --- TEACHER HEADER STATUS CARD --- */}
-                        <div className="card theme-emerald p-4 flex flex-col gap-3">
+                        {/* Teacher Identity & Class Code Card */}
+                        <div className="card p-4 flex flex-col gap-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-[var(--brand-solid)] rounded-[var(--radius-btn)] flex items-center justify-center text-white shadow-sm shrink-0">
-                                    <Users size={20} />
+                                <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center text-white shrink-0">
+                                    <Users size={18} />
                                 </div>
                                 <div className="min-w-0">
-                                    <h1 className="text-base font-bold text-[var(--text-main)] leading-none mb-1 truncate">
+                                    <h1 className="text-sm font-bold text-[var(--text-main)] leading-tight truncate">
                                         {profile?.full_name || "Lärare"}
                                     </h1>
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-1 truncate">
-                                        <Target size={10} /> {profile?.school_name || "Anpassa Math Platform"}
+                                    <p className="text-[11px] font-medium text-[var(--text-muted)] flex items-center gap-1 truncate mt-0.5">
+                                        <Target size={11} className="shrink-0" /> {profile?.school_name || "Anpassa"}
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Subscription Date */}
                             {(() => {
                                 const sub = formatSubscriptionDate(profile?.subscription_end_date || profile?.subscription_ends_at, lang);
                                 if (!sub) return null;
                                 return (
-                                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-[var(--bg-surface)] px-2.5 py-1.5 rounded-[var(--radius-btn)] border border-[var(--border-main)]">
-                                        <span className={`w-2 h-2 rounded-full ${sub.isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`} />
-                                        <span className={sub.isExpired ? 'text-[var(--theme-rose-text)] font-black' : 'text-[var(--text-muted)]'}>
+                                    <div className="flex items-center gap-2 text-[11px] font-semibold bg-[var(--bg-surface)] px-2.5 py-1.5 rounded-lg border border-[var(--border-main)]">
+                                        <span className={`w-2 h-2 rounded-full shrink-0 ${sub.isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                                        <span className={sub.isExpired ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-[var(--text-muted)]'}>
                                             {sub.text}
                                         </span>
                                     </div>
                                 );
                             })()}
 
-                            {/* Class Code */}
-                            <div className="flex flex-col items-center bg-[var(--brand-bg)] px-3 py-2.5 rounded-[var(--radius-btn)] border border-[var(--brand-border)] relative overflow-hidden">
-                                <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--brand-text)] opacity-80 mb-0.5">
+                            {/* Class Code Block */}
+                            <div className="flex flex-col items-center bg-[var(--bg-surface)] px-3 py-2.5 rounded-xl border border-[var(--border-main)]">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-0.5">
                                     {t.class_code_label}
                                 </span>
-                                <span className="text-lg font-black tracking-[0.2em] text-[var(--brand-text)] uppercase">
+                                <span className="text-lg font-extrabold font-mono tracking-[0.18em] text-[var(--text-main)] uppercase">
                                     {profile?.class_code || "---"}
                                 </span>
 
                                 {profile?.class_code && (
                                     <button 
+                                        type="button"
                                         onClick={() => setShowCapacityModal(true)}
-                                        className="theme-amber mt-2 flex items-center gap-1.5 px-3 py-1 bg-[var(--theme-amber-bg)] border border-[var(--theme-amber-border)] rounded-md text-[9px] font-black uppercase tracking-widest text-[var(--theme-amber-text)] hover:bg-amber-500 hover:text-white transition-all shadow-2xs active:scale-95 cursor-pointer"
+                                        className="mt-2 flex items-center gap-1.5 px-2.5 py-1 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-lg text-[10px] font-bold text-[var(--text-main)] hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-300 transition-colors cursor-pointer"
                                     >
-                                        <Users size={11} /> {lang === 'sv' ? "Hantera Platser" : "Manage Slots"}
+                                        <Users size={11} className="text-amber-600 dark:text-amber-400" />
+                                        <span>{lang === 'sv' ? "Hantera platser" : "Manage slots"}</span>
                                     </button>
                                 )}
                             </div>
 
-                            {/* Profile/Settings Button */}
                             <button 
+                                type="button"
                                 onClick={onProfileOpen} 
-                                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-widest hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)] transition-all shadow-2xs active:scale-95 cursor-pointer"
+                                className="w-full flex items-center justify-center gap-2 py-2 bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-main)] rounded-xl text-xs font-bold hover:border-emerald-600 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer"
                             >
                                 <Settings size={13} /> {t.profile_btn}
                             </button>
                         </div>
 
-                        {/* --- TEACHER TOOLS SECTION --- */}
-                        <div className="flex flex-col gap-2.5">
-                            <div className="flex items-center gap-2 ml-1.5">
-                                <Zap size={13} className="text-orange-400" />
-                                <h2 className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t.tools_section}</h2>
+                        {/* Teacher Tools — Primary CTA + Quiet Neutral Studio Controls */}
+                        <div className="flex flex-col gap-2">
+                            <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider px-1">
+                                {t.tools_section}
+                            </span>
+
+                            {/* Primary Action: Question Studio */}
+                            <button 
+                                type="button"
+                                onClick={onStudioOpen} 
+                                className="group flex items-center gap-3 p-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl transition-all shadow-sm active:scale-[0.98] text-left w-full cursor-pointer"
+                            >
+                                <div className="w-9 h-9 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
+                                    <Zap size={17} fill="currentColor" />
+                                </div>
+                                <div className="min-w-0">
+                                    <span className="block font-bold text-sm leading-tight">{t.studio_title}</span>
+                                    <span className="text-[11px] font-medium text-emerald-100 block truncate mt-0.5">{t.studio_desc}</span>
+                                </div>
+                            </button>
+
+                            {/* Secondary Tool: Digital Manipulatives */}
+                            <button 
+                                type="button"
+                                onClick={onFractionLabOpen} 
+                                className="card-tactile group flex items-center gap-3 p-3 text-left w-full cursor-pointer"
+                            >
+                                <div className="w-8 h-8 bg-sky-50 dark:bg-sky-950/50 border border-sky-200 dark:border-sky-800/60 rounded-xl flex items-center justify-center text-sky-600 dark:text-sky-400 shrink-0">
+                                    <PieChart size={16} />
+                                </div>
+                                <div className="min-w-0">
+                                    <span className="block font-bold text-xs text-[var(--text-main)] group-hover:text-sky-700 dark:group-hover:text-sky-300 leading-tight truncate">
+                                        {lang === 'sv' ? "Digitala laborationer" : "Digital Manipulatives"}
+                                    </span>
+                                    <span className="text-[11px] font-medium text-[var(--text-muted)] block truncate mt-0.5">
+                                        {lang === 'sv' ? "Bråk, Algebra, Geometri" : "Fraction, Algebra, Geometry"}
+                                    </span>
+                                </div>
+                            </button>
+
+                            {/* Secondary Tool: Test Lab */}
+                            <button 
+                                type="button"
+                                onClick={onLabOpen} 
+                                className="card-tactile group flex items-center gap-3 p-3 text-left w-full cursor-pointer"
+                            >
+                                <div className="w-8 h-8 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 rounded-xl flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                                    <Beaker size={16} />
+                                </div>
+                                <div className="min-w-0">
+                                    <span className="block font-bold text-xs text-[var(--text-main)] group-hover:text-amber-700 dark:group-hover:text-amber-300 leading-tight">
+                                        Test Lab
+                                    </span>
+                                    <span className="text-[11px] font-medium text-[var(--text-muted)] block truncate mt-0.5">
+                                        {lang === 'sv' ? 'Övningsprov & diagnoser' : 'Practice tests'}
+                                    </span>
+                                </div>
+                            </button>
+
+                            {/* Inline Timer Control */}
+                            <div className="flex items-center gap-2.5 p-2.5 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl w-full">
+                                <div className="w-8 h-8 bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                                    <Clock size={15} />
+                                </div>
+                                <div className="flex-1 flex items-center gap-1.5">
+                                    <select 
+                                        value={timerSettings.duration / 60} 
+                                        onChange={(e) => toggleTimer(Number(e.target.value))} 
+                                        className="flex-1 bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] py-1.5 px-2.5 rounded-xl text-xs font-bold font-mono outline-none cursor-pointer focus:border-emerald-600"
+                                    >
+                                        <option value="0">{t.timer_off}</option>
+                                        {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
+                                    </select>
+                                    {timerSettings.duration > 0 && (
+                                        <button 
+                                            type="button"
+                                            onClick={resetTimer} 
+                                            className="p-1.5 text-rose-600 dark:text-rose-400 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-main)] hover:border-rose-400 transition-colors cursor-pointer"
+                                        >
+                                            <RotateCcw size={13} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Question Studio */}
-                            <div className="theme-emerald">
-                                <button onClick={onStudioOpen} className="group flex items-center gap-3.5 p-3.5 bg-[var(--brand-solid)] text-white rounded-[var(--radius-card)] hover:opacity-90 transition-all shadow-md text-left w-full cursor-pointer">
-                                    <div className="w-9 h-9 bg-white/20 rounded-[var(--radius-btn)] flex items-center justify-center shrink-0">
-                                        <Zap size={17} fill="currentColor" />
-                                    </div>
-                                    <div>
-                                        <span className="block font-bold text-xs uppercase tracking-tight leading-tight">{t.studio_title}</span>
-                                        <span className="text-[9px] font-medium text-white/80 uppercase tracking-widest">{t.studio_desc}</span>
-                                    </div>
-                                </button>
-                            </div>
-
-                            {/* Digitala laborationer */}
-                            <div className="theme-indigo">
+                            {/* Bottom Row Compact Tools */}
+                            <div className="grid grid-cols-2 gap-2">
                                 <button 
-                                    onClick={onFractionLabOpen} 
-                                    className="group flex items-center gap-3 p-3 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] hover:bg-[var(--brand-solid)] transition-all text-left w-full cursor-pointer"
+                                    type="button"
+                                    onClick={onTimesTableOpen} 
+                                    className="card-tactile w-full flex flex-col items-center justify-center gap-1.5 p-3 text-center cursor-pointer"
                                 >
-                                    <div className="w-8 h-8 bg-[var(--bg-card)] rounded-[var(--radius-btn)] flex items-center justify-center text-[var(--brand-text)] shrink-0 shadow-2xs">
-                                        <PieChart size={16} />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <span className="block font-bold text-xs uppercase text-[var(--text-main)] group-hover:text-white leading-tight truncate">
-                                            {lang === 'sv' ? "Digitala laborationer" : "Digital Manipulatives"}
-                                        </span>
-                                        <span className="text-[9px] font-bold text-[var(--brand-text)] group-hover:text-white/85 uppercase tracking-widest block truncate">
-                                            {lang === 'sv' ? "Bråk, Algebra, Geometri" : "Fraction, Algebra, Geometry"}
-                                        </span>
-                                    </div>
+                                    <Grid3X3 size={16} className="text-emerald-600 dark:text-emerald-400" />
+                                    <span className="font-bold text-xs text-[var(--text-main)]">{t.times_table_title}</span>
                                 </button>
-                            </div>
-
-                            {/* Test Lab */}
-                            <div className="theme-indigo">
-                                <button onClick={onLabOpen} className="group flex items-center gap-3 p-3 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] hover:bg-[var(--brand-solid)] transition-all text-left w-full cursor-pointer">
-                                    <div className="w-8 h-8 bg-[var(--bg-card)] rounded-[var(--radius-btn)] flex items-center justify-center text-[var(--brand-text)] shrink-0 shadow-2xs">
-                                        <Beaker size={16} />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <span className="block font-bold text-xs uppercase text-[var(--text-main)] group-hover:text-white leading-tight">Test Lab</span>
-                                        <span className="text-[9px] font-bold text-[var(--brand-text)] group-hover:text-white/85 uppercase tracking-widest block">
-                                            {lang === 'sv' ? 'Övningsprov' : 'Practice tests'}
-                                        </span>
-                                    </div>
+                                <button 
+                                    type="button"
+                                    onClick={onStatsOpen} 
+                                    className="card-tactile w-full flex flex-col items-center justify-center gap-1.5 p-3 text-center cursor-pointer"
+                                >
+                                    <BarChart3 size={16} className="text-amber-600 dark:text-amber-400" />
+                                    <span className="font-bold text-xs text-[var(--text-main)]">{t.stats_title}</span>
                                 </button>
-                            </div>
-
-                            {/* Timer Inline Tool */}
-                            <div className="theme-emerald">
-                                <div className="flex items-center gap-2.5 p-3 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] w-full">
-                                    <div className="w-8 h-8 bg-[var(--brand-solid)] rounded-[var(--radius-btn)] flex items-center justify-center text-white shrink-0 shadow-2xs">
-                                        <Clock size={16} />
-                                    </div>
-                                    <div className="flex-1 flex items-center gap-1.5">
-                                        <select value={timerSettings.duration / 60} onChange={(e) => toggleTimer(Number(e.target.value))} className="flex-1 bg-[var(--bg-card)] border border-[var(--border-strong)] text-[var(--text-main)] py-1.5 px-2 rounded-[var(--radius-btn)] text-xs font-bold outline-none cursor-pointer focus:border-[var(--brand-solid)] appearance-none">
-                                            <option value="0">{t.timer_off}</option>
-                                            {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
-                                        </select>
-                                        {timerSettings.duration > 0 && (
-                                            <button onClick={resetTimer} className="p-1.5 text-[var(--theme-rose-text)] bg-[var(--bg-card)] rounded-[var(--radius-btn)] shadow-2xs border border-[var(--border-strong)] hover:border-[var(--theme-rose-border)] hover:bg-[var(--theme-rose-bg)] transition-colors cursor-pointer">
-                                                <RotateCcw size={14} />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Bottom Row Tools */}
-                            <div className="grid grid-cols-2 gap-2.5">
-                                <div className="theme-emerald">
-                                    <button onClick={onTimesTableOpen} className="w-full group flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] transition-all text-center cursor-pointer">
-                                        <Grid3X3 size={18} className="text-[var(--brand-text)]" />
-                                        <span className="font-bold text-[10px] uppercase text-[var(--text-main)]">{t.times_table_title}</span>
-                                    </button>
-                                </div>
-                                <div className="theme-amber">
-                                    <button onClick={onStatsOpen} className="w-full group flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] transition-all text-center cursor-pointer">
-                                        <BarChart3 size={18} className="text-[var(--brand-text)]" />
-                                        <span className="font-bold text-[10px] uppercase text-[var(--text-main)]">{t.stats_title}</span>
-                                    </button>
-                                </div>
                             </div>
                         </div>
 
-                        {/* Compact Utility Menu */}
-                        <div className="card p-3 flex flex-wrap gap-1.5 border border-[var(--border-main)]">
+                        {/* Utility Links */}
+                        <div className="card p-2.5 grid grid-cols-2 gap-1.5">
                             <button 
                                 type="button"
                                 onClick={onContentOpen} 
-                                className="flex-1 min-w-[110px] px-2.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[10px] font-bold uppercase tracking-wider text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
+                                className="px-2.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[11px] font-bold text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                                <Map size={12} className="text-indigo-500 shrink-0" />
                                 <span className="truncate">{t.content_map}</span>
                             </button>
                             <button 
                                 type="button"
                                 onClick={() => setShowDashboardTutorial(true)} 
-                                className="flex-1 min-w-[110px] px-2.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[10px] font-bold uppercase tracking-wider text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
+                                className="px-2.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[11px] font-bold text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                                <HelpCircle size={12} className="text-amber-500 shrink-0" />
+                                <HelpCircle size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
                                 <span className="truncate">{lang === 'sv' ? "Snabbguide" : "Quick Guide"}</span>
                             </button>
                             <button 
                                 type="button"
                                 onClick={onLgrOpen} 
-                                className="flex-1 min-w-[110px] px-2.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[10px] font-bold uppercase tracking-wider text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
+                                className="px-2.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[11px] font-bold text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                                <Book size={12} className="text-emerald-500 shrink-0" />
+                                <Book size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 <span className="truncate">{t.lgr_link}</span>
                             </button>
                             <button 
                                 type="button"
                                 onClick={onAboutOpen} 
-                                className="flex-1 min-w-[110px] px-2.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[10px] font-bold uppercase tracking-wider text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
+                                className="px-2.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[11px] font-bold text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                                <Info size={12} className="text-slate-400 shrink-0" />
+                                <Info size={12} className="text-[var(--text-muted)] shrink-0" />
                                 <span className="truncate">{t.about_link}</span>
                             </button>
                         </div>
                     </aside>
                 )}
 
-
                 {/* ========================================================= */}
-                {/* ➡️ MAIN CONTENT (FULL WIDTH FOR STUDENTS/GUESTS)          */}
+                {/* MAIN CONTENT COLUMN                                       */}
                 {/* ========================================================= */}
                 <main className="w-full min-w-0 flex flex-col">
                     
-                    {/* --- ACTIVE SESSION RESUME BANNER (Adaptive 1 or Multi-Room) --- */}
-                    {activeSessions.length > 0 && ['teacher', 'super_admin'].includes(userRole) && (
-                        <div className="theme-rose mb-6 p-4 sm:p-5 bg-[var(--brand-solid)] rounded-[var(--radius-card)] shadow-2xl shadow-[var(--brand-solid)]/20 flex flex-col gap-3 animate-in slide-in-from-top-4 duration-500 text-white">
-                            
-                            {/* Banner Top Header Strip */}
-                            <div className="flex items-center justify-between border-b border-white/15 pb-2.5">
+                    {/* Active Session Resume Banner */}
+                    {activeSessions.length > 0 && isEducator && (
+                        <div className="mb-4 p-4 bg-rose-600 dark:bg-rose-700 rounded-2xl shadow-sm flex flex-col gap-2.5 animate-in slide-in-from-top-2 duration-300 text-white">
+                            <div className="flex items-center justify-between border-b border-white/15 pb-2">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
-                                    <h3 className="text-xs sm:text-sm font-black uppercase italic tracking-wider text-white">
+                                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-white">
                                         {activeSessions.length === 1 
                                             ? t.resume_h 
                                             : t.active_sessions_count(activeSessions.length)}
                                     </h3>
                                 </div>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-white/80 bg-black/20 px-2 py-0.5 rounded-md">
+                                <span className="text-[11px] font-semibold text-white/85">
                                     {t.click_to_resume}
                                 </span>
                             </div>
 
-                            {/* Active Rooms Grid / List */}
-                            <div className={`grid gap-2.5 ${activeSessions.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                            <div className={`grid gap-2 ${activeSessions.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                                 {activeSessions.map((sessionItem) => {
                                     const modeLabel = sessionItem.active_question_data?.mode 
                                         ? String(sessionItem.active_question_data.mode).replace(/^activity_/, '').replace(/_/g, ' ') 
@@ -742,32 +654,33 @@ const fetchArchive = async () => {
                                     return (
                                         <div 
                                             key={sessionItem.id} 
-                                            className="bg-black/15 hover:bg-black/25 border border-white/10 rounded-[var(--radius-btn)] p-3 flex items-center justify-between gap-3 transition-colors"
+                                            className="bg-black/15 hover:bg-black/25 border border-white/10 rounded-xl p-2.5 flex items-center justify-between gap-3 transition-colors"
                                         >
-                                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                <div className="w-8 h-8 rounded-lg bg-white text-[var(--brand-solid)] flex items-center justify-center shrink-0 shadow-xs font-black">
-                                                    <PlayCircle size={18} />
+                                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                                <div className="w-8 h-8 rounded-lg bg-white text-rose-600 flex items-center justify-center shrink-0">
+                                                    <PlayCircle size={17} />
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center gap-2 truncate">
-                                                        <span className="font-black text-xs text-white truncate">
+                                                        <span className="font-bold text-xs text-white truncate">
                                                             {sessionItem.title || t.untitled_session}
                                                         </span>
                                                         {modeLabel && (
-                                                            <span className="text-[9px] font-bold uppercase tracking-wider bg-white/20 text-white px-1.5 py-0.2 rounded shrink-0">
+                                                            <span className="text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white px-1.5 py-0.5 rounded shrink-0">
                                                                 {modeLabel}
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-[10px] font-bold text-white/80 tracking-wider font-mono">
-                                                        {t.pin_label}: <span className="text-white font-black underline tracking-widest">{sessionItem.class_code}</span>
+                                                    <p className="text-[11px] font-semibold text-white/85 font-mono">
+                                                        {t.pin_label}: <span className="text-white font-extrabold tracking-widest">{sessionItem.class_code}</span>
                                                     </p>
                                                 </div>
                                             </div>
 
                                             <button 
+                                                type="button"
                                                 onClick={() => onRelaunch(sessionItem)} 
-                                                className="shrink-0 px-4 py-2 bg-white text-[var(--brand-solid)] hover:bg-slate-100 rounded-lg font-black uppercase tracking-wider text-[10px] shadow-sm active:scale-95 transition-all cursor-pointer"
+                                                className="shrink-0 px-3.5 py-1.5 bg-white text-rose-700 hover:bg-rose-50 rounded-lg font-bold text-xs transition-colors cursor-pointer"
                                             >
                                                 {t.resume_btn}
                                             </button>
@@ -775,66 +688,79 @@ const fetchArchive = async () => {
                                     );
                                 })}
                             </div>
-
                         </div>
                     )}
 
-                    {/* --- CONTENT TABS & MAP NAV (Educators Only) --- */}
+                    {/* Educator Top Navigation Tabs & Changelog Pill */}
                     {isEducator && (
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                            <div className="flex gap-2 w-fit">
+                        <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+                            <div className="inline-flex bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1">
                                 <button 
+                                    type="button"
                                     onClick={() => setActiveTab('curriculum')} 
-                                    className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'curriculum' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                        activeTab === 'curriculum' 
+                                            ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]' 
+                                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                    }`}
                                 >
-                                    <Book size={14}/> {t.curriculum_title}
+                                    <Book size={13} className={activeTab === 'curriculum' ? 'text-emerald-600 dark:text-emerald-400' : ''} />
+                                    {t.curriculum_title}
                                 </button>
 
                                 <button 
+                                    type="button"
                                     onClick={() => setActiveTab('hub')} 
-                                    className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'hub' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                        activeTab === 'hub' 
+                                            ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]' 
+                                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                    }`}
                                 >
-                                    <Layers size={14}/> {lang === 'sv' ? "Grupper" : "Custom Unit"}
+                                    <Layers size={13} className={activeTab === 'hub' ? 'text-sky-600 dark:text-sky-400' : ''} />
+                                    {lang === 'sv' ? "Grupper" : "Custom Units"}
                                 </button>
 
                                 <button 
+                                    type="button"
                                     onClick={() => setActiveTab('archive')} 
-                                    className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'archive' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                        activeTab === 'archive' 
+                                            ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]' 
+                                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                    }`}
                                 >
-                                    <History size={14}/> {t.archive_title}
+                                    <History size={13} className={activeTab === 'archive' ? 'text-amber-600 dark:text-amber-400' : ''} />
+                                    {t.archive_title}
                                 </button>
                             </div>
 
-                            <div className="theme-orange">
-                                <button 
-                                    onClick={() => setShowUpdateLog(true)} 
-                                    className="flex items-center gap-2 px-3.5 py-2.5 rounded-[var(--radius-btn)] bg-[var(--brand-bg)] border border-[var(--brand-border)] hover:border-[var(--brand-solid)] text-[var(--brand-text)] transition-all shadow-xs group cursor-pointer"
-                                    title={t.view_all}
-                                >
-                                    <div className="flex items-center gap-1.5 font-black text-[10px] uppercase tracking-wider">
-                                        <Sparkles size={13} className="text-amber-500 fill-amber-500 group-hover:rotate-12 transition-transform" />
-                                        <span className="hidden md:inline text-[var(--text-muted)] font-bold">{t.news_title}:</span>
-                                        <span className="truncate max-w-[150px] lg:max-w-[200px] text-[var(--text-main)] font-black">
-                                            {latestUpdate.title[lang]}
-                                        </span>
-                                    </div>
-                                    <span className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--brand-border)] text-[9px] font-black tracking-normal">
-                                        v{latestUpdate.version}
-                                    </span>
-                                </button>
-                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => setShowUpdateLog(true)} 
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] hover:border-amber-500 text-xs transition-colors group cursor-pointer"
+                                title={t.view_all}
+                            >
+                                <Sparkles size={13} className="text-amber-500 fill-amber-500 shrink-0" />
+                                <span className="truncate max-w-[160px] lg:max-w-[220px] text-[var(--text-main)] font-bold">
+                                    {latestUpdate.title[lang]}
+                                </span>
+                                <span className="px-1.5 py-0.5 rounded bg-[var(--bg-surface)] border border-[var(--border-main)] text-[10px] font-bold font-mono text-[var(--text-muted)]">
+                                    v{latestUpdate.version}
+                                </span>
+                            </button>
                         </div>
                     )}
 
-                    {/* --- TAB CONTENT --- */}
+                    {/* Tab Content */}
                     {activeTab === 'hub' ? (
-                        <div className="animate-in slide-in-from-right-4 duration-500 pb-20">
+                        <div className="animate-in fade-in duration-200 pb-20">
                             <TeacherHubManager lang={lang} teacherId={profile?.id} />
                         </div>
                     ) : activeTab === 'curriculum' ? (
-                        <div className="flex flex-col space-y-3.5 animate-in slide-in-from-right-4 duration-500">
+                        <div className="flex flex-col space-y-3.5 animate-in fade-in duration-200">
                             
-                            {/* --- UNIFIED SPOTLIGHT SEARCH, STUDENT TOOLS & DIAGNOSTIC WORKSPACE --- */}
+                            {/* Unified Spotlight Search, Student Tools & Diagnostic Workspace */}
                             <ConceptMapDashboard
                                 lang={lang}
                                 diagnosticTarget={diagnosticTarget}
@@ -850,28 +776,26 @@ const fetchArchive = async () => {
                                 } : null}
                             />
 
-                            {/* --- BELOW THE SEARCH DECK (Shown when not actively inspecting a diagnostic search result) --- */}
+                            {/* Below Search Deck */}
                             {!diagnosticTarget && (
                                 userRole === 'student' && activeBucket && activeBucket !== 'FREE_PLAY' ? (
-                                    /* --- CURATED BUCKET ROADMAP: DEL 1, DEL 2, ETC. --- */
-                                    <div className="space-y-6">
-                                        {/* Unit Header */}
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--bg-card)] p-6 rounded-[var(--radius-card)] border border-[var(--border-main)] shadow-sm">
-                                            {/* 100% Unit Completion Banner */}
+                                    /* Curated Bucket Roadmap */
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--bg-card)] p-5 rounded-2xl border border-[var(--border-main)]">
                                             {progressPercentage === 100 && (
-                                                <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 rounded-[var(--radius-card)] p-6 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in-95 duration-500">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
-                                                            <Award size={32} className="text-amber-300 drop-shadow-md" />
+                                                <div className="w-full bg-emerald-600 rounded-xl p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in-95 duration-300">
+                                                    <div className="flex items-center gap-3.5">
+                                                        <div className="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
+                                                            <Award size={26} className="text-amber-300" />
                                                         </div>
                                                         <div>
-                                                            <span className="text-[12px] font-black uppercase tracking-widest text-emerald-100 block">
-                                                                {lang === 'sv' ? "Grattis! Enheten Slutförd" : "Congratulations! Unit Complete"}
+                                                            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-100 block">
+                                                                {lang === 'sv' ? "Enheten slutförd" : "Unit Complete"}
                                                             </span>
-                                                            <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight italic leading-tight">
-                                                                {lang === 'sv' ? "Alla moment är avklarade! 🏆" : "All parts completed! 🏆"}
+                                                            <h3 className="text-lg font-extrabold leading-tight">
+                                                                {lang === 'sv' ? "Alla moment är avklarade!" : "All parts completed!"}
                                                             </h3>
-                                                            <p className="text-s font-semibold text-emerald-100/90 mt-1">
+                                                            <p className="text-xs font-medium text-emerald-100/90 mt-0.5">
                                                                 {lang === 'sv' 
                                                                     ? `Du har gått igenom alla ${allUnitSteps.length} moment i ${activeBucket.name}.` 
                                                                     : `You have mastered all ${allUnitSteps.length} steps in ${activeBucket.name}.`}
@@ -881,49 +805,53 @@ const fetchArchive = async () => {
                                                     <button
                                                         type="button"
                                                         onClick={onBackToGateway}
-                                                        className="w-full sm:w-auto px-6 py-3 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
+                                                        className="w-full sm:w-auto px-5 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0"
                                                     >
-                                                        {lang === 'sv' ? "Välj ny enhet ➡" : "Choose New Unit ➡"}
+                                                        {lang === 'sv' ? "Välj ny enhet →" : "Choose New Unit →"}
                                                     </button>
                                                 </div>
                                             )}
-                                            <div className="flex-1 max-w-xl">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--brand-text)]">
-                                                    {lang === 'sv' ? "Aktiv Enhet" : "Active Unit"}
-                                                </span>
-                                                <h2 className="text-2xl font-black uppercase italic text-[var(--text-main)] tracking-tight">
-                                                    {activeBucket.name}
-                                                </h2>
-                                                
-                                                {/* Progress Readout */}
-                                                <div className="mt-3 space-y-1.5">
-                                                    <div className="flex items-center justify-between text-[11px] font-bold text-[var(--text-muted)]">
-                                                        <span>
-                                                            {lang === 'sv' 
-                                                                ? `${completedCount} av ${allUnitSteps.length} steg klara` 
-                                                                : `${completedCount} of ${allUnitSteps.length} steps completed`}
+
+                                            {progressPercentage < 100 && (
+                                                <>
+                                                    <div className="flex-1 max-w-xl">
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                                                            {lang === 'sv' ? "Aktiv enhet" : "Active Unit"}
                                                         </span>
-                                                        <span className="font-black text-[var(--text-main)]">{progressPercentage}%</span>
+                                                        <h2 className="text-xl font-extrabold text-[var(--text-main)] tracking-tight mt-0.5">
+                                                            {activeBucket.name}
+                                                        </h2>
+                                                        
+                                                        <div className="mt-2.5 space-y-1.5">
+                                                            <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-muted)]">
+                                                                <span>
+                                                                    {lang === 'sv' 
+                                                                        ? `${completedCount} av ${allUnitSteps.length} steg klara` 
+                                                                        : `${completedCount} of ${allUnitSteps.length} steps completed`}
+                                                                </span>
+                                                                <span className="font-bold font-mono text-[var(--text-main)]">{progressPercentage}%</span>
+                                                            </div>
+                                                            <div className="w-full h-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-main)] overflow-hidden">
+                                                                <div 
+                                                                    className="h-full bg-emerald-600 transition-all duration-500 ease-out rounded-full"
+                                                                    style={{ width: `${progressPercentage}%` }}
+                                                                />
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    {/* Progress Bar Track */}
-                                                    <div className="w-full h-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] overflow-hidden">
-                                                        <div 
-                                                            className="h-full bg-[var(--brand-solid)] transition-all duration-500 ease-out rounded-full"
-                                                            style={{ width: `${progressPercentage}%` }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <button 
-                                                onClick={onBackToGateway}
-                                                className="w-full sm:w-auto px-4 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-[var(--border-strong)] cursor-pointer"
-                                            >
-                                                <ChevronLeft size={16}/> {lang === 'sv' ? "Byt Område" : "Change Unit"}
-                                            </button>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={onBackToGateway}
+                                                        className="w-full sm:w-auto px-4 py-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 border border-[var(--border-strong)] cursor-pointer shrink-0"
+                                                    >
+                                                        <ChevronLeft size={15}/> {lang === 'sv' ? "Byt område" : "Change Unit"}
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
 
-                                        {/* Parts Sequence (Master-Detail: Left Timeline + Right Goldilocks Inspector Card) */}
-                                        <div className="space-y-4">
+                                        {/* Parts Sequence */}
+                                        <div className="space-y-3">
                                             {curatedParts.map((part, pIdx) => {
                                                 const partSteps = part.steps || [];
                                                 const partCompletedCount = partSteps.filter(s => checkIsStepCompleted(s, completedStepIds)).length;
@@ -932,7 +860,6 @@ const fetchArchive = async () => {
                                                     ? Boolean(collapsedPartSections[part.id]) 
                                                     : true;
 
-                                                // Determine which step is currently being inspected in this part's right-hand preview card
                                                 const defaultStep = partSteps.find(s => !checkIsStepCompleted(s, completedStepIds)) || partSteps[0] || null;
                                                 const inspectedStep = partSteps.find(s => s.id === inspectedStepByPart[part.id]) || defaultStep;
 
@@ -966,7 +893,6 @@ const fetchArchive = async () => {
                                                     }
                                                 };
 
-                                                // Compute metadata for the inspected step in the right column
                                                 const inspIsInstruction = inspectedStep && (inspectedStep.type === 'instruction' || !!inspectedStep.sheetId);
                                                 const inspIsTest = inspectedStep && inspectedStep.type === 'test';
                                                 const inspIsCompleted = inspectedStep ? checkIsStepCompleted(inspectedStep, completedStepIds) : false;
@@ -981,25 +907,24 @@ const fetchArchive = async () => {
                                                 return (
                                                     <div 
                                                         key={part.id || pIdx} 
-                                                        className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-main)] overflow-hidden shadow-xs transition-all"
+                                                        className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-main)] overflow-hidden transition-colors"
                                                     >
-                                                        {/* Part Header Strip */}
                                                         <div 
                                                             onClick={handleExpandOrTogglePart}
-                                                            className="bg-[var(--bg-surface)] px-5 py-3.5 border-b border-[var(--border-main)] flex items-center justify-between cursor-pointer select-none group"
+                                                            className="bg-[var(--bg-surface)]/70 hover:bg-[var(--bg-surface)] px-4 py-3 border-b border-[var(--border-main)] flex items-center justify-between cursor-pointer select-none group transition-colors"
                                                         >
                                                             <div className="flex items-center gap-3">
-                                                                <span className={`w-7 h-7 rounded-lg text-white text-sm font-black flex items-center justify-center shrink-0 shadow-2xs ${
-                                                                    isPartFullyCompleted ? 'bg-emerald-600' : 'bg-[var(--brand-solid)]'
+                                                                <span className={`w-7 h-7 rounded-lg text-white text-xs font-extrabold font-mono flex items-center justify-center shrink-0 ${
+                                                                    isPartFullyCompleted ? 'bg-emerald-600' : 'bg-stone-800 dark:bg-stone-700'
                                                                 }`}>
                                                                     {isPartFullyCompleted ? <Check size={14} strokeWidth={3} /> : pIdx + 1}
                                                                 </span>
                                                                 <div className="flex items-center gap-2">
-                                                                    <h3 className="font-black text-sm sm:text-base uppercase tracking-wider text-[var(--text-main)] group-hover:text-[var(--brand-text)] transition-colors">
+                                                                    <h3 className="font-bold text-sm text-[var(--text-main)] group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
                                                                         {getPartDisplayTitle(part, pIdx, lang)}
                                                                     </h3>
                                                                     {isPartFullyCompleted && (
-                                                                        <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
+                                                                        <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
                                                                             {lang === 'sv' ? "Klar ✓" : "Done ✓"}
                                                                         </span>
                                                                     )}
@@ -1007,20 +932,18 @@ const fetchArchive = async () => {
                                                             </div>
 
                                                             <div className="flex items-center gap-3">
-                                                                <span className="text-xs font-bold text-[var(--text-muted)] tracking-wider">
+                                                                <span className="text-xs font-semibold font-mono text-[var(--text-muted)]">
                                                                     {partCompletedCount}/{partSteps.length} {lang === 'sv' ? "klara" : "done"}
                                                                 </span>
-                                                                <div className="text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors p-1 rounded-md">
+                                                                <div className="text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors p-1">
                                                                     {isPartCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                                                                 </div>
                                                             </div>
                                                         </div>
 
-                                                        {/* Master-Detail Expanded Body */}
                                                         {!isPartCollapsed && (
-                                                            <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                                                                
-                                                                {/* LEFT COLUMN (6/12): STEP SELECTOR TIMELINE */}
+                                                            <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                                                                {/* Left Column: Step Timeline */}
                                                                 <div className="lg:col-span-6 space-y-1">
                                                                     {partSteps.map((step, sIdx) => {
                                                                         const isCompleted = checkIsStepCompleted(step, completedStepIds);
@@ -1034,27 +957,20 @@ const fetchArchive = async () => {
 
                                                                         return (
                                                                             <div key={step.id || sIdx} className="relative flex items-stretch gap-3">
-                                                                                {/* Timeline Spine */}
                                                                                 <div className="flex flex-col items-center shrink-0 w-7 select-none">
-                                                                                    <div 
-                                                                                        className={`w-[2px] flex-1 ${
-                                                                                            sIdx === 0 
-                                                                                                ? 'bg-transparent' 
-                                                                                                : isCompleted 
-                                                                                                    ? 'bg-emerald-500' 
-                                                                                                    : 'bg-slate-300 dark:bg-slate-600'
-                                                                                        }`} 
-                                                                                    />
+                                                                                    <div className={`w-[2px] flex-1 ${
+                                                                                        sIdx === 0 ? 'bg-transparent' : isCompleted ? 'bg-emerald-500' : 'bg-[var(--border-strong)]'
+                                                                                    }`} />
 
-                                                                                    <div className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs shrink-0 z-10 transition-colors my-1 ${
+                                                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold font-mono text-xs shrink-0 z-10 transition-colors my-1 ${
                                                                                         isInstruction
-                                                                                            ? 'bg-indigo-600 text-white'
+                                                                                            ? 'bg-sky-600 text-white'
                                                                                             : isTest
-                                                                                                ? isCompleted ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'
+                                                                                                ? isCompleted ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white'
                                                                                                 : isCompleted
                                                                                                     ? 'bg-emerald-600 text-white'
                                                                                                     : isInspected
-                                                                                                        ? 'bg-indigo-600 text-white ring-2 ring-indigo-500/30'
+                                                                                                        ? 'bg-emerald-600 text-white ring-2 ring-emerald-500/30'
                                                                                                         : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-strong)]'
                                                                                     }`}>
                                                                                         {isInstruction ? (
@@ -1068,18 +984,11 @@ const fetchArchive = async () => {
                                                                                         )}
                                                                                     </div>
 
-                                                                                    <div 
-                                                                                        className={`w-[2px] flex-1 ${
-                                                                                            sIdx === partSteps.length - 1 
-                                                                                                ? 'bg-transparent' 
-                                                                                                : isCompleted && completedStepIds.includes(partSteps[sIdx + 1]?.id)
-                                                                                                    ? 'bg-emerald-500' 
-                                                                                                    : 'bg-slate-300 dark:bg-slate-600'
-                                                                                        }`} 
-                                                                                    />
+                                                                                    <div className={`w-[2px] flex-1 ${
+                                                                                        sIdx === partSteps.length - 1 ? 'bg-transparent' : isCompleted && completedStepIds.includes(partSteps[sIdx + 1]?.id) ? 'bg-emerald-500' : 'bg-[var(--border-strong)]'
+                                                                                    }`} />
                                                                                 </div>
 
-                                                                                {/* Step Selector Row */}
                                                                                 <div className="flex-1 min-w-0 py-1">
                                                                                     <button
                                                                                         type="button"
@@ -1087,11 +996,11 @@ const fetchArchive = async () => {
                                                                                         className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-2.5 cursor-pointer ${
                                                                                             isInspected
                                                                                                 ? isInstruction
-                                                                                                    ? 'bg-indigo-50/90 dark:bg-indigo-950/40 border-indigo-600 ring-2 ring-indigo-600/15 shadow-xs'
+                                                                                                    ? 'bg-sky-50/70 dark:bg-sky-950/30 border-sky-600'
                                                                                                     : isTest
-                                                                                                        ? 'bg-amber-50/90 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/15 shadow-xs'
-                                                                                                        : 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-600 ring-2 ring-emerald-600/15 shadow-xs'
-                                                                                                : 'bg-[var(--bg-surface)]/70 hover:bg-[var(--bg-surface)] border-[var(--border-main)] hover:border-[var(--border-strong)]'
+                                                                                                        ? 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-500'
+                                                                                                        : 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-600'
+                                                                                                : 'bg-[var(--bg-surface)]/50 hover:bg-[var(--bg-surface)] border-[var(--border-main)] hover:border-[var(--border-strong)]'
                                                                                         }`}
                                                                                     >
                                                                                         <div className="min-w-0 flex-1">
@@ -1105,26 +1014,26 @@ const fetchArchive = async () => {
                                                                                                 </span>
 
                                                                                                 {isInstruction ? (
-                                                                                                    <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0">
+                                                                                                    <span className="bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">
                                                                                                         {lang === 'sv' ? "Genomgång" : "Walkthrough"}
                                                                                                     </span>
                                                                                                 ) : isTest ? (
-                                                                                                    <span className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0">
+                                                                                                    <span className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">
                                                                                                         {step.testMode === 'exam' ? (lang === 'sv' ? "Prov" : "Exam") : (lang === 'sv' ? "Delprov" : "Checkpoint")}
                                                                                                     </span>
                                                                                                 ) : (
-                                                                                                    <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0">
+                                                                                                    <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold font-mono px-1.5 py-0.5 rounded shrink-0">
                                                                                                         {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
                                                                                                     </span>
                                                                                                 )}
 
                                                                                                 {isNextActive && !isCompleted && (
-                                                                                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title={lang === 'sv' ? "Nästa rekommenderade steg" : "Next recommended step"} />
+                                                                                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                                                                                                 )}
                                                                                             </div>
 
                                                                                             {!isInstruction && (
-                                                                                                <p className="text-[11px] font-medium text-[var(--text-muted)] truncate mt-0.5">
+                                                                                                <p className="text-xs font-medium text-[var(--text-muted)] truncate mt-0.5">
                                                                                                     {isTest
                                                                                                         ? `${step.questionCount || 10} ${lang === 'sv' ? "blandade frågor" : "mixed questions"}`
                                                                                                         : description}
@@ -1147,30 +1056,29 @@ const fetchArchive = async () => {
                                                                     })}
                                                                 </div>
 
-                                                                {/* RIGHT COLUMN (6/12): GOLDILOCKS-STYLE STEP INSPECTOR CARD */}
+                                                                {/* Right Column: Step Inspector Card */}
                                                                 {inspectedStep && (
                                                                     <div className="lg:col-span-6 lg:sticky lg:top-6 bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-2xl p-5 space-y-4">
                                                                         {inspIsInstruction ? (
-                                                                            /* --- WALKTHROUGH PREVIEW --- */
                                                                             <>
                                                                                 <div className="flex items-start justify-between gap-3">
                                                                                     <div>
-                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-                                                                                            {lang === 'sv' ? "Interaktiv Genomgång" : "Interactive Walkthrough"}
+                                                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-sky-700 dark:text-sky-400">
+                                                                                            {lang === 'sv' ? "Interaktiv genomgång" : "Interactive Walkthrough"}
                                                                                         </span>
-                                                                                        <h4 className="text-lg font-black text-[var(--text-main)] mt-0.5">
+                                                                                        <h4 className="text-base font-extrabold text-[var(--text-main)] mt-0.5">
                                                                                             {inspectedStep.sheetTitle}
                                                                                         </h4>
                                                                                     </div>
                                                                                     {inspIsCompleted && (
-                                                                                        <span className="px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider shrink-0">
+                                                                                        <span className="px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold shrink-0">
                                                                                             {lang === 'sv' ? "Sedd ✓" : "Viewed ✓"}
                                                                                         </span>
                                                                                     )}
                                                                                 </div>
 
-                                                                                <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] text-xs font-semibold text-[var(--text-muted)] leading-relaxed flex items-start gap-3">
-                                                                                    <div className="w-9 h-9 rounded-xl bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                                                                                <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] text-xs font-medium text-[var(--text-muted)] leading-relaxed flex items-start gap-3">
+                                                                                    <div className="w-9 h-9 rounded-xl bg-sky-600/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                                                                                         <BookOpen size={18} />
                                                                                     </div>
                                                                                     <div>
@@ -1188,7 +1096,7 @@ const fetchArchive = async () => {
                                                                                 <button
                                                                                     type="button"
                                                                                     onClick={() => handleOpenInstruction(inspectedStep)}
-                                                                                    className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                                                                                    className="w-full py-3 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                                                                                 >
                                                                                     <Play size={14} fill="currentColor" />
                                                                                     <span>
@@ -1199,25 +1107,24 @@ const fetchArchive = async () => {
                                                                                 </button>
                                                                             </>
                                                                         ) : inspIsTest ? (
-                                                                            /* --- CHECKPOINT / TEST PREVIEW --- */
                                                                             <>
                                                                                 <div className="flex items-start justify-between gap-3">
                                                                                     <div>
-                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                                                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
                                                                                             {inspectedStep.testMode === 'exam'
                                                                                                 ? (lang === 'sv' ? "Slutprov" : "Unit Exam")
                                                                                                 : (lang === 'sv' ? "Kunskapskontroll" : "Checkpoint Quiz")}
                                                                                         </span>
-                                                                                        <h4 className="text-lg font-black text-[var(--text-main)] mt-0.5">
+                                                                                        <h4 className="text-base font-extrabold text-[var(--text-main)] mt-0.5">
                                                                                             {inspectedStep.title || (lang === 'sv' ? "Delprov" : "Checkpoint")}
                                                                                         </h4>
                                                                                     </div>
-                                                                                    <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider shrink-0">
+                                                                                    <span className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-[11px] font-bold font-mono shrink-0">
                                                                                         {inspectedStep.questionCount || 10} {lang === 'sv' ? "frågor" : "questions"}
                                                                                     </span>
                                                                                 </div>
 
-                                                                                <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] text-xs font-semibold text-[var(--text-muted)] leading-relaxed flex items-start gap-3">
+                                                                                <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] text-xs font-medium text-[var(--text-muted)] leading-relaxed flex items-start gap-3">
                                                                                     <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                                                                                         <Beaker size={18} />
                                                                                     </div>
@@ -1240,7 +1147,7 @@ const fetchArchive = async () => {
                                                                                             onStartCheckpoint(inspectedStep.configCode, inspectedStep.id);
                                                                                         }
                                                                                     }}
-                                                                                    className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-wider shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                                                                                    className="w-full py-3 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                                                                                 >
                                                                                     <Play size={14} fill="currentColor" />
                                                                                     <span>
@@ -1251,47 +1158,45 @@ const fetchArchive = async () => {
                                                                                 </button>
                                                                             </>
                                                                         ) : (
-                                                                            /* --- PRACTICE LEVEL GOLDILOCKS PREVIEW (No Too Hard / Too Easy buttons) --- */
                                                                             <>
                                                                                 <div className="flex items-start justify-between gap-3">
                                                                                     <div>
-                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">
+                                                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                                                                                             {lang === 'sv' ? "Övningsmoment" : "Practice Skill"}
                                                                                         </span>
-                                                                                        <h4 className="text-lg font-black text-[var(--text-main)] tracking-tight mt-0.5">
+                                                                                        <h4 className="text-base font-extrabold text-[var(--text-main)] tracking-tight mt-0.5">
                                                                                             {getTopicName(inspTopicId, lang)}
                                                                                         </h4>
                                                                                         {inspMeta?.description && (
-                                                                                            <p className="text-xs font-bold text-[var(--text-muted)] mt-0.5">
+                                                                                            <p className="text-xs font-medium text-[var(--text-muted)] mt-0.5">
                                                                                                 {inspMeta.description}
                                                                                             </p>
                                                                                         )}
                                                                                     </div>
-                                                                                    <span className="px-3 py-1 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-wider shrink-0 shadow-2xs">
+                                                                                    <span className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold font-mono shrink-0">
                                                                                         {lang === 'sv' ? `Nivå ${inspectedStep.level}` : `Level ${inspectedStep.level}`}
                                                                                     </span>
                                                                                 </div>
 
-                                                                                {/* Sample Problem Box ("Så här ser en uppgift ut:") */}
                                                                                 <div className="p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] space-y-2.5">
                                                                                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                                                                                             {lang === 'sv' ? "Så här ser en uppgift ut:" : "Sample problem:"}
                                                                                         </span>
                                                                                         <button
                                                                                             type="button"
                                                                                             onClick={() => fetchPartStepSample(inspTopicId, inspectedStep.level, inspectedStep.variationKey)}
                                                                                             disabled={isFetchingPartPreview}
-                                                                                            className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-main)] hover:border-emerald-500 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                                                                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-main)] hover:border-emerald-600 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
                                                                                         >
-                                                                                            <RotateCcw size={10} className={isFetchingPartPreview ? "animate-spin" : ""} />
+                                                                                            <RotateCcw size={11} className={isFetchingPartPreview ? "animate-spin" : ""} />
                                                                                             <span>{lang === 'sv' ? "Nytt exempel" : "New example"}</span>
                                                                                         </button>
                                                                                     </div>
 
-                                                                                    <div className="min-h-[100px] p-4 rounded-xl bg-[var(--bg-surface)]/60 border border-[var(--border-main)] flex flex-col justify-center items-center text-center overflow-visible">
+                                                                                    <div className="min-h-[100px] p-4 rounded-xl bg-[var(--bg-surface)]/50 border border-[var(--border-main)] flex flex-col justify-center items-center text-center overflow-visible">
                                                                                         {isFetchingPartPreview ? (
-                                                                                            <span className="text-xs font-bold text-[var(--text-muted)] animate-pulse">
+                                                                                            <span className="text-xs font-semibold text-[var(--text-muted)] animate-pulse">
                                                                                                 {lang === 'sv' ? "Hämtar exempel..." : "Loading example..."}
                                                                                             </span>
                                                                                         ) : partPreviewQuestion?.renderData ? (
@@ -1310,7 +1215,7 @@ const fetchArchive = async () => {
                                                                                                 )}
 
                                                                                                 {inspLiveDesc && (
-                                                                                                    <div className="text-xs font-semibold text-[var(--text-main)] leading-relaxed max-w-md text-center">
+                                                                                                    <div className="text-xs font-medium text-[var(--text-main)] leading-relaxed max-w-md text-center">
                                                                                                         <MathDisplay content={inspLiveDesc} />
                                                                                                     </div>
                                                                                                 )}
@@ -1320,7 +1225,7 @@ const fetchArchive = async () => {
                                                                                                 <MathDisplay content={inspMeta.mathExample} />
                                                                                             </div>
                                                                                         ) : (
-                                                                                            <span className="text-xs font-semibold text-[var(--text-muted)] italic">
+                                                                                            <span className="text-xs font-medium text-[var(--text-muted)]">
                                                                                                 {inspMeta?.description}
                                                                                             </span>
                                                                                         )}
@@ -1333,7 +1238,7 @@ const fetchArchive = async () => {
                                                                                         onSelect(inspTopicId, inspectedStep.level);
                                                                                         if (onStart) onStart();
                                                                                     }}
-                                                                                    className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                                                                                    className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                                                                                 >
                                                                                     <Play size={14} fill="currentColor" />
                                                                                     <span>
@@ -1354,36 +1259,35 @@ const fetchArchive = async () => {
                                         </div>
                                     </div>
                                 ) : (
-                                    /* --- CATEGORY TABS & TOPIC GRID (Free Play / Teacher) --- */
+                                    /* Category Tabs & Topic Grid (Free Play / Teacher) */
                                     <>
-                                        {/* CLEAN FULL-WIDTH HORIZONTAL CATEGORY TABS */}
-                                        <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+                                        {/* Category Filter Strip */}
+                                        <div className="flex gap-1.5 overflow-x-auto custom-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
                                             {Object.entries(CATEGORIES).map(([catKey, category]) => {
                                                 const isActive = expandedCategory === catKey;
-                                                const themeColorStr = category.color || 'emerald';
+                                                const themeColorStr = category.color === 'indigo' ? 'cobalt' : (category.color || 'emerald');
                                                 
                                                 return (
                                                     <div key={catKey} className={`theme-${themeColorStr}`}>
                                                         <button 
+                                                            type="button"
                                                             onClick={() => setExpandedCategory(catKey)}
-                                                            className={`flex items-center gap-2 px-4 py-2.5 rounded-[var(--radius-btn)] font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-2xs border-2 cursor-pointer ${
+                                                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap transition-all border cursor-pointer ${
                                                                 isActive 
-                                                                    ? `bg-[var(--brand-solid)] text-white border-[var(--brand-solid)]` 
-                                                                    : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'
+                                                                    ? 'bg-[var(--brand-solid)] text-white border-[var(--brand-solid)] shadow-2xs' 
+                                                                    : 'bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'
                                                             }`}
                                                         >
-                                                            {isActive && <Award size={14} />}
-                                                            {category.label[lang]}
+                                                            {isActive && <Award size={13} />}
+                                                            <span>{category.label[lang]}</span>
                                                         </button>
                                                     </div>
                                                 );
                                             })}
                                         </div>
 
-                                        {/* ACTIVE CATEGORY TOPICS GRID (Single-layer cards on canvas — no box-in-a-box) */}
-                                        <div className={`theme-${themeColorString} space-y-4`}>
-
-                                            {/* Backdrop to close open dropdown when clicking outside */}
+                                        {/* Topic Cards Grid */}
+                                        <div className={`theme-${themeColorString}`}>
                                             {openDropdownTopicId && (
                                                 <div 
                                                     className="fixed inset-0 z-20" 
@@ -1399,7 +1303,6 @@ const fetchArchive = async () => {
                                                         lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl]
                                                     );
 
-                                                    // Middle diagnostic entry point so unsure users calibrate in 1 click instead of starting at L1
                                                     const diagnosticStartLvl = availableLevels.length > 0
                                                         ? availableLevels[Math.min(Math.floor((availableLevels.length - 1) / 2), 2)]
                                                         : 1;
@@ -1411,39 +1314,39 @@ const fetchArchive = async () => {
                                                     return (
                                                         <div 
                                                             key={topic.id} 
-                                                            className={`relative bg-[var(--bg-card)] rounded-2xl p-4 sm:p-5 transition-all group ${
+                                                            className={`card-tactile relative p-4 sm:p-5 group ${
                                                                 isThisTopicSelected 
-                                                                    ? 'border-2 border-[var(--brand-solid)] shadow-md' 
-                                                                    : 'border border-[var(--border-main)] hover:border-[var(--brand-solid)] shadow-2xs hover:shadow-md'
+                                                                    ? 'border-2 border-[var(--brand-solid)] shadow-sm' 
+                                                                    : ''
                                                             } ${isDropdownOpen ? 'z-30' : 'z-10'}`}
                                                         >
                                                             {/* Topic Title & Level Count */}
-                                                            <div className="font-bold text-[var(--text-main)] mb-3.5 flex items-center justify-between gap-2 text-sm leading-tight">
+                                                            <div className="font-bold text-[var(--text-main)] mb-3 flex items-center justify-between gap-2 text-sm leading-snug">
                                                                 <span className="truncate">{topic.label[lang]}</span>
-                                                                <span className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-surface)] px-2 py-0.5 rounded-md border border-[var(--border-main)] shrink-0">
+                                                                <span className="text-[11px] font-bold font-mono text-[var(--text-muted)] bg-[var(--bg-surface)] px-2 py-0.5 rounded-md border border-[var(--border-main)] shrink-0">
                                                                     {availableLevels.length} {lang === 'sv' ? 'nivåer' : 'levels'}
                                                                 </span>
                                                             </div>
 
-                                                            {/* Custom Dropdown Trigger */}
+                                                            {/* Level Selector Dropdown Trigger */}
                                                             <div className="relative">
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => setOpenDropdownTopicId(isDropdownOpen ? null : topic.id)}
-                                                                    className={`w-full p-2.5 pl-3.5 pr-3 bg-[var(--bg-surface)] border rounded-xl text-xs font-bold text-[var(--text-main)] flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
+                                                                    className={`w-full py-2 pl-3.5 pr-3 bg-[var(--bg-surface)] border rounded-xl text-xs font-semibold text-[var(--text-main)] flex items-center justify-between gap-2 transition-colors cursor-pointer text-left ${
                                                                         isDropdownOpen || isThisTopicSelected
-                                                                            ? 'border-[var(--brand-solid)] shadow-sm'
+                                                                            ? 'border-[var(--brand-solid)]'
                                                                             : 'border-[var(--border-strong)] hover:border-[var(--brand-solid)]'
                                                                     }`}
                                                                 >
                                                                     <span className="truncate">
                                                                         {isThisTopicSelected ? (
                                                                             <>
-                                                                                <span className="font-black text-[var(--brand-text)]">
+                                                                                <span className="font-bold font-mono text-[var(--brand-text)]">
                                                                                     {lang === 'sv' ? `Nivå ${selectedLevel}` : `Level ${selectedLevel}`}
                                                                                 </span>
                                                                                 {selectedMeta?.description && (
-                                                                                    <span className="text-[var(--text-muted)] font-semibold">
+                                                                                    <span className="text-[var(--text-muted)] font-medium">
                                                                                         {' '}— {selectedMeta.description}
                                                                                     </span>
                                                                                 )}
@@ -1453,15 +1356,15 @@ const fetchArchive = async () => {
                                                                         )}
                                                                     </span>
                                                                     <ChevronDown 
-                                                                        size={16} 
-                                                                        className={`shrink-0 text-[var(--text-muted)] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180 text-[var(--brand-solid)]' : ''}`} 
+                                                                        size={15} 
+                                                                        className={`shrink-0 text-[var(--text-muted)] transition-transform duration-150 ${isDropdownOpen ? 'rotate-180 text-[var(--brand-solid)]' : ''}`} 
                                                                     />
                                                                 </button>
 
-                                                                {/* Floating Rich Level Menu (Rendered ONLY when clicked) */}
+                                                                {/* Floating Level Menu */}
                                                                 {isDropdownOpen && (
-                                                                    <div className="absolute left-0 right-0 top-full mt-2 bg-[var(--bg-card)] border-2 border-[var(--brand-solid)] rounded-2xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)] animate-in fade-in slide-in-from-top-1 duration-150">
-                                                                        {/* Top Helper Row: Hitta rätt nivå (uses active category theme variables) */}
+                                                                    <div className="absolute left-0 right-0 top-full mt-1.5 bg-[var(--bg-card)] border border-[var(--brand-solid)] rounded-2xl shadow-xl max-h-72 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)] animate-in fade-in slide-in-from-top-1 duration-150">
+                                                                        {/* Top Helper Row: Find the Right Level */}
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => {
@@ -1478,11 +1381,11 @@ const fetchArchive = async () => {
                                                                         >
                                                                             <div className="flex items-center gap-2 min-w-0">
                                                                                 <Compass size={14} className="text-[var(--brand-text)] group-hover/finder:text-white shrink-0" />
-                                                                                <span className="text-xs font-black text-[var(--brand-text)] group-hover/finder:text-white truncate">
+                                                                                <span className="text-xs font-bold text-[var(--brand-text)] group-hover/finder:text-white truncate">
                                                                                     {lang === 'sv' ? 'Hitta rätt nivå...' : 'Find the right level...'}
                                                                                 </span>
                                                                             </div>
-                                                                            <span className="text-[10px] font-bold text-[var(--text-main)] group-hover/finder:text-white/90 shrink-0">
+                                                                            <span className="text-[11px] font-semibold text-[var(--text-main)] group-hover/finder:text-white/90 shrink-0">
                                                                                 {lang === 'sv' ? 'Testa exempel →' : 'Try example →'}
                                                                             </span>
                                                                         </button>
@@ -1507,27 +1410,27 @@ const fetchArchive = async () => {
                                                                                 >
                                                                                     <div className="flex items-center justify-between gap-2 w-full">
                                                                                         <div className="flex items-center gap-2 min-w-0">
-                                                                                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shrink-0 ${
+                                                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono shrink-0 ${
                                                                                                 isRowSelected
                                                                                                     ? 'bg-[var(--brand-solid)] text-white'
                                                                                                     : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
                                                                                             }`}>
-                                                                                                {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
+                                                                                                {lang === 'sv' ? `Nivå ${lvl}` : `Lvl ${lvl}`}
                                                                                             </span>
-                                                                                            <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                                                                                            <span className="text-xs font-semibold text-[var(--text-main)] truncate">
                                                                                                 {description}
                                                                                             </span>
                                                                                         </div>
 
                                                                                         {mathExample && !isSentence && (
-                                                                                            <span className="shrink-0 px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-main)] text-xs font-bold text-[var(--text-main)]">
+                                                                                            <span className="shrink-0 px-2 py-0.5 rounded bg-[var(--bg-surface)] border border-[var(--border-main)] text-xs font-bold text-[var(--text-main)]">
                                                                                                 <MathDisplay content={mathExample} />
                                                                                             </span>
                                                                                         )}
                                                                                     </div>
 
                                                                                     {mathExample && isSentence && (
-                                                                                        <div className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1 pl-1 italic">
+                                                                                        <div className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1 pl-1">
                                                                                             <MathDisplay content={mathExample} />
                                                                                         </div>
                                                                                     )}
@@ -1538,13 +1441,13 @@ const fetchArchive = async () => {
                                                                 )}
                                                             </div>
 
-                                                            {/* Selected Level Full Example Preview Pill */}
+                                                            {/* Selected Level Full Example Preview */}
                                                             {isThisTopicSelected && selectedMeta?.mathExample && (
-                                                                <div className="mt-3 p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)] flex items-start gap-2 animate-in fade-in duration-200">
-                                                                    <span className="text-[10px] font-black uppercase tracking-wider text-[var(--brand-text)] bg-[var(--brand-bg)] border border-[var(--brand-border)] px-1.5 py-0.5 rounded shrink-0 mt-0.5">
-                                                                        Ex:
+                                                                <div className="mt-3 p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)] flex items-start gap-2 animate-in fade-in duration-150">
+                                                                    <span className="text-[10px] font-bold font-mono text-[var(--brand-text)] bg-[var(--brand-bg)] border border-[var(--brand-border)] px-1.5 py-0.5 rounded shrink-0 mt-0.5">
+                                                                        Ex
                                                                     </span>
-                                                                    <div className="text-xs font-bold text-[var(--text-main)] leading-snug break-words min-w-0 flex-1">
+                                                                    <div className="text-xs font-semibold text-[var(--text-main)] leading-snug break-words min-w-0 flex-1">
                                                                         <MathDisplay content={selectedMeta.mathExample} />
                                                                     </div>
                                                                 </div>
@@ -1559,56 +1462,86 @@ const fetchArchive = async () => {
                             )}
                         </div>
                     ) : (
-                        <div className="animate-in slide-in-from-right-4 duration-500 space-y-4 pb-20">
+                        /* Session Archive Tab */
+                        <div className="animate-in fade-in duration-200 space-y-3 pb-20">
                             {isLoadingArchive ? (
-                                <div className="flex items-center justify-center p-20"><div className="animate-spin h-10 w-10 border-4 border-[var(--brand-solid)] border-t-transparent rounded-full" /></div>
+                                <div className="flex items-center justify-center p-16">
+                                    <div className="animate-spin h-8 w-8 border-4 border-emerald-600 border-t-transparent rounded-full" />
+                                </div>
                             ) : archivedSessions.length === 0 ? (
-                                <div className="card p-20 text-center border-2 border-dashed border-[var(--border-strong)]">
-                                    <History size={48} className="mx-auto text-[var(--text-muted)] mb-4 opacity-50" />
-                                    <p className="font-bold text-[var(--text-muted)] uppercase tracking-widest">{t.archive_empty}</p>
+                                <div className="card p-16 text-center border border-dashed border-[var(--border-strong)]">
+                                    <History size={40} className="mx-auto text-[var(--text-muted)] mb-3 opacity-50" />
+                                    <p className="font-bold text-xs text-[var(--text-muted)]">{t.archive_empty}</p>
                                 </div>
                             ) : (
                                 archivedSessions.map(session => {
                                     const isDoNow = session.active_question_data?.mode === 'donow';
-                                    const themeCls = isDoNow ? 'theme-indigo' : 'theme-emerald';
 
                                     return (
-                                        <div key={session.id} className={`${themeCls} card p-5 flex flex-col lg:flex-row items-center justify-between gap-5 group hover:border-[var(--brand-solid)] hover:shadow-lg transition-all`}>
-                                            <div className="flex items-center gap-5 flex-1 min-w-0 w-full">
-                                                <div className="w-12 h-12 rounded-[var(--radius-btn)] flex items-center justify-center shadow-inner shrink-0 bg-[var(--brand-bg)] text-[var(--brand-text)] border border-[var(--brand-border)] group-hover:bg-[var(--brand-solid)] group-hover:text-white transition-all">
-                                                    {isDoNow ? <LayoutGrid size={24} /> : <FileSpreadsheet size={24} />}
+                                        <div key={session.id} className="card-tactile p-4 flex flex-col lg:flex-row items-center justify-between gap-4">
+                                            <div className="flex items-center gap-4 flex-1 min-w-0 w-full">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                                                    isDoNow 
+                                                        ? 'bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800' 
+                                                        : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                                                }`}>
+                                                    {isDoNow ? <LayoutGrid size={20} /> : <FileSpreadsheet size={20} />}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <h4 className="font-bold text-[var(--text-main)] text-base truncate leading-none mb-2">{session.title || (isDoNow ? "Do Now Grid" : "Live Lektion")}</h4>
-                                                    <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-                                                        <span className="flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border-main)] px-2 py-1 rounded-md">
-                                                            <Calendar size={10}/> {new Date(session.created_at).toLocaleDateString()}
+                                                    <h4 className="font-bold text-[var(--text-main)] text-sm truncate mb-1.5">
+                                                        {session.title || (isDoNow ? "Do Now Grid" : "Live Lektion")}
+                                                    </h4>
+                                                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-[var(--text-muted)]">
+                                                        <span className="flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border-main)] px-2 py-0.5 rounded-md font-mono">
+                                                            <Calendar size={11}/> {new Date(session.created_at).toLocaleDateString()}
                                                         </span>
-                                                        {/* 🟢 Render the database expiration badge */}
-                                                        <span className="flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border-main)] px-2 py-1 rounded-md text-amber-600 dark:text-amber-400">
-                                                            <Clock size={10}/> {session.expirationText}
+                                                        <span className="flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border-main)] px-2 py-0.5 rounded-md text-amber-700 dark:text-amber-400">
+                                                            <Clock size={11}/> {session.expirationText}
                                                         </span>
-                                                        <span className="flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border-main)] px-2 py-1 rounded-md">
-                                                            <Users size={10}/> {session.studentCount} {lang === 'sv' ? "Elever" : "Students"}
+                                                        <span className="flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border-main)] px-2 py-0.5 rounded-md">
+                                                            <Users size={11}/> {session.studentCount} {lang === 'sv' ? "Elever" : "Students"}
                                                         </span>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center gap-6 px-4 lg:border-l border-[var(--border-main)] w-full lg:w-auto">
-                                                <div className="text-center">
-                                                    <span className="block text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-0.5">{t.accuracy_label}</span>
-                                                    <div className={`text-xl font-black italic ${session.accuracy > 70 ? 'text-[var(--theme-emerald-text)]' : session.accuracy > 40 ? 'text-[var(--theme-amber-text)]' : 'text-[var(--theme-rose-text)]'}`}>{session.accuracy}%</div>
+                                            <div className="flex items-center gap-4 px-4 lg:border-l border-[var(--border-main)] w-full lg:w-auto">
+                                                <div>
+                                                    <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">{t.accuracy_label}</span>
+                                                    <div className={`text-lg font-extrabold font-mono ${
+                                                        session.accuracy > 70 
+                                                            ? 'text-emerald-600 dark:text-emerald-400' 
+                                                            : session.accuracy > 40 
+                                                                ? 'text-amber-600 dark:text-amber-400' 
+                                                                : 'text-rose-600 dark:text-rose-400'
+                                                    }`}>
+                                                        {session.accuracy}%
+                                                    </div>
                                                 </div>
                                             </div>
                                             
                                             <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                                                <button onClick={() => onViewReport(session)} className="flex-1 lg:flex-none px-4 py-3 bg-[var(--bg-surface)] text-[var(--text-main)] rounded-[var(--radius-btn)] text-[9px] font-black uppercase tracking-widest hover:border-[var(--brand-solid)] transition-all border border-[var(--border-strong)]">{t.view_report}</button>
-                                                <button onClick={() => onEdit(session)} className="p-3 bg-[var(--brand-bg)] text-[var(--brand-text)] border border-[var(--brand-border)] rounded-[var(--radius-btn)] transition-all hover:bg-[var(--brand-solid)] hover:text-white" title={t.edit_btn}>
-                                                    <PenTool size={16} />
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => onViewReport(session)} 
+                                                    className="flex-1 lg:flex-none px-3.5 py-2 bg-[var(--bg-surface)] text-[var(--text-main)] rounded-xl text-xs font-bold hover:border-emerald-600 transition-colors border border-[var(--border-strong)] cursor-pointer"
+                                                >
+                                                    {t.view_report}
                                                 </button>
-                                                <button onClick={() => onRelaunch(session)} className="btn-brand flex-1 lg:flex-none px-4 py-3 text-[9px] flex items-center justify-center gap-2 active:scale-95">
-                                                    <RotateCcw size={14}/> {t.relaunch_btn}
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => onEdit(session)} 
+                                                    className="p-2 bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)] rounded-xl transition-colors hover:border-sky-600 hover:text-sky-600 dark:hover:text-sky-400 cursor-pointer" 
+                                                    title={t.edit_btn}
+                                                >
+                                                    <PenTool size={15} />
+                                                </button>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => onRelaunch(session)} 
+                                                    className="flex-1 lg:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer"
+                                                >
+                                                    <RotateCcw size={13}/> {t.relaunch_btn}
                                                 </button>
                                             </div>
                                         </div>
@@ -1617,97 +1550,101 @@ const fetchArchive = async () => {
                             )}
                         </div>
                     )}
-
                 </main>
 
-                {/* --- SMART FLOATING ACTION BUTTON --- */}
+                {/* ========================================================= */}
+                {/* ARCHITECTURAL FLOATING ACTION BAR                         */}
+                {/* ========================================================= */}
                 {activeTab === 'curriculum' && (
-                    <div className={`fixed bottom-8 right-8 flex justify-end pointer-events-none z-30 transition-all duration-500 ${
+                    <div className={`fixed bottom-6 right-6 flex justify-end pointer-events-none z-30 transition-all duration-300 ${
                         (!diagnosticTarget && (selectedTopic || (activeBucket && activeBucket !== 'FREE_PLAY' && nextUnfinishedStep))) 
                             ? 'translate-y-0 opacity-100' 
-                            : 'translate-y-20 opacity-0'
+                            : 'translate-y-16 opacity-0'
                     }`}>
                         {activeBucket && activeBucket !== 'FREE_PLAY' && nextUnfinishedStep && !hasUserManuallySelected ? (
-                            /* Curated Unit Context */
                             nextUnfinishedStep.type === 'test' ? (
-                                <div className="theme-amber">
-                                    <button 
-                                        type="button"
-                                        onClick={() => {
-                                            if (onStartCheckpoint) {
-                                                onStartCheckpoint(nextUnfinishedStep.configCode, nextUnfinishedStep.id);
-                                            }
-                                        }} 
-                                        className="btn-brand px-8 py-4 rounded-[2rem] font-black text-base uppercase tracking-wider pointer-events-auto flex items-center gap-3 hover:scale-105 active:scale-95 transition-all border-b-[4px] border-amber-600 bg-amber-500 hover:bg-amber-600 text-white shadow-2xl cursor-pointer"
-                                    >
-                                        <span>{lang === 'sv' ? "Starta nästa delprov" : "Start next test"}</span>
-                                        <Beaker size={20} />
-                                    </button>
-                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        if (onStartCheckpoint) {
+                                            onStartCheckpoint(nextUnfinishedStep.configCode, nextUnfinishedStep.id);
+                                        }
+                                    }} 
+                                    className="px-6 py-3.5 rounded-xl font-bold text-sm pointer-events-auto flex items-center gap-2.5 hover:bg-amber-700 active:scale-[0.98] transition-all bg-amber-600 text-white shadow-lg cursor-pointer"
+                                >
+                                    <span>{lang === 'sv' ? "Starta nästa delprov" : "Start next test"}</span>
+                                    <Beaker size={18} />
+                                </button>
                             ) : nextUnfinishedStep.type === 'instruction' ? (
-                                <div className="theme-indigo">
-                                    <button 
-                                        type="button"
-                                        onClick={() => handleOpenInstruction(nextUnfinishedStep)} 
-                                        className="btn-brand px-8 py-4 rounded-[2rem] font-black text-base uppercase tracking-wider pointer-events-auto flex items-center gap-3 hover:scale-105 active:scale-95 transition-all border-b-[4px] border-indigo-700 bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xl cursor-pointer"
-                                    >
-                                        <span>{lang === 'sv' ? "Titta på genomgång" : "Watch walkthrough"}</span>
-                                        <BookOpen size={20} />
-                                    </button>
-                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => handleOpenInstruction(nextUnfinishedStep)} 
+                                    className="px-6 py-3.5 rounded-xl font-bold text-sm pointer-events-auto flex items-center gap-2.5 hover:bg-sky-700 active:scale-[0.98] transition-all bg-sky-600 text-white shadow-lg cursor-pointer"
+                                >
+                                    <span>{lang === 'sv' ? "Titta på genomgång" : "Watch walkthrough"}</span>
+                                    <BookOpen size={18} />
+                                </button>
                             ) : (
-                                <div className="theme-emerald">
-                                    <button 
-                                        type="button"
-                                        onClick={onStart} 
-                                        className="btn-brand px-8 py-4 rounded-[2rem] font-black text-base uppercase tracking-wider pointer-events-auto flex items-center gap-3 hover:scale-105 active:scale-95 transition-all border-b-[4px] border-emerald-700 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xl cursor-pointer"
-                                    >
-                                        <span>{t.start_btn}</span>
-                                        <Play fill="currentColor" size={20} />
-                                    </button>
-                                </div>
-                            )
-                        ) : (
-                            /* Standard Free Play Context */
-                            <div className="theme-emerald">
                                 <button 
                                     type="button"
                                     onClick={onStart} 
-                                    className="btn-brand px-10 py-5 rounded-[2rem] font-bold text-xl pointer-events-auto flex items-center gap-4 hover:scale-105 active:scale-95 transition-all tracking-tight border-b-[6px] border-[var(--brand-border)] shadow-2xl cursor-pointer"
+                                    className="px-6 py-3.5 rounded-xl font-bold text-sm pointer-events-auto flex items-center gap-2.5 hover:bg-emerald-700 active:scale-[0.98] transition-all bg-emerald-600 text-white shadow-lg cursor-pointer"
                                 >
                                     <span>{t.start_btn}</span>
-                                    <Play fill="currentColor" size={24} />
+                                    <Play fill="currentColor" size={16} />
                                 </button>
-                            </div>
+                            )
+                        ) : (
+                            <button 
+                                type="button"
+                                onClick={onStart} 
+                                className="px-7 py-3.5 rounded-xl font-bold text-base pointer-events-auto flex items-center gap-3 hover:bg-emerald-700 active:scale-[0.98] transition-all bg-emerald-600 text-white shadow-lg cursor-pointer"
+                            >
+                                <span>{t.start_btn}</span>
+                                <Play fill="currentColor" size={18} />
+                            </button>
                         )}
                     </div>
                 )}
 
+                {/* Changelog Modal */}
                 {showUpdateLog && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6 modal-overlay">
-                        <div className="card-flat w-full max-w-2xl max-h-[80vh] animate-in zoom-in-95 p-0 border-[var(--border-main)] flex flex-col overflow-hidden">
-                            <div className="card-header-flat bg-[var(--bg-surface)] p-8 shrink-0 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-[var(--brand-bg)] text-[var(--brand-text)] border border-[var(--brand-border)] rounded-2xl shadow-sm"><Newspaper size={24}/></div>
-                                    <h2 className="text-2xl font-black uppercase tracking-tight italic text-[var(--text-main)]">Ändringslogg</h2>
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6">
+                        <div className="bg-[var(--bg-card)] w-full max-w-2xl max-h-[80vh] rounded-2xl border border-[var(--border-strong)] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+                            <div className="bg-[var(--bg-surface)] px-6 py-5 border-b border-[var(--border-main)] shrink-0 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                                        <Newspaper size={20}/>
+                                    </div>
+                                    <h2 className="text-lg font-extrabold text-[var(--text-main)]">Ändringslogg</h2>
                                 </div>
-                                <button onClick={() => setShowUpdateLog(false)} className="btn-ghost"><X className="text-[var(--text-main)]" /></button>
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowUpdateLog(false)} 
+                                    className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer"
+                                >
+                                    <X size={18} />
+                                </button>
                             </div>
                             
-                            <div className="card-body-flat overflow-y-auto p-8 space-y-10 custom-scrollbar bg-[var(--bg-card)]">
+                            <div className="overflow-y-auto p-6 space-y-8 custom-scrollbar bg-[var(--bg-card)]">
                                 {APP_UPDATES.map((update) => (
-                                    <div key={update.id} className="relative pl-8 border-l-2 border-[var(--border-strong)] pb-2">
-                                        <div className="absolute -left-[9px] top-0 w-4 h-4 bg-[var(--bg-card)] border-2 border-[var(--brand-text)] rounded-full" />
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <span className="text-[10px] font-black text-[var(--brand-text)] bg-[var(--brand-bg)] border border-[var(--brand-border)] px-2 py-1 rounded-md">{update.date}</span>
-                                            <span className="text-[10px] font-black text-[var(--text-muted)]">VERSION {update.version}</span>
+                                    <div key={update.id} className="relative pl-6 border-l-2 border-[var(--border-strong)] pb-2">
+                                        <div className="absolute -left-[7px] top-1 w-3 h-3 bg-[var(--bg-card)] border-2 border-emerald-600 rounded-full" />
+                                        <div className="flex items-center gap-2.5 mb-1.5">
+                                            <span className="text-[11px] font-bold font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded">
+                                                {update.date}
+                                            </span>
+                                            <span className="text-[11px] font-bold font-mono text-[var(--text-muted)]">
+                                                v{update.version}
+                                            </span>
                                         </div>
-                                        <h3 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight mb-4">{update.title[lang]}</h3>
-                                        <ul className="space-y-3">
+                                        <h3 className="text-base font-bold text-[var(--text-main)] mb-3">{update.title[lang]}</h3>
+                                        <ul className="space-y-2">
                                             {update.changes[lang].map((change, i) => (
-                                                <li key={i} className="flex gap-3 text-sm text-[var(--text-main)] opacity-90 leading-relaxed">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--brand-text)] mt-2 shrink-0" />
-                                                    {change}
+                                                <li key={i} className="flex gap-2.5 text-sm text-[var(--text-main)] opacity-90 leading-relaxed">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-2 shrink-0" />
+                                                    <span>{change}</span>
                                                 </li>
                                             ))}
                                         </ul>
@@ -1718,20 +1655,19 @@ const fetchArchive = async () => {
                     </div>
                 )}
             </div>
+
             <DashboardTutorialModal
                 isOpen={showDashboardTutorial}
                 onClose={handleCloseDashboardTutorial}
                 lang={lang}
                 userRole={userRole}
             />
-            {/* NEW: Capacity Modal */}
             <CapacityModal 
                 visible={showCapacityModal}
                 onClose={() => setShowCapacityModal(false)}
                 classCode={profile?.class_code}
                 lang={lang}
             />
-            {/* --- INSTRUCTION SLIDE VIEWER MODAL --- */}
             <InstructionSlideModal
                 isOpen={!!activeInstructionModal}
                 onClose={() => setActiveInstructionModal(null)}

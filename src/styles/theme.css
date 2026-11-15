@@ -1,33 +1,75 @@
+/* ============================================================================
+   ANPASSA DESIGN STANDARD — "SCANDINAVIAN CLASSROOM & PRINT STUDIO"
+   ============================================================================
+   1. IDENTITY & AESTHETIC
+      - Tactile, high-density Swedish educational & print-publishing studio.
+      - Paper & Graphite surfaces over cold Tailwind slate; math is the hero.
+
+   2. STRICT COLOR DISCIPLINE (ZERO INDIGO)
+      - NEVER use `indigo-*` or `purple-*` classes anywhere in UI chrome.
+      - Emerald (`emerald-600` / `--brand-solid`): Primary forward actions,
+        mastery states, active studio save/print CTAs.
+      - Blueprint Cobalt (`sky-600`): Interactive walkthroughs, Do Now mode,
+        diagnostic "next step" unlocks, and active selection rings.
+      - Warm Ochre (`amber-600`): Worked examples, prerequisite foundations,
+        and checkpoint quizzes.
+      - Rose (`rose-600`): Live classroom broadcast controls & destructive actions.
+      - Neutral Stone/Graphite (`--bg-card`, `--bg-surface`): All secondary
+        buttons, toolbars, and passive badges.
+
+   3. TYPOGRAPHY & NUMERIC PRECISION
+      - UI & Print: `Plus Jakarta Sans` (`font-bold` / `font-extrabold` for
+        headings; avoid `font-black italic uppercase` on body buttons/titles).
+      - Data & Codes: `JetBrains Mono` (`font-mono tabular-nums`) for class
+        codes, PINs, timers, level badges, and accuracy metrics.
+      - Math Equations: `KaTeX_Main` (`.math-content`, `.katex`).
+
+   4. ARCHITECTURAL GEOMETRY & DRAFTING-TABLE RULES
+      - Radius Scale: `rounded-lg` (badges/inputs) -> `rounded-xl` (buttons/
+        inner wells) -> `rounded-2xl` (cards/modals). Never use `rounded-[3rem]`.
+      - Borders over Shadows: Use crisp 1px `border-[var(--border-main)]`
+        structural dividers; reserve heavy shadows strictly for floating popovers.
+      - Desk vs. Sheet: Use `.drafting-desk-bg` behind `.whiteboard-protect`
+        print/board surfaces so A4 pages sit like real paper on a mat.
+   ============================================================================ */
 /* src/styles/theme.css */
-@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700;1,800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600;1,700&display=swap');
 
 /* GLOBAL DEFAULT FONT FOR UI & WORKSHEETS */
 body, .font-sans {
-  font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* SHIELD LATEX, MATH, AND SERIF ELEMENTS */
-/* Equations and specific math text ignore Nunito entirely */
-.math-content, 
-.font-serif, 
-.katex,
-.katex * {
+/* MONOSPACE FOR CLASS CODES, PINS, TIMERS & DATA READOUTS */
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* SHIELD LATEX SYMBOLS WHILE USING BRAND FONT FOR WORKSHEET PROSE */
+.math-content,
+.katex .text,
+.katex .textrm {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+.katex {
   font-family: "KaTeX_Main", "Times New Roman", Times, serif !important;
 }
-
 /* ========================================================================= */
 /* ACCESSIBLE TYPOGRAPHY FLOOR                                               */
-/* Keep text legible without bloating layout hierarchy                      */
 /* ========================================================================= */
 .text-xs {
-  font-size: 0.75rem !important; /* Standard 12px desktop, ~11.5px floor */
+  font-size: 0.75rem !important;
   line-height: 1.15rem !important;
 }
 
 .text-\[9px\],
 .text-\[10px\],
 .text-\[11px\] {
-  font-size: 0.725rem !important; /* ~11px hard minimum floor */
+  font-size: 0.725rem !important;
   line-height: 1.1rem !important;
 }
 
@@ -37,99 +79,108 @@ body, .font-sans {
 }
 
 :root {
-  /* ☀️ 1. LIGHT THEME (DEFAULT) */
-  --bg-canvas: #f8fafc;       /* slate-50 */
-  --bg-card: #ffffff;         /* white */
-  --bg-surface: #f1f5f9;      /* slate-100 */
-  --bg-surface-hover: #e2e8f0;/* slate-200 */
+  /* ☀️ 1. ARCHIVAL PAPER LIGHT THEME (DEFAULT — Warm Stone & Crisp White) */
+  --bg-canvas: #fafaf9;        /* stone-50: warm archival paper */
+  --bg-card: #ffffff;          /* pure sheet white */
+  --bg-surface: #f5f5f4;       /* stone-100: recessed control surface */
+  --bg-surface-hover: #e7e5e4; /* stone-200 */
 
-  --text-main: #0f172a;       /* slate-900 */
-  --text-muted: #64748b;      /* slate-500 */
+  --text-main: #1c1917;        /* stone-900: high-contrast ink */
+  --text-muted: #57534e;       /* stone-600: legible secondary ink */
   --text-inverse: #ffffff;
 
-  --border-subtle: #f1f5f9;   /* slate-100 */
-  --border-main: #e2e8f0;     /* slate-200 */
-  --border-strong: #cbd5e1;   /* slate-300 */
+  --border-subtle: #f5f5f4;
+  --border-main: #e7e5e4;      /* stone-200: crisp hairline */
+  --border-strong: #d6d3d1;    /* stone-300 */
 
-  /* Standardized Proportions (Maximized Screen Real Estate) */
-  --radius-card: 1.5rem;
-  --radius-btn: 0.75rem;
+  /* Standardized Geometry */
+  --radius-card: 1rem;         /* 16px: architectural card corner */
+  --radius-btn: 0.75rem;       /* 12px: crisp button corner */
   
   --pad-sm: 0.5rem;
   --pad-md: 1rem;
   --pad-lg: 1.5rem;
 
   /* AMBIENT BACKGROUND WAVES (Light) */
-  --ambient-emerald: rgba(110, 231, 183, 0.3);
-  --ambient-indigo: rgba(165, 180, 252, 0.3);
-  --ambient-amber: rgba(253, 230, 138, 0.2);
+  --ambient-emerald: rgba(16, 185, 129, 0.18);
+  --ambient-cobalt: rgba(2, 132, 199, 0.16);
+  --ambient-amber: rgba(217, 119, 6, 0.14);
 
-  --brand-solid: #4f46e5; /* Default primary brand for un-themed UI */
-  --brand-text: #4338ca;
+  /* DEFAULT BRAND: EMERALD CHALKBOARD (Zero Indigo) */
+  --brand-bg: #ecfdf5;
+  --brand-border: #a7f3d0;
+  --brand-solid: #059669;      /* emerald-600 */
+  --brand-text: #047857;       /* emerald-700 */
 }
 
-/* 🌙 2. FULL DARK THEME */
+/* 🌙 2. DEEP GRAPHITE DARK THEME (Low-glare Charcoal — Zero Blue Slate) */
 .dark, [data-theme="dark"] {
-  --bg-canvas: #0f172a;       /* slate-900 */
-  --bg-card: #1e293b;         /* slate-800 */
-  --bg-surface: #334155;      /* slate-700 */
-  --bg-surface-hover: #475569;/* slate-600 */
+  --bg-canvas: #111315;        /* deep matte graphite */
+  --bg-card: #181b1f;          /* elevated charcoal surface */
+  --bg-surface: #22262c;       /* interactive control well */
+  --bg-surface-hover: #2d323a;
 
-  --text-main: #f8fafc;       /* slate-50 */
-  --text-muted: #94a3b8;      /* slate-400 */
-  --text-inverse: #0f172a;
+  --text-main: #f4f4f5;        /* zinc-100 */
+  --text-muted: #a1a1aa;       /* zinc-400 */
+  --text-inverse: #111315;
 
-  --border-subtle: #1e293b;
-  --border-main: #334155;
-  --border-strong: #475569;
+  --border-subtle: #1f2328;
+  --border-main: #2a2f37;
+  --border-strong: #3a414c;
 
   /* AMBIENT BACKGROUND WAVES (Dark) */
-  --ambient-emerald: rgba(6, 78, 59, 0.2);
-  --ambient-indigo: rgba(49, 46, 129, 0.2);
-  --ambient-amber: rgba(120, 53, 15, 0.1);
+  --ambient-emerald: rgba(16, 185, 129, 0.14);
+  --ambient-cobalt: rgba(56, 189, 248, 0.12);
+  --ambient-amber: rgba(245, 158, 11, 0.1);
 
-  --brand-solid: #818cf8; /* High-contrast bright indigo for dark mode */
-  --brand-text: #a5b4fc;
+  --brand-bg: rgba(16, 185, 129, 0.14);
+  --brand-border: rgba(16, 185, 129, 0.32);
+  --brand-solid: #10b981;      /* emerald-500 */
+  --brand-text: #34d399;       /* emerald-400 */
 }
 
 /* 🎯 3. FOCUS THEME (For StudentLiveView & Active Practice) */
 .theme-focus {
-  --bg-canvas: #0f172a;
-  --text-canvas: #f8fafc;
-  --bg-card: #1e293b;
-  --bg-surface: #334155;
-  --bg-surface-hover: #475569;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --border-main: #334155;
-  --border-strong: #475569;
-  --brand-solid: #818cf8;
-  --brand-text: #a5b4fc;
+  --bg-canvas: #111315;
+  --text-canvas: #f4f4f5;
+  --bg-card: #181b1f;
+  --bg-surface: #22262c;
+  --bg-surface-hover: #2d323a;
+  --text-main: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --border-main: #2a2f37;
+  --border-strong: #3a414c;
+  --brand-bg: rgba(16, 185, 129, 0.14);
+  --brand-border: rgba(16, 185, 129, 0.32);
+  --brand-solid: #10b981;
+  --brand-text: #34d399;
 }
 
-/* 🎨 4. DYNAMIC CATEGORY THEMES (For PracticeView & Dashboard) */
+/* 🎨 4. DYNAMIC CATEGORY THEMES (Zero Indigo — Uses Blueprint Cobalt & Teal) */
 
 /* --- LIGHT MODE (DEFAULT) --- */
-.theme-emerald { --brand-bg: #ecfdf5; --brand-border: #a7f3d0; --brand-text: #059669; --brand-solid: #10b981; }
-.theme-indigo  { --brand-bg: #eef2ff; --brand-border: #c7d2fe; --brand-text: #4f46e5; --brand-solid: #6366f1; }
-.theme-pink    { --brand-bg: #fdf2f8; --brand-border: #fbcfe8; --brand-text: #db2777; --brand-solid: #ec4899; }
-.theme-amber   { --brand-bg: #fffbeb; --brand-border: #fde68a; --brand-text: #d97706; --brand-solid: #f59e0b; }
-.theme-rose    { --brand-bg: #fff1f2; --brand-border: #fecdd3; --brand-text: #e11d48; --brand-solid: #f43f5e; }
-.theme-orange  { --brand-bg: #ffedd5; --brand-border: #fdba74; --brand-text: #ea580c; --brand-solid: #f97316; }
-.theme-blue    { --brand-bg: #dbeafe; --brand-border: #93c5fd; --brand-text: #2563eb; --brand-solid: #3b82f6; }
-.theme-purple  { --brand-bg: #faf5ff; --brand-border: #e9d5ff; --brand-text: #9333ea; --brand-solid: #a855f7; }
-.theme-cyan    { --brand-bg: #ecfeff; --brand-border: #a5f3fc; --brand-text: #0891b2; --brand-solid: #06b6d4; }
+.theme-emerald { --brand-bg: #ecfdf5; --brand-border: #a7f3d0; --brand-text: #047857; --brand-solid: #059669; }
+.theme-cobalt,
+.theme-indigo  { --brand-bg: #f0f9ff; --brand-border: #bae6fd; --brand-text: #0369a1; --brand-solid: #0284c7; }
+.theme-pink    { --brand-bg: #fdf2f8; --brand-border: #fbcfe8; --brand-text: #be185d; --brand-solid: #db2777; }
+.theme-amber   { --brand-bg: #fffbeb; --brand-border: #fde68a; --brand-text: #b45309; --brand-solid: #d97706; }
+.theme-rose    { --brand-bg: #fff1f2; --brand-border: #fecdd3; --brand-text: #be123c; --brand-solid: #e11d48; }
+.theme-orange  { --brand-bg: #fff7ed; --brand-border: #fed7aa; --brand-text: #c2410c; --brand-solid: #ea580c; }
+.theme-blue    { --brand-bg: #eff6ff; --brand-border: #bfdbfe; --brand-text: #1d4ed8; --brand-solid: #2563eb; }
+.theme-purple  { --brand-bg: #f0fdfa; --brand-border: #99f6e4; --brand-text: #0f766e; --brand-solid: #0d9488; }
+.theme-cyan    { --brand-bg: #ecfeff; --brand-border: #a5f3fc; --brand-text: #0e7490; --brand-solid: #0891b2; }
 
 /* --- DARK MODE OVERRIDES --- */
-.dark .theme-emerald, [data-theme="dark"] .theme-emerald { --brand-bg: rgba(16, 185, 129, 0.15); --brand-border: rgba(16, 185, 129, 0.3); --brand-text: #34d399; --brand-solid: #10b981; }
-.dark .theme-indigo, [data-theme="dark"] .theme-indigo   { --brand-bg: rgba(99, 102, 241, 0.15); --brand-border: rgba(99, 102, 241, 0.3); --brand-text: #818cf8; --brand-solid: #6366f1; }
-.dark .theme-pink, [data-theme="dark"] .theme-pink       { --brand-bg: rgba(236, 72, 153, 0.15); --brand-border: rgba(236, 72, 153, 0.3); --brand-text: #f472b6; --brand-solid: #ec4899; }
-.dark .theme-amber, [data-theme="dark"] .theme-amber     { --brand-bg: rgba(245, 158, 11, 0.15); --brand-border: rgba(245, 158, 11, 0.3); --brand-text: #fbbf24; --brand-solid: #f59e0b; }
-.dark .theme-rose, [data-theme="dark"] .theme-rose       { --brand-bg: rgba(244, 63, 94, 0.15); --brand-border: rgba(244, 63, 94, 0.3); --brand-text: #fb7185; --brand-solid: #f43f5e; }
-.dark .theme-orange, [data-theme="dark"] .theme-orange   { --brand-bg: rgba(249, 115, 22, 0.15); --brand-border: rgba(249, 115, 22, 0.3); --brand-text: #fb923c; --brand-solid: #f97316; }
-.dark .theme-blue, [data-theme="dark"] .theme-blue       { --brand-bg: rgba(59, 130, 246, 0.15); --brand-border: rgba(59, 130, 246, 0.3); --brand-text: #60a5fa; --brand-solid: #3b82f6; }
-.dark .theme-purple, [data-theme="dark"] .theme-purple   { --brand-bg: rgba(168, 85, 247, 0.15); --brand-border: rgba(168, 85, 247, 0.3); --brand-text: #c084fc; --brand-solid: #a855f7; }
-.dark .theme-cyan, [data-theme="dark"] .theme-cyan       { --brand-bg: rgba(6, 182, 212, 0.15); --brand-border: rgba(6, 182, 212, 0.3); --brand-text: #22d3ee; --brand-solid: #06b6d4; }
+.dark .theme-emerald, [data-theme="dark"] .theme-emerald { --brand-bg: rgba(16, 185, 129, 0.14); --brand-border: rgba(16, 185, 129, 0.3); --brand-text: #34d399; --brand-solid: #10b981; }
+.dark .theme-cobalt, [data-theme="dark"] .theme-cobalt,
+.dark .theme-indigo, [data-theme="dark"] .theme-indigo   { --brand-bg: rgba(2, 132, 199, 0.16); --brand-border: rgba(56, 189, 248, 0.3); --brand-text: #38bdf8; --brand-solid: #0284c7; }
+.dark .theme-pink, [data-theme="dark"] .theme-pink       { --brand-bg: rgba(236, 72, 153, 0.14); --brand-border: rgba(236, 72, 153, 0.3); --brand-text: #f472b6; --brand-solid: #ec4899; }
+.dark .theme-amber, [data-theme="dark"] .theme-amber     { --brand-bg: rgba(245, 158, 11, 0.14); --brand-border: rgba(245, 158, 11, 0.3); --brand-text: #fbbf24; --brand-solid: #f59e0b; }
+.dark .theme-rose, [data-theme="dark"] .theme-rose       { --brand-bg: rgba(244, 63, 94, 0.14); --brand-border: rgba(244, 63, 94, 0.3); --brand-text: #fb7185; --brand-solid: #f43f5e; }
+.dark .theme-orange, [data-theme="dark"] .theme-orange   { --brand-bg: rgba(249, 115, 22, 0.14); --brand-border: rgba(249, 115, 22, 0.3); --brand-text: #fb923c; --brand-solid: #f97316; }
+.dark .theme-blue, [data-theme="dark"] .theme-blue       { --brand-bg: rgba(59, 130, 246, 0.14); --brand-border: rgba(59, 130, 246, 0.3); --brand-text: #60a5fa; --brand-solid: #3b82f6; }
+.dark .theme-purple, [data-theme="dark"] .theme-purple   { --brand-bg: rgba(20, 184, 166, 0.14); --brand-border: rgba(20, 184, 166, 0.3); --brand-text: #2dd4bf; --brand-solid: #14b8a6; }
+.dark .theme-cyan, [data-theme="dark"] .theme-cyan       { --brand-bg: rgba(6, 182, 212, 0.14); --brand-border: rgba(6, 182, 212, 0.3); --brand-text: #22d3ee; --brand-solid: #06b6d4; }
 
 /* ========================================= */
 /* 1. BASE LAYOUT & HONEYCOMB BACKGROUND     */
@@ -153,13 +204,10 @@ body {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  
   background-image: 
     radial-gradient(circle at 100% 100%, var(--text-main) 0%, transparent 60%),
     radial-gradient(circle at 0% 0%, var(--text-main) 0%, transparent 35%);
-  
-  opacity: 0.04; 
-  
+  opacity: 0.032; 
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
   -webkit-mask-size: 40px;
   mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
@@ -172,7 +220,7 @@ body {
 }
 
 /* ========================================= */
-/* 2. FLOATING BRANDED HEADER ISLAND         */
+/* 2. SLIM FLOATING BRANDED HEADER ISLAND    */
 /* ========================================= */
 .header-glass {
   background-color: var(--bg-card) !important;
@@ -181,7 +229,7 @@ body {
   width: calc(100% - 1.5rem) !important;
   max-width: 1400px;
   border: 1px solid var(--border-main) !important;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.04);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   padding-top: 0.25rem !important;
@@ -195,30 +243,19 @@ body {
 }
 
 .dark .header-glass, [data-theme="dark"] .header-glass {
-  background-color: rgba(15, 23, 42, 0.85);
+  background-color: rgba(24, 27, 31, 0.92) !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
 }
 
-.layout-twocol {
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-  padding: var(--pad-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--pad-lg);
+/* ========================================= */
+/* 3. DRAFTING TABLE & TACTILE MOTION        */
+/* ========================================= */
+.drafting-desk-bg {
+  background-color: var(--bg-canvas);
+  background-image: radial-gradient(var(--border-strong) 1px, transparent 1px);
+  background-size: 18px 18px;
 }
 
-@media (min-width: 1024px) {
-  .layout-twocol { flex-direction: row; }
-}
-
-.layout-sidebar { width: 100%; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--pad-lg); }
-@media (min-width: 1024px) {
-  .layout-sidebar { width: 340px; }
-}
-.layout-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--pad-lg); }
-
-/* --- Cards --- */
 .card {
   background-color: var(--bg-card);
   border-radius: var(--radius-card);
@@ -227,37 +264,44 @@ body {
   color: var(--text-main);
 }
 
-.card-interactive {
+.card-interactive,
+.card-tactile {
   background-color: var(--bg-card);
   border-radius: var(--radius-card);
   border: 1px solid var(--border-main);
-  padding: var(--pad-md);
-  transition: all 0.2s ease;
-  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.2, 0, 0, 1), border-color 160ms ease, box-shadow 160ms ease;
 }
-.card-interactive:hover {
-  border-color: var(--brand-solid, var(--border-strong));
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
+@media (prefers-reduced-motion: no-preference) {
+  .card-interactive:hover,
+  .card-tactile:hover {
+    transform: translateY(-2px);
+    border-color: var(--brand-solid, var(--border-strong));
+    box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.08);
+  }
+  .dark .card-interactive:hover,
+  .dark .card-tactile:hover {
+    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.45);
+  }
 }
 
 /* --- Buttons --- */
 .btn-brand {
-  background-color: var(--brand-solid, #4f46e5);
+  background-color: var(--brand-solid, #059669);
   color: #ffffff;
   border-radius: var(--radius-btn);
   padding: var(--pad-md);
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+  transition: transform 120ms cubic-bezier(0.2, 0, 0, 1), background-color 150ms ease, opacity 150ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
 }
-.btn-brand:hover:not(:disabled) { opacity: 0.9; }
+.btn-brand:hover:not(:disabled) { opacity: 0.92; }
 .btn-brand:active:not(:disabled) { transform: scale(0.98); }
-.btn-brand:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-brand:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* Gamified 3D Button */
 .btn-3d {
@@ -284,46 +328,43 @@ body {
 .dark .whiteboard-protect {
   --bg-canvas: #ffffff !important;
   --bg-card: #ffffff !important;
-  --bg-surface: #f8fafc !important;
-  --bg-surface-hover: #f1f5f9 !important;
-  --text-main: #0f172a !important;
-  --text-muted: #64748b !important;
-  --border-main: #e2e8f0 !important;
-  --border-strong: #cbd5e1 !important;
+  --bg-surface: #fafaf9 !important;
+  --bg-surface-hover: #f5f5f4 !important;
+  --text-main: #1c1917 !important;
+  --text-muted: #57534e !important;
+  --border-main: #e7e5e4 !important;
+  --border-strong: #d6d3d1 !important;
   background-color: #ffffff !important;
-  color: #0f172a !important;
+  color: #1c1917 !important;
 }
 
 .whiteboard-protect svg text,
 .dark .whiteboard-protect svg text { 
-  fill: #0f172a !important; 
+  fill: #1c1917 !important; 
 }
 
-/* Ensure math inside whiteboard-protected containers remains dark */
 .whiteboard-protect .math-content,
 .whiteboard-protect .math-content .katex,
 .whiteboard-protect .math-content .katex *,
 .dark .whiteboard-protect .math-content,
 .dark .whiteboard-protect .math-content .katex,
 .dark .whiteboard-protect .math-content .katex * {
-  color: #0f172a !important;
+  color: #1c1917 !important;
 }
 
 /* ========================================= */
 /* GLOBAL RESPONSIVE REM SCALING             */
 /* ========================================= */
 html {
-  font-size: 15px; /* Standard Desktop */
+  font-size: 15px;
 }
 
-/* Small laptops & Chromebooks */
 @media (max-width: 1280px) {
   html {
     font-size: 13px; 
   }
 }
 
-/* Tablets and small devices */
 @media (max-width: 768px) {
   html {
     font-size: 12px;
@@ -338,7 +379,6 @@ html {
   line-height: 1.4;
 }
 
-/* Enforce high contrast text color on formulas in both light and dark modes */
 .math-content,
 .math-content .katex,
 .math-content .katex * {
@@ -351,7 +391,6 @@ html {
   color: var(--text-main) !important;
 }
 
-/* Consolidated sizing and display margins */
 .math-content .katex {
   font-size: 1.1em !important;
 }
@@ -418,6 +457,7 @@ html {
     background-size: 30px 30px !important;
   }
 }
+
 /* =========================================================================
    PROTECT INSTRUCTION SLIDE CARD FROM DARK MODE CASCADE
    ========================================================================= */
@@ -425,13 +465,12 @@ html {
 .dark .instruction-slide-card .math-content,
 .dark .instruction-slide-card .katex,
 .dark .instruction-slide-card .katex * {
-  color: #0f172a !important; /* Forces dark slate text and math */
+  color: #1c1917 !important;
 }
 
-/* Retain amber styling for the pedagogical insight box */
 .dark .instruction-slide-card .insight-box-content,
 .dark .instruction-slide-card .insight-box-content * {
-  color: #451a03 !important; /* amber-950 */
+  color: #451a03 !important;
 }
 
 /* Arcade / Dark Activity Protection */
@@ -439,11 +478,10 @@ html {
 .arcade-dark-protect .math-content,
 .arcade-dark-protect .math-content .katex,
 .arcade-dark-protect .math-content .katex * {
-  --text-main: #f8fafc !important;
-  color: #f8fafc !important;
+  --text-main: #f4f4f5 !important;
+  color: #f4f4f5 !important;
 }
 
-/* Allow emerald and amber highlights to preserve their color inside dark arcade views */
 .arcade-dark-protect .text-emerald-400,
 .arcade-dark-protect .text-emerald-400 *,
 .arcade-dark-protect .text-emerald-400 .katex,
@@ -457,6 +495,7 @@ html {
 .arcade-dark-protect .text-amber-300 .katex * {
   color: #fcd34d !important;
 }
+
 /* =========================================================================
    PROTECT CONTENT MODAL FROM DARK MODE CASCADE
    ========================================================================= */
@@ -468,26 +507,28 @@ html {
 .dark .content-modal-protect .math-content,
 .dark .content-modal-protect .math-content .katex,
 .dark .content-modal-protect .math-content .katex * {
-  --text-main: #0f172a !important;
-  color: #0f172a !important;
+  --text-main: #1c1917 !important;
+  color: #1c1917 !important;
 }
 
 /* =========================================================================
-   AMBIENT SEARCH BAR BREATHING GLOW
+   AMBIENT SEARCH BAR BREATHING GLOW (Emerald Brand — Zero Indigo)
    ========================================================================= */
 @keyframes searchGlowPulse {
   0%, 100% {
-    box-shadow: 0 0 14px -3px rgba(99, 102, 241, 0.25);
-    border-color: rgba(99, 102, 241, 0.45);
+    box-shadow: 0 0 12px -3px rgba(16, 185, 129, 0.22);
+    border-color: rgba(16, 185, 129, 0.45);
   }
   50% {
-    box-shadow: 0 0 24px -1px rgba(99, 102, 241, 0.55);
-    border-color: rgba(99, 102, 241, 0.85);
+    box-shadow: 0 0 22px -1px rgba(16, 185, 129, 0.48);
+    border-color: rgba(16, 185, 129, 0.85);
   }
 }
 
-.animate-search-glow {
-  animation: searchGlowPulse 3.5s ease-in-out infinite;
+@media (prefers-reduced-motion: no-preference) {
+  .animate-search-glow {
+    animation: searchGlowPulse 3.5s ease-in-out infinite;
+  }
 }
 
 .animate-search-glow:focus,

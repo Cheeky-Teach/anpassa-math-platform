@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Printer, ChevronLeft, X, ChevronRight, Maximize2, Loader2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Printer, ChevronLeft, Loader2 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer';
 import WorkedExampleCard from '../shared/WorkedExampleCard';
+import '../../styles/theme.css';
 
 // --- MATH RENDERING ENGINE (PROTECTED FOR PRINT & PREVIEW) ---
 const MathDisplay = ({ content, className = "" }) => {
@@ -234,13 +235,13 @@ export default function PrintView({
         >
             {/* FLOATING INTERACTIVE MASK COVER */}
             {isMeasuring && (
-                <div className="fixed inset-0 bg-slate-900 text-white flex flex-col items-center justify-center gap-4 font-sans select-none z-[9999] animate-in fade-in duration-200 print:hidden">
-                    <Loader2 className="animate-spin text-indigo-500" size={40} />
+                <div className="fixed inset-0 bg-stone-950 text-white flex flex-col items-center justify-center gap-4 font-sans select-none z-[9999] animate-in fade-in duration-200 print:hidden">
+                    <Loader2 className="animate-spin text-emerald-500" size={38} />
                     <div className="text-center space-y-1">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-200">
+                        <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-100">
                             {lang === 'sv' ? "Anpassar Utskriftslayout" : "Optimizing Print Layout"}
                         </h3>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                        <p className="text-xs font-medium text-stone-400">
                             {lang === 'sv' ? "Mäter element och beräknar perfekta sidbrytningar..." : "Measuring elements and calibrating smart page breaks..."}
                         </p>
                     </div>
@@ -248,14 +249,16 @@ export default function PrintView({
             )}
 
             {/* TOOLBAR */}
-            <div className="bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-50 print:hidden">
-                <button onClick={onBack} className="flex items-center gap-2 text-sm font-bold uppercase hover:text-indigo-400 transition-colors cursor-pointer">
-                    <ChevronLeft size={18}/> Question Studio
+            <div className="bg-stone-900 text-white px-6 py-3 flex justify-between items-center sticky top-0 z-50 border-b border-stone-800 print:hidden">
+                <button type="button" onClick={onBack} className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-stone-300 hover:text-emerald-400 transition-colors cursor-pointer">
+                    <ChevronLeft size={16}/> Question Studio
                 </button>
-                <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-black uppercase text-slate-500 italic px-3 py-1 bg-white/5 rounded-lg border border-white/10">Förhandsgranskning</span>
-                    <button onClick={() => window.print()} className="bg-indigo-600 px-6 py-2 rounded-xl text-sm font-black uppercase flex items-center gap-2 hover:bg-indigo-500 shadow-lg transition-all active:scale-95 cursor-pointer">
-                        <Printer size={18}/> Skriv ut
+                <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-stone-400 px-3 py-1 bg-white/5 rounded-lg border border-white/10">
+                        {lang === 'sv' ? 'Förhandsgranskning' : 'Print Preview'}
+                    </span>
+                    <button type="button" onClick={() => window.print()} className="bg-emerald-600 hover:bg-emerald-500 px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer">
+                        <Printer size={16}/> {lang === 'sv' ? 'Skriv ut / PDF' : 'Print / PDF'}
                     </button>
                 </div>
             </div>
@@ -267,21 +270,21 @@ export default function PrintView({
                     className={`max-w-[210mm] mx-auto !bg-white !text-slate-900 shadow-2xl my-8 p-[8mm] flex flex-col min-h-[240mm] print:min-h-auto print:shadow-none print:my-0 print:p-[12mm] relative ${pageIdx < measuredPages.length - 1 ? 'break-after-page' : ''}`}
                 >
                     {pageIdx === 0 ? (
-                        <header className="border-b border-black pb-2 mb-4 relative">
-                            <div className="mb-6">
-                                <div className="text-[6px] font-black uppercase text-slate-600 italic tracking-widest">{t.watermark}</div>
-                                <h1 className="text-[12px] font-black uppercase tracking-tight leading-none text-slate-900">{title || "Matematik"}</h1>
+                        <header className="border-b-2 border-stone-900 pb-2.5 mb-5 relative">
+                            <div className="mb-5">
+                                <div className="text-[9px] font-bold uppercase text-stone-500 tracking-widest mb-0.5">{t.watermark}</div>
+                                <h1 className="text-lg font-extrabold tracking-tight leading-none text-stone-900">{title || (lang === 'sv' ? "Matematik" : "Mathematics")}</h1>
                             </div>
-                            <div className="flex gap-8 text-[10px] font-bold uppercase text-slate-800">
-                                <div className="flex-1 flex gap-2 items-baseline border-b border-black/20"><span>{t.name}</span><div className="flex-1" /></div>
-                                <div className="w-32 flex gap-2 items-baseline border-b border-black/20"><span>{t.class}</span><div className="flex-1" /></div>
-                                <div className="w-32 flex gap-2 items-baseline border-b border-black/20"><span>{t.date}</span><div className="flex-1" /></div>
+                            <div className="flex gap-8 text-[10px] font-bold uppercase tracking-wider text-stone-800">
+                                <div className="flex-1 flex gap-2 items-baseline border-b border-stone-300 pb-0.5"><span>{t.name}</span><div className="flex-1" /></div>
+                                <div className="w-32 flex gap-2 items-baseline border-b border-stone-300 pb-0.5"><span>{t.class}</span><div className="flex-1" /></div>
+                                <div className="w-32 flex gap-2 items-baseline border-b border-stone-300 pb-0.5"><span>{t.date}</span><div className="flex-1" /></div>
                             </div>
                         </header>
                     ) : (
-                        <div className="border-b border-slate-200 pb-1 mb-3 flex justify-between items-center text-[8px] font-bold uppercase text-slate-400">
-                            <span>{title || "Matematik"}</span>
-                            <span>{t.page} {pageIdx + 1}</span>
+                        <div className="border-b border-stone-200 pb-1.5 mb-4 flex justify-between items-center text-[10px] font-bold text-stone-400">
+                            <span>{title || (lang === 'sv' ? "Matematik" : "Mathematics")}</span>
+                            <span className="font-mono">{t.page} {pageIdx + 1}</span>
                         </div>
                     )}
 
@@ -330,8 +333,8 @@ export default function PrintView({
                                             }`}>
                                                 <div className="flex items-start gap-4" onClick={() => setZoomedIdx(item.originalIdx)}>
                                                     {/* Visual Anchor Circle: Uses problemNumber so examples don't consume student numbering */}
-                                                    <div className="shrink-0 w-7 h-7 rounded-full border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-xs mt-1">
-                                                        {problemNumber.toString()}
+                                                    <div className="shrink-0 w-7 h-7 rounded-full border-2 border-stone-900 flex items-center justify-center text-stone-900 font-bold font-mono text-xs mt-1">
+                                                        {problemNumber}
                                                     </div>
 
                                                     <div className="flex-1 min-w-0 flex flex-col h-full">
@@ -345,7 +348,7 @@ export default function PrintView({
                                                         {/* LaTeX Equation Block */}
                                                         {displayLatex && item.resolvedData?.renderData.latex && (
                                                             <div className="py-2">
-                                                                <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className={`${latexSizeClass} text-slate-900 text-center font-serif`} />
+                                                                <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className={`${latexSizeClass} text-slate-900 text-center font-sans`} />
                                                             </div>
                                                         )}
                                                         
@@ -404,16 +407,16 @@ export default function PrintView({
             {!isMeasuring && includeAnswerKey && (
                  <div className="print-answer-key-page print:my-0">
                      <div className="max-w-[210mm] mx-auto !bg-white !text-slate-900 shadow-2xl my-8 p-[15mm] flex flex-col min-h-[297mm] print:min-h-0 print:shadow-none print:my-0 print:p-[12mm] relative border-t-[12px] border-emerald-600">
-                        <header className="border-b-2 border-slate-900 pb-4 mb-6">
-                            <div className="text-[8px] font-black uppercase text-slate-400 italic tracking-widest leading-none mb-1">{t.watermark}</div>
-                            <h2 className="text-xl font-black uppercase tracking-tight text-slate-900">{t.key_title}: {title}</h2>
+                        <header className="border-b-2 border-stone-900 pb-3 mb-6">
+                            <div className="text-[9px] font-bold uppercase text-stone-400 tracking-widest leading-none mb-1">{t.watermark}</div>
+                            <h2 className="text-lg font-extrabold tracking-tight text-stone-900">{t.key_title}: {title}</h2>
                         </header>
-                        
+
                         <div className="print-columns-3 flex-1 text-slate-900">
                             {/* 🟢 Filter out worked examples so the answer key corresponds 1:1 with student practice questions */}
                             {packet.filter(p => !p.isWorkedExample).map((item, qIdx) => (
-                                <div key={`ans-${item.id}`} className={`break-inside-avoid border-slate-200 ${answerKeyStyle === 'compact' ? 'mb-2 flex gap-2 items-baseline' : 'mb-6 pb-4 border-b'}`}>
-                                    <div className="font-black uppercase text-slate-500 shrink-0 text-[10px] italic">{qIdx + 1}</div>
+                                <div key={`ans-${item.id}`} className={`break-inside-avoid border-stone-200 ${answerKeyStyle === 'compact' ? 'mb-2 flex gap-2 items-baseline' : 'mb-6 pb-4 border-b'}`}>
+                                    <div className="font-bold font-mono text-stone-500 shrink-0 text-xs">{qIdx + 1}.</div>
                                     {answerKeyStyle === 'compact' ? (
                                         <div className="font-bold text-slate-900 text-[11px]"><MathDisplay content={getFinalAnswer(item.resolvedData)} /></div>
                                     ) : (
@@ -472,7 +475,7 @@ export default function PrintView({
                                                     <div className="text-sm font-semibold text-slate-900"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
                                                 )}
                                                 {displayLatex && item.resolvedData?.renderData.latex && (
-                                                    <div className="py-2"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className={`${latexSizeClass} text-center font-serif text-slate-900`} /></div>
+                                                    <div className="py-2"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className={`${latexSizeClass} text-center font-sans text-slate-900`} /></div>
                                                 )}
                                                 {displayVisual && (
                                                     <div className="flex justify-center scale-90 origin-top mt-2">

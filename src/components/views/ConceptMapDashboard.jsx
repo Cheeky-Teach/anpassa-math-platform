@@ -29,24 +29,17 @@ const VISUAL_TOPICS = new Set([
 const RECENT_STORAGE_KEY = 'concept_map_recent_nodes_v1';
 
 const RECOMMENDED_SEARCHES = [
-    // Arithmetic & Number Sense
     { sv: 'Bråk', en: 'Fractions', querySv: 'bråk', queryEn: 'fractions' },
     { sv: 'Procent', en: 'Percent', querySv: 'procent', queryEn: 'percent' },
     { sv: 'Negativa tal', en: 'Negative numbers', querySv: 'negativa', queryEn: 'negative' },
     { sv: 'Potenser', en: 'Exponents', querySv: 'potenser', queryEn: 'exponents' },
     { sv: 'Prioriteringsregler', en: 'Order of operations', querySv: 'prioritering', queryEn: 'order' },
-
-    // Algebra
     { sv: 'Ekvationer', en: 'Equations', querySv: 'ekvationer', queryEn: 'equations' },
     { sv: 'Parenteser', en: 'Parentheses', querySv: 'parenteser', queryEn: 'parentheses' },
     { sv: 'Förenkla uttryck', en: 'Simplify expressions', querySv: 'förenkla', queryEn: 'simplify' },
-
-    // Geometry
     { sv: 'Pythagoras', en: 'Pythagoras', querySv: 'pythagoras', queryEn: 'pythagoras' },
     { sv: 'Area & Omkrets', en: 'Area & Perimeter', querySv: 'area', queryEn: 'area' },
     { sv: 'Vinklar', en: 'Angles', querySv: 'vinklar', queryEn: 'angles' },
-
-    // Functions & Statistics
     { sv: 'Grafer & Räta linjen', en: 'Graphs & Linear functions', querySv: 'graf', queryEn: 'graph' },
     { sv: 'Sannolikhet', en: 'Probability', querySv: 'sannolikhet', queryEn: 'probability' },
     { sv: 'Medelvärde & Median', en: 'Mean & Median', querySv: 'medelvärde', queryEn: 'mean' }
@@ -60,13 +53,9 @@ export default function ConceptMapDashboard({
     onStart,
     studentTools = null
 }) {
-    // Anchored Original Goal so stepping through prerequisites never loses track of what the user came for
-    const [originalGoal, setOriginalGoal] = useState(null); // { topicId, level }
+    const [originalGoal, setOriginalGoal] = useState(null);
+    const [branchPrompt, setBranchPrompt] = useState(null);
 
-    // Inline disambiguation prompt when "För svårt" or "För lätt" has multiple branches
-    const [branchPrompt, setBranchPrompt] = useState(null); // 'prereqs' | 'unlocks' | null
-
-    // GDPR-friendly localStorage history (UI state only, no PII)
     const [recentNodes, setRecentNodes] = useState(() => {
         try {
             const saved = localStorage.getItem(RECENT_STORAGE_KEY);
@@ -76,11 +65,9 @@ export default function ConceptMapDashboard({
         }
     });
 
-    // Spotlight search state
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-    // Live "Show Me a Problem" preview state
     const [liveQuestion, setLiveQuestion] = useState(null);
     const [isFetchingExample, setIsFetchingExample] = useState(false);
 
@@ -109,7 +96,6 @@ export default function ConceptMapDashboard({
         } catch {}
     };
 
-    // Cmd+K / Ctrl+K shortcut to focus search
     useEffect(() => {
         const handleKeyDown = (e) => {
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -125,7 +111,6 @@ export default function ConceptMapDashboard({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    // Sync originalGoal when an external trigger (like "Testa nivå" on a topic card) opens diagnosticTarget
     useEffect(() => {
         if (!diagnosticTarget) {
             setOriginalGoal(null);
@@ -181,7 +166,6 @@ export default function ConceptMapDashboard({
         }
     };
 
-    // Reset & auto-fetch live question for visual/geometry topics so figures render immediately
     useEffect(() => {
         setLiveQuestion(null);
         setBranchPrompt(null);
@@ -201,7 +185,6 @@ export default function ConceptMapDashboard({
         }
     }, [focusedNode, lang]);
 
-    // Direct upstream prerequisites (sorted foundational -> immediate)
     const directPrereqs = useMemo(() => {
         if (!focusedNode) return [];
         return (focusedNode.prerequisites || [])
@@ -210,7 +193,6 @@ export default function ConceptMapDashboard({
             .sort((a, b) => (a.tier ?? 0) - (b.tier ?? 0) || a.level - b.level);
     }, [focusedNode]);
 
-    // Direct downstream unlocked next steps (same-topic next level first, then cross-topic bridges)
     const directUnlocks = useMemo(() => {
         if (!focusedNode) return [];
         return (focusedNode.unlocks || [])
@@ -224,14 +206,12 @@ export default function ConceptMapDashboard({
             });
     }, [focusedNode]);
 
-    // Spotlight search results
     const searchResults = useMemo(() => {
         const q = searchQuery.trim().toLowerCase();
         if (!q) return [];
         return CONCEPT_SEARCH_INDEX.filter(item => item.keywords.includes(q)).slice(0, 10);
     }, [searchQuery]);
 
-    // Selecting from Search or Recent History establishes a new Original Goal
     const handleSelectNewGoal = (topicId, level) => {
         const numLevel = Number(level);
         setOriginalGoal({ topicId, level: numLevel });
@@ -244,7 +224,6 @@ export default function ConceptMapDashboard({
         }
     };
 
-    // Stepping along the Timeline or Branch Choice shifts current diagnostic focus while keeping Original Goal anchored
     const handleStepToNode = (topicId, level) => {
         const numLevel = Number(level);
         setBranchPrompt(null);
@@ -270,7 +249,6 @@ export default function ConceptMapDashboard({
         }
     };
 
-    // Goldilocks Action 1: "För svårt" -> Auto-step if 1 prerequisite; inline choice if multiple
     const handleTooHard = () => {
         if (directPrereqs.length === 0) return;
         if (directPrereqs.length === 1) {
@@ -280,7 +258,6 @@ export default function ConceptMapDashboard({
         }
     };
 
-    // Goldilocks Action 3: "För lätt" -> Auto-step if 1 next step (or single same-topic next level); inline choice if multiple branches
     const handleTooEasy = () => {
         if (directUnlocks.length === 0) return;
         if (directUnlocks.length === 1) {
@@ -298,18 +275,17 @@ export default function ConceptMapDashboard({
     }, [liveQuestion, lang]);
 
     return (
-        <div className="w-full space-y-5">
+        <div className="w-full space-y-4">
             {/* ===================================================================== */}
             {/* 1. COMPACT SINGLE-ROW SEARCH & CORE STUDENT TOOLS DECK                */}
             {/* ===================================================================== */}
             <div className="relative z-30">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                    {/* Back to Topic Grid button when Diagnostic Mode is open */}
                     {focusedNode && (
                         <button
                             type="button"
                             onClick={handleCloseDiagnostic}
-                            className="px-3.5 py-2.5 rounded-2xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] border border-[var(--border-strong)] hover:border-indigo-500 text-xs font-black uppercase tracking-wider text-[var(--text-main)] transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs"
+                            className="px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] border border-[var(--border-strong)] hover:border-emerald-600 text-xs font-bold text-[var(--text-main)] transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
                         >
                             <ChevronLeft size={15} />
                             <span>{lang === 'sv' ? 'Visa alla ämnen' : 'All Topics'}</span>
@@ -318,8 +294,8 @@ export default function ConceptMapDashboard({
 
                     {/* Search Input + Attached Spotlight Popover */}
                     <div className="relative flex-1">
-                        <div className="relative flex items-center z-20">
-                            <Search size={17} className="absolute left-3.5 text-indigo-600 dark:text-indigo-400 pointer-events-none" />
+                        <div className="relative flex items-center z-20 group/search">
+                            <Search size={16} className="absolute left-3.5 text-emerald-600 dark:text-emerald-400 pointer-events-none transition-transform duration-150 group-focus-within/search:scale-110" />
                             <input
                                 ref={searchInputRef}
                                 type="text"
@@ -334,7 +310,7 @@ export default function ConceptMapDashboard({
                                         ? 'Osäker på var du ska börja? Sök t.ex. "bråk", "procent", "ekvationer"...'
                                         : 'Not sure where to start? Search e.g. "fractions", "percent", "equations"...'
                                 }
-                                className={`w-full pl-10 pr-14 py-2.5 bg-[var(--bg-card)] border border-indigo-500/45 hover:border-indigo-500 focus:border-indigo-500 focus:shadow-[0_0_26px_-2px_rgba(99,102,241,0.5)] focus:ring-4 focus:ring-indigo-500/15 rounded-2xl text-xs sm:text-sm font-bold text-[var(--text-main)] outline-none transition-all duration-300 ${
+                                className={`w-full pl-10 pr-14 py-2.5 bg-[var(--bg-card)] border border-emerald-500/45 hover:border-emerald-600 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/15 rounded-xl text-xs sm:text-sm font-semibold text-[var(--text-main)] outline-none transition-all duration-200 ${
                                     !searchQuery && !isSearchOpen ? 'animate-search-glow' : ''
                                 }`}
                             />
@@ -350,25 +326,25 @@ export default function ConceptMapDashboard({
                                     <X size={15} />
                                 </button>
                             ) : (
-                                <kbd className="hidden md:inline-flex items-center absolute right-3 px-2 py-0.5 text-[10px] font-black text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-lg">
+                                <kbd className="hidden md:inline-flex items-center absolute right-3 px-2 py-0.5 text-[10px] font-bold font-mono text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-md">
                                     ⌘K
                                 </kbd>
                             )}
                         </div>
 
-                        {/* Floating Spotlight Popover (Onboarding Prompt & Chips OR Live Results) */}
+                        {/* Floating Spotlight Popover */}
                         {isSearchOpen && (
                             <>
                                 <div
                                     className="fixed inset-0 z-10"
                                     onClick={() => setIsSearchOpen(false)}
                                 />
-                                <div className="absolute left-0 right-0 top-full mt-2 z-20 bg-[var(--bg-card)] border-2 border-indigo-600 rounded-2xl shadow-2xl max-h-96 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-1 duration-150">
+                                <div className="absolute left-0 right-0 top-full mt-1.5 z-20 bg-[var(--bg-card)] border border-emerald-600 rounded-2xl shadow-xl max-h-96 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-1 duration-150">
                                     {searchQuery.trim().length === 0 ? (
                                         <div className="p-4 space-y-3.5">
-                                            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-500/30">
-                                                <Compass size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-                                                <p className="text-xs font-semibold text-indigo-950 dark:text-indigo-100 leading-relaxed">
+                                            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/35 border border-emerald-200 dark:border-emerald-800/50">
+                                                <Compass size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                                                <p className="text-xs font-medium text-emerald-950 dark:text-emerald-100 leading-relaxed">
                                                     {lang === 'sv'
                                                         ? 'Skriv ett mattebegrepp eller klicka på ett förslag nedan för att se exempeluppgifter och hitta rätt nivå.'
                                                         : 'Type a math concept or pick a suggestion below to preview sample problems and find your right level.'}
@@ -377,7 +353,7 @@ export default function ConceptMapDashboard({
 
                                             {/* Recommended Chips */}
                                             <div className="space-y-1.5">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] block">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">
                                                     {lang === 'sv' ? 'Populära sökningar' : 'Suggested searches'}
                                                 </span>
                                                 <div className="flex flex-wrap items-center gap-1.5">
@@ -391,7 +367,7 @@ export default function ConceptMapDashboard({
                                                                     setSearchQuery(queryVal);
                                                                     searchInputRef.current?.focus();
                                                                 }}
-                                                                className="px-2.5 py-1 rounded-xl text-xs font-bold bg-[var(--bg-surface)] hover:bg-indigo-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-indigo-600 transition-colors cursor-pointer"
+                                                                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--bg-surface)] hover:bg-emerald-600 text-[var(--text-main)] hover:text-white border border-[var(--border-main)] hover:border-emerald-600 transition-colors cursor-pointer"
                                                             >
                                                                 # {lang === 'sv' ? chip.sv : chip.en}
                                                             </button>
@@ -404,13 +380,13 @@ export default function ConceptMapDashboard({
                                             {recentNodes.length > 0 && (
                                                 <div className="pt-3 border-t border-[var(--border-main)] space-y-1.5">
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                                                             {lang === 'sv' ? 'Senast utforskade' : 'Recently explored'}
                                                         </span>
                                                         <button
                                                             type="button"
                                                             onClick={clearRecentHistory}
-                                                            className="text-[10px] font-bold text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                                                            className="text-[11px] font-semibold text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
                                                         >
                                                             {lang === 'sv' ? 'Rensa historik' : 'Clear history'}
                                                         </button>
@@ -428,9 +404,9 @@ export default function ConceptMapDashboard({
                                                                         setIsSearchOpen(false);
                                                                         setSearchQuery('');
                                                                     }}
-                                                                    className="px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border-main)] hover:border-indigo-500 flex items-center gap-1.5"
+                                                                    className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer border bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border-main)] hover:border-emerald-600 flex items-center gap-1.5"
                                                                 >
-                                                                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-600 text-white">
+                                                                    <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-emerald-600 text-white">
                                                                         {lang === 'sv' ? `N${node.level}` : `L${node.level}`}
                                                                     </span>
                                                                     <span>{node.topicLabel?.[lang] || node.topicLabel?.sv}</span>
@@ -441,7 +417,7 @@ export default function ConceptMapDashboard({
                                             )}
                                         </div>
                                     ) : searchResults.length === 0 ? (
-                                        <div className="p-4 text-center text-xs font-bold text-[var(--text-muted)]">
+                                        <div className="p-4 text-center text-xs font-semibold text-[var(--text-muted)]">
                                             {lang === 'sv' ? 'Inga matchande begrepp hittades.' : 'No matching concepts found.'}
                                         </div>
                                     ) : (
@@ -455,17 +431,17 @@ export default function ConceptMapDashboard({
                                                         setIsSearchOpen(false);
                                                         setSearchQuery('');
                                                     }}
-                                                    className="w-full text-left p-3.5 hover:bg-[var(--bg-surface)] transition-colors flex items-center justify-between gap-3 cursor-pointer"
+                                                    className="w-full text-left p-3 hover:bg-[var(--bg-surface)] transition-colors flex items-center justify-between gap-3 cursor-pointer"
                                                 >
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex items-center gap-2 flex-wrap">
-                                                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-600 text-white shrink-0">
+                                                            <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-emerald-600 text-white shrink-0">
                                                                 {lang === 'sv' ? `Nivå ${item.level}` : `Lvl ${item.level}`}
                                                             </span>
-                                                            <span className="text-xs font-black text-[var(--text-main)]">
+                                                            <span className="text-xs font-bold text-[var(--text-main)]">
                                                                 {item.topicLabel?.[lang] || item.topicLabel?.sv}
                                                             </span>
-                                                            <span className="text-xs font-semibold text-[var(--text-muted)] truncate">
+                                                            <span className="text-xs font-medium text-[var(--text-muted)] truncate">
                                                                 — {item.levelDesc?.[lang] || item.levelDesc?.sv}
                                                             </span>
                                                         </div>
@@ -486,28 +462,27 @@ export default function ConceptMapDashboard({
                             <button
                                 type="button"
                                 onClick={studentTools.onTimesTableOpen}
-                                className="px-3.5 py-2.5 rounded-2xl bg-[var(--bg-card)] hover:bg-emerald-600 text-[var(--text-main)] hover:text-white border border-[var(--border-strong)] hover:border-emerald-600 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group/tool"
+                                className="px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)] hover:border-emerald-600 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                                <Grid3X3 size={15} className="text-emerald-600 dark:text-emerald-400 group-hover/tool:text-white" />
+                                <Grid3X3 size={15} className="text-emerald-600 dark:text-emerald-400" />
                                 <span>{lang === 'sv' ? 'Tabeller' : 'Tables'}</span>
                             </button>
 
                             <button
                                 type="button"
                                 onClick={studentTools.onFractionLabOpen}
-                                className="px-3.5 py-2.5 rounded-2xl bg-[var(--bg-card)] hover:bg-indigo-600 text-[var(--text-main)] hover:text-white border border-[var(--border-strong)] hover:border-indigo-600 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group/tool"
+                                className="px-3.5 py-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)] hover:border-sky-600 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                                <PieChart size={15} className="text-indigo-600 dark:text-indigo-400 group-hover/tool:text-white" />
+                                <PieChart size={15} className="text-sky-600 dark:text-sky-400" />
                                 <span>{lang === 'sv' ? 'Laborationer' : 'Manipulatives'}</span>
                             </button>
 
-                            {/* Compact Timer Selector */}
-                            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-2.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-strong)] shadow-2xs">
+                            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-strong)]">
                                 <Clock size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 <select
                                     value={studentTools.timerSettings.duration / 60}
                                     onChange={(e) => studentTools.toggleTimer(Number(e.target.value))}
-                                    className="bg-transparent text-xs font-bold text-[var(--text-main)] outline-none cursor-pointer"
+                                    className="bg-transparent text-xs font-bold font-mono text-[var(--text-main)] outline-none cursor-pointer"
                                     aria-label="Timer"
                                 >
                                     <option value="0">{lang === 'sv' ? 'Timer av' : 'Timer Off'}</option>
@@ -534,14 +509,14 @@ export default function ConceptMapDashboard({
             {/* ===================================================================== */}
             {focusedNode && (
                 <div className="space-y-4 animate-in fade-in duration-200">
-                    {/* ANCHORED ORIGINAL GOAL BREADCRUMB */}
+                    {/* Anchored Original Goal Breadcrumb */}
                     {isDetouredFromGoal && goalNode && (
-                        <div className="bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500 rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-                            <div className="flex items-center gap-2 text-xs font-bold text-amber-950 dark:text-amber-100 flex-wrap">
-                                <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-amber-600 text-white">
+                        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-500 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-xs font-semibold text-amber-950 dark:text-amber-100 flex-wrap">
+                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-600 text-white">
                                     {lang === 'sv' ? 'Ditt mål' : 'Your Goal'}
                                 </span>
-                                <span className="font-black">
+                                <span className="font-bold">
                                     {goalNode.topicLabel?.[lang] || goalNode.topicLabel?.sv} ({lang === 'sv' ? `Nivå ${goalNode.level}` : `Lvl ${goalNode.level}`})
                                 </span>
                                 <span className="opacity-60">→</span>
@@ -556,7 +531,7 @@ export default function ConceptMapDashboard({
                             <button
                                 type="button"
                                 onClick={handleReturnToGoal}
-                                className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs"
+                                className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
                             >
                                 <RotateCcw size={12} />
                                 <span>{lang === 'sv' ? 'Tillbaka till ditt mål' : 'Return to Goal'}</span>
@@ -564,32 +539,31 @@ export default function ConceptMapDashboard({
                         </div>
                     )}
 
-                    {/* TWO-COLUMN SPLIT WORKSPACE: LEFT (7/12) GOLDILOCKS DIAGNOSTIC | RIGHT (5/12) VERTICAL TIMELINE */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                        {/* LEFT COLUMN: GOLDILOCKS DIAGNOSTIC STAGE */}
-                        <div className="lg:col-span-7 bg-[var(--bg-card)] border-2 border-indigo-600 rounded-2xl p-5 sm:p-6 shadow-md ring-4 ring-indigo-600/10 space-y-5">
-                            {/* Active Topic & Level Header */}
+                    {/* Two-Column Split Workspace */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                        {/* Left Column: Goldilocks Diagnostic Stage */}
+                        <div className="lg:col-span-7 bg-[var(--bg-card)] border-2 border-emerald-600 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-700 dark:text-indigo-300">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                                         {CATEGORIES[focusedNode.category]?.label?.[lang] || focusedNode.category}
                                     </span>
-                                    <h3 className="text-xl sm:text-2xl font-black text-[var(--text-main)] tracking-tight mt-0.5">
+                                    <h3 className="text-xl font-extrabold text-[var(--text-main)] tracking-tight mt-0.5">
                                         {focusedNode.topicLabel?.[lang] || focusedNode.topicLabel?.sv}
                                     </h3>
-                                    <p className="text-sm font-bold text-[var(--text-muted)] mt-1">
+                                    <p className="text-sm font-medium text-[var(--text-muted)] mt-1">
                                         {focusedNode.levelDesc?.[lang] || focusedNode.levelDesc?.sv}
                                     </p>
                                 </div>
-                                <span className="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-black uppercase tracking-wider shrink-0 shadow-sm">
+                                <span className="px-3 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold font-mono shrink-0">
                                     {lang === 'sv' ? `Nivå ${focusedNode.level}` : `Level ${focusedNode.level}`}
                                 </span>
                             </div>
 
-                            {/* Sample Problem Box ("Så här ser en uppgift ut:") */}
-                            <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface)] border-2 border-[var(--border-strong)] space-y-3">
+                            {/* Sample Problem Box */}
+                            <div className="p-4 sm:p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-strong)] space-y-3">
                                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-700 dark:text-indigo-300">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                                         {lang === 'sv' ? 'Så här ser en uppgift ut:' : 'Here is what a problem looks like:'}
                                     </span>
 
@@ -598,7 +572,7 @@ export default function ConceptMapDashboard({
                                             type="button"
                                             onClick={() => fetchLiveQuestion(focusedNode)}
                                             disabled={isFetchingExample}
-                                            className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-main)] hover:border-indigo-500 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-main)] hover:border-emerald-600 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
                                         >
                                             <RefreshCw size={11} className={isFetchingExample ? 'animate-spin' : ''} />
                                             <span>{lang === 'sv' ? 'Visa nytt exempel' : 'New Example'}</span>
@@ -608,7 +582,7 @@ export default function ConceptMapDashboard({
 
                                 <div className="min-h-[120px] p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] flex flex-col justify-center items-center text-center overflow-visible">
                                     {isFetchingExample ? (
-                                        <span className="text-xs font-bold text-[var(--text-muted)] animate-pulse">
+                                        <span className="text-xs font-semibold text-[var(--text-muted)] animate-pulse">
                                             {lang === 'sv' ? 'Tar fram ett nytt exempel...' : 'Generating a fresh example...'}
                                         </span>
                                     ) : liveQuestion?.renderData ? (
@@ -627,7 +601,7 @@ export default function ConceptMapDashboard({
                                             )}
 
                                             {liveDescriptionText && (
-                                                <div className="text-sm font-semibold text-[var(--text-main)] leading-relaxed max-w-xl text-center">
+                                                <div className="text-sm font-medium text-[var(--text-main)] leading-relaxed max-w-xl text-center">
                                                     <MathDisplay content={liveDescriptionText} />
                                                 </div>
                                             )}
@@ -637,29 +611,29 @@ export default function ConceptMapDashboard({
                                             <MathDisplay content={focusedNode.example} />
                                         </div>
                                     ) : (
-                                        <span className="text-xs font-semibold text-[var(--text-muted)] italic">
+                                        <span className="text-xs font-medium text-[var(--text-muted)]">
                                             {focusedNode.levelDesc?.[lang] || focusedNode.levelDesc?.sv}
                                         </span>
                                     )}
                                 </div>
                             </div>
 
-                            {/* GOLDILOCKS DECISION BAR: SOLID HIGH-CONTRAST BUTTONS */}
+                            {/* Goldilocks Decision Bar */}
                             <div className="space-y-2.5 pt-1">
-                                <p className="text-center text-xs font-black uppercase tracking-wider text-[var(--text-muted)]">
+                                <p className="text-center text-xs font-bold text-[var(--text-muted)]">
                                     {lang === 'sv' ? 'Hur känns den här uppgiften?' : 'How does this problem feel?'}
                                 </p>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                                    {/* 1. TOO HARD -> Solid Amber with White Text */}
+                                    {/* 1. Too Hard */}
                                     <button
                                         type="button"
                                         disabled={directPrereqs.length === 0}
                                         onClick={handleTooHard}
-                                        className="py-3.5 px-3 rounded-2xl bg-amber-600 hover:bg-amber-700 disabled:bg-amber-600/35 disabled:cursor-not-allowed text-white font-black text-xs uppercase tracking-wider shadow-md shadow-amber-600/20 transition-all active:scale-95 cursor-pointer flex flex-col items-center justify-center gap-1 text-center"
+                                        className="py-3 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:bg-amber-600/35 disabled:cursor-not-allowed text-white font-bold text-xs transition-all active:scale-[0.98] cursor-pointer flex flex-col items-center justify-center gap-0.5 text-center"
                                     >
                                         <span>{lang === 'sv' ? 'För svårt' : 'Too Hard'}</span>
-                                        <span className="text-[10px] font-bold text-amber-50 normal-case tracking-normal">
+                                        <span className="text-[11px] font-medium text-amber-100">
                                             {directPrereqs.length === 0
                                                 ? (lang === 'sv' ? 'Redan på startnivå' : 'Already at start')
                                                 : directPrereqs.length === 1
@@ -668,7 +642,7 @@ export default function ConceptMapDashboard({
                                         </span>
                                     </button>
 
-                                    {/* 2. JUST RIGHT -> Solid Emerald with White Text */}
+                                    {/* 2. Just Right */}
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -676,26 +650,26 @@ export default function ConceptMapDashboard({
                                             if (onSelect) onSelect(focusedNode.topicId, focusedNode.level);
                                             if (onStart) onStart();
                                         }}
-                                        className="py-3.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-600/25 transition-all active:scale-95 cursor-pointer flex flex-col items-center justify-center gap-1 text-center"
+                                        className="py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all active:scale-[0.98] cursor-pointer flex flex-col items-center justify-center gap-0.5 text-center"
                                     >
                                         <span className="flex items-center gap-1.5">
-                                            <Play size={14} fill="currentColor" />
+                                            <Play size={13} fill="currentColor" />
                                             {lang === 'sv' ? 'Lagom — Börja öva' : 'Just Right — Practice'}
                                         </span>
-                                        <span className="text-[10px] font-bold text-emerald-50 normal-case tracking-normal">
+                                        <span className="text-[11px] font-medium text-emerald-100">
                                             {lang === 'sv' ? `Starta Nivå ${focusedNode.level}` : `Start Level ${focusedNode.level}`}
                                         </span>
                                     </button>
 
-                                    {/* 3. TOO EASY -> Solid Indigo with White Text */}
+                                    {/* 3. Too Easy (Cobalt instead of Indigo) */}
                                     <button
                                         type="button"
                                         disabled={directUnlocks.length === 0}
                                         onClick={handleTooEasy}
-                                        className="py-3.5 px-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/35 disabled:cursor-not-allowed text-white font-black text-xs uppercase tracking-wider shadow-md shadow-indigo-600/20 transition-all active:scale-95 cursor-pointer flex flex-col items-center justify-center gap-1 text-center"
+                                        className="py-3 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:bg-sky-600/35 disabled:cursor-not-allowed text-white font-bold text-xs transition-all active:scale-[0.98] cursor-pointer flex flex-col items-center justify-center gap-0.5 text-center"
                                     >
                                         <span>{lang === 'sv' ? 'För lätt' : 'Too Easy'}</span>
-                                        <span className="text-[10px] font-bold text-indigo-50 normal-case tracking-normal">
+                                        <span className="text-[11px] font-medium text-sky-100">
                                             {directUnlocks.length === 0
                                                 ? (lang === 'sv' ? 'Högsta nivån nådd' : 'Top level reached')
                                                 : directUnlocks.length === 1
@@ -706,11 +680,11 @@ export default function ConceptMapDashboard({
                                 </div>
                             </div>
 
-                            {/* INLINE MULTI-BRANCH DISAMBIGUATION PROMPT (Avoids bad auto-guesses when >1 prerequisite or unlock exists) */}
+                            {/* Multi-Branch Disambiguation Prompts */}
                             {branchPrompt === 'prereqs' && directPrereqs.length > 1 && (
-                                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500 space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
+                                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-500 space-y-3 animate-in fade-in duration-150">
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="text-xs font-black text-amber-950 dark:text-amber-100 flex items-center gap-1.5">
+                                        <span className="text-xs font-bold text-amber-950 dark:text-amber-100 flex items-center gap-1.5">
                                             <HelpCircle size={15} className="text-amber-600 shrink-0" />
                                             {lang === 'sv'
                                                 ? 'Det här momentet bygger på flera grunder. Vilken del känns klurigast?'
@@ -724,29 +698,29 @@ export default function ConceptMapDashboard({
                                             <X size={14} />
                                         </button>
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         {directPrereqs.map(prereq => (
                                             <button
                                                 key={prereq.id}
                                                 type="button"
                                                 onClick={() => handleStepToNode(prereq.topicId, prereq.level)}
-                                                className="p-3 rounded-xl bg-[var(--bg-card)] hover:border-amber-600 border-2 border-amber-400/70 text-left transition-all cursor-pointer group flex flex-col justify-between gap-1.5"
+                                                className="p-3 rounded-xl bg-[var(--bg-card)] hover:border-amber-600 border border-amber-400/70 text-left transition-colors cursor-pointer flex flex-col justify-between gap-1.5"
                                             >
                                                 <div>
                                                     <div className="flex items-center gap-1.5">
-                                                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-600 text-white">
+                                                        <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-amber-600 text-white">
                                                             {lang === 'sv' ? `Nivå ${prereq.level}` : `Lvl ${prereq.level}`}
                                                         </span>
-                                                        <span className="text-xs font-black text-[var(--text-main)] truncate">
+                                                        <span className="text-xs font-bold text-[var(--text-main)] truncate">
                                                             {prereq.topicLabel?.[lang] || prereq.topicLabel?.sv}
                                                         </span>
                                                     </div>
-                                                    <p className="text-[11px] font-semibold text-[var(--text-muted)] mt-0.5 line-clamp-1">
+                                                    <p className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5 line-clamp-1">
                                                         {prereq.levelDesc?.[lang] || prereq.levelDesc?.sv}
                                                     </p>
                                                 </div>
                                                 {prereq.example && (
-                                                    <div className="text-xs font-bold text-[var(--text-main)] truncate pt-1 border-t border-[var(--border-main)]">
+                                                    <div className="text-xs font-semibold text-[var(--text-main)] truncate pt-1 border-t border-[var(--border-main)]">
                                                         <MathDisplay content={prereq.example} />
                                                     </div>
                                                 )}
@@ -757,10 +731,10 @@ export default function ConceptMapDashboard({
                             )}
 
                             {branchPrompt === 'unlocks' && directUnlocks.length > 1 && (
-                                <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border-2 border-indigo-500 space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
+                                <div className="p-4 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-500 space-y-3 animate-in fade-in duration-150">
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="text-xs font-black text-indigo-950 dark:text-indigo-100 flex items-center gap-1.5">
-                                            <Compass size={15} className="text-indigo-600 shrink-0" />
+                                        <span className="text-xs font-bold text-sky-950 dark:text-sky-100 flex items-center gap-1.5">
+                                            <Compass size={15} className="text-sky-600 shrink-0" />
                                             {lang === 'sv'
                                                 ? 'Härifrån kan du gå vidare på flera sätt. Välj nästa utmaning:'
                                                 : 'From here you can branch in multiple ways. Choose your next challenge:'}
@@ -768,34 +742,34 @@ export default function ConceptMapDashboard({
                                         <button
                                             type="button"
                                             onClick={() => setBranchPrompt(null)}
-                                            className="p-1 text-indigo-800 dark:text-indigo-200 hover:opacity-70 cursor-pointer"
+                                            className="p-1 text-sky-800 dark:text-sky-200 hover:opacity-70 cursor-pointer"
                                         >
                                             <X size={14} />
                                         </button>
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         {directUnlocks.map(nextNode => (
                                             <button
                                                 key={nextNode.id}
                                                 type="button"
                                                 onClick={() => handleStepToNode(nextNode.topicId, nextNode.level)}
-                                                className="p-3 rounded-xl bg-[var(--bg-card)] hover:border-indigo-600 border-2 border-indigo-400/70 text-left transition-all cursor-pointer group flex flex-col justify-between gap-1.5"
+                                                className="p-3 rounded-xl bg-[var(--bg-card)] hover:border-sky-600 border border-sky-400/70 text-left transition-colors cursor-pointer flex flex-col justify-between gap-1.5"
                                             >
                                                 <div>
                                                     <div className="flex items-center gap-1.5">
-                                                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-600 text-white">
+                                                        <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-sky-600 text-white">
                                                             {lang === 'sv' ? `Nivå ${nextNode.level}` : `Lvl ${nextNode.level}`}
                                                         </span>
-                                                        <span className="text-xs font-black text-[var(--text-main)] truncate">
+                                                        <span className="text-xs font-bold text-[var(--text-main)] truncate">
                                                             {nextNode.topicLabel?.[lang] || nextNode.topicLabel?.sv}
                                                         </span>
                                                     </div>
-                                                    <p className="text-[11px] font-semibold text-[var(--text-muted)] mt-0.5 line-clamp-1">
+                                                    <p className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5 line-clamp-1">
                                                         {nextNode.levelDesc?.[lang] || nextNode.levelDesc?.sv}
                                                     </p>
                                                 </div>
                                                 {nextNode.example && (
-                                                    <div className="text-xs font-bold text-[var(--text-main)] truncate pt-1 border-t border-[var(--border-main)]">
+                                                    <div className="text-xs font-semibold text-[var(--text-main)] truncate pt-1 border-t border-[var(--border-main)]">
                                                         <MathDisplay content={nextNode.example} />
                                                     </div>
                                                 )}
@@ -806,59 +780,58 @@ export default function ConceptMapDashboard({
                             )}
                         </div>
 
-                        {/* RIGHT COLUMN: CONNECTED VERTICAL TIMELINE / STEPPER */}
-                        <div className="lg:col-span-5 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
+                        {/* Right Column: Connected Vertical Timeline */}
+                        <div className="lg:col-span-5 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl p-5 space-y-5">
                             <div className="border-b border-[var(--border-main)] pb-3">
-                                <h4 className="text-xs font-black uppercase tracking-widest text-[var(--text-main)]">
+                                <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-main)]">
                                     {lang === 'sv' ? 'Din väg hit & vidare' : 'Your Path Here & Forward'}
                                 </h4>
-                                <p className="text-[11px] font-semibold text-[var(--text-muted)] mt-0.5">
+                                <p className="text-xs font-medium text-[var(--text-muted)] mt-0.5">
                                     {lang === 'sv'
                                         ? 'Klicka på ett steg i tidslinjen för att granska dess uppgift.'
                                         : 'Click any step on the timeline to inspect its sample problem.'}
                                 </p>
                             </div>
 
-                            {/* TIMELINE TRACK */}
                             <div className="relative pl-6 space-y-5 before:content-[''] before:absolute before:left-[9px] before:top-2 before:bottom-2 before:w-0.5 before:bg-[var(--border-strong)]">
-                                {/* 1. UPSTREAM PREREQUISITES */}
+                                {/* 1. Upstream Prerequisites */}
                                 <div className="relative">
                                     <span className="absolute -left-[22px] top-1 w-3.5 h-3.5 rounded-full bg-amber-600 ring-4 ring-[var(--bg-card)]" />
                                     <div className="mb-2">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-800 dark:text-amber-300">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
                                             {lang === 'sv' ? 'Behöver du repetera först?' : 'Need to review first?'}
                                         </span>
                                     </div>
 
                                     {directPrereqs.length === 0 ? (
-                                        <p className="text-xs font-semibold text-[var(--text-muted)] italic">
+                                        <p className="text-xs font-medium text-[var(--text-muted)]">
                                             {lang === 'sv'
                                                 ? 'Detta är redan den allra första grundnivån.'
                                                 : 'This is already the initial foundation level.'}
                                         </p>
                                     ) : (
-                                        <div className="divide-y divide-[var(--border-main)] border border-[var(--border-main)] rounded-2xl bg-[var(--bg-surface)] overflow-hidden">
+                                        <div className="divide-y divide-[var(--border-main)] border border-[var(--border-main)] rounded-xl bg-[var(--bg-surface)] overflow-hidden">
                                             {directPrereqs.map(prereq => (
                                                 <button
                                                     key={prereq.id}
                                                     type="button"
                                                     onClick={() => handleStepToNode(prereq.topicId, prereq.level)}
-                                                    className="w-full p-3 text-left hover:bg-[var(--bg-card)] dark:hover:bg-amber-950/40 transition-colors cursor-pointer group flex items-center justify-between gap-3"
+                                                    className="w-full p-3 text-left hover:bg-[var(--bg-card)] transition-colors cursor-pointer group flex items-center justify-between gap-3"
                                                 >
                                                     <div className="min-w-0 flex-1 space-y-1">
                                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-600 text-white shrink-0">
+                                                            <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-amber-600 text-white shrink-0">
                                                                 {lang === 'sv' ? `Nivå ${prereq.level}` : `Lvl ${prereq.level}`}
                                                             </span>
-                                                            <span className="text-xs font-black text-[var(--text-main)] group-hover:text-amber-900 dark:group-hover:text-amber-200 truncate">
+                                                            <span className="text-xs font-bold text-[var(--text-main)] group-hover:text-amber-800 dark:group-hover:text-amber-200 truncate">
                                                                 {prereq.topicLabel?.[lang] || prereq.topicLabel?.sv}
                                                             </span>
                                                         </div>
-                                                        <p className="text-[11px] font-semibold text-[var(--text-muted)] truncate">
+                                                        <p className="text-[11px] font-medium text-[var(--text-muted)] truncate">
                                                             {prereq.levelDesc?.[lang] || prereq.levelDesc?.sv}
                                                         </p>
                                                         {prereq.example && (
-                                                            <div className="text-[11px] font-bold text-[var(--text-main)] truncate pt-0.5">
+                                                            <div className="text-[11px] font-semibold text-[var(--text-main)] truncate pt-0.5">
                                                                 <MathDisplay content={prereq.example} />
                                                             </div>
                                                         )}
@@ -870,62 +843,62 @@ export default function ConceptMapDashboard({
                                     )}
                                 </div>
 
-                                {/* 2. CURRENT ANCHOR NODE ON TIMELINE */}
+                                {/* 2. Current Anchor Node */}
                                 <div className="relative">
-                                    <span className="absolute -left-[24px] top-1.5 w-4 h-4 rounded-full bg-indigo-600 ring-4 ring-indigo-600/20" />
-                                    <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-300 dark:border-indigo-500/40">
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-indigo-800 dark:text-indigo-300 block">
+                                    <span className="absolute -left-[24px] top-1.5 w-4 h-4 rounded-full bg-emerald-600 ring-4 ring-emerald-600/20" />
+                                    <div className="p-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/50">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">
                                             {lang === 'sv' ? 'Du granskar just nu' : 'Currently inspecting'}
                                         </span>
-                                        <div className="text-xs font-black text-indigo-950 dark:text-indigo-100 mt-0.5">
+                                        <div className="text-xs font-extrabold text-emerald-950 dark:text-emerald-100 mt-0.5">
                                             {focusedNode.topicLabel?.[lang] || focusedNode.topicLabel?.sv} — {lang === 'sv' ? `Nivå ${focusedNode.level}` : `Level ${focusedNode.level}`}
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* 3. DOWNSTREAM UNLOCKS / NEXT STEPS */}
+                                {/* 3. Downstream Unlocks */}
                                 <div className="relative">
-                                    <span className="absolute -left-[22px] top-1 w-3.5 h-3.5 rounded-full bg-emerald-600 ring-4 ring-[var(--bg-card)]" />
+                                    <span className="absolute -left-[22px] top-1 w-3.5 h-3.5 rounded-full bg-sky-600 ring-4 ring-[var(--bg-card)]" />
                                     <div className="mb-2">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800 dark:text-emerald-300">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">
                                             {lang === 'sv' ? 'När du klarar detta är du redo för:' : 'Once mastered, you are ready for:'}
                                         </span>
                                     </div>
 
                                     {directUnlocks.length === 0 ? (
-                                        <p className="text-xs font-semibold text-[var(--text-muted)] italic">
+                                        <p className="text-xs font-medium text-[var(--text-muted)]">
                                             {lang === 'sv'
                                                 ? 'Du har nått den högsta nivån inom detta område!'
                                                 : 'You have reached the highest level in this topic!'}
                                         </p>
                                     ) : (
-                                        <div className="divide-y divide-[var(--border-main)] border border-[var(--border-main)] rounded-2xl bg-[var(--bg-surface)] overflow-hidden">
+                                        <div className="divide-y divide-[var(--border-main)] border border-[var(--border-main)] rounded-xl bg-[var(--bg-surface)] overflow-hidden">
                                             {directUnlocks.map(nextNode => (
                                                 <button
                                                     key={nextNode.id}
                                                     type="button"
                                                     onClick={() => handleStepToNode(nextNode.topicId, nextNode.level)}
-                                                    className="w-full p-3 text-left hover:bg-[var(--bg-card)] dark:hover:bg-emerald-950/40 transition-colors cursor-pointer group flex items-center justify-between gap-3"
+                                                    className="w-full p-3 text-left hover:bg-[var(--bg-card)] transition-colors cursor-pointer group flex items-center justify-between gap-3"
                                                 >
                                                     <div className="min-w-0 flex-1 space-y-1">
                                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-600 text-white shrink-0">
+                                                            <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-sky-600 text-white shrink-0">
                                                                 {lang === 'sv' ? `Nivå ${nextNode.level}` : `Lvl ${nextNode.level}`}
                                                             </span>
-                                                            <span className="text-xs font-black text-[var(--text-main)] group-hover:text-emerald-900 dark:group-hover:text-emerald-200 truncate">
+                                                            <span className="text-xs font-bold text-[var(--text-main)] group-hover:text-sky-800 dark:group-hover:text-sky-200 truncate">
                                                                 {nextNode.topicLabel?.[lang] || nextNode.topicLabel?.sv}
                                                             </span>
                                                         </div>
-                                                        <p className="text-[11px] font-semibold text-[var(--text-muted)] truncate">
+                                                        <p className="text-[11px] font-medium text-[var(--text-muted)] truncate">
                                                             {nextNode.levelDesc?.[lang] || nextNode.levelDesc?.sv}
                                                         </p>
                                                         {nextNode.example && (
-                                                            <div className="text-[11px] font-bold text-[var(--text-main)] truncate pt-0.5">
+                                                            <div className="text-[11px] font-semibold text-[var(--text-main)] truncate pt-0.5">
                                                                 <MathDisplay content={nextNode.example} />
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <ArrowRight size={14} className="text-[var(--text-muted)] group-hover:text-emerald-700 dark:group-hover:text-emerald-300 group-hover:translate-x-0.5 transition-all shrink-0" />
+                                                    <ArrowRight size={14} className="text-[var(--text-muted)] group-hover:text-sky-700 dark:group-hover:text-sky-300 group-hover:translate-x-0.5 transition-all shrink-0" />
                                                 </button>
                                             ))}
                                         </div>

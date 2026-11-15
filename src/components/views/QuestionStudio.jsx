@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
-  ChevronRight, ChevronLeft, Plus, Trash2, Layout, Send, Info, Layers, Search, Zap, 
-  FileText, Grid3X3, RefreshCcw, Loader2, Maximize2, AlertTriangle, Sparkles,
-  Minus, Eye, Settings2, Printer, Square, Type, Shuffle, Save, Eraser, Clock,
-  PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, X, Globe, Building2, Lock, Copy, Check, Filter,
-  MoreVertical, AlignLeft, LayoutGrid, EyeOff, GripVertical, Brain, Calculator, Target, 
-  Image as ImageIcon, FileText as TextIcon, Monitor, ChevronDown, Edit2, HelpCircle, Gamepad2
+  ChevronLeft, Plus, Trash2, Send, Layers, Search, Zap, 
+  FileText, Grid3X3, RefreshCcw, Loader2, Sparkles,
+  Minus, Settings2, Printer, Square, Type, Shuffle, Save, Eraser,
+  PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, X, Building2, Lock,
+  AlignLeft, LayoutGrid, GripVertical, Brain, Calculator, Target, 
+  Image as ImageIcon, FileText as TextIcon, Monitor, ChevronDown, HelpCircle, Gamepad2
 } from 'lucide-react';
 import { SKILL_BUCKETS, isTopicWordProblemReady } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer.jsx';
-import { supabase } from '../../lib/supabaseClient'; 
 import PresentationView from '../views/PresentationView.jsx';
-import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
+import { syncBatchProgress } from '../../lib/progressSync';
 import LiveLaunchModal from '../modals/LiveLaunchModal';
 import StudioTutorialModal from '../modals/StudioTutorialModal.jsx';
 import SheetLibraryModal from '../modals/SheetLibraryModal';
@@ -24,7 +23,6 @@ import WorkedExampleCard from '../shared/WorkedExampleCard.jsx';
 import { useSheetSaver } from '../../hooks/useSheetSaver';
 import SaveChoiceModal from '../modals/SaveChoiceModal';
 
-// CRITICAL: Imports Universal Theme and Preferences Toggle
 import '../../styles/theme.css'; 
 import PreferencesToggle from '../ui/PreferencesToggle';
 
@@ -108,9 +106,7 @@ const compileAnchoredStory = (item, lang = 'sv', includeLatex = false) => {
         template += lang === 'en' ? " Calculate the total change in percent." : " Beräkna den totala förändringen i procent.";
     } else if (item.variationKey === 'repeated_change_years') {
         template += lang === 'en' ? " Calculate the value at the end of the period." : " Beräkna värdet efter periodens slut.";
-    } 
-    // Equations Suffixes
-    else if (item.topicId === 'equations' || item.topicId === 'equations_word') {
+    } else if (item.topicId === 'equations' || item.topicId === 'equations_word') {
         if (item.resolvedData?.metadata?.difficulty === 5) {
             template += lang === 'en' ? " Write the equation that describes this situation." : " Teckna ekvationen som beskriver situationen.";
         } else {
@@ -143,82 +139,46 @@ export default function QuestionStudio({
 }) {
   const t = {
     sv: {
-      studio: "Question Studio", library_title: "Bibliotek", donow_title: "Do Now Grid", worksheet_title: "Arbetsblad",
-      change_mode: "Byt läge", search_placeholder: "Sök område...", board_label: "Tavlan", new_example: "Nytt exempel",
-      select_hint: "Välj en variant för att förhandsgranska", selected_questions: "Valda frågor", clear_all: "Rensa",
+      studio: "Question Studio", donow_title: "Do Now Grid", worksheet_title: "Arbetsblad",
+      change_mode: "Byt läge", search_placeholder: "Sök område...", board_label: "Förhandsvisning", new_example: "Nytt exempel",
+      select_hint: "Välj en variant till vänster för att förhandsgranska", selected_questions: "Valda frågor", clear_all: "Rensa",
       create_donow: "Grid", publish: "Skriv ut", title_placeholder: "Namnge ditt arbete...",
-      save_success: "Sparad!", unsaved_warning: "Du har osparade ändringar. Fortsätt ändå?",
-      width_label: "Bredd", work_area_toggle: "Arbetsyta", section_label: "Instruktion:",
-      regenerate: "Slumpa ny", regenerate_all: "Slumpa alla", load_btn: "Öppna", delete_confirm: "Radera permanent?",
-      compact: "Kompakt", spacious: "Gott om plats",
-      answer_key_toggle: "Inkludera facit", answer_style_label: "Facit stil",
+      unsaved_warning: "Du har osparade ändringar. Fortsätt ändå?",
+      regenerate_all: "Slumpa alla",
+      answer_key_toggle: "Inkludera facit", answer_style_label: "Facitstil",
       style_compact: "Bara svar", style_detailed: "Steg",
       delete_task: "Radera", name_label: "Namn:", date_label: "Datum:",
-      save_btn: "Spara", live_btn: "Live", btn_close: "Stäng",
-      visibility_label: "Delning", vis_private: "Privat", vis_school: "Skola", vis_public: "Global",
-      tab_mine: "Mina sparade", tab_school: "Min Skola", tab_global: "Globalt",
-      clone_btn: "Kopiera", clone_success: "Kopierad!", peek_title: "Snabbkoll",
-      mode_header: "Som rubrik", mode_inline: "Inuti kortet", mode_hidden: "Dölj text",
+      save_btn: "Spara", live_btn: "Live",
       hide_extra: "Dölj Begrepp & Flerval", type_calc: "Räkna", type_concept: "Begrepp", type_logic: "Felsök", type_visual: "Bild", type_text: "Text",
       present: "Presentera",
-      new_donow: "Nytt Do Now", new_worksheet: "Nytt Arbetsblad",
-      new_board: "Nytt Board", board_title: "Presentation", 
-      trash: "Papperskorg", new_folder: "Ny Mapp", folder: "Mapp",
-      filter_all: "Alla", create_folder_title: "Skapa ny mapp",
-      folder_name_placeholder: "Mappnamn...", cancel: "Avbryt", create: "Skapa",
-      move_file: "Flytta fil", root_dir: "Start (Hem)",
-      trash_empty: "Papperskorgen är tom.", no_files: "Inga filer hittades här.",
-      restore: "Återställ", hard_delete: "Radera permanent", duplicate_btn: "Duplicera",
-      duplicate_success: "Kopia skapad!", rename_folder: "Byt namn på mapp", rename_folder_title: "Ändra mappnamn",
       add_qty: "Lägg till", rows_label: "Rader:", toggle_grid: "Växla Rutnät / Blank",
       toggle_work_area: "Växla rutnät/tom yta",
       preset_compact: "Tät (Prov)", preset_standard: "Standard", preset_spacious: "Rymlig",
       style_open: "Öppen", style_framed: "Inramad",
       density_and_style: "Täthet & Stil", presets_heading: "Snabbmallar",
       font_size_heading: "Textstorlek", framing_heading: "Inramning",
-      sheet_default_title: "Matematik",
-      err_create_folder: "Kunde inte skapa mapp: ",
-      err_move_file: "Kunde inte flytta filen: ",
-      err_copy: "Kunde inte kopiera."
+      sheet_default_title: "Matematik"
     },
     en: {
-      studio: "Question Studio", library_title: "Library", donow_title: "Do Now Grid", worksheet_title: "Worksheet",
-      change_mode: "Change mode", search_placeholder: "Search topics...", board_label: "The Board", new_example: "New Example",
-      select_hint: "Select a variation to preview", selected_questions: "Questions", clear_all: "Clear",
+      studio: "Question Studio", donow_title: "Do Now Grid", worksheet_title: "Worksheet",
+      change_mode: "Change mode", search_placeholder: "Search topics...", board_label: "Preview", new_example: "New Example",
+      select_hint: "Select a variation on the left to preview", selected_questions: "Questions", clear_all: "Clear",
       create_donow: "Grid", publish: "Print", title_placeholder: "Enter title...",
-      save_success: "Saved!", unsaved_warning: "Unsaved work! Proceed anyway?",
-      width_label: "Width", work_area_toggle: "Work Area", section_label: "Instruction:",
-      regenerate: "Randomize new", regenerate_all: "Randomize all", load_btn: "Open", delete_confirm: "Delete permanently?",
-      compact: "Compact", spacious: "Spacious",
+      unsaved_warning: "Unsaved work! Proceed anyway?",
+      regenerate_all: "Randomize all",
       answer_key_toggle: "Include answer key", answer_style_label: "Style",
       style_compact: "Answers", style_detailed: "Steps",
       delete_task: "Delete task", name_label: "Name:", date_label: "Date:",
-      save_btn: "Save", live_btn: "Live", btn_close: "Close",
-      visibility_label: "Sharing", vis_private: "Private", vis_school: "School", vis_public: "Global",
-      tab_mine: "My Saved", tab_school: "School", tab_global: "Global",
-      clone_btn: "Clone", clone_success: "Cloned!", peek_title: "Quick Peek",
-      mode_header: "As Header", mode_inline: "Inside Card", mode_hidden: "Hide Text",
+      save_btn: "Save", live_btn: "Live",
       hide_extra: "Hide Concepts & MCQ", type_calc: "Calculate", type_concept: "Concept", type_logic: "Logic", type_visual: "Image", type_text: "Text",
       present: "Present",
-      new_donow: "New Do Now", new_worksheet: "New Worksheet",
-      new_board: "New Board", board_title: "Board", 
-      trash: "Trash", new_folder: "New Folder", folder: "Folder",
-      filter_all: "All", create_folder_title: "Create new folder",
-      folder_name_placeholder: "Folder name...", cancel: "Cancel", create: "Create",
-      move_file: "Move file", root_dir: "Root directory",
-      trash_empty: "Trash is empty.", no_files: "No files found here.",
-      restore: "Restore", hard_delete: "Delete permanently",
-      duplicate_btn: "Duplicate", duplicate_success: "Copy created!", rename_folder: "Rename folder", rename_folder_title: "Rename folder",
       add_qty: "Add", rows_label: "Rows:", toggle_grid: "Toggle Grid / Blank",
       toggle_work_area: "Toggle grid / blank space",
       preset_compact: "Compact (Exam)", preset_standard: "Standard", preset_spacious: "Spacious",
       style_open: "Open", style_framed: "Framed",
       density_and_style: "Density & Style", presets_heading: "Presets",
       font_size_heading: "Font Size", framing_heading: "Borders",
-      sheet_default_title: "Mathematics",
-      err_create_folder: "Could not create folder: ",
-      err_move_file: "Could not move file: ",
-      err_copy: "Failed to copy."
+      sheet_default_title: "Mathematics"
     }
   }[lang];
 
@@ -229,9 +189,6 @@ export default function QuestionStudio({
   const [activeSheetId, setActiveSheetId] = useState(null); 
   const [activeBoardSheet, setActiveBoardSheet] = useState(null);
 
-  const [savedSheets, setSavedSheets] = useState([]);
-  const [libraryTab, setLibraryTab] = useState('private'); 
-  const [isLibraryLoading, setIsLibraryLoading] = useState(false);
   const [canvasMode, setCanvasMode] = useState('studio'); 
   const [globalLatexSize, setGlobalLatexSize] = useState('md');
   const [workspaceHeight, setWorkspaceHeight] = useState(0);
@@ -247,37 +204,18 @@ export default function QuestionStudio({
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [pendingQuantity, setPendingQuantity] = useState(1);
   const [chosenVisibility, setChosenVisibility] = useState('private');
-  const [peekSheet, setPeekSheet] = useState(null);
   const [draggedIdx, setDraggedIdx] = useState(null);
-  const [filterTopic, setFilterTopic] = useState('all');
 
   const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
   const [hideExtra, setHideExtra] = useState(false);
   const [useWordProblems, setUseWordProblems] = useState(false);
   
   const [isGlobalShuffleOpen, setIsGlobalShuffleOpen] = useState(false);
-  const [filterDocType, setFilterDocType] = useState('all');
   const [showPresentation, setShowPresentation] = useState(false); 
 
   // Live Session Pre-Flight States
   const [showLiveModal, setShowLiveModal] = useState(false);
   const [liveSettings, setLiveSettings] = useState({ pacing: 'open', order: 'original', summary: true });
-  const [enableScratchpad, setEnableScratchpad] = useState(true);
-  const [enableCanvas, setEnableCanvas] = useState(false); 
-  const [responseStyle, setResponseStyle] = useState('flexible'); 
-  const [folders, setFolders] = useState([]);
-  const [expandedFolders, setExpandedFolders] = useState([]);
-
-  const toggleFolder = (folderId) => {
-      setExpandedFolders(prev => prev.includes(folderId) ? prev.filter(id => id !== folderId) : [...prev, folderId]);
-  };
-  const [isTrashView, setIsTrashView] = useState(false);
-  const [showFolderModal, setShowFolderModal] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-  const [showMoveModal, setShowMoveModal] = useState(null); 
-  const [editingFolder, setEditingFolder] = useState(null); 
-  const [editingFolderName, setEditingFolderName] = useState(''); 
-
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
 
   const [showActivityHub, setShowActivityHub] = useState(false);
@@ -323,7 +261,6 @@ export default function QuestionStudio({
               layout_style: layoutStyle
           });
           setIsSaved(true);
-          await fetchLibrary();
       }
   });
 
@@ -366,10 +303,7 @@ export default function QuestionStudio({
 
               setActiveActivity({
                   key: gameKey,
-                  config: {
-                      ...config,
-                      session: roomData
-                  },
+                  config: { ...config, session: roomData },
                   savedBoard: config.savedBoard,
                   sourcePacket: questions,
                   session: roomData,
@@ -381,10 +315,7 @@ export default function QuestionStudio({
       } else {
           setActiveActivity({
               key: gameKey,
-              config: {
-                  ...config,
-                  session: null
-              },
+              config: { ...config, session: null },
               savedBoard: config.savedBoard,
               sourcePacket: config.initialQuestions || config.tiles || config.sourcePacket || config.savedBoard?.packet || [],
               session: null,
@@ -393,10 +324,7 @@ export default function QuestionStudio({
       }
   };
 
-  const [showTutorial, setShowTutorial] = useState(() => {
-      return !localStorage.getItem('has_seen_studio_guide');
-  });
-
+  const [showTutorial, setShowTutorial] = useState(() => !localStorage.getItem('has_seen_studio_guide'));
   const handleCloseTutorial = () => {
       localStorage.setItem('has_seen_studio_guide', 'true');
       setShowTutorial(false);
@@ -429,28 +357,30 @@ export default function QuestionStudio({
     setDraggedItemIndex(null);
   };
 
-  const handleSelectSheet = (sheet) => {
-    if (sheet.type?.startsWith('activity')) {
-        const actDef = getActivityDefinition(sheet.type);
-        if (actDef) {
-            const questions = Array.isArray(sheet.packet)
-                ? sheet.packet
-                : (sheet.packet?.tiles || sheet.packet?.livePacket || []);
+  const topicSupportsWordProblems = isTopicWordProblemReady(selectedTopicId);
 
-            setActiveSetupModal({
-                key: actDef.key,
-                savedBoard: sheet,
-                sourcePacket: questions
-            });
-        }
-        return;
-    }
+  const allTopics = Object.values(SKILL_BUCKETS).flatMap(cat => Object.entries(cat.topics).map(([id, data]) => ({ id, categoryName: cat.name[lang] || cat.name.en || cat.name.sv, categoryId: cat.id, ...data })));
+  const currentTopic = allTopics.find(tp => tp.id === selectedTopicId) || allTopics[0];
+  const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
 
-    setPacket(Array.isArray(sheet.packet) ? sheet.packet : []);
-    setShowLibraryModal(false);
+  const getDifficultyScore = (key) => {
+    const k = key.toLowerCase();
+    if (k.includes('basic') || k.includes('foundations') || k.includes('onestep') || k.includes('intro')) return 1;
+    if (k.includes('complex') || k.includes('twostep') || k.includes('twoterm')) return 3;
+    if (k.includes('powers') || k.includes('chain') || k.includes('advanced')) return 4;
+    return 2; 
   };
 
-  const topicSupportsWordProblems = isTopicWordProblemReady(selectedTopicId);
+  const visibleVariations = (currentTopic?.variations || [])
+    .filter(v => {
+      if (useWordProblems && !v.tags?.includes('word_problem_ready')) return false;
+      if (!hideExtra) return true;
+      const k = v.key.toLowerCase();
+      const isMCQ = ['lie', 'spot', 'choice', 'mcq', 'check', 'select', 'which', 'error', 'inverse'].some(kw => k.includes(kw));
+      const isConcept = ['concept', 'theory', 'foundations', 'id', 'begrepp'].some(kw => k.includes(kw));
+      return !isMCQ && !isConcept;
+    })
+    .sort((a, b) => getDifficultyScore(a.key) - getDifficultyScore(b.key));
 
   useEffect(() => {
     if (!topicSupportsWordProblems && useWordProblems) {
@@ -470,7 +400,6 @@ export default function QuestionStudio({
   useEffect(() => { if (currentTopic?.variations?.[0]) triggerPreview(currentTopic.variations[0].key); }, [selectedTopicId]);
   useEffect(() => { setInitialPacket(packet); }, [packet]);
   useEffect(() => { setStudioMode(setupMode); }, [setupMode]);
-  useEffect(() => { fetchLibrary(); }, [setupMode, libraryTab, isTrashView]);
 
   useEffect(() => {
       if (Array.isArray(initialPacket) && initialPacket.length > 0) {
@@ -482,20 +411,6 @@ export default function QuestionStudio({
       }
   }, [initialPacket]);
 
-  const getTopicLabel = (topicId) => {
-      if (!topicId || topicId === 'all') return lang === 'sv' ? "Alla ämnen" : "All topics";
-      if (topicId === 'patterns' || topicId === 'pattern') {
-          return lang === 'sv' ? "Mönster" : "Patterns";
-      }
-      for (const catKey in SKILL_BUCKETS) {
-          const category = SKILL_BUCKETS[catKey];
-          if (category.topics && category.topics[topicId]) {
-              return category.topics[topicId].name[lang] || category.topics[topicId].name.en || category.topics[topicId].name.sv || topicId;
-          }
-      }
-      return topicId.charAt(0).toUpperCase() + topicId.slice(1).replace('_', ' ');
-  };
-
   const renderOptions = (options, inline = false) => {
     if (!options || options.length === 0) return null;
     const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -504,8 +419,8 @@ export default function QuestionStudio({
             {options.map((opt, i) => {
                 const choiceLabel = typeof opt === 'object' ? opt.label : opt;
                 return (
-                    <div key={i} className="flex items-center gap-2 text-[11px] bg-[var(--bg-surface)] border border-[var(--border-main)] p-2 rounded-[var(--radius-btn)]">
-                        <span className="font-black text-[var(--primary-color)]">{labels[i]}</span>
+                    <div key={i} className="flex items-center gap-2 text-xs bg-[var(--bg-surface)] border border-[var(--border-main)] p-2 rounded-xl">
+                        <span className="font-bold font-mono text-emerald-600 dark:text-emerald-400">{labels[i]}</span>
                         <MathDisplay content={choiceLabel} />
                     </div>
                 );
@@ -525,158 +440,13 @@ export default function QuestionStudio({
 
   const getCategoryStyles = (type) => {
     const styles = {
-        visual: { border: 'border-[var(--theme-indigo-border)]', bg: 'bg-[var(--theme-indigo-bg)]', text: 'text-[var(--theme-indigo-text)]', icon: <ImageIcon size={10} />, label: t.type_visual },
-        calculate: { border: 'border-[var(--theme-emerald-border)]', bg: 'bg-[var(--theme-emerald-bg)]', text: 'text-[var(--theme-emerald-text)]', icon: <Calculator size={10} />, label: t.type_calc },
-        conceptual: { border: 'border-[var(--theme-amber-border)]', bg: 'bg-[var(--theme-amber-bg)]', text: 'text-[var(--theme-amber-text)]', icon: <Brain size={10} />, label: t.type_concept },
-        logic: { border: 'border-[var(--theme-rose-border)]', bg: 'bg-[var(--theme-rose-bg)]', text: 'text-[var(--theme-rose-text)]', icon: <Target size={10} />, label: t.type_logic },
-        default: { border: 'border-[var(--border-strong)]', bg: 'bg-[var(--bg-surface)]', text: 'text-[var(--text-muted)]', icon: <TextIcon size={10} />, label: t.type_text }
+        visual: { border: 'border-sky-200 dark:border-sky-800/60', bg: 'bg-sky-50 dark:bg-sky-950/40', stripe: 'bg-sky-600', text: 'text-sky-700 dark:text-sky-300', icon: <ImageIcon size={10} />, label: t.type_visual },
+        calculate: { border: 'border-emerald-200 dark:border-emerald-800/60', bg: 'bg-emerald-50 dark:bg-emerald-950/40', stripe: 'bg-emerald-600', text: 'text-emerald-700 dark:text-emerald-300', icon: <Calculator size={10} />, label: t.type_calc },
+        conceptual: { border: 'border-amber-200 dark:border-amber-800/60', bg: 'bg-amber-50 dark:bg-amber-950/40', stripe: 'bg-amber-600', text: 'text-amber-700 dark:text-amber-300', icon: <Brain size={10} />, label: t.type_concept },
+        logic: { border: 'border-rose-200 dark:border-rose-800/60', bg: 'bg-rose-50 dark:bg-rose-950/40', stripe: 'bg-rose-600', text: 'text-rose-700 dark:text-rose-300', icon: <Target size={10} />, label: t.type_logic },
+        default: { border: 'border-[var(--border-main)]', bg: 'bg-[var(--bg-surface)]', stripe: 'bg-stone-400', text: 'text-[var(--text-muted)]', icon: <TextIcon size={10} />, label: t.type_text }
     };
     return styles[type] || styles.default;
-  };
-
-  const getDifficultyScore = (key) => {
-    const k = key.toLowerCase();
-    if (k.includes('basic') || k.includes('foundations') || k.includes('onestep') || k.includes('intro')) return 1;
-    if (k.includes('complex') || k.includes('twostep') || k.includes('twoterm')) return 3;
-    if (k.includes('powers') || k.includes('chain') || k.includes('advanced')) return 4;
-    return 2; 
-  };
-
-  const fetchLibrary = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    
-    setIsLibraryLoading(true);
-    try {
-        if (libraryTab === 'private' && !isTrashView) {
-            const { data: folderData, error: folderError } = await supabase.from('folders').select('*').eq('user_id', user.id).order('name');
-            if (!folderError) setFolders(folderData || []);
-        } else {
-            setFolders([]);
-        }
-
-        let query = supabase.from('saved_sheets').select('*').order('updated_at', { ascending: false });
-        
-        if (libraryTab === 'private') {
-            query = query.eq('user_id', user.id);
-            if (isTrashView) query = query.not('deleted_at', 'is', null);
-            else query = query.is('deleted_at', null);
-        } else if (libraryTab === 'school') {
-            query = query.eq('visibility', 'school').eq('school_name', profile?.school_name).is('deleted_at', null);
-        } else {
-            query = query.eq('visibility', 'public').is('deleted_at', null);
-        }
-        
-        const { data, error } = await query;
-        if (error) throw error;
-        setSavedSheets(data || []);
-    } catch (err) { console.error(err); } finally { setIsLibraryLoading(false); }
-  };
-
-  const handleCreateFolder = async () => {
-      if (!newFolderName.trim()) return;
-      try {
-          const { data: { user } } = await supabase.auth.getUser();
-          const { error } = await supabase.from('folders').insert([{ user_id: user.id, name: newFolderName }]);
-          if (error) throw error;
-          setNewFolderName(''); setShowFolderModal(false); fetchLibrary();
-      } catch (err) { alert(t.err_create_folder + err.message); }
-  };
-
-  const handleRenameFolder = async () => {
-      if (!editingFolder?.id || !editingFolderName.trim()) return;
-      try {
-          const { error } = await supabase
-              .from('folders')
-              .update({ name: editingFolderName.trim() })
-              .eq('id', editingFolder.id);
-
-          if (error) throw error;
-
-          setEditingFolder(null);
-          setEditingFolderName('');
-          fetchLibrary();
-      } catch (err) {
-          alert((lang === 'sv' ? "Kunde inte byta namn: " : "Failed to rename: ") + err.message);
-      }
-  };
-
-  const handleMoveSheet = async (sheetId, targetFolderId) => {
-      try {
-          const { error } = await supabase.from('saved_sheets').update({ folder_id: targetFolderId }).eq('id', sheetId);
-          if (error) throw error;
-          setShowMoveModal(null); fetchLibrary();
-      } catch (err) { alert(t.err_move_file + err.message); }
-  };
-
-  const handleDeleteFolder = async (folderId) => {
-      try {
-          const { error } = await supabase.from('folders').delete().eq('id', folderId);
-          if (error) alert(lang === 'sv' ? "Mappen måste vara tom innan den kan raderas." : "Folder must be empty before deleting.");
-          else fetchLibrary();
-      } catch (err) { console.error(err); }
-  };
-
-  const handleSoftDelete = async (e, id) => {
-      e.stopPropagation();
-      try { await supabase.from('saved_sheets').update({ deleted_at: new Date().toISOString() }).eq('id', id); fetchLibrary(); } catch (err) { console.error(err); }
-  };
-
-  const handleRestore = async (e, id) => {
-      e.stopPropagation();
-      try { await supabase.from('saved_sheets').update({ deleted_at: null }).eq('id', id); fetchLibrary(); } catch (err) { console.error(err); }
-  };
-
-  const handleHardDelete = async (e, id) => {
-      e.stopPropagation(); 
-      if (!window.confirm(t.delete_confirm)) return;
-      try {
-          const { error } = await supabase.from('saved_sheets').delete().eq('id', id);
-          if (error) throw error;
-          fetchLibrary();
-      } catch (err) { alert("Kunde inte radera: " + err.message); }
-  };
-
-  const handleDuplicate = async (e, sheet) => {
-      e?.stopPropagation();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return alert("Not authenticated");
-
-      try {
-          const copyPrefix = lang === 'sv' ? "Kopia av " : "Copy of ";
-          const newTitle = `${copyPrefix}${sheet.title || (lang === 'sv' ? "Namnlöst arbete" : "Untitled Work")}`;
-
-          const duplicatePayload = {
-              title: newTitle,
-              type: sheet.type,
-              user_id: user.id,
-              visibility: 'private',
-              school_name: profile?.school_name?.trim() || null,
-              school_id: profile?.school_id || null,
-              packet: sheet.packet,
-              config: sheet.config || {},
-              auto_topics: sheet.auto_topics || [],
-              folder_id: sheet.folder_id || null
-          };
-
-          const { error } = await supabase.from('saved_sheets').insert([duplicatePayload]);
-          if (error) throw error;
-
-          alert(lang === 'sv' ? "Kopia skapad!" : "Copy created!");
-          fetchLibrary();
-      } catch (err) {
-          console.error("Duplicate Error:", err);
-          alert(lang === 'sv' ? "Kunde inte duplicera." : "Failed to duplicate.");
-      }
-  };
-  
-  const handleClone = async (sheetId) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    try {
-        const { error } = await supabase.rpc('clone_worksheet', { target_id: sheetId, new_user_id: user.id });
-        if (error) throw error;
-        alert(t.clone_success); setLibraryTab('private'); fetchLibrary();
-    } catch (err) { alert(t.err_copy); }
   };
 
   const loadBoard = (sheet) => {
@@ -775,7 +545,7 @@ export default function QuestionStudio({
             app_mode: 'teacher_live',
             pacing: finalSettings.pacing,
             order: finalSettings.order,
-            scratchpad: enableScratchpad
+            scratchpad: true
         });
 
         try {
@@ -787,10 +557,10 @@ export default function QuestionStudio({
                 packet: packet,
                 settings: {
                     ...finalSettings,
-                    scratchpad: enableScratchpad,
-                    allowScratchpad: enableScratchpad,
-                    allowCanvas: enableCanvas,
-                    responseStyle: responseStyle
+                    scratchpad: true,
+                    allowScratchpad: true,
+                    allowCanvas: false,
+                    responseStyle: 'flexible'
                 },
                 activeSheetId
             });
@@ -863,29 +633,7 @@ export default function QuestionStudio({
   };
 
   const updatePacketItem = (id, key, val) => { setPacket(packet.map(p => p.id === id ? { ...p, [key]: val } : p)); setIsSaved(false); };
-  
-  const allTopics = Object.values(SKILL_BUCKETS).flatMap(cat => Object.entries(cat.topics).map(([id, data]) => ({ id, categoryName: cat.name[lang] || cat.name.en || cat.name.sv, categoryId: cat.id, ...data })));
-  const currentTopic = allTopics.find(tp => tp.id === selectedTopicId) || allTopics[0];
-  const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
-  
-  const filteredLibrary = savedSheets.filter(sheet => {
-      const matchesSearch = sheet.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesTopic = filterTopic === 'all' || sheet.auto_topics?.includes(filterTopic);
-      const activeSheetType = (sheet.type || '').replace('_', '').toLowerCase();
-      const matchesType = setupMode
-        ? activeSheetType === setupMode.replace('_', '').toLowerCase()
-        : filterDocType === 'all' || activeSheetType === filterDocType;
-        
-      return matchesSearch && matchesTopic && matchesType;
-  });
-  
-  const allCurriculumTopicIds = Object.values(SKILL_BUCKETS).flatMap(cat => Object.keys(cat.topics || {}));
-  const availableTopics = [...new Set([
-      ...allCurriculumTopicIds,
-      ...savedSheets.flatMap(s => s.auto_topics || [])
-  ])].sort((a, b) => getTopicLabel(a).localeCompare(getTopicLabel(b), lang, { sensitivity: 'base' }));
 
-  // 🟢 Filter categories and topics for Pane 1 search
   const filteredSkillBuckets = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     if (!query) return Object.values(SKILL_BUCKETS);
@@ -914,28 +662,8 @@ export default function QuestionStudio({
     }).filter(cat => cat.filteredTopicEntries.length > 0);
   }, [searchTerm, lang]);
 
-  const visibleVariations = (currentTopic?.variations || [])
-  .filter(v => {
-    if (useWordProblems) {
-      const hasTag = v.tags?.includes('word_problem_ready');
-      if (!hasTag) return false; 
-    }
-    if (!hideExtra) return true;
-    const k = v.key.toLowerCase();
-    const isMCQ = ['lie', 'spot', 'choice', 'mcq', 'check', 'select', 'which', 'error', 'inverse'].some(kw => k.includes(kw));
-    const isConcept = ['concept', 'theory', 'foundations', 'id', 'begrepp'].some(kw => k.includes(kw));
-    return !isMCQ && !isConcept;
-  })
-  .sort((a, b) => getDifficultyScore(a.key) - getDifficultyScore(b.key));
-
-  const getSheetIconStyle = (type, size = 12) => {
-      if (type === 'board') return { theme: 'theme-amber', icon: <Monitor size={size} /> };
-      if (type === 'donow') return { theme: 'theme-indigo', icon: <Grid3X3 size={size} /> };
-      return { theme: 'theme-emerald', icon: <FileText size={size} /> };
-  };
-
   // =========================================================================
-  // SETUP MODE (CLOUD DRIVE LAYOUT)
+  // SETUP / LIBRARY GATEWAY
   // =========================================================================
   if (showPresentation) {
       return (
@@ -943,14 +671,13 @@ export default function QuestionStudio({
               packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : packet}
               initialSlides={activeBoardSheet?.packet?.slides}
               initialSettings={activeBoardSheet?.packet?.settings}
-              boardId={activeBoardSheet?.id || (savedSheets.find(s => s.id === activeSheetId)?.type === 'board' ? activeSheetId : null)}
+              boardId={activeBoardSheet?.id || activeSheetId}
               sheetTitle={activeBoardSheet?.title || sheetTitle} 
               lang={lang} 
               onClose={() => { 
                   setShowPresentation(false);
                   setActiveBoardSheet(null);
                   setSetupMode(null);
-                  fetchLibrary(); 
               }}
               onLaunchLive={(roomData) => {
                   setShowPresentation(false);
@@ -972,10 +699,7 @@ export default function QuestionStudio({
                   session={activeActivity.session || activeActivity.config?.session || null}
                   isLiveHost={Boolean(activeActivity.isLiveHost || activeActivity.session)}
                   profile={profile}
-                  onClose={() => {
-                      setActiveActivity(null);
-                      fetchLibrary();
-                  }}
+                  onClose={() => setActiveActivity(null)}
                   lang={lang}
               />
           );
@@ -1064,51 +788,42 @@ export default function QuestionStudio({
                       />
                   );
               })()}
-
-              {activeActivity && (() => {
-                  const def = getActivityDefinition(activeActivity.key);
-                  if (!def?.TeacherEngine) return null;
-                  const Engine = def.TeacherEngine;
-                  return (
-                      <Engine
-                          initialConfig={activeActivity.config}
-                          savedBoard={activeActivity.savedBoard}
-                          sourcePacket={activeActivity.sourcePacket || []}
-                          session={activeActivity.session || activeActivity.config?.session || null}
-                          isLiveHost={Boolean(activeActivity.isLiveHost || activeActivity.session)}
-                          profile={profile}
-                          onClose={() => {
-                              setActiveActivity(null);
-                              fetchLibrary();
-                          }}
-                          lang={lang}
-                      />
-                  );
-              })()}
           </>
       );
   }
 
   // =========================================================================
-  // ACTIVE EDITOR (STUDIO MODE)
+  // ACTIVE DRAFTING-TABLE EDITOR (STUDIO MODE)
   // =========================================================================
+  const isDoNowMode = setupMode === 'donow';
+
   return (
     <div className="layout-wrapper flex flex-col h-screen max-h-screen font-sans overflow-hidden relative">
-        <header className={`relative flex items-center justify-between px-6 py-1 border-b shadow-md z-50 transition-colors duration-500 ${setupMode === 'donow' ? 'bg-indigo-950 border-indigo-900' : 'bg-emerald-900 border-emerald-800'}`}>
-            <div className="flex items-center gap-3 flex-1 max-w-[40%]">
+        {/* Top Drafting-Table Header Bar */}
+        <header className="relative flex items-center justify-between px-4 sm:px-6 py-2 bg-[var(--bg-card)] border-b border-[var(--border-main)] z-50 gap-3">
+            {/* Left Cluster: Back + Mode Badge + Document Title + Visibility + Save */}
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
                 <button 
+                    type="button"
                     onClick={() => { if(!isSaved && !window.confirm(t.unsaved_warning)) return; setSetupMode(null); }} 
-                    className="flex items-center gap-1 text-[11px] font-black uppercase text-white/80 hover:text-white transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-main)] text-xs font-bold text-[var(--text-main)] transition-colors shrink-0 cursor-pointer"
                 >
-                    <ChevronLeft size={13}/> {t.change_mode}
+                    <ChevronLeft size={14}/> <span>{t.change_mode}</span>
                 </button>
+
+                <span className={`hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 ${
+                    isDoNowMode 
+                        ? 'bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800' 
+                        : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                }`}>
+                    {isDoNowMode ? <Grid3X3 size={12} /> : <FileText size={12} />}
+                    {isDoNowMode ? t.donow_title : t.worksheet_title}
+                </span>
                 
-                <div className={`h-4 w-px mx-0.5 ${setupMode === 'donow' ? 'bg-indigo-800' : 'bg-emerald-800'}`}></div>
-                
-                <div className="relative group flex-1 max-w-xs">
+                <div className="relative flex-1 max-w-xs min-w-[140px]">
                     <input 
                         type="text" 
-                        className="w-full bg-white/10 px-3 py-1.5 rounded-[var(--radius-btn)] text-m font-black tracking-tight outline-none focus:bg-white/20 transition-all border border-transparent focus:border-white/30 text-white placeholder-white/40" 
+                        className="w-full bg-[var(--bg-surface)] px-3 py-1.5 rounded-xl text-sm font-bold tracking-tight outline-none focus:border-emerald-600 transition-colors border border-[var(--border-main)] text-[var(--text-main)] placeholder-[var(--text-muted)]" 
                         placeholder={t.title_placeholder} 
                         value={sheetTitle}
                         maxLength={100}
@@ -1116,35 +831,47 @@ export default function QuestionStudio({
                     />
                 </div>
 
-                <div className="flex items-center gap-0.5 bg-white/10 p-1 rounded-[var(--radius-btn)] border border-white/5 shadow-inner">
-                    <button onClick={() => setChosenVisibility('private')} className={`p-1 rounded-[var(--radius-btn)] transition-all ${chosenVisibility === 'private' ? 'bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-strong)] shadow-sm' : 'text-white/50 hover:text-white'}`}><Lock size={10}/></button>
-                    <button onClick={() => setChosenVisibility('school')} className={`p-1 rounded-[var(--radius-btn)] transition-all ${chosenVisibility === 'school' ? 'bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-strong)] shadow-sm' : 'text-white/50 hover:text-white'}`}><Building2 size={10}/></button>
+                {/* Visibility Toggle */}
+                <div className="hidden sm:flex items-center gap-0.5 bg-[var(--bg-surface)] p-0.5 rounded-xl border border-[var(--border-main)] shrink-0">
+                    <button 
+                        type="button"
+                        onClick={() => setChosenVisibility('private')} 
+                        title={lang === 'sv' ? 'Privat' : 'Private'}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${chosenVisibility === 'private' ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                    >
+                        <Lock size={12}/>
+                    </button>
+                    <button 
+                        type="button"
+                        onClick={() => setChosenVisibility('school')} 
+                        title={lang === 'sv' ? 'Dela med skolan' : 'Share with school'}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${chosenVisibility === 'school' ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                    >
+                        <Building2 size={12}/>
+                    </button>
                 </div>
 
                 <button 
+                    type="button"
                     onClick={() => triggerSave()} 
                     disabled={packet.length === 0 || isSaving} 
-                    className="px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-[var(--bg-surface)] text-[var(--text-main)] transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                    className="px-3 py-1.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] rounded-xl text-xs font-bold flex items-center gap-1.5 text-[var(--text-main)] transition-colors disabled:opacity-40 cursor-pointer shrink-0"
                 >
-                    <Save size={13}/> {t.save_btn}
+                    <Save size={13} className="text-emerald-600 dark:text-emerald-400" />
+                    <span>{t.save_btn}</span>
                 </button>
             </div>
 
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
-                <span className="text-white font-black uppercase text-xl tracking-wider opacity-90">
-                    {setupMode === 'donow' ? t.donow_title : setupMode === 'worksheet' ? t.worksheet_title : null}
-                </span>
-            </div>
-
-            <div className="flex items-center gap-2 pl-4 max-w-[45%] justify-end">
+            {/* Right Cluster: Quiet Utility Controls + Primary Output Actions */}
+            <div className="flex items-center gap-2 shrink-0 justify-end">
                 <button
                     type="button"
                     onClick={() => setShowTutorial(true)}
-                    className="px-3 py-1.5 bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-solid)] rounded-[var(--radius-btn)] transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs"
+                    className="px-2.5 py-1.5 bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] hover:border-[var(--border-strong)] rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
                     title={lang === 'sv' ? "Snabbguide & Hjälp" : "Quick Guide & Help"}
                 >
-                    <HelpCircle size={15} className="text-amber-500" />
-                    <span className="text-[10px] font-black uppercase">
+                    <HelpCircle size={14} className="text-amber-600 dark:text-amber-400" />
+                    <span className="hidden md:inline text-xs font-bold">
                         {lang === 'sv' ? "Guide" : "Help"}
                     </span>
                 </button>
@@ -1154,51 +881,57 @@ export default function QuestionStudio({
                 <button
                     type="button"
                     onClick={() => setShowActivityHub(true)}
-                    className="p-2 bg-[var(--bg-surface)] hover:bg-indigo-600 text-[var(--text-muted)] hover:text-white border border-[var(--border-main)] rounded-xl transition-all cursor-pointer shadow-sm"
+                    className="p-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-main)] rounded-xl transition-colors cursor-pointer"
                     title={lang === 'sv' ? "Aktiviteter & Spel" : "Activities & Games"}
                 >
-                    <Gamepad2 size={16} className="hover:rotate-12 transition-transform" />
+                    <Gamepad2 size={15} className="text-sky-600 dark:text-sky-400" />
                 </button>
 
+                <div className="h-5 w-px bg-[var(--border-main)] mx-0.5" />
+
                 <button 
+                    type="button"
                     onClick={handleLaunchLive} 
                     disabled={packet.length === 0} 
-                    className="px-4 py-1.5 bg-rose-500 text-white rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-rose-400 transition-all disabled:opacity-30 cursor-pointer shadow-sm"
+                    className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-35 cursor-pointer"
                 >
-                    <Send size={13}/> {t.live_btn}
+                    <Send size={13}/> <span>{t.live_btn}</span>
                 </button>
 
                 <button 
+                    type="button"
                     onClick={() => setShowPresentation(true)} 
                     disabled={packet.length === 0} 
-                    className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-30 shadow-md cursor-pointer"
+                    className="px-3.5 py-1.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-[var(--text-main)] rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-35 cursor-pointer"
                 >
-                    <Monitor size={13}/> {t.present}
+                    <Monitor size={13} className="text-amber-600 dark:text-amber-400" /> <span>{t.present}</span>
                 </button>
 
-                <div className={`h-4 w-px mx-0.5 ${setupMode === 'donow' ? 'bg-indigo-800' : 'bg-emerald-800'}`}></div>
-
-                {setupMode === 'donow' ? (
+                {isDoNowMode ? (
                     <button 
+                        type="button"
                         onClick={handleLaunchGrid} 
                         disabled={packet.length === 0} 
-                        className="px-4 py-1.5 bg-indigo-500 text-white hover:bg-indigo-400 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-30 shadow-md cursor-pointer"
+                        className="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-35 cursor-pointer shadow-2xs"
                     >
-                        <Grid3X3 size={13}/> {t.create_donow}
+                        <Grid3X3 size={13}/> <span>{t.create_donow}</span>
                     </button>
                 ) : (
                     <button 
+                        type="button"
                         onClick={handleLaunchPrint} 
                         disabled={packet.length === 0} 
-                        className="px-4 py-1.5 bg-emerald-500 text-white hover:bg-emerald-400 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-30 shadow-md cursor-pointer"
+                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-35 cursor-pointer shadow-2xs"
                     >
-                        <Printer size={13}/> {t.publish}
+                        <Printer size={13}/> <span>{t.publish}</span>
                     </button>
                 )}
 
                 <button 
+                    type="button"
                     onClick={onClose} 
-                    className="p-1 text-white/60 hover:bg-rose-500 hover:text-white rounded-[var(--radius-btn)] transition-all cursor-pointer ml-1"
+                    className="p-1.5 text-[var(--text-muted)] hover:bg-rose-600 hover:text-white rounded-xl transition-colors cursor-pointer ml-0.5"
+                    title={lang === 'sv' ? "Stäng Studio" : "Close Studio"}
                 >
                     <X size={16}/>
                 </button>
@@ -1206,43 +939,64 @@ export default function QuestionStudio({
         </header>
 
       <div className="flex flex-1 overflow-hidden relative z-10 min-h-0">
-        {/* PANE 1: Topics */}
-        <div className={`bg-[var(--bg-card)] border-r border-[var(--border-main)] flex flex-col shrink-0 transition-all duration-300 ${isPane1Collapsed ? 'w-16' : 'w-72'}`}>
-          <div className={`p-4 border-b border-[var(--border-main)] flex items-center ${isPane1Collapsed ? 'justify-center' : 'justify-end'}`}>
-              <button onClick={() => setIsPane1Collapsed(!isPane1Collapsed)} className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] transition-colors">
-                    {isPane1Collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
-                </button>
+        {/* PANE 1: Curriculum Topics */}
+        <div className={`bg-[var(--bg-card)] border-r border-[var(--border-main)] flex flex-col shrink-0 transition-all duration-200 ${isPane1Collapsed ? 'w-14' : 'w-56'}`}>
+          <div className={`px-3 py-2.5 border-b border-[var(--border-main)] flex items-center ${isPane1Collapsed ? 'justify-center' : 'justify-between'}`}>
+              {!isPane1Collapsed && (
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] pl-1">
+                      {lang === 'sv' ? "Ämnesområden" : "Topics"}
+                  </span>
+              )}
+              <button 
+                  type="button"
+                  onClick={() => setIsPane1Collapsed(!isPane1Collapsed)} 
+                  className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+              >
+                  {isPane1Collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+              </button>
           </div>
-          <div className={`flex-1 overflow-y-auto custom-scrollbar transition-opacity duration-200 ${isPane1Collapsed ? 'opacity-0 invisible' : 'opacity-100 p-4 space-y-3'}`}>
+          <div className={`flex-1 overflow-y-auto custom-scrollbar transition-opacity duration-150 ${isPane1Collapsed ? 'opacity-0 invisible' : 'opacity-100 p-3 space-y-4'}`}>
             {!isPane1Collapsed && (
                 <>
-                    <div className="relative mb-4">
-                        <Search className="absolute left-3 top-2.5 text-[var(--text-muted)]" size={16} />
-                        <input type="text" placeholder={t.search_placeholder} className="w-full pl-10 pr-4 py-2 bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] rounded-[var(--radius-btn)] text-sm font-bold outline-none focus:border-[var(--brand-solid)]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <div className="relative">
+                        <Search className="absolute left-3 top-2.5 text-[var(--text-muted)]" size={14} />
+                        <input 
+                            type="text" 
+                            placeholder={t.search_placeholder} 
+                            className="w-full pl-9 pr-3 py-2 bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] rounded-xl text-xs font-semibold outline-none focus:border-emerald-600 transition-colors" 
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)} 
+                        />
                     </div>
                     {filteredSkillBuckets.map(cat => (
                         <div key={cat.id}>
-                            <h3 className="text-[14px] font-black uppercase tracking-widest text-[var(--brand-solid)] mb-3 ml-2">
+                            <h3 className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1.5 px-2">
                                 {cat.name[lang] || cat.name.en || cat.name.sv}
                             </h3>
-                            <div className="space-y-1">
-                                {(cat.filteredTopicEntries || Object.entries(cat.topics)).map(([id, data]) => (
-                                    <button 
-                                        key={id} 
-                                        onClick={() => setSelectedTopicId(id)} 
-                                        className={`w-full text-left px-3 py-1.5 text-m rounded-[var(--radius-btn)] transition-all ${
-                                            selectedTopicId === id ? 'bg-indigo-600 text-white font-bold shadow-md' : 'text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
-                                        }`}
-                                    >
-                                        {data.name[lang] || data.name.en || data.name.sv}
-                                    </button>
-                                ))}
+                            <div className="space-y-0.5">
+                                {(cat.filteredTopicEntries || Object.entries(cat.topics)).map(([id, data]) => {
+                                    const isSelected = selectedTopicId === id;
+                                    return (
+                                        <button 
+                                            key={id} 
+                                            type="button"
+                                            onClick={() => setSelectedTopicId(id)} 
+                                            className={`w-full text-left px-3 py-1.5 text-xs rounded-xl transition-colors cursor-pointer ${
+                                                isSelected 
+                                                    ? (isDoNowMode ? 'bg-sky-600 text-white font-bold' : 'bg-emerald-600 text-white font-bold')
+                                                    : 'text-[var(--text-main)] font-medium hover:bg-[var(--bg-surface)]'
+                                            }`}
+                                        >
+                                            {data.name[lang] || data.name.en || data.name.sv}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     ))}
 
                     {filteredSkillBuckets.length === 0 && (
-                        <div className="py-8 text-center text-xs font-bold text-[var(--text-muted)] italic">
+                        <div className="py-8 text-center text-xs font-medium text-[var(--text-muted)]">
                             {lang === 'sv' ? `Inga områden matchade "${searchTerm}"` : `No topics matched "${searchTerm}"`}
                         </div>
                     )}
@@ -1252,31 +1006,35 @@ export default function QuestionStudio({
         </div>
 
         {/* PANE 2: Variations */}
-        <div className="w-[300px] bg-[var(--bg-surface)]/80 backdrop-blur-sm border-r border-[var(--border-main)] flex flex-col shrink-0 min-h-0 h-full">
-            <div className="p-3 border-b border-[var(--border-main)] bg-[var(--bg-card)] shrink-0 shadow-sm space-y-2">
-                <h1 className="text-sm font-black text-[var(--text-main)] uppercase italic truncate leading-none">{currentTopic?.name[lang] || currentTopic?.name.en || currentTopic?.name.sv}</h1>
+        <div className="w-[296px] bg-[var(--bg-surface)]/60 border-r border-[var(--border-main)] flex flex-col shrink-0 min-h-0 h-full">
+            <div className="p-3 border-b border-[var(--border-main)] bg-[var(--bg-card)] shrink-0 space-y-2">
+                <h1 className="text-sm font-extrabold text-[var(--text-main)] truncate leading-snug">
+                    {currentTopic?.name[lang] || currentTopic?.name.en || currentTopic?.name.sv}
+                </h1>
                 
-                <div className="flex items-center justify-between bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-strong)] shadow-inner">
-                    <span className="text-[11px] font-black uppercase text-[var(--text-main)] ml-1.5 tracking-tight">{t.hide_extra}</span>
+                <div className="flex items-center justify-between bg-[var(--bg-surface)] px-2.5 py-1.5 rounded-xl border border-[var(--border-main)]">
+                    <span className="text-[11px] font-semibold text-[var(--text-main)]">{t.hide_extra}</span>
                     <button 
+                        type="button"
                         onClick={() => setHideExtra(!hideExtra)} 
-                        className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${hideExtra ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'}`}
+                        className={`w-8 h-4 rounded-full transition-colors relative p-0.5 cursor-pointer ${hideExtra ? 'bg-emerald-600' : 'bg-[var(--border-strong)]'}`}
                     >
-                        <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${hideExtra ? 'translate-x-4' : 'translate-x-0'}`} />
+                        <div className={`w-3 h-3 bg-white rounded-full transition-transform ${hideExtra ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
                 </div>
 
-                <div className={`flex items-center justify-between bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border shadow-inner transition-opacity ${topicSupportsWordProblems ? 'border-[var(--border-strong)]' : 'border-[var(--border-main)] opacity-50'}`}>
-                    <span className="text-[11px] font-black uppercase text-[var(--text-main)] ml-1.5 tracking-tight">
+                <div className={`flex items-center justify-between bg-[var(--bg-surface)] px-2.5 py-1.5 rounded-xl border transition-opacity ${topicSupportsWordProblems ? 'border-[var(--border-main)]' : 'border-[var(--border-subtle)] opacity-50'}`}>
+                    <span className="text-[11px] font-semibold text-[var(--text-main)]">
                         {lang === 'sv' ? 'Problemlösning' : 'Word Problems'}
                     </span>
                     <button 
+                        type="button"
                         disabled={!topicSupportsWordProblems}
                         onClick={() => setUseWordProblems(!useWordProblems)} 
-                        className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${!topicSupportsWordProblems ? 'cursor-not-allowed bg-[var(--border-main)]' : useWordProblems ? 'cursor-pointer bg-[var(--theme-emerald-solid)]' : 'cursor-pointer bg-[var(--border-strong)]'}`}
+                        className={`w-8 h-4 rounded-full transition-colors relative p-0.5 ${!topicSupportsWordProblems ? 'cursor-not-allowed bg-[var(--border-main)]' : useWordProblems ? 'cursor-pointer bg-emerald-600' : 'cursor-pointer bg-[var(--border-strong)]'}`}
                         title={!topicSupportsWordProblems ? (lang === 'sv' ? "Inga textuppgifter finns för detta område" : "No word problems available for this topic") : ""}
                     >
-                        <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${useWordProblems ? 'translate-x-4' : 'translate-x-0'}`} />
+                        <div className={`w-3 h-3 bg-white rounded-full transition-transform ${useWordProblems ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
                 </div>
             </div>
@@ -1291,11 +1049,11 @@ export default function QuestionStudio({
                     }, {})
                 ).sort(([lvlA], [lvlB]) => Number(lvlA) - Number(lvlB)).map(([lvl, variations]) => (
                     <div key={lvl} className="space-y-2">
-                        <div className="sticky top-0 bg-[var(--bg-surface)]/95 backdrop-blur-sm pt-4 pb-2 flex items-center z-10">
-                            <span className="text-[14px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+                        <div className="sticky top-0 bg-[var(--bg-surface)]/95 backdrop-blur-xs pt-2 pb-1.5 flex items-center z-10">
+                            <span className="text-xs font-bold font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                                 {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
                             </span>
-                            <div className="flex-1 h-[2px] bg-[var(--border-strong)] ml-3 rounded-full"></div>
+                            <div className="flex-1 h-px bg-[var(--border-strong)] ml-2.5"></div>
                         </div>
 
                         {variations.map(v => {
@@ -1307,30 +1065,51 @@ export default function QuestionStudio({
                                 <div 
                                     key={v.key} 
                                     onClick={() => triggerPreview(v.key)} 
-                                    className={`group p-3 rounded-[var(--radius-card)] border transition-all bg-[var(--bg-card)] relative overflow-hidden
-                                        ${isPreviewed ? 'border-[var(--brand-solid)] shadow-md ring-2 ring-[var(--brand-solid)]/10' : 'border-[var(--border-main)] shadow-sm hover:border-[var(--brand-solid)] cursor-pointer'}
-                                    `}
+                                    className={`p-3 rounded-xl border transition-all bg-[var(--bg-card)] relative overflow-hidden cursor-pointer ${
+                                        isPreviewed 
+                                            ? (isDoNowMode ? 'border-sky-600 ring-2 ring-sky-600/15' : 'border-emerald-600 ring-2 ring-emerald-600/15')
+                                            : 'border-[var(--border-main)] hover:border-[var(--border-strong)]'
+                                    }`}
                                 >
-                                    <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.bg}`} />
-                                    <div className="flex justify-between items-start mb-1">
-                                        <h4 className="font-black text-[11px] uppercase tracking-tight text-[var(--text-main)] leading-tight pr-2">{v.name[lang] || v.name.en || v.name.sv}</h4>
-                                        <div className={`shrink-0 px-1.5 py-0.5 rounded border ${styles.border} ${styles.bg} ${styles.text} text-[7px] font-black uppercase flex items-center gap-0.5`}>
+                                    <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.stripe}`} />
+                                    <div className="flex justify-between items-start gap-2 mb-1 pl-1">
+                                        <h4 className="font-bold text-xs text-[var(--text-main)] leading-snug">
+                                            {v.name[lang] || v.name.en || v.name.sv}
+                                        </h4>
+                                        <span className={`shrink-0 px-1.5 py-0.5 rounded border ${styles.border} ${styles.bg} ${styles.text} text-[10px] font-bold flex items-center gap-1`}>
                                             {styles.icon} {styles.label}
-                                        </div>
+                                        </span>
                                     </div>
                                     
-                                    <p className="text-[14px] font-medium text-[var(--text-muted)] line-clamp-1 mb-2 italic leading-tight">{v.desc[lang] || v.desc.en || v.desc.sv}</p>
+                                    <p className="text-xs font-medium text-[var(--text-muted)] line-clamp-1 mb-2.5 pl-1">
+                                        {v.desc[lang] || v.desc.en || v.desc.sv}
+                                    </p>
                                     
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5">
-                                            <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(Math.max(1, pendingQuantity - 1)); }} className="w-5 h-5 flex items-center justify-center hover:bg-[var(--bg-card)] rounded transition-all text-[var(--text-muted)] hover:text-[var(--primary-color)]"><Minus size={10}/></button>
-                                            <span className="w-5 text-center text-[11px] font-black text-[var(--text-main)]">{pendingQuantity}</span>
-                                            <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(pendingQuantity + 1); }} className="w-5 h-5 flex items-center justify-center hover:bg-[var(--bg-card)] rounded transition-all text-[var(--text-muted)] hover:text-[var(--primary-color)]"><Plus size={10}/></button>
+                                    <div className="flex items-center gap-1.5 pl-1">
+                                        <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-lg p-0.5">
+                                            <button 
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); setPendingQuantity(Math.max(1, pendingQuantity - 1)); }} 
+                                                className="w-6 h-6 flex items-center justify-center hover:bg-[var(--bg-card)] rounded text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
+                                            >
+                                                <Minus size={11}/>
+                                            </button>
+                                            <span className="w-5 text-center text-xs font-bold font-mono text-[var(--text-main)]">{pendingQuantity}</span>
+                                            <button 
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); setPendingQuantity(pendingQuantity + 1); }} 
+                                                className="w-6 h-6 flex items-center justify-center hover:bg-[var(--bg-card)] rounded text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
+                                            >
+                                                <Plus size={11}/>
+                                            </button>
                                         </div>
                                         <button 
+                                            type="button"
                                             disabled={isPreviewLoading} 
                                             onClick={(e) => { e.stopPropagation(); addToPacket(v, pendingQuantity); }} 
-                                            className={`flex-1 py-1.5 text-white rounded-[var(--radius-btn)] text-[9px] font-black uppercase transition-all shadow-sm active:scale-95 disabled:opacity-50 ${setupMode === 'donow' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                                            className={`flex-1 py-1.5 text-white rounded-lg text-xs font-bold transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer ${
+                                                isDoNowMode ? 'bg-sky-600 hover:bg-sky-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                                            }`}
                                         >
                                             {isPreviewLoading && isPreviewed ? '...' : `${t.add_qty} ${pendingQuantity}`}
                                         </button>
@@ -1343,40 +1122,64 @@ export default function QuestionStudio({
             </div>
         </div>
 
-        {/* PANE 3: Workspace */}
-        <div className="flex-1 flex flex-col overflow-hidden relative bg-[var(--bg-canvas)] min-h-0 h-full">
+        {/* PANE 3: Drafting-Table Workspace */}
+        <div className="flex-1 flex flex-col overflow-hidden relative drafting-desk-bg min-h-0 h-full">
             {/* Pane 3 Subheader */}
-            <div className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-6 py-2 flex items-center justify-between shadow-sm shrink-0 z-40 min-h-[56px]">
-                <div className="flex items-center gap-3">
-                    <div className="bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-main)] flex gap-1">
-                        <button onClick={() => setCanvasMode('studio')} className={`px-4 py-1.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase flex items-center gap-1.5 transition-all ${canvasMode === 'studio' ? 'bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}><Zap size={13}/> Studio</button>
-                        {setupMode && <button onClick={() => setCanvasMode('layout')} className={`px-4 py-1.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase flex items-center gap-1.5 transition-all ${canvasMode === 'layout' ? 'bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}><LayoutGrid size={13}/> {setupMode === 'donow' ? 'Grid' : 'Layout'}</button>}
-                    </div>
+            <div className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-5 py-2 flex items-center justify-between shrink-0 z-40 min-h-[52px]">
+                <div className="inline-flex bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1">
+                    <button 
+                        type="button"
+                        onClick={() => setCanvasMode('studio')} 
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                            canvasMode === 'studio' 
+                                ? 'bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] shadow-2xs' 
+                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                        }`}
+                    >
+                        <Zap size={13} className={canvasMode === 'studio' ? 'text-emerald-600 dark:text-emerald-400' : ''} />
+                        <span>Studio</span>
+                    </button>
+                    {setupMode && (
+                        <button 
+                            type="button"
+                            onClick={() => setCanvasMode('layout')} 
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                canvasMode === 'layout' 
+                                    ? 'bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] shadow-2xs' 
+                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                            }`}
+                        >
+                            <LayoutGrid size={13} className={canvasMode === 'layout' ? 'text-sky-600 dark:text-sky-400' : ''} />
+                            <span>{isDoNowMode ? 'Grid' : 'Layout'}</span>
+                        </button>
+                    )}
                 </div>
 
                 {canvasMode === 'layout' && (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
+                        {/* Global Shuffle Dropdown */}
                         <div className="relative">
                             <button 
+                                type="button"
                                 disabled={isRegeneratingAll || packet.length === 0}
                                 onClick={() => setIsGlobalShuffleOpen(!isGlobalShuffleOpen)} 
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-btn)] border border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-main)] text-[10px] font-black uppercase shadow-sm hover:border-[var(--brand-solid)] disabled:opacity-50 transition-all"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-main)] text-xs font-bold hover:border-emerald-600 disabled:opacity-40 transition-colors cursor-pointer"
                             >
-                                {isRegeneratingAll ? <Loader2 size={13} className="animate-spin text-[var(--brand-solid)]" /> : <Shuffle size={13} className="text-[var(--brand-solid)]" />} 
-                                {t.regenerate_all}
+                                {isRegeneratingAll ? <Loader2 size={13} className="animate-spin text-emerald-600" /> : <Shuffle size={13} className="text-emerald-600 dark:text-emerald-400" />} 
+                                <span>{t.regenerate_all}</span>
                             </button>
 
                             {isGlobalShuffleOpen && (
-                                <div className="absolute top-10 right-0 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl shadow-2xl p-2 w-52 z-50 flex flex-col gap-1">
-                                    <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('numbers'); }} className="w-full text-left px-3 py-2 hover:bg-[var(--bg-surface)] rounded-xl flex items-center gap-2 text-[10px] font-black uppercase text-[var(--text-main)]">
-                                        <Calculator size={13} /> {lang === 'sv' ? "Bara Siffror" : "Numbers Only"}
+                                <div className="absolute top-10 right-0 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl shadow-xl p-1.5 w-48 z-50 flex flex-col gap-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                                    <button type="button" onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('numbers'); }} className="w-full text-left px-3 py-2 hover:bg-[var(--bg-surface)] rounded-xl flex items-center gap-2 text-xs font-bold text-[var(--text-main)] cursor-pointer">
+                                        <Calculator size={13} className="text-emerald-600" /> {lang === 'sv' ? "Bara tal" : "Numbers Only"}
                                     </button>
-                                    <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('stories'); }} className="w-full text-left px-3 py-2 hover:bg-[var(--bg-surface)] rounded-xl flex items-center gap-2 text-[10px] font-black uppercase text-[var(--text-main)]">
-                                        <Type size={13} /> {lang === 'sv' ? "Bara Text" : "Stories Only"}
+                                    <button type="button" onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('stories'); }} className="w-full text-left px-3 py-2 hover:bg-[var(--bg-surface)] rounded-xl flex items-center gap-2 text-xs font-bold text-[var(--text-main)] cursor-pointer">
+                                        <Type size={13} className="text-amber-600" /> {lang === 'sv' ? "Bara text" : "Stories Only"}
                                     </button>
-                                    <div className="h-px bg-[var(--border-main)] my-1" />
-                                    <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('both'); }} className="w-full text-left px-3 py-2 hover:bg-[var(--bg-surface)] rounded-xl flex items-center gap-2 text-[10px] font-black uppercase text-[var(--theme-rose-text)]">
-                                        <RefreshCcw size={13} /> {lang === 'sv' ? "Slumpa Allt" : "Reshuffle Both"}
+                                    <div className="h-px bg-[var(--border-main)] my-0.5" />
+                                    <button type="button" onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('both'); }} className="w-full text-left px-3 py-2 hover:bg-[var(--bg-surface)] rounded-xl flex items-center gap-2 text-xs font-bold text-rose-600 dark:text-rose-400 cursor-pointer">
+                                        <RefreshCcw size={13} /> {lang === 'sv' ? "Slumpa allt" : "Reshuffle Both"}
                                     </button>
                                 </div>
                             )}
@@ -1384,12 +1187,14 @@ export default function QuestionStudio({
 
                         {setupMode === 'worksheet' && (
                             <>
-                                <div className="h-6 w-px bg-[var(--border-main)] mx-1" />
+                                <div className="h-5 w-px bg-[var(--border-main)]" />
 
-                                <div className="flex items-center gap-1.5 bg-[var(--bg-surface)] border border-[var(--border-main)] p-0.5 rounded-[var(--radius-btn)] shadow-xs">
-                                    <span className="text-[9px] font-black uppercase text-[var(--text-muted)] px-1.5">{t.rows_label}</span>
-                                    <div className="flex items-center bg-[var(--bg-card)] rounded-[var(--radius-btn)] border border-[var(--border-strong)] shadow-xs">
+                                {/* Work Area Rows & Grid Toggle */}
+                                <div className="flex items-center gap-1.5 bg-[var(--bg-surface)] border border-[var(--border-main)] p-1 rounded-xl">
+                                    <span className="text-[11px] font-bold text-[var(--text-muted)] px-1.5">{t.rows_label}</span>
+                                    <div className="flex items-center bg-[var(--bg-card)] rounded-lg border border-[var(--border-main)]">
                                         <button 
+                                            type="button"
                                             onClick={() => { 
                                                 const nextGlobal = Math.max(0, workspaceHeight - 1);
                                                 setWorkspaceHeight(nextGlobal); 
@@ -1399,11 +1204,11 @@ export default function QuestionStudio({
                                                 }));
                                                 setIsSaved(false); 
                                             }} 
-                                            className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--brand-solid)] cursor-pointer"
+                                            className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
                                         >
                                             <Minus size={11} />
                                         </button>
-                                        <span className="text-[10px] font-black w-5 text-center text-[var(--text-main)]">
+                                        <span className="text-xs font-bold font-mono w-7 text-center text-[var(--text-main)]">
                                             {(() => {
                                                 const practiceItems = packet.filter(p => !p.isWorkedExample);
                                                 if (practiceItems.length === 0) return workspaceHeight;
@@ -1413,6 +1218,7 @@ export default function QuestionStudio({
                                             })()}
                                         </span>
                                         <button 
+                                            type="button"
                                             onClick={() => { 
                                                 const nextGlobal = Math.min(15, workspaceHeight + 1);
                                                 setWorkspaceHeight(nextGlobal); 
@@ -1422,43 +1228,47 @@ export default function QuestionStudio({
                                                 }));
                                                 setIsSaved(false); 
                                             }} 
-                                            className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--brand-solid)] cursor-pointer"
+                                            className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
                                         >
                                             <Plus size={11} />
                                         </button>
                                     </div>
                                     <button 
+                                        type="button"
                                         onClick={() => { 
                                             const nextStyle = workspaceStyle === 'grid' ? 'blank' : 'grid';
                                             setWorkspaceStyle(nextStyle); 
                                             setPacket(prev => prev.map(p => ({ ...p, localWorkspaceStyle: nextStyle })));
                                             setIsSaved(false); 
                                         }} 
-                                        className={`p-1.5 rounded-[var(--radius-btn)] transition-all cursor-pointer ${workspaceStyle === 'grid' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-xs border border-[var(--border-strong)]' : 'text-[var(--text-muted)]'}`}
+                                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${workspaceStyle === 'grid' ? 'bg-[var(--bg-card)] text-emerald-600 dark:text-emerald-400 border border-[var(--border-main)]' : 'text-[var(--text-muted)]'}`}
                                         title={t.toggle_grid}
                                     >
                                         <Grid3X3 size={13} />
                                     </button>
                                 </div>
 
+                                {/* Density & Style Popover */}
                                 <div className="relative">
                                     <button 
+                                        type="button"
                                         onClick={() => setIsLayoutMenuOpen(prev => !prev)}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-btn)] border border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-main)] text-[10px] font-black uppercase shadow-xs hover:border-[var(--brand-solid)]"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-main)] text-xs font-bold hover:border-emerald-600 transition-colors cursor-pointer"
                                     >
-                                        <Settings2 size={13} className="text-[var(--brand-solid)]" />
-                                        {t.density_and_style}
-                                        <ChevronDown size={11} className="opacity-60" />
+                                        <Settings2 size={13} className="text-emerald-600 dark:text-emerald-400" />
+                                        <span>{t.density_and_style}</span>
+                                        <ChevronDown size={12} className="opacity-60" />
                                     </button>
 
                                     {isLayoutMenuOpen && (
-                                        <div className="absolute top-10 right-0 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl shadow-2xl p-4 w-72 z-50 flex flex-col gap-3">
+                                        <div className="absolute top-10 right-0 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl shadow-xl p-4 w-72 z-50 flex flex-col gap-3.5 animate-in fade-in slide-in-from-top-1 duration-150">
                                             <div>
-                                                <span className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1.5 block">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5 block">
                                                     {t.presets_heading}
                                                 </span>
                                                 <div className="grid grid-cols-3 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
                                                     <button 
+                                                        type="button"
                                                         onClick={() => {
                                                             setGlobalLatexSize('sm');
                                                             setWorkspaceHeight(0);
@@ -1466,11 +1276,12 @@ export default function QuestionStudio({
                                                             setPacket(prev => prev.map(p => ({ ...p, localLatexSize: null, localWorkspaceHeight: undefined, columnSpan: 2 })));
                                                             setIsSaved(false);
                                                         }}
-                                                        className="py-1 text-center text-[9px] font-black uppercase rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-main)]"
+                                                        className="py-1.5 text-center text-[11px] font-bold rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-main)] cursor-pointer"
                                                     >
                                                         {t.preset_compact}
                                                     </button>
                                                     <button 
+                                                        type="button"
                                                         onClick={() => {
                                                             setGlobalLatexSize('md');
                                                             setWorkspaceHeight(2);
@@ -1478,11 +1289,12 @@ export default function QuestionStudio({
                                                             setPacket(prev => prev.map(p => ({ ...p, localLatexSize: null, localWorkspaceHeight: undefined, columnSpan: 3 })));
                                                             setIsSaved(false);
                                                         }}
-                                                        className="py-1 text-center text-[9px] font-black uppercase rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-main)]"
+                                                        className="py-1.5 text-center text-[11px] font-bold rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-main)] cursor-pointer"
                                                     >
                                                         {t.preset_standard}
                                                     </button>
                                                     <button 
+                                                        type="button"
                                                         onClick={() => {
                                                             setGlobalLatexSize('lg');
                                                             setWorkspaceHeight(4);
@@ -1490,7 +1302,7 @@ export default function QuestionStudio({
                                                             setPacket(prev => prev.map(p => ({ ...p, localLatexSize: null, localWorkspaceHeight: undefined, columnSpan: 6 })));
                                                             setIsSaved(false);
                                                         }}
-                                                        className="py-1 text-center text-[9px] font-black uppercase rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-main)]"
+                                                        className="py-1.5 text-center text-[11px] font-bold rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-main)] cursor-pointer"
                                                     >
                                                         {t.preset_spacious}
                                                     </button>
@@ -1498,15 +1310,16 @@ export default function QuestionStudio({
                                             </div>
 
                                             <div>
-                                                <span className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1.5 block">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5 block">
                                                     {t.font_size_heading}
                                                 </span>
                                                 <div className="grid grid-cols-4 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
                                                     {['sm', 'md', 'lg', 'xl'].map(s => (
                                                         <button 
                                                             key={s} 
+                                                            type="button"
                                                             onClick={() => { setGlobalLatexSize(s); setPacket(prev => prev.map(p => ({ ...p, localLatexSize: null }))); setIsSaved(false); }}
-                                                            className={`py-1 text-center text-[10px] font-black rounded-lg transition-all ${globalLatexSize === s ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-xs' : 'text-[var(--text-muted)]'}`}
+                                                            className={`py-1 text-center text-xs font-bold font-mono rounded-lg transition-colors cursor-pointer ${globalLatexSize === s ? 'bg-[var(--bg-card)] text-emerald-600 dark:text-emerald-400 shadow-2xs' : 'text-[var(--text-muted)]'}`}
                                                         >
                                                             {s.toUpperCase()}
                                                         </button>
@@ -1515,19 +1328,21 @@ export default function QuestionStudio({
                                             </div>
 
                                             <div>
-                                                <span className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1.5 block">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5 block">
                                                     {t.framing_heading}
                                                 </span>
                                                 <div className="grid grid-cols-2 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
                                                     <button 
+                                                        type="button"
                                                         onClick={() => { setLayoutStyle('open'); setIsSaved(false); }}
-                                                        className={`py-1 text-center text-[10px] font-black uppercase rounded-lg ${layoutStyle === 'open' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-xs' : 'text-[var(--text-muted)]'}`}
+                                                        className={`py-1 text-center text-xs font-bold rounded-lg cursor-pointer ${layoutStyle === 'open' ? 'bg-[var(--bg-card)] text-emerald-600 dark:text-emerald-400 shadow-2xs' : 'text-[var(--text-muted)]'}`}
                                                     >
                                                         {t.style_open}
                                                     </button>
                                                     <button 
+                                                        type="button"
                                                         onClick={() => { setLayoutStyle('framed'); setIsSaved(false); }}
-                                                        className={`py-1 text-center text-[10px] font-black uppercase rounded-lg ${layoutStyle === 'framed' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-xs' : 'text-[var(--text-muted)]'}`}
+                                                        className={`py-1 text-center text-xs font-bold rounded-lg cursor-pointer ${layoutStyle === 'framed' ? 'bg-[var(--bg-card)] text-emerald-600 dark:text-emerald-400 shadow-2xs' : 'text-[var(--text-muted)]'}`}
                                                     >
                                                         {t.style_framed}
                                                     </button>
@@ -1545,39 +1360,41 @@ export default function QuestionStudio({
             {/* Canvas Body */}
             <div className="flex-1 flex flex-col overflow-hidden relative min-h-0">
                 {canvasMode === 'studio' ? (
-                    <div className="whiteboard-protect bg-white flex-1 rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col mx-auto w-full max-w-2xl animate-in zoom-in-95 duration-300 m-4">
-                        <div className="px-8 py-5 bg-slate-900 text-white flex justify-between items-center">
-                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60 italic">
+                    <div className="whiteboard-protect bg-white flex-1 rounded-2xl shadow-lg border border-stone-200 overflow-hidden flex flex-col mx-auto w-full max-w-2xl animate-in fade-in duration-200 my-5">
+                        <div className="px-6 py-3.5 bg-stone-900 text-white flex justify-between items-center">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-300">
                                 {t.board_label}
                             </span>
                             {activePreviewKey && (
-                                <button onClick={() => triggerPreview(activePreviewKey)} className="text-[10px] bg-[var(--bg-canvas)]/10 hover:bg-[var(--bg-canvas)]/20 px-4 py-1.5 rounded-full font-black uppercase flex items-center gap-2 transition-all">
+                                <button 
+                                    type="button"
+                                    onClick={() => triggerPreview(activePreviewKey)} 
+                                    className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                >
                                     <RefreshCcw size={12}/> {t.new_example}
                                 </button>
                             )}
                         </div>
-                        <div className="p-12 flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
+                        <div className="p-8 sm:p-10 flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center justify-center">
                             {isPreviewLoading ? (
-                                <div className="h-full flex items-center justify-center">
-                                    <Loader2 className="animate-spin text-[var(--brand-solid)]" size={48} />
-                                </div>
+                                <Loader2 className="animate-spin text-emerald-600" size={36} />
                             ) : !previewData ? (
-                                <div className="h-full flex items-center justify-center text-[var(--border-strong)] uppercase font-black tracking-widest italic">
+                                <p className="text-stone-400 font-bold text-sm">
                                     {t.select_hint}
-                                </div>
+                                </p>
                             ) : (
-                                <div className="w-full space-y-12 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <div className="w-full flex justify-center drop-shadow-md">
+                                <div className="w-full space-y-8 animate-in fade-in duration-200">
+                                    <div className="w-full flex justify-center">
                                         <VisualRenderer 
                                             data={previewData?.renderData} 
                                             isWordProblem={useWordProblems} 
                                         />
                                     </div>
-                                    <div className="text-2xl text-[var(--text-main)] font-bold text-center px-10 leading-relaxed">
+                                    <div className="text-xl text-stone-900 font-semibold text-center px-6 leading-relaxed">
                                         <MathDisplay content={previewData.renderData.description} />
                                     </div>
                                     {previewData.renderData.latex && (
-                                        <div className="text-4xl text-[var(--brand-solid)] bg-[var(--brand-bg)] p-10 rounded-[2.5rem] border-2 border-[var(--brand-border)] shadow-inner text-center font-serif">
+                                        <div className="text-3xl sm:text-4xl text-stone-900 bg-stone-50 p-8 rounded-2xl border border-stone-200 text-center font-serif">
                                             <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
                                         </div>
                                     )}
@@ -1587,42 +1404,42 @@ export default function QuestionStudio({
                         </div>
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-auto custom-scrollbar pb-24 flex justify-center items-start bg-[var(--bg-canvas)] p-4 rounded-[3rem]">
+                    <div className="flex-1 overflow-auto custom-scrollbar pb-24 flex justify-center items-start p-5">
                         <div 
-                            className={`shadow-2xl flex flex-col animate-in slide-in-from-bottom-6 origin-top relative ${
-                                setupMode === 'donow' 
-                                ? 'whiteboard-protect w-full max-w-5xl bg-white border border-slate-200 rounded-[2.5rem] p-8' 
-                                : 'whiteboard-protect w-[210mm] min-h-[297mm] p-[12mm]'
+                            className={`shadow-xl flex flex-col animate-in fade-in duration-200 origin-top relative ${
+                                isDoNowMode 
+                                ? 'whiteboard-protect w-full max-w-5xl bg-white border border-stone-200 rounded-2xl p-8' 
+                                : 'whiteboard-protect w-[210mm] min-h-[297mm] bg-white border border-stone-300 rounded-sm p-[12mm]'
                             }`}
                             style={setupMode === 'worksheet' ? { transform: 'scale(0.85)', transformOrigin: 'top center' } : {}}
                         >
-                            {/* Multi-Page A4 Page Break Guides */}
+                            {/* A4 Page Break Guides */}
                             {setupMode === 'worksheet' && [1, 2, 3, 4].map((pageNum) => {
                                 const topOffsetMm = pageNum * 273;
                                 return (
                                     <div 
                                         key={`pb-${pageNum}`}
-                                        className="pointer-events-none absolute left-0 right-0 border-b-2 border-dashed border-rose-400 flex items-center justify-end pr-4 text-[10px] font-black uppercase text-rose-500 tracking-widest z-30"
+                                        className="pointer-events-none absolute left-0 right-0 border-b border-dashed border-rose-400 flex items-center justify-end pr-4 text-[10px] font-bold font-mono text-rose-500 z-30"
                                         style={{ top: `${topOffsetMm}mm` }}
                                     >
-                                        <span className="bg-white px-2 py-0.5 rounded-full border border-rose-200 shadow-xs mb-[-10px]">
-                                            {lang === 'sv' ? `--- Sidbrytning (Sida ${pageNum}) ---` : `--- Page Break (Page ${pageNum}) ---`}
+                                        <span className="bg-white px-2 py-0.5 rounded border border-rose-200 mb-[-10px]">
+                                            {lang === 'sv' ? `Sidbrytning · Sida ${pageNum}` : `Page Break · Page ${pageNum}`}
                                         </span>
                                     </div>
                                 );
                             })}
 
                             {setupMode === 'worksheet' ? (
-                                <header className="border-b-2 border-slate-900 pb-2 mb-4 flex items-end justify-between">
-                                    <h1 className="text-lg font-black uppercase tracking-tighter w-1/3 truncate italic leading-none text-slate-900">{sheetTitle || t.sheet_default_title}</h1>
-                                    <div className="flex gap-6 w-2/3 justify-end text-[10px] font-black uppercase tracking-widest text-slate-900">
-                                        <div className="border-b-2 border-slate-200 pb-1 flex gap-2 flex-1 max-w-[200px]"><span>{t.name_label}</span><div className="flex-1" /></div>
-                                        <div className="border-b-2 border-slate-200 pb-1 flex gap-2 w-[120px]"><span>{t.date_label}</span><div className="flex-1" /></div>
+                                <header className="border-b-2 border-stone-900 pb-2 mb-4 flex items-end justify-between">
+                                    <h1 className="text-lg font-extrabold w-1/3 truncate leading-none text-stone-900">{sheetTitle || t.sheet_default_title}</h1>
+                                    <div className="flex gap-6 w-2/3 justify-end text-[11px] font-bold uppercase tracking-wider text-stone-700">
+                                        <div className="border-b border-stone-300 pb-1 flex gap-2 flex-1 max-w-[200px]"><span>{t.name_label}</span><div className="flex-1" /></div>
+                                        <div className="border-b border-stone-300 pb-1 flex gap-2 w-[120px]"><span>{t.date_label}</span><div className="flex-1" /></div>
                                     </div>
                                 </header>
                             ) : (
-                                <header className="border-b-2 border-slate-900 pb-4 mb-6 flex items-center justify-between">
-                                    <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900 italic leading-none">{sheetTitle || t.donow_title}</h1>
+                                <header className="border-b-2 border-stone-900 pb-3 mb-5 flex items-center justify-between">
+                                    <h1 className="text-xl font-extrabold text-stone-900 leading-none">{sheetTitle || t.donow_title}</h1>
                                 </header>
                             )}
 
@@ -1645,8 +1462,8 @@ export default function QuestionStudio({
                                     return (
                                         <React.Fragment key={item.id}>
                                             {!item.isWorkedExample && isHeaderMode && (
-                                                <div className={`col-span-6 border-l-4 pl-3 py-1.5 rounded-r-xl ${setupMode === 'donow' ? 'bg-indigo-50/70 border-indigo-600 mb-1 mt-2' : 'bg-slate-50 border-slate-900 mb-1 mt-1'}`}>
-                                                    <div className="text-sm font-semibold leading-relaxed text-slate-900">
+                                                <div className={`col-span-6 border-l-4 pl-3 py-1.5 rounded-r-lg ${isDoNowMode ? 'bg-sky-50/70 border-sky-600 mb-1 mt-2' : 'bg-stone-50 border-stone-900 mb-1 mt-1'}`}>
+                                                    <div className="text-sm font-semibold leading-relaxed text-stone-900">
                                                         <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                     </div>
                                                 </div>
@@ -1660,43 +1477,154 @@ export default function QuestionStudio({
                                                 className={`whiteboard-protect relative group transition-all flex flex-col cursor-move ${
                                                     item.isWorkedExample ? 'col-span-6 h-auto p-0 border-0' : `${getColSpanClass(item.columnSpan)} h-full`
                                                 } ${
-                                                    !item.isWorkedExample && (setupMode === 'donow' 
-                                                        ? 'p-5 shadow-xl border-2 border-transparent hover:border-indigo-400 rounded-2xl' 
+                                                    !item.isWorkedExample && (isDoNowMode 
+                                                        ? 'p-5 border border-stone-200 hover:border-sky-500 rounded-xl shadow-xs' 
                                                         : (layoutStyle === 'framed' 
-                                                            ? 'p-4 border-2 border-slate-200 rounded-2xl shadow-xs hover:border-indigo-400' 
-                                                            : 'p-2 border-2 border-transparent hover:border-slate-200 hover:shadow-xs rounded-2xl'))
-                                                } ${draggedIdx === idx ? 'opacity-20 border-indigo-500 bg-indigo-50 scale-95' : ''}`}
+                                                            ? 'p-4 border border-stone-300 rounded-xl hover:border-emerald-600' 
+                                                            : 'p-2.5 border border-transparent hover:border-stone-300 rounded-xl'))
+                                                } ${draggedIdx === idx ? 'opacity-25 border-sky-500 bg-sky-50 scale-[0.98]' : ''}`}
                                             >
-                                                <div className="absolute top-2 left-2 text-slate-300 opacity-0 group-hover:opacity-100 z-10"><GripVertical size={14} /></div>
+                                                <div className="absolute top-2 left-1.5 text-stone-300 opacity-0 group-hover:opacity-100 z-10">
+                                                    <GripVertical size={13} />
+                                                </div>
                                                 
-                                                {/* Restored Original Hover Toolbar */}
-                                                <div className="absolute -top-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 z-30 transition-all gap-1.5">
-                                                    <div className="bg-white shadow-2xl rounded-full p-1 flex gap-1 border border-slate-200 items-center">
+                                                {/* Single-Row Labeled Drafting Toolbar (Zero wrap, never covers math) */}
+                                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex justify-center opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto z-30 transition-opacity duration-150">
+                                                    <div className="bg-white shadow-lg rounded-xl px-2 py-1 flex items-center gap-1 border border-stone-300 whitespace-nowrap">
                                                         {setupMode === 'worksheet' && (
                                                             <>
-                                                                <div className="flex items-center bg-slate-100 rounded-full px-1">
-                                                                    <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceHeight', Math.max(0, effectiveWorkArea - 1)); }} className="p-1 hover:text-indigo-600"><Minus size={10}/></button>
-                                                                    <span className="text-[9px] font-black w-3 text-center text-slate-600">{effectiveWorkArea}</span>
-                                                                    <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceHeight', Math.min(15, effectiveWorkArea + 1)); }} className="p-1 hover:text-indigo-600"><Plus size={10}/></button>
+                                                                {/* Workspace Rows */}
+                                                                <div className="flex items-center bg-stone-100 rounded-lg px-1" title={lang === 'sv' ? 'Antal rader för uträkning' : 'Answer space rows'}>
+                                                                    <button type="button" onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceHeight', Math.max(0, effectiveWorkArea - 1)); }} className="p-1 text-stone-600 hover:text-emerald-700 cursor-pointer"><Minus size={10}/></button>
+                                                                    <span className="text-[10px] font-bold font-mono px-1 text-stone-800">{effectiveWorkArea}r</span>
+                                                                    <button type="button" onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceHeight', Math.min(15, effectiveWorkArea + 1)); }} className="p-1 text-stone-600 hover:text-emerald-700 cursor-pointer"><Plus size={10}/></button>
                                                                 </div>
                                                                 
-                                                                <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceStyle', effectiveWorkspaceStyle === 'grid' ? 'blank' : 'grid'); }} className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1.5 rounded-full transition-colors" title={t.toggle_work_area}>
+                                                                {/* Grid / Blank Toggle */}
+                                                                <button 
+                                                                    type="button" 
+                                                                    onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceStyle', effectiveWorkspaceStyle === 'grid' ? 'blank' : 'grid'); }} 
+                                                                    className={`px-1.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${effectiveWorkspaceStyle === 'grid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`} 
+                                                                    title={t.toggle_work_area}
+                                                                >
                                                                     {effectiveWorkspaceStyle === 'grid' ? <Grid3X3 size={10} /> : <Square size={10} />}
+                                                                    <span>{lang === 'sv' ? 'Rutnät' : 'Grid'}</span>
                                                                 </button>
 
-                                                                <button onClick={(e) => { e.stopPropagation(); const sizes = ['sm', 'md', 'lg', 'xl']; updatePacketItem(item.id, 'localLatexSize', sizes[(sizes.indexOf(effectiveLatexSize) + 1) % 4]); }} className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-serif font-black px-2 py-1 rounded-full italic transition-colors">A</button>
+                                                                {/* Font Size Cycle */}
+                                                                <button 
+                                                                    type="button" 
+                                                                    onClick={(e) => { e.stopPropagation(); const sizes = ['sm', 'md', 'lg', 'xl']; updatePacketItem(item.id, 'localLatexSize', sizes[(sizes.indexOf(effectiveLatexSize) + 1) % 4]); }} 
+                                                                    className="bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-mono font-bold px-1.5 py-1 rounded-lg transition-colors cursor-pointer" 
+                                                                    title={t.font_size_heading}
+                                                                >
+                                                                    {effectiveLatexSize.toUpperCase()}
+                                                                </button>
                                                             </>
                                                         )}
 
-                                                        <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'columnSpan', item.columnSpan === 2 ? 3 : item.columnSpan === 3 ? 6 : 2); }} className="bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full italic">W</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); const modes = ['header', 'inline', 'hidden']; updatePacketItem(item.id, 'instructionMode', modes[(modes.indexOf(item.instructionMode || 'header') + 1) % 3]); }} className={`p-1.5 rounded-full transition-all ${item.instructionMode === 'inline' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400'}`}><AlignLeft size={12} /></button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }} className="bg-rose-500 text-white p-1.5 rounded-full hover:bg-rose-600"><Trash2 size={12} /></button>
+                                                        {/* Card Width Cycle */}
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'columnSpan', item.columnSpan === 2 ? 3 : item.columnSpan === 3 ? 6 : 2); }} 
+                                                            className="bg-sky-600 hover:bg-sky-700 text-white text-[10px] font-bold font-mono px-2 py-1 rounded-lg cursor-pointer" 
+                                                            title={lang === 'sv' ? 'Ändra bredd (1/3, 1/2, Hel)' : 'Cycle width (1/3, 1/2, Full)'}
+                                                        >
+                                                            {item.columnSpan === 2 ? '1/3' : item.columnSpan === 3 ? '1/2' : '1/1'}
+                                                        </button>
+
+                                                        {/* Instruction Placement */}
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={(e) => { e.stopPropagation(); const modes = ['header', 'inline', 'hidden']; updatePacketItem(item.id, 'instructionMode', modes[(modes.indexOf(item.instructionMode || 'header') + 1) % 3]); }} 
+                                                            className={`px-1.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${item.instructionMode === 'inline' ? 'bg-amber-500 text-white' : item.instructionMode === 'hidden' ? 'bg-stone-100 text-stone-400 line-through' : 'bg-stone-100 text-stone-700'}`} 
+                                                            title={lang === 'sv' ? 'Instruktion: Rubrik / I kort / Dold' : 'Instruction: Header / Inline / Hidden'}
+                                                        >
+                                                            <AlignLeft size={10} />
+                                                            <span>{lang === 'sv' ? 'Text' : 'Text'}</span>
+                                                        </button>
+
+                                                        <div className="h-3.5 w-px bg-stone-200 mx-0.5" />
+
+                                                        {/* Shuffle Numbers */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                try {
+                                                                    const isItemWP = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
+                                                                    const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${isItemWP}`);
+                                                                    const data = await res.json();
+                                                                    setPacket(packet.map(p => p.id === item.id ? { ...p, resolvedData: data, selectedStoryIndex: p.selectedStoryIndex !== undefined && p.selectedStoryIndex !== null ? p.selectedStoryIndex : null } : p));
+                                                                    setIsSaved(false);
+                                                                } catch (err) { console.error("Number shuffle failed:", err); }
+                                                            }}
+                                                            className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-emerald-50 text-stone-700 hover:text-emerald-700 text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                                                            title={lang === 'sv' ? "Slumpa nya tal" : "Shuffle Numbers"}
+                                                        >
+                                                            <RefreshCcw size={10} />
+                                                            <span>{lang === 'sv' ? 'Slumpa' : 'Shuffle'}</span>
+                                                        </button>
+
+                                                        {/* Shuffle Story (shown when multiple word-problem stories exist) */}
+                                                        {item.resolvedData?.renderData?.availableStories && item.resolvedData.renderData.availableStories.length > 1 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const totalStories = item.resolvedData.renderData.availableStories.length;
+                                                                    const currentStoryIdx = item.selectedStoryIndex !== undefined && item.selectedStoryIndex !== null ? item.selectedStoryIndex : 0;
+                                                                    let newIndex = Math.floor(Math.random() * totalStories);
+                                                                    if (newIndex === currentStoryIdx) newIndex = (newIndex + 1) % totalStories;
+                                                                    updatePacketItem(item.id, 'selectedStoryIndex', newIndex);
+                                                                }}
+                                                                className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-amber-50 text-stone-700 hover:text-amber-700 text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                                                                title={lang === 'sv' ? "Byt berättelse" : "Shuffle Story"}
+                                                            >
+                                                                <Shuffle size={10} />
+                                                                <span>{lang === 'sv' ? 'Berättelse' : 'Story'}</span>
+                                                            </button>
+                                                        )}
+
+                                                        {/* Explicit Labeled "Example" / "Exempel" Toggle */}
+                                                        <button 
+                                                            type="button"
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                const nextVal = !item.isWorkedExample;
+                                                                setPacket(packet.map(p => p.id === item.id ? { 
+                                                                    ...p, 
+                                                                    isWorkedExample: nextVal,
+                                                                    columnSpan: nextVal ? 6 : (p.columnSpan || 6)
+                                                                } : p));
+                                                                setIsSaved(false);
+                                                            }} 
+                                                            className={`px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
+                                                                item.isWorkedExample 
+                                                                    ? 'bg-amber-500 text-white' 
+                                                                    : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200'
+                                                            }`}
+                                                            title={lang === 'sv' ? "Gör om till löst exempel" : "Convert to worked example"}
+                                                        >
+                                                            <Sparkles size={10} />
+                                                            <span>{lang === 'sv' ? 'Exempel' : 'Example'}</span>
+                                                        </button>
+
+                                                        {/* Delete */}
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }} 
+                                                            className="bg-rose-600 text-white p-1.5 rounded-lg hover:bg-rose-700 cursor-pointer ml-0.5" 
+                                                            title={t.delete_task}
+                                                        >
+                                                            <Trash2 size={11} />
+                                                        </button>
                                                     </div>
                                                 </div>
                                                 
-                                                <div className={`flex items-start flex-1 ${item.isWorkedExample ? 'w-full' : 'gap-4'}`}>
+                                                <div className={`flex items-start flex-1 ${item.isWorkedExample ? 'w-full' : 'gap-3.5'}`}>
                                                     {!item.isWorkedExample && (
-                                                        <div className="shrink-0 w-7 h-7 rounded-full border-2 border-[var(--text-main)] flex items-center justify-center text-[var(--text-main)] font-black text-xs mt-1">
+                                                        <div className="shrink-0 w-6 h-6 rounded-full border border-stone-900 flex items-center justify-center text-stone-900 font-bold font-mono text-xs mt-1">
                                                             {idx + 1}
                                                         </div>
                                                     )}
@@ -1709,13 +1637,13 @@ export default function QuestionStudio({
                                                         ) : (
                                                             <>
                                                                 {isInlineMode && (
-                                                                    <div className="text-sm font-semibold text-slate-800 mb-1.5 leading-relaxed">
+                                                                    <div className="text-sm font-semibold text-stone-800 mb-1.5 leading-relaxed">
                                                                         <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                                     </div>
                                                                 )}
                                                                 
                                                                 {displayLatex && item.resolvedData?.renderData.latex && (
-                                                                    <div className="py-2 text-center font-serif text-slate-900">
+                                                                    <div className="py-2 text-center font-serif text-stone-900">
                                                                         <MathDisplay 
                                                                             key={`${item.id}-${effectiveLatexSize}`}
                                                                             content={`$$${item.resolvedData.renderData.latex}$$`} 
@@ -1735,7 +1663,7 @@ export default function QuestionStudio({
                                                                 <div className="mt-auto pt-2">
                                                                     {setupMode === 'worksheet' && effectiveWorkArea > 0 && (
                                                                         <div 
-                                                                            className={`w-full mt-2 overflow-hidden ${effectiveWorkspaceStyle === 'grid' ? 'border border-slate-300 rounded-lg worksheet-grid-bg' : ''}`}
+                                                                            className={`w-full mt-2 overflow-hidden ${effectiveWorkspaceStyle === 'grid' ? 'border border-stone-300 rounded-lg worksheet-grid-bg' : ''}`}
                                                                             style={{ 
                                                                                 height: `${effectiveWorkArea * 30}px`,
                                                                                 ...(effectiveWorkspaceStyle !== 'grid' ? { backgroundColor: 'transparent' } : {})
@@ -1745,115 +1673,50 @@ export default function QuestionStudio({
                                                                 </div>
                                                             </>
                                                         )}
-
-                                                        <div className="opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-2 pt-3 mt-3 z-40 relative">
-                                                            <div className="flex justify-end gap-2">
-                                                                <button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            const isItemWP = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
-                                                                            const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${isItemWP}`);
-                                                                            const data = await res.json();
-                                                                            setPacket(packet.map(p => p.id === item.id ? { ...p, resolvedData: data, selectedStoryIndex: p.selectedStoryIndex !== undefined && p.selectedStoryIndex !== null ? p.selectedStoryIndex : null } : p));
-                                                                            setIsSaved(false);
-                                                                        } catch (err) { console.error("Number shuffle failed:", err); }
-                                                                    }}
-                                                                    className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/50 hover:border-indigo-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer"
-                                                                >
-                                                                    <Calculator size={12} /> {lang === 'sv' ? "Slumpa Tal" : "Shuffle Numbers"}
-                                                                </button>
-
-                                                                {item.resolvedData?.renderData?.availableStories && item.resolvedData.renderData.availableStories.length > 1 && (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            const totalStories = item.resolvedData.renderData.availableStories.length;
-                                                                            const currentStoryIdx = item.selectedStoryIndex !== undefined && item.selectedStoryIndex !== null ? item.selectedStoryIndex : 0;
-                                                                            let newIndex = Math.floor(Math.random() * totalStories);
-                                                                            if (newIndex === currentStoryIdx) newIndex = (newIndex + 1) % totalStories;
-                                                                            updatePacketItem(item.id, 'selectedStoryIndex', newIndex);
-                                                                        }}
-                                                                        className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-amber-600 hover:bg-amber-50/50 hover:border-amber-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer"
-                                                                    >
-                                                                        <Shuffle size={12} /> {lang === 'sv' ? "Slumpa Text" : "Shuffle Story"}
-                                                                    </button>
-                                                                )}
-                                                            </div>
-
-                                                            <div className="flex justify-end gap-2">
-                                                                <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'showText', !displayStory); }} className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all cursor-pointer ${displayStory ? 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100/70' : 'bg-slate-50 border-slate-100 text-slate-400 line-through'}`}>
-                                                                    <Type size={12} /> Text
-                                                                </button>
-
-                                                                {item.resolvedData?.renderData.latex && (
-                                                                <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'showLatex', !displayLatex); }} className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all cursor-pointer ${displayLatex ? 'bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100/70' : 'bg-slate-50 border-slate-100 text-slate-400 line-through'}`}>
-                                                                    <Calculator size={12} /> LaTeX
-                                                                </button>
-                                                            )}
-
-                                                            {(item.resolvedData?.renderData.geometry || item.resolvedData?.renderData.graph || item.resolvedData?.renderData.pattern) && (
-                                                                <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'showVisual', !displayVisual); }} className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all cursor-pointer ${displayVisual ? 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100/70' : 'bg-slate-50 border-slate-100 text-slate-400 line-through'}`}>
-                                                                    <ImageIcon size={12} /> {lang === 'sv' ? "Figur" : "Visual"}
-                                                                </button>
-                                                            )}
-                                                            <button 
-                                                                onClick={(e) => { 
-                                                                    e.stopPropagation(); 
-                                                                    const nextVal = !item.isWorkedExample;
-                                                                    setPacket(packet.map(p => p.id === item.id ? { 
-                                                                        ...p, 
-                                                                        isWorkedExample: nextVal,
-                                                                        columnSpan: nextVal ? 6 : (p.columnSpan || 6)
-                                                                    } : p));
-                                                                    setIsSaved(false);
-                                                                }} 
-                                                                className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all cursor-pointer ${
-                                                                    item.isWorkedExample 
-                                                                        ? 'bg-amber-500 border-amber-600 text-slate-950 font-black shadow-md' 
-                                                                        : 'bg-white border-slate-200 text-slate-600 hover:text-amber-700 hover:bg-amber-50 hover:border-amber-300'
-                                                                }`}
-                                                                title={lang === 'sv' ? "Gör om till genomgång / exempel" : "Convert to worked example"}
-                                                            >
-                                                                <Sparkles size={12} className={item.isWorkedExample ? "text-slate-950 fill-slate-950" : "text-amber-500"} />
-                                                                <span>{lang === 'sv' ? "Exempel" : "Example"}</span>
-                                                            </button>
-                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </React.Fragment>
-                                );
-                            })}
-                      </div>
-                  </div>
-              </div>
-          )}
-          </div>
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
 
-        {/* PANE 4: Selected Questions */}
-        <div className={`bg-[var(--bg-card)]/90 backdrop-blur-sm border-l border-[var(--border-main)] flex flex-col shadow-2xl shrink-0 transition-all duration-300 min-h-0 h-full ${isPane4Collapsed ? 'w-16' : 'w-72'}`}>
-          <div className={`p-4 border-b border-[var(--border-main)] flex items-center ${isPane4Collapsed ? 'justify-center' : 'justify-between'} bg-[var(--bg-surface)]/80`}>
+        {/* PANE 4: Selected Questions Queue */}
+        <div className={`bg-[var(--bg-card)] border-l border-[var(--border-main)] flex flex-col shrink-0 transition-all duration-200 min-h-0 h-full ${isPane4Collapsed ? 'w-14' : 'w-72'}`}>
+          <div className={`px-3 py-2.5 border-b border-[var(--border-main)] flex items-center ${isPane4Collapsed ? 'justify-center' : 'justify-between'} bg-[var(--bg-surface)]/60`}>
               {!isPane4Collapsed && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pl-1">
                     <Layers size={14} className="text-[var(--text-muted)]" />
-                    <h2 className="text-[12px] font-black uppercase tracking-widest text-[var(--text-main)]">{t.selected_questions}</h2>
-                    <div className="bg-[var(--text-main)] text-[var(--bg-canvas)] px-2 py-0.5 rounded-lg text-[10px] font-black">{packet.length}</div>
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">{t.selected_questions}</h2>
+                    <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-md text-[11px] font-bold font-mono">{packet.length}</span>
                 </div>
               )}
-              <button onClick={() => setIsPane4Collapsed(!isPane4Collapsed)} className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] transition-colors">
-                {isPane4Collapsed ? <PanelRightOpen size={20} /> : <PanelRightClose size={20} />}
-            </button>
+              <button 
+                  type="button"
+                  onClick={() => setIsPane4Collapsed(!isPane4Collapsed)} 
+                  className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+              >
+                {isPane4Collapsed ? <PanelRightOpen size={17} /> : <PanelRightClose size={17} />}
+              </button>
           </div>
 
           {!isPane4Collapsed && (
-            <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-200 min-h-0">
-                <div className="p-3 border-b border-[var(--border-main)] flex justify-end shrink-0">
-                    <button onClick={() => { if(window.confirm(t.clear_all + "?")) setPacket([]); }} className="text-[var(--text-main)] hover:text-[var(--theme-rose-text)] transition-colors flex items-center gap-1 text-[14px] font-black uppercase tracking-widest"><Eraser size={14}/> {t.clear_all}</button>
+            <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-150 min-h-0">
+                <div className="px-3 py-2 border-b border-[var(--border-main)] flex justify-end shrink-0">
+                    <button 
+                        type="button"
+                        onClick={() => { if(window.confirm(t.clear_all + "?")) setPacket([]); }} 
+                        className="text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 transition-colors flex items-center gap-1 text-xs font-bold cursor-pointer"
+                    >
+                        <Eraser size={13}/> <span>{t.clear_all}</span>
+                    </button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-[var(--bg-canvas)]/50 min-h-0">
+                <div className="flex-1 overflow-y-auto p-2.5 space-y-2 custom-scrollbar bg-[var(--bg-canvas)]/60 min-h-0">
                     {Array.isArray(packet) && packet.map((item, idx) => (
                         <div 
                             key={item.id}
@@ -1861,24 +1724,24 @@ export default function QuestionStudio({
                             onDragStart={(e) => handleDragStartUnified(e, idx)}
                             onDragOver={(e) => handleDragOverUnified(e, idx)}
                             onDragEnd={handleDragEndUnified}
-                            className={`p-3 border rounded-[var(--radius-card)] flex justify-between items-center group shadow-sm transition-all select-none
-                                ${draggedItemIndex === idx 
-                                    ? 'opacity-30 bg-[var(--theme-indigo-bg)] border-[var(--brand-solid)] border-dashed scale-[0.98]' 
-                                    : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:shadow-md hover:border-[var(--brand-solid)] cursor-grab active:cursor-grabbing'
-                                }`}
+                            className={`p-2.5 border rounded-xl flex justify-between items-start gap-2 group transition-all select-none ${
+                                draggedItemIndex === idx 
+                                    ? 'opacity-30 bg-sky-50 dark:bg-sky-950/30 border-sky-500 border-dashed scale-[0.98]' 
+                                    : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:border-emerald-600 cursor-grab active:cursor-grabbing'
+                            }`}
                         >
-                            <div className="flex items-start gap-2 min-w-0 flex-1 w-full">
-                                <GripVertical size={12} className="text-[var(--text-muted)] shrink-0 group-hover:text-[var(--primary-color)] transition-colors mt-1" />
+                            <div className="flex items-start gap-2 min-w-0 flex-1">
+                                <GripVertical size={13} className="text-[var(--text-muted)] shrink-0 mt-0.5" />
                                 <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-[14px] font-black text-[var(--text-main)]">#{idx + 1}</span>
-                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.instructionMode === 'header' ? 'bg-indigo-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-[var(--border-strong)]'}`} />
-                                        <span className="text-[12px] font-black text-[var(--text-muted)] uppercase tracking-widest truncate">
+                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                        <span className="text-xs font-bold font-mono text-[var(--text-main)]">#{idx + 1}</span>
+                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.instructionMode === 'header' ? 'bg-sky-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-[var(--border-strong)]'}`} />
+                                        <span className="text-[11px] font-bold text-[var(--text-muted)] truncate">
                                             {item.name}
                                         </span>
                                     </div>
                                     
-                                    <div className="text-[12px] font-bold text-[var(--text-muted)] leading-tight pr-2">
+                                    <div className="text-xs font-medium text-[var(--text-main)] leading-snug pr-1">
                                         <MathDisplay 
                                             content={compileAnchoredStory(item, lang, true)} 
                                             className="!whitespace-normal line-clamp-2" 
@@ -1887,38 +1750,49 @@ export default function QuestionStudio({
                                 </div>
                             </div>
 
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }}
-                                    className="p-1 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] transition-colors rounded-lg"
-                                    title={t.delete_task}
-                                >
-                                    <Trash2 size={20} />
-                                </button>
-                            </div>
+                            <button 
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }}
+                                className="opacity-0 group-hover:opacity-100 p-1 text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 transition-all rounded-lg shrink-0 cursor-pointer"
+                                title={t.delete_task}
+                            >
+                                <Trash2 size={14} />
+                            </button>
                         </div>
                     ))}
                 </div>
                 {setupMode === 'worksheet' && (
-                    <div className="p-4 border-t border-[var(--border-main)] bg-[var(--bg-card)] space-y-4 shrink-0">
+                    <div className="p-3.5 border-t border-[var(--border-main)] bg-[var(--bg-card)] space-y-3 shrink-0">
                         <div className="flex items-center justify-between">
-                            <span className="text-[12px] font-black uppercase text-[var(--text-main)] tracking-widest">
+                            <span className="text-xs font-bold text-[var(--text-main)]">
                                 {t.answer_key_toggle}
                             </span>
-                            <button onClick={() => setIncludeAnswerKey(!includeAnswerKey)} className={`w-10 h-5 rounded-full transition-all relative p-1 ${includeAnswerKey ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'}`}>
-                                <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${includeAnswerKey ? 'translate-x-5' : 'translate-x-0'}`} />
+                            <button 
+                                type="button"
+                                onClick={() => setIncludeAnswerKey(!includeAnswerKey)} 
+                                className={`w-9 h-5 rounded-full transition-colors relative p-0.5 cursor-pointer ${includeAnswerKey ? 'bg-emerald-600' : 'bg-[var(--border-strong)]'}`}
+                            >
+                                <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-2xs ${includeAnswerKey ? 'translate-x-4' : 'translate-x-0'}`} />
                             </button>
                         </div>
                         {includeAnswerKey && (
-                            <div className="animate-in fade-in slide-in-from-bottom-2 space-y-2">
-                                <label className="text-[12px] font-black uppercase text-[var(--text-main)] block">
+                            <div className="animate-in fade-in duration-150 space-y-1.5">
+                                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">
                                     {t.answer_style_label}
                                 </label>
-                                <div className="grid grid-cols-2 gap-1 p-1 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border border-[var(--border-main)]">
-                                    <button onClick={() => setAnswerKeyStyle('compact')} className={`py-1 rounded-[var(--radius-btn)] text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'compact' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+                                <div className="grid grid-cols-2 gap-1 p-1 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-main)]">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setAnswerKeyStyle('compact')} 
+                                        className={`py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${answerKeyStyle === 'compact' ? 'bg-[var(--bg-card)] text-emerald-600 dark:text-emerald-400 shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                    >
                                         {t.style_compact}
                                     </button>
-                                    <button onClick={() => setAnswerKeyStyle('detailed')} className={`py-1 rounded-[var(--radius-btn)] text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'detailed' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setAnswerKeyStyle('detailed')} 
+                                        className={`py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${answerKeyStyle === 'detailed' ? 'bg-[var(--bg-card)] text-emerald-600 dark:text-emerald-400 shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                    >
                                         {t.style_detailed}
                                     </button>
                                 </div>
@@ -1945,104 +1819,63 @@ export default function QuestionStudio({
           initialSettings={liveSettings}
       />
 
-      {showPresentation && (
-          <PresentationView 
-              packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : packet}
-              initialSlides={activeBoardSheet?.packet?.slides}
-              initialSettings={activeBoardSheet?.packet?.settings}
-              boardId={activeBoardSheet?.id || (peekSheet?.type === 'board' || savedSheets.find(s => s.id === activeSheetId)?.type === 'board' ? activeSheetId : null)}
-              sheetTitle={activeBoardSheet?.title || sheetTitle} 
-              lang={lang} 
-              onClose={() => { 
-                  setShowPresentation(false);
-                  setActiveBoardSheet(null);
-                  setSetupMode(null);
-                  fetchLibrary(); 
-              }}
-              onLaunchLive={(roomData) => {
-                  onDoNowGenerate(null, null, { room: roomData, packet: roomData.active_question_data.packet });
-              }}
-          />
-      )}
-
       <StudioTutorialModal
-            isOpen={showTutorial}
-            onClose={handleCloseTutorial}
-            lang={lang}
-        />
+          isOpen={showTutorial}
+          onClose={handleCloseTutorial}
+          lang={lang}
+      />
 
-        <ActivityHubModal
-            isOpen={showActivityHub}
-            onClose={() => setShowActivityHub(false)}
-            sourcePacket={packet}
-            profile={profile}
-            lang={lang}
-            onLaunchActivity={handleLaunchActivity}
-        />
+      <ActivityHubModal
+          isOpen={showActivityHub}
+          onClose={() => setShowActivityHub(false)}
+          sourcePacket={packet}
+          profile={profile}
+          lang={lang}
+          onLaunchActivity={handleLaunchActivity}
+      />
 
-        {/* 🟢 Dynamic Activity Engine Render */}
-        {activeSetupModal && (() => {
-            const def = getActivityDefinition(activeSetupModal.key);
-            if (!def?.SetupModal) return null;
-            const WizardModal = def.SetupModal;
-            return (
-                <WizardModal
-                    isOpen={true}
-                    onClose={() => setActiveSetupModal(null)}
-                    sourcePacket={activeSetupModal.sourcePacket || []}
-                    savedBoard={activeSetupModal.savedBoard || null}
-                    profile={profile}
-                    lang={lang}
-                    onLaunch={(config) => {
-                        setActiveSetupModal(null);
-                        handleLaunchActivity(activeSetupModal.key, {
-                            ...config,
-                            savedBoard: activeSetupModal.savedBoard,
-                            title: activeSetupModal.savedBoard?.title || config.title,
-                            sheetId: activeSetupModal.savedBoard?.id
-                        });
-                    }}
-                />
-            );
-        })()}
+      {activeSetupModal && (() => {
+          const def = getActivityDefinition(activeSetupModal.key);
+          if (!def?.SetupModal) return null;
+          const WizardModal = def.SetupModal;
+          return (
+              <WizardModal
+                  isOpen={true}
+                  onClose={() => setActiveSetupModal(null)}
+                  sourcePacket={activeSetupModal.sourcePacket || []}
+                  savedBoard={activeSetupModal.savedBoard || null}
+                  profile={profile}
+                  lang={lang}
+                  onLaunch={(config) => {
+                      setActiveSetupModal(null);
+                      handleLaunchActivity(activeSetupModal.key, {
+                          ...config,
+                          savedBoard: activeSetupModal.savedBoard,
+                          title: activeSetupModal.savedBoard?.title || config.title,
+                          sheetId: activeSetupModal.savedBoard?.id
+                      });
+                  }}
+              />
+          );
+      })()}
 
-        {activeActivity && (() => {
-            const def = getActivityDefinition(activeActivity.key);
-            if (!def?.TeacherEngine) return null;
-            const Engine = def.TeacherEngine;
-            return (
-                <Engine
-                    initialConfig={activeActivity.config}
-                    savedBoard={activeActivity.savedBoard}
-                    sourcePacket={activeActivity.sourcePacket || packet || []}
-                    session={activeActivity.session || null}
-                    isLiveHost={Boolean(activeActivity.session)}
-                    profile={profile}
-                    onClose={() => {
-                        setActiveActivity(null);
-                        fetchLibrary();
-                    }}
-                    lang={lang}
-                />
-            );
-        })()}
-        <SaveChoiceModal
-            isOpen={showSaveChoiceModal}
-            onClose={() => setShowSaveChoiceModal(false)}
-            onOverwrite={async () => {
-                setShowSaveChoiceModal(false);
-                await executeSave({ forceNewCopy: false, silent: false });
-            }}
-            onSaveAsCopy={async () => {
-                setShowSaveChoiceModal(false);
-                await executeSave({ forceNewCopy: true, silent: false });
-            }}
-            lang={lang}
-            itemTypeLabel={{
-                sv: setupMode === 'donow' ? 'Do Now-rutnät' : 'arbetsblad',
-                en: setupMode === 'donow' ? 'Do Now grid' : 'worksheet'
-            }}
-        />
+      <SaveChoiceModal
+          isOpen={showSaveChoiceModal}
+          onClose={() => setShowSaveChoiceModal(false)}
+          onOverwrite={async () => {
+              setShowSaveChoiceModal(false);
+              await executeSave({ forceNewCopy: false, silent: false });
+          }}
+          onSaveAsCopy={async () => {
+              setShowSaveChoiceModal(false);
+              await executeSave({ forceNewCopy: true, silent: false });
+          }}
+          lang={lang}
+          itemTypeLabel={{
+              sv: setupMode === 'donow' ? 'Do Now-rutnät' : 'arbetsblad',
+              en: setupMode === 'donow' ? 'Do Now grid' : 'worksheet'
+          }}
+      />
     </div>
   );
 }
