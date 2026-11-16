@@ -1,3 +1,4 @@
+// src/components/modals/ContentModal.jsx
 import React, { useState, useMemo } from 'react';
 import { CONTENT_MAP } from '../../constants/content_map.generated';
 import { X, BookOpen, Layers, Search, Check, Plus } from 'lucide-react';
@@ -52,10 +53,10 @@ const ContentModal = ({
     const t = TEXT[lang] || TEXT.sv;
 
     const themeClasses = {
-        pink: { bg: "bg-pink-600", text: "text-pink-700", border: "border-pink-200" },
-        indigo: { bg: "bg-indigo-600", text: "text-indigo-700", border: "border-indigo-200" },
-        amber: { bg: "bg-amber-500", text: "text-amber-700", border: "border-amber-200" },
-        rose: { bg: "bg-rose-500", text: "text-rose-700", border: "border-rose-200" }
+        pink: { bg: "bg-pink-600 text-white", text: "text-pink-950 font-extrabold", border: "border-pink-200" },
+        indigo: { bg: "bg-emerald-600 text-white", text: "text-emerald-950 font-extrabold", border: "border-emerald-200" },
+        amber: { bg: "bg-amber-600 text-white", text: "text-amber-950 font-extrabold", border: "border-amber-200" },
+        rose: { bg: "bg-rose-600 text-white", text: "text-rose-950 font-extrabold", border: "border-rose-200" }
     };
 
     const isSelected = (topicId, level) => {
@@ -88,18 +89,18 @@ const ContentModal = ({
     }).filter(category => category.topics.length > 0);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-            {/* Added 'text-slate-800' and color reset to ensure child text defaults dark on light surfaces */}
-            <div className="content-modal-protect bg-slate-50 text-slate-800 w-full max-w-[1600px] h-[95vh] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150 select-none font-sans">
+            <div className="content-modal-protect bg-white text-slate-900 w-full max-w-[1400px] h-[90vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+                
                 {/* Header */}
-                <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 shrink-0 shadow-sm z-10">
-                    <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md shrink-0 ${selectionMode ? 'bg-indigo-600' : 'bg-slate-900'}`}>
-                            <BookOpen size={24} />
+                <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 shrink-0 shadow-2xs z-10">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-2xs shrink-0 ${selectionMode ? 'bg-emerald-600' : 'bg-slate-900'}`}>
+                            <BookOpen size={20} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-black text-slate-800 tracking-tight uppercase italic leading-none">{t.title}</h2>
-                            <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${selectionMode ? 'text-indigo-500' : 'text-slate-500'}`}>
+                            <h2 className="text-base font-extrabold text-slate-900 tracking-tight leading-none">{t.title}</h2>
+                            <p className={`text-[11px] font-semibold mt-1 ${selectionMode ? 'text-emerald-700' : 'text-slate-500'}`}>
                                 {t.subtitle}
                             </p>
                         </div>
@@ -107,65 +108,67 @@ const ContentModal = ({
                     
                     <div className="flex items-center gap-3 w-full sm:w-auto flex-1 sm:max-w-md ml-auto">
                         <div className="relative w-full">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
                             <input 
                                 type="text"
                                 placeholder={t.searchPlaceholder}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner"
+                                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-600 transition-colors shadow-inner"
                             />
                             {searchTerm && (
                                 <button 
+                                    type="button"
                                     onClick={() => setSearchTerm('')} 
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 cursor-pointer"
                                 >
                                     <X size={14} strokeWidth={3} />
                                 </button>
                             )}
                         </div>
                         <button 
+                            type="button"
                             onClick={onClose} 
-                            className="w-11 h-11 shrink-0 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:text-white hover:bg-rose-500 transition-all active:scale-90"
+                            className="p-1.5 shrink-0 flex items-center justify-center rounded-xl bg-white text-slate-500 hover:text-slate-900 border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer"
                         >
-                            <X size={20} strokeWidth={3} />
+                            <X size={18} strokeWidth={3} />
                         </button>
                     </div>
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar bg-slate-100/70">
                     {filteredContent.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
-                            <Search size={48} className="opacity-20" />
-                            <p className="text-sm font-bold uppercase tracking-wider">{t.noResults} "{searchTerm}"</p>
+                            <Search size={40} className="opacity-30" />
+                            <p className="text-xs font-bold uppercase tracking-wider">{t.noResults} "{searchTerm}"</p>
                         </div>
                     ) : (
-                        <div className="columns-1 lg:columns-2 2xl:columns-3 gap-6 space-y-6">
+                        <div className="columns-1 lg:columns-2 2xl:columns-3 gap-5 space-y-5">
                             {filteredContent.map((category) => {
                                 const theme = themeClasses[category.color] || themeClasses.indigo;
                                 return (
-                                    <div key={category.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden break-inside-avoid">
-                                        <div className={`${theme.bg} px-5 py-2.5 flex items-center justify-between`}>
-                                            <div className="flex items-center gap-3">
-                                                <Layers size={16} className="text-white/80" />
-                                                <h3 className="text-sm font-black text-white uppercase tracking-widest">
+                                    <div key={category.id} className="bg-white rounded-2xl border border-slate-200 shadow-2xs flex flex-col overflow-hidden break-inside-avoid">
+                                        <div className={`${theme.bg} px-4 py-2.5 flex items-center justify-between`}>
+                                            <div className="flex items-center gap-2.5">
+                                                <Layers size={15} className="text-white/90" />
+                                                <h3 className="text-xs font-extrabold text-white uppercase tracking-wider">
                                                     {category.title[lang] || category.title}
                                                 </h3>
                                             </div>
-                                            <span className="text-white/70 text-[9px] font-black tracking-widest uppercase bg-black/10 px-2 py-0.5 rounded-md">
-                                                {category.topics.length} {lang === 'sv' ? 'Områden' : 'Topics'}
+                                            <span className="text-white/90 text-[10px] font-bold font-mono uppercase bg-black/15 px-2 py-0.5 rounded">
+                                                {category.topics.length} {lang === 'sv' ? 'områden' : 'topics'}
                                             </span>
                                         </div>
 
-                                        <div className="flex flex-col divide-y divide-slate-100">
+                                        <div className="flex flex-col divide-y divide-slate-100 bg-white">
                                             {category.topics.map((topic) => (
-                                                <div key={topic.id} className="p-4 bg-white">
-                                                    <h4 className={`font-black text-xs uppercase tracking-tight mb-2 ${theme.text}`}>
+                                                <div key={topic.id} className="p-3.5 bg-white">
+                                                    <h4 className={`font-bold text-xs uppercase tracking-tight mb-2 text-slate-900`}>
                                                         {topic.name[lang] || topic.name}
                                                     </h4>
 
-                                                    <div className="flex flex-col border border-slate-100 rounded-lg overflow-hidden">
+                                                    <div className="flex flex-col border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
                                                         {topic.levels.map((lvl, index) => {
                                                             const descStr = lvl.desc?.[lang] || lvl.desc || '';
                                                             const rowText = `${descStr} ${lvl.ex}`.toLowerCase();
@@ -183,45 +186,43 @@ const ContentModal = ({
                                                                         e.stopPropagation();
                                                                         onToggleItem(topic.id, lvl.lvl);
                                                                     }}
-                                                                    className={`group flex items-stretch text-[10px] sm:text-[11px] leading-tight transition-all select-none
-                                                                        ${index !== topic.levels.length - 1 ? 'border-b border-slate-100' : ''}
-                                                                        ${selectionMode ? 'cursor-pointer active:scale-[0.995]' : ''}
-                                                                        ${currentlySelected 
-                                                                            ? 'bg-emerald-50 shadow-inner z-10' 
-                                                                            : (isHighlighted ? 'bg-indigo-50/50' : 'hover:bg-slate-50')
-                                                                        }
-                                                                    `}
+                                                                    className={`group flex items-stretch text-xs leading-snug transition-colors select-none ${
+                                                                        index !== topic.levels.length - 1 ? 'border-b border-slate-200' : ''
+                                                                    } ${selectionMode ? 'cursor-pointer active:scale-[0.995]' : ''} ${
+                                                                        currentlySelected 
+                                                                            ? 'bg-emerald-50 text-slate-900 shadow-inner z-10' 
+                                                                            : (isHighlighted ? 'bg-sky-50 text-slate-900' : 'hover:bg-slate-100/80 text-slate-900')
+                                                                    }`}
                                                                 >
                                                                     {/* Level Number */}
-                                                                    <div className={`w-8 shrink-0 flex items-center justify-center font-black pointer-events-none transition-colors ${currentlySelected ? 'bg-emerald-500 text-white' : `bg-slate-50 border-r border-slate-100 ${theme.text}`}`}>
+                                                                    <div className={`w-8 shrink-0 flex items-center justify-center font-bold font-mono pointer-events-none transition-colors ${
+                                                                        currentlySelected 
+                                                                            ? 'bg-emerald-600 text-white' 
+                                                                            : 'bg-white border-r border-slate-200 text-slate-700'
+                                                                    }`}>
                                                                         {lvl.lvl}
                                                                     </div>
                                                                     
                                                                     {/* Description */}
-                                                                    <div className={`w-1/2 sm:w-2/5 shrink-0 p-2 font-bold border-r border-slate-100 flex items-center pointer-events-none transition-colors ${currentlySelected ? 'text-emerald-900 border-emerald-100' : 'text-slate-800'}`}>
+                                                                    <div className="w-1/2 sm:w-2/5 shrink-0 p-2.5 font-semibold border-r border-slate-200 flex items-center pointer-events-none text-slate-800">
                                                                         {descStr}
                                                                     </div>
                                                                     
-                                                                    {/* Math Example - Forced dark color via text-slate-700 and style color override */}
-                                                                    <div 
-                                                                        className="flex-1 p-2 font-serif font-bold text-slate-700 italic flex items-center overflow-x-auto no-scrollbar pointer-events-none"
-                                                                        style={{ color: '#334155' }}
-                                                                    >
+                                                                    {/* Math Example */}
+                                                                    <div className="flex-1 p-2.5 font-serif font-semibold text-slate-700 italic flex items-center overflow-x-auto no-scrollbar pointer-events-none">
                                                                         {lvl.ex && (
-                                                                            lvl.ex.includes('\\') || lvl.ex.includes('$') || lvl.ex.includes('=') ? (
-                                                                                <div className="text-slate-800" style={{ color: '#1e293b' }}>
-                                                                                    <MathDisplay content={lvl.ex.includes('$') ? lvl.ex : `$$${lvl.ex}$$`} className="inline-block pointer-events-none text-slate-800" />
-                                                                                </div>
-                                                                            ) : (
-                                                                                <span className="font-sans not-italic text-[10px] text-slate-700 pointer-events-none">{lvl.ex}</span>
-                                                                            )
+                                                                            <MathDisplay content={lvl.ex.includes('$') || lvl.ex.includes('\\') ? lvl.ex : `$$${lvl.ex}$$`} className="inline-block pointer-events-none text-slate-900" />
                                                                         )}
                                                                     </div>
 
                                                                     {/* Action Indicator */}
                                                                     {selectionMode && (
-                                                                        <div className={`w-10 shrink-0 flex items-center justify-center border-l pointer-events-none transition-colors ${currentlySelected ? 'bg-emerald-500 text-white border-emerald-600' : 'border-slate-100 text-slate-300 group-hover:bg-slate-200 group-hover:text-indigo-500 bg-slate-50'}`}>
-                                                                            {currentlySelected ? <Check size={16} strokeWidth={4} /> : <Plus size={16} strokeWidth={3} />}
+                                                                        <div className={`w-9 shrink-0 flex items-center justify-center border-l pointer-events-none transition-colors ${
+                                                                            currentlySelected 
+                                                                                ? 'bg-emerald-600 text-white border-emerald-700' 
+                                                                                : 'border-slate-200 text-slate-400 group-hover:bg-slate-100 group-hover:text-emerald-600 bg-white'
+                                                                        }`}>
+                                                                            {currentlySelected ? <Check size={14} strokeWidth={3} /> : <Plus size={14} strokeWidth={2.5} />}
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -239,14 +240,14 @@ const ContentModal = ({
                 </div>
 
                 {/* Footer */}
-                <div className={`border-t border-slate-200 p-4 flex justify-between items-center shrink-0 ${selectionMode ? 'bg-indigo-50' : 'bg-white'}`}>
+                <div className={`border-t border-slate-200 px-6 py-3.5 flex justify-between items-center shrink-0 ${selectionMode ? 'bg-emerald-50' : 'bg-slate-50'}`}>
                     <div className="w-1/2">
                         {selectionMode && (
                             <div className="flex items-center gap-2">
-                                <span className="bg-indigo-600 text-white font-black text-xs px-2.5 py-1 rounded-lg">
+                                <span className="bg-emerald-600 text-white font-bold font-mono text-xs px-2.5 py-1 rounded-lg">
                                     {selectedItems.length}
                                 </span>
-                                <span className="text-[10px] font-black uppercase text-indigo-800 tracking-widest hidden sm:block">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900 hidden sm:block">
                                     {t.selectedCount}
                                 </span>
                             </div>
@@ -254,10 +255,11 @@ const ContentModal = ({
                     </div>
 
                     <button 
+                        type="button"
                         onClick={onClose} 
-                        className={`px-10 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 w-full sm:w-auto shadow-md
-                            ${selectionMode ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-900 hover:bg-indigo-600 text-white'}
-                        `}
+                        className={`px-8 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer shadow-2xs ${
+                            selectionMode ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-900 hover:bg-emerald-600 text-white'
+                        }`}
                     >
                         {selectionMode ? t.done : t.close}
                     </button>

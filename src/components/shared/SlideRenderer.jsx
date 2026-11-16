@@ -1,3 +1,4 @@
+// src/components/shared/SlideRenderer.jsx
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronDown, RefreshCw } from 'lucide-react';
 import MathDisplay from './MathDisplay';
@@ -17,16 +18,17 @@ export default function SlideRenderer({
     onSpotlight,
     onRegenerate,
     setIsSaving,
-    authorMode = true, // If false, it hides the alignment pills for students/live presentations!
+    authorMode = true,
     globalZoom = 1.0
 }) {
     const [openAlignMenuId, setOpenAlignMenuId] = useState(null);
 
     return (
-        <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden font-sans">
             <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet" className="absolute inset-0 w-full h-full pointer-events-none">
                 <foreignObject x="0" y="0" width="1920" height="1080" className="pointer-events-none">
-                    <div className="w-full h-full relative flex items-start select-none pt-[80px] pb-[80px] pointer-events-auto">
+                    {/* 🟢 Refined padding to prevent overlapping with top/bottom floating nav docks */}
+                    <div className="w-full h-full relative flex items-start select-none pt-[100px] pb-[90px] px-8 pointer-events-auto">
                         
                         {clueViewMode === 'coach' ? (
                             <MyCoachModal
@@ -36,9 +38,9 @@ export default function SlideRenderer({
                                 {...coachProps} 
                             />
                         ) : activeIds.length === 0 ? (
-                            <div className="absolute top-5 left-5 flex items-center gap-2 text-slate-400/50 bg-white/50 px-3 py-1.5 rounded-lg border border-slate-200/50 pointer-events-none select-none z-0">
-                                <ChevronLeft size={14} className="animate-pulse" />
-                                <span className="font-black uppercase tracking-widest text-[9px]">
+                            <div className="absolute top-8 left-8 flex items-center gap-2 text-[var(--text-muted)] bg-[var(--bg-card)] px-3.5 py-2 rounded-xl border border-[var(--border-strong)] pointer-events-none select-none z-0 shadow-2xs">
+                                <ChevronLeft size={14} className="animate-pulse text-emerald-600 dark:text-emerald-400" />
+                                <span className="font-bold uppercase tracking-wider text-[10px]">
                                     {lang === 'sv' ? "Välj uppgift för att presentera" : "Select question to present"}
                                 </span>
                             </div>
@@ -55,51 +57,60 @@ export default function SlideRenderer({
                                 return (
                                     <div 
                                         key={id} 
-                                        className={`group flex flex-col flex-1 px-8 relative h-full ${alignClass} justify-start animate-in zoom-in-95 duration-200`}
+                                        className={`group flex flex-col flex-1 px-4 relative h-full ${alignClass} justify-start animate-in zoom-in-95 duration-150`}
                                     >
                                         {index > 0 && (
-                                            <div className="absolute top-0 bottom-0 left-0 border-l-4 border-dashed border-slate-400/80 -translate-x-1/2 pointer-events-none" />
+                                            <div className="absolute top-0 bottom-0 left-0 border-l-2 border-dashed border-[var(--border-strong)] -translate-x-1/2 pointer-events-none opacity-60" />
                                         )}
 
                                         {/* 1. THE FIXED UI CONTROLS (Only visible in authoring mode) */}
                                         {authorMode && (
-                                            <div className={`flex flex-col mb-3 shrink-0 relative z-40 mt-4 items-${q.align === 'start' ? 'start' : q.align === 'end' ? 'end' : 'center'}`}>
-                                                <div className="flex items-center gap-3">
+                                            <div className={`flex flex-col mb-3 shrink-0 relative z-40 mt-1 items-${q.align === 'start' ? 'start' : q.align === 'end' ? 'end' : 'center'}`}>
+                                                <div className="flex items-center gap-2">
                                                     <button 
+                                                        type="button"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             setOpenAlignMenuId(prev => prev === q.id ? null : q.id);
                                                         }}
-                                                        className="flex items-center gap-1.5 text-[14px] font-black text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 hover:border-indigo-200 rounded-md px-2.5 py-1 uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer pointer-events-auto"
+                                                        className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 rounded-xl px-3 py-1.5 uppercase tracking-wider shadow-2xs transition-all active:scale-[0.98] cursor-pointer pointer-events-auto"
                                                         title={lang === 'sv' ? "Ändra justering och skala" : "Change alignment & scale"}
                                                     >
-                                                        {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
-                                                        <ChevronDown size={16} className={`transition-transform duration-200 ${openAlignMenuId === q.id ? 'rotate-180' : ''}`} />
+                                                        <span>{lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}</span>
+                                                        <ChevronDown size={14} className={`transition-transform duration-150 ${openAlignMenuId === q.id ? 'rotate-180' : ''}`} />
                                                     </button>
                                                     
                                                     <button
+                                                        type="button"
                                                         onClick={(e) => { e.stopPropagation(); onRegenerate(q.id); }}
-                                                        className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all active:scale-90 cursor-pointer pointer-events-auto ui-ignore"
+                                                        className="p-1.5 text-[var(--text-muted)] hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-[var(--bg-surface)] rounded-xl transition-all active:scale-95 cursor-pointer pointer-events-auto border border-[var(--border-strong)] bg-[var(--bg-card)] shadow-2xs"
                                                         title={lang === 'sv' ? "Slå om tal / slumpa nya värden" : "Roll fresh question numbers"}
                                                     >
-                                                        <RefreshCw size={18} className="transition-transform duration-300 hover:rotate-180" />
+                                                        <RefreshCw size={15} className="transition-transform duration-300 hover:rotate-180" />
                                                     </button>
                                                 </div>
 
                                                 {openAlignMenuId === q.id && (
-                                                    <div className="absolute top-full mt-1.5 animate-in fade-in slide-in-from-top-1 duration-200 flex flex-col bg-white/95 backdrop-blur-sm p-1.5 rounded-xl shadow-md border border-slate-200 pointer-events-auto z-50 min-w-[160px]" onPointerDown={(e) => e.stopPropagation()}>
-                                                        <div className="flex bg-slate-100 rounded-lg p-0.5 mb-1.5">
+                                                    <div className="absolute top-full mt-2 animate-in fade-in slide-in-from-top-1 duration-150 flex flex-col bg-[var(--bg-card)] backdrop-blur-xs p-2 rounded-xl shadow-2xl border border-[var(--border-strong)] pointer-events-auto z-50 min-w-[180px]" onPointerDown={(e) => e.stopPropagation()}>
+                                                        <div className="flex bg-[var(--bg-surface)] rounded-lg p-0.5 border border-[var(--border-main)] mb-2">
                                                             {['start', 'center', 'end'].map(align => (
-                                                                <button key={align} onClick={() => {
-                                                                    setLivePacket(prev => prev.map(p => p.id === q.id ? { ...p, align } : p));
-                                                                    setIsSaving(false);
-                                                                }} className={`flex-1 px-2 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${q.align === align ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-200'}`}>
+                                                                <button 
+                                                                    type="button"
+                                                                    key={align} 
+                                                                    onClick={() => {
+                                                                        setLivePacket(prev => prev.map(p => p.id === q.id ? { ...p, align } : p));
+                                                                        setIsSaving(false);
+                                                                    }} 
+                                                                    className={`flex-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                                                                        q.align === align ? 'bg-emerald-600 text-white shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                                                    }`}
+                                                                >
                                                                     {align === 'start' ? (lang === 'sv' ? 'Vänster' : 'Left') : align === 'end' ? (lang === 'sv' ? 'Höger' : 'Right') : (lang === 'sv' ? 'Mitten' : 'Center')}
                                                                 </button>
                                                             ))}
                                                         </div>
-                                                        <div className="flex items-center justify-between px-1 py-1 border-t border-slate-200 pt-2">
-                                                            <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">
+                                                        <div className="flex items-center justify-between px-1 py-1 border-t border-[var(--border-main)] pt-2 gap-2">
+                                                            <span className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wider">
                                                                 {lang === 'sv' ? 'Skala' : 'Scale'}
                                                             </span>
                                                             <input 
@@ -108,9 +119,9 @@ export default function SlideRenderer({
                                                                     setLivePacket(prev => prev.map(p => p.id === q.id ? { ...p, scale: parseFloat(e.target.value) } : p));
                                                                     setIsSaving(false);
                                                                 }}
-                                                                className="w-20 accent-indigo-500 cursor-ew-resize"
+                                                                className="w-20 accent-emerald-600 cursor-ew-resize"
                                                             />
-                                                            <span className="text-[10px] font-black text-indigo-600 w-8 text-right">
+                                                            <span className="text-[10px] font-bold font-mono text-emerald-700 dark:text-emerald-400 w-8 text-right">
                                                                 {Math.round((q.scale || 1.0) * 100)}%
                                                             </span>
                                                         </div>
@@ -121,7 +132,7 @@ export default function SlideRenderer({
 
                                         {/* 2. THE SCALED CONTENT WRAPPER */}
                                         <div 
-                                            className={`flex flex-col w-full ${alignClass} pointer-events-auto mt-4`}
+                                            className={`flex flex-col w-full ${alignClass} pointer-events-auto mt-2`}
                                             style={{ 
                                                 transform: `scale(${(q.scale || 1.0) * globalZoom})`, 
                                                 transformOrigin: q.align === 'start' ? 'top left' : q.align === 'end' ? 'top right' : 'top center',
@@ -129,7 +140,7 @@ export default function SlideRenderer({
                                             }}
                                         >
                                             {q.showText !== false && (
-                                                <div className={`font-bold text-slate-800 ${textAlignClass} leading-relaxed max-w-md w-full shrink-0 break-words px-4 mb-2 ${sizeClasses.desc}`}>
+                                                <div className={`font-bold text-[var(--text-main)] ${textAlignClass} leading-relaxed max-w-xl w-full shrink-0 break-words px-4 mb-3 ${sizeClasses.desc}`}>
                                                     <MathDisplay content={compileAnchoredStory(q, lang)} />
                                                 </div>
                                             )}
@@ -137,7 +148,7 @@ export default function SlideRenderer({
                                             {q.showVisual !== false && rd && (
                                                 <div 
                                                     onClick={(e) => { e.stopPropagation(); onSpotlight(rd); }}
-                                                    className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 w-full max-w-md px-4 ${sizeClasses.visualClass}`}
+                                                    className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 w-full max-w-xl px-4 ${sizeClasses.visualClass}`}
                                                 >
                                                     <VisualRenderer 
                                                         data={rd} 
@@ -146,17 +157,17 @@ export default function SlideRenderer({
                                                 </div>
                                             )}
 
-                                            {/* 🟢 MULTIPLE CHOICE OPTIONS */}
+                                            {/* MULTIPLE CHOICE OPTIONS */}
                                             {rd?.options && rd.options.length > 0 && (
-                                                <div className="mt-5 grid grid-cols-2 gap-3 w-full max-w-lg px-4 pointer-events-none relative z-30 shrink-0">
+                                                <div className="mt-4 grid grid-cols-2 gap-3 w-full max-w-xl px-4 pointer-events-none relative z-30 shrink-0">
                                                     {rd.options.map((opt, oIdx) => {
                                                         const choiceLabel = typeof opt === 'object' ? opt.label : opt;
                                                         return (
-                                                            <div key={oIdx} className="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-slate-200/80 bg-white/95 shadow-sm">
-                                                                <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-black shrink-0">
+                                                            <div key={oIdx} className="flex items-center gap-3 p-3.5 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-card)] shadow-2xs text-[var(--text-main)]">
+                                                                <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-xs font-bold font-mono shrink-0">
                                                                     {['A','B','C','D','E','F'][oIdx]}
                                                                 </div>
-                                                                <MathDisplay content={String(choiceLabel)} className={`font-bold text-slate-700 ${sizeClasses.desc}`} />
+                                                                <MathDisplay content={String(choiceLabel)} className={`font-semibold text-[var(--text-main)] ${sizeClasses.desc}`} />
                                                             </div>
                                                         );
                                                     })}
@@ -164,7 +175,7 @@ export default function SlideRenderer({
                                             )}
 
                                             {q.showLatex !== false && rd?.latex && !rd?.geometry && (
-                                                <div className={`mt-6 py-4 bg-indigo-50/40 rounded-2xl text-center font-serif text-indigo-950 border border-indigo-100/60 shadow-inner w-full max-w-xs shrink-0 ${sizeClasses.latex}`}>
+                                                <div className={`mt-5 py-3.5 px-5 bg-[var(--bg-card)] rounded-xl text-center font-serif text-[var(--text-main)] border border-[var(--border-strong)] shadow-inner w-full max-w-md shrink-0 ${sizeClasses.latex}`}>
                                                     <MathDisplay content={`$$${rd.latex}$$`} />
                                                 </div>
                                             )}

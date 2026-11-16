@@ -59,69 +59,95 @@ export default function EndSessionModal({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300 no-print">
-            <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300 border-b-8 border-indigo-100">
-                <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                    <h2 className="text-2xl font-black uppercase tracking-tight italic text-slate-900">
-                        {lang === 'sv' ? "Avsluta Session" : "End Session"}
-                    </h2>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 cursor-pointer">
-                        <X />
+        <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 select-none font-sans no-print">
+            <div className="bg-[var(--bg-card)] text-[var(--text-main)] w-full max-w-xl rounded-2xl shadow-2xl border border-[var(--border-strong)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-150">
+                
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-[var(--border-main)] flex items-center justify-between bg-[var(--bg-surface)] shrink-0 shadow-2xs">
+                    <div>
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block mb-0.5">
+                            Anpassa Studio
+                        </span>
+                        <h2 className="text-base font-extrabold tracking-tight text-[var(--text-main)]">
+                            {lang === 'sv' ? "Avsluta Session" : "End Session"}
+                        </h2>
+                    </div>
+                    <button 
+                        type="button"
+                        onClick={onClose} 
+                        className="p-1.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer border border-[var(--border-main)] shadow-2xs"
+                    >
+                        <X size={18} />
                     </button>
                 </div>
-                <div className="p-8 space-y-4">
+
+                {/* Body Content Options */}
+                <div className="p-6 space-y-3.5 bg-[var(--bg-canvas)]">
+                    {/* Option 1: Print Report */}
                     <button 
+                        type="button"
                         onClick={() => { onOpenPrintReport(); onClose(); }} 
-                        className="w-full group p-6 bg-indigo-50 border-2 border-indigo-100 hover:border-indigo-600 rounded-3xl text-left transition-all cursor-pointer"
+                        className="w-full group p-4 bg-[var(--bg-card)] hover:border-sky-500 border border-[var(--border-strong)] rounded-xl text-left transition-all cursor-pointer shadow-2xs flex items-center gap-4"
                     >
-                        <div className="flex items-center gap-4 mb-2">
-                            <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg"><Printer size={20}/></div>
-                            <span className="font-black uppercase tracking-tight text-indigo-900 text-lg">
+                        <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center justify-center shrink-0 shadow-2xs">
+                            <Printer size={18}/>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <span className="font-extrabold text-xs uppercase tracking-wider text-[var(--text-main)] block mb-0.5">
                                 {lang === 'sv' ? "Utskriftsvänlig Rapport" : "Printable Report"}
                             </span>
+                            <p className="text-[11px] font-medium text-[var(--text-muted)] truncate">
+                                {lang === 'sv' ? "Genererar en kompakt A4-översikt i liggande format." : "Generates a compact A4 overview in landscape format."}
+                            </p>
                         </div>
-                        <p className="text-indigo-600/60 text-xs font-bold leading-relaxed ml-14">
-                            {lang === 'sv' ? "Genererar en kompakt A4-översikt i liggande format." : "Generates a compact A4 overview in landscape format."}
-                        </p>
                     </button>
 
+                    {/* Option 2: Copy Table */}
                     <button 
+                        type="button"
                         onClick={copyToClipboard} 
-                        className="w-full group p-6 bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-600 rounded-3xl text-left transition-all cursor-pointer"
+                        className="w-full group p-4 bg-[var(--bg-card)] hover:border-emerald-500 border border-[var(--border-strong)] rounded-xl text-left transition-all cursor-pointer shadow-2xs flex items-center gap-4"
                     >
-                        <div className="flex items-center gap-4 mb-2">
-                            <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-lg"><Copy size={20}/></div>
-                            <span className="font-black uppercase tracking-tight text-emerald-900 text-lg">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center shrink-0 shadow-2xs">
+                            <Copy size={18}/>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <span className="font-extrabold text-xs uppercase tracking-wider text-[var(--text-main)] block mb-0.5">
                                 {lang === 'sv' ? "Kopiera Tabell" : "Copy Table"}
                             </span>
+                            <p className="text-[11px] font-medium text-[var(--text-muted)] truncate">
+                                {lang === 'sv' ? "Klistra in resultatet direkt i Word eller Excel." : "Paste the result directly into Word or Excel."}
+                            </p>
                         </div>
-                        <p className="text-emerald-600/60 text-xs font-bold leading-relaxed ml-14">
-                            {lang === 'sv' ? "Klistra in resultatet direkt i Word eller Excel." : "Paste the result directly into Word or Excel."}
-                        </p>
                     </button>
 
+                    {/* Option 3: Close & Archive */}
                     <button 
+                        type="button"
                         onClick={handleEndSession} 
                         disabled={isClosing} 
-                        className="w-full group p-6 bg-slate-50 border-2 border-slate-100 hover:border-slate-900 rounded-3xl text-left transition-all disabled:opacity-50 cursor-pointer"
+                        className="w-full group p-4 bg-[var(--bg-card)] hover:border-slate-500 border border-[var(--border-strong)] rounded-xl text-left transition-all disabled:opacity-50 cursor-pointer shadow-2xs flex items-center gap-4"
                     >
-                        <div className="flex items-center gap-4 mb-2">
-                            <div className="p-3 bg-slate-900 text-white rounded-2xl shadow-lg">
-                                {isClosing ? <Loader2 className="animate-spin" size={20}/> : <Save size={20}/>}
-                            </div>
-                            <span className="font-black uppercase tracking-tight text-slate-900 text-lg">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)] flex items-center justify-center shrink-0 shadow-2xs">
+                            {isClosing ? <Loader2 className="animate-spin" size={18}/> : <Save size={18}/>}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <span className="font-extrabold text-xs uppercase tracking-wider text-[var(--text-main)] block mb-0.5">
                                 {lang === 'sv' ? "Stäng & Arkivera (7 dagar)" : "Close & Archive (7 days)"}
                             </span>
+                            <p className="text-[11px] font-medium text-[var(--text-muted)] truncate">
+                                {lang === 'sv' ? "Rensas automatiskt efter 7 dagar." : "Automatically cleared after 7 days."}
+                            </p>
                         </div>
-                        <p className="text-slate-400 text-xs font-bold leading-relaxed ml-14">
-                            {lang === 'sv' ? "Rensas automatiskt efter 7 dagar." : "Automatically cleared after 7 days."}
-                        </p>
                     </button>
                 </div>
-                <div className="p-6 bg-slate-50 flex justify-end items-center border-t border-slate-100">
+
+                {/* Footer */}
+                <div className="px-6 py-3.5 bg-[var(--bg-surface)] border-t border-[var(--border-main)] flex justify-end items-center shrink-0 shadow-2xs">
                     <button 
+                        type="button"
                         onClick={onClose} 
-                        className="px-6 py-2 bg-slate-200 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-300 transition-colors cursor-pointer"
+                        className="px-5 py-2 bg-[var(--bg-card)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-[var(--text-main)] rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-2xs"
                     >
                         {lang === 'sv' ? "Avbryt" : "Cancel"}
                     </button>

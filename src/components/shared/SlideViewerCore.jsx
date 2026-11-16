@@ -16,10 +16,10 @@ export default function SlideViewerCore({
     interactiveCanvasProps = {},
     slideRendererProps = {},
     sizeClasses = { 
-        desc: 'text-m', 
+        desc: 'text-sm', 
         latex: 'text-xl', 
-        clue: 'text-m', 
-        headerText: 'text-l', 
+        clue: 'text-sm', 
+        headerText: 'text-base', 
         visualClass: 'scale-100 max-h-[180px] mb-2' 
     }
 }) {
@@ -29,12 +29,12 @@ export default function SlideViewerCore({
 
     const currentTheme = PRESENTATION_THEMES[slide?.theme || theme] || PRESENTATION_THEMES[DEFAULT_THEME];
 
-    // 🟢 Strip `key` out of interactiveCanvasProps so it cannot be spread into JSX
+    // Strip `key` out of interactiveCanvasProps so it cannot be spread into JSX
     const { key: canvasKey, ...safeCanvasProps } = interactiveCanvasProps || {};
 
     return (
         <div 
-            className={`relative w-full flex flex-col items-center shadow-[0_25px_70px_rgba(0,0,0,0.6)] rounded-3xl border-4 transition-colors duration-300 overflow-hidden select-none ${currentTheme.wrapperClass.replace(/slide-honeycomb-bg/g, '')}`}
+            className={`relative w-full flex flex-col items-center shadow-2xl rounded-2xl border border-[var(--border-strong)] transition-colors duration-300 overflow-hidden select-none font-sans ${currentTheme.wrapperClass.replace(/slide-honeycomb-bg/g, '')}`}
             style={{
                 aspectRatio: '16/9',
                 height: '100%',
@@ -84,8 +84,8 @@ export default function SlideViewerCore({
             )}
 
             {/* --- PERMANENT WATERMARK --- */}
-            <div className={`absolute bottom-3 right-5 pointer-events-none select-none z-20 flex items-center gap-1.5 font-sans font-black text-[11px] uppercase tracking-widest ${currentTheme.watermarkColor}`}>
-                <span className="w-2 h-2 rounded-full bg-current opacity-60" />
+            <div className={`absolute bottom-3 right-5 pointer-events-none select-none z-20 flex items-center gap-1.5 font-sans font-bold text-[10px] uppercase tracking-wider ${currentTheme.watermarkColor}`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
                 <span>Anpassa Math Platform :: Anpassa.app</span>
             </div>
         </div>

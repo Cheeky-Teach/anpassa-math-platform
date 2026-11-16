@@ -66,62 +66,66 @@ export default function CapacityModal({ visible, onClose, classCode, lang = 'sv'
     const isNearingCap = fillPercentage >= 80;
 
     return (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 font-sans select-none animate-in fade-in duration-150">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-150">
                 
                 {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50">
+                <div className="flex justify-between items-center p-5 border-b border-[var(--border-main)] bg-[var(--bg-surface)]">
                     <div>
-                        <h2 className="text-xl font-black uppercase tracking-tight text-slate-800">{t.title}</h2>
-                        <p className="text-xs font-bold text-slate-400 mt-1">{t.subtitle}</p>
+                        <h2 className="text-base font-extrabold text-[var(--text-main)]">{t.title}</h2>
+                        <p className="text-xs font-medium text-[var(--text-muted)] mt-0.5">{t.subtitle}</p>
                     </div>
-                    <button onClick={onClose} className="p-2 bg-slate-200 hover:bg-rose-100 hover:text-rose-600 rounded-full transition-colors text-slate-500">
-                        <X size={20} />
+                    <button 
+                        type="button" 
+                        onClick={onClose} 
+                        className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] rounded-xl transition-colors cursor-pointer"
+                    >
+                        <X size={18} />
                     </button>
                 </div>
 
                 {/* Body */}
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-5">
                     
                     {/* Visual Counter */}
-                    <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 relative overflow-hidden">
+                    <div className="bg-[var(--bg-surface)] p-5 rounded-xl border border-[var(--border-main)] relative overflow-hidden">
                         {loading ? (
-                            <div className="flex justify-center py-4"><Loader2 className="animate-spin text-emerald-500" size={32} /></div>
+                            <div className="flex justify-center py-6"><Loader2 className="animate-spin text-emerald-600" size={32} /></div>
                         ) : (
                             <div className="flex justify-between items-end relative z-10">
                                 <div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t.active_label}</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">{t.active_label}</span>
                                     <div className="flex items-baseline gap-2 mt-1">
-                                        <span className={`text-5xl font-black tracking-tighter ${isNearingCap ? 'text-amber-500' : 'text-emerald-600'}`}>
+                                        <span className={`text-4xl font-extrabold font-mono tracking-tight ${isNearingCap ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                             {capacity.active_count}
                                         </span>
-                                        <span className="text-xl font-bold text-slate-300">/ {capacity.max_slots}</span>
+                                        <span className="text-lg font-bold font-mono text-[var(--text-muted)]">/ {capacity.max_slots}</span>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <Users size={32} className={isNearingCap ? 'text-amber-200' : 'text-emerald-200'} />
+                                    <Users size={28} className={isNearingCap ? 'text-amber-500/40' : 'text-emerald-500/40'} />
                                 </div>
                             </div>
                         )}
                         
                         {/* Progress Bar */}
-                        <div className="w-full bg-slate-200 h-2 rounded-full mt-6 overflow-hidden relative z-10">
+                        <div className="w-full bg-[var(--bg-card)] border border-[var(--border-main)] h-2 rounded-full mt-4 overflow-hidden relative z-10">
                             <div 
-                                className={`h-full rounded-full transition-all duration-1000 ${isNearingCap ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                className={`h-full rounded-full transition-all duration-500 ${isNearingCap ? 'bg-amber-500' : 'bg-emerald-600'}`}
                                 style={{ width: `${Math.min(fillPercentage, 100)}%` }}
                             />
                         </div>
                     </div>
 
                     {/* Explainer / Warning */}
-                    <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl flex gap-4">
-                        <AlertCircle className="text-indigo-500 shrink-0" size={24} />
-                        <div>
-                            <h4 className="text-sm font-black text-indigo-900 uppercase tracking-widest mb-1">{t.warning_title}</h4>
-                            <p className="text-xs font-medium text-indigo-700 leading-relaxed mb-3">
+                    <div className="bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 p-4 rounded-xl flex gap-3 text-sky-950 dark:text-sky-100">
+                        <AlertCircle className="text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" size={20} />
+                        <div className="space-y-2">
+                            <h4 className="text-xs font-extrabold uppercase tracking-wider">{t.warning_title}</h4>
+                            <p className="text-xs font-medium leading-relaxed opacity-90">
                                 {t.warning_desc}
                             </p>
-                            <p className="text-xs font-bold text-emerald-700 bg-emerald-100/50 p-2 rounded-lg border border-emerald-200/50">
+                            <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
                                 ✓ {t.warning_safe}
                             </p>
                         </div>
@@ -129,12 +133,13 @@ export default function CapacityModal({ visible, onClose, classCode, lang = 'sv'
 
                     {/* Action Button */}
                     <button 
+                        type="button"
                         onClick={handlePurge}
                         disabled={purging || loading}
-                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all shadow-xl active:scale-95 disabled:opacity-50"
+                        className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-sm disabled:opacity-50"
                     >
-                        {purging ? <RefreshCw className="animate-spin" size={18} /> : <Zap size={18} />}
-                        {purging ? t.btn_purged : t.btn_purge}
+                        {purging ? <RefreshCw className="animate-spin" size={16} /> : <Zap size={16} />}
+                        <span>{purging ? t.btn_purged : t.btn_purge}</span>
                     </button>
                 </div>
             </div>

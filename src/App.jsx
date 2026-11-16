@@ -937,7 +937,7 @@ function App() {
                             ? "Din tillgång till plattformen har löpt ut. Vänligen kontakta support för att förnya din licens och återfå åtkomst till dina klassrum." 
                             : "Your access to the platform has expired. Please contact support to renew your license and regain access to your classrooms."}
                     </p>
-                    <a href="mailto:support@anpassa.se" className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-2 mb-6 shadow-lg">
+                    <a href="mailto:anpassa@proton.me" className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-2 mb-6 shadow-lg">
                         <Mail size={18} /> {lang === 'sv' ? "Kontakta Support" : "Contact Support"}
                     </a>
                     <button onClick={() => { supabase.auth.signOut(); setShowExpired(false); setView('landing'); }} className="text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors">
@@ -1042,7 +1042,7 @@ function App() {
                     streak={streak} 
                     ui={ui} 
                 />            
-                {(view === 'dashboard' || view === 'practice' || view === 'times_table') && (
+                {(view === 'dashboard' || view === 'practice' || view === 'times_table'|| view === 'practice_lab') && (
                 <header className="sticky top-2 z-40 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
                     <div className="max-w-[1400px] mx-auto w-full px-3 sm:px-5 py-0 flex flex-row items-center justify-between relative">
                         <div className="flex-1 flex justify-start">

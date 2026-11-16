@@ -62,31 +62,31 @@ function TopicLevelInspector({
     const isAllSelected = allLevels.length > 0 && selectedLevels.length === allLevels.length;
 
     return (
-        <div className="bg-[var(--bg-surface)] rounded-2xl border-2 border-[var(--border-main)] overflow-hidden shadow-xs transition-colors h-fit">
+        <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-main)] overflow-hidden shadow-2xs transition-colors h-fit">
             {/* Topic Inspector Header */}
             <div className="px-3.5 py-2.5 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-2">
                 <div 
                     className="flex items-center gap-2 cursor-pointer flex-1 min-w-0"
                     onClick={onToggleExpand}
                 >
-                    <button type="button" className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
+                    <button type="button" className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer">
                         {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                     </button>
-                    <h4 className="font-black text-xs uppercase tracking-wide text-[var(--text-main)] truncate">
+                    <h4 className="font-bold text-xs uppercase tracking-wide text-[var(--text-main)] truncate">
                         {getTopicLabel(topicId, lang)}
                     </h4>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[10px] font-bold text-[var(--text-muted)]">
+                    <span className="text-[10px] font-bold font-mono text-[var(--text-muted)]">
                         {selectedLevels.length}/{allLevels.length}
                     </span>
                     <button
                         type="button"
                         onClick={() => onToggleAllLevels(topicId, allLevels)}
-                        className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all border ${
+                        className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border cursor-pointer ${
                             isAllSelected
-                                ? 'bg-amber-500 text-white border-transparent'
+                                ? 'bg-amber-600 text-white border-transparent'
                                 : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-strong)] hover:text-[var(--text-main)]'
                         }`}
                     >
@@ -110,27 +110,27 @@ function TopicLevelInspector({
                                 onClick={() => onToggleLevel(topicId, lvl)}
                                 className={`p-3 flex items-center justify-between gap-3 cursor-pointer transition-colors ${
                                     isSelected 
-                                        ? 'bg-amber-50/70 dark:bg-amber-950/20' 
+                                        ? 'bg-amber-50/70 dark:bg-amber-950/30' 
                                         : 'hover:bg-[var(--bg-surface)]'
                                 }`}
                             >
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shrink-0 transition-all ${
+                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold font-mono text-xs shrink-0 transition-all ${
                                         isSelected 
-                                            ? 'bg-amber-500 text-white shadow-xs scale-105' 
+                                            ? 'bg-amber-600 text-white shadow-2xs' 
                                             : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-strong)]'
                                     }`}>
                                         {lvl}
                                     </div>
 
                                     <div className="flex flex-col min-w-0 flex-1">
-                                        <span className="font-extrabold text-xs text-[var(--text-main)] leading-snug truncate">
+                                        <span className="font-bold text-xs text-[var(--text-main)] leading-snug truncate">
                                             {description || `${lang === 'sv' ? 'Nivå' : 'Level'} ${lvl}`}
                                         </span>
 
                                         {mathExample && (
-                                            <div className="mt-0.5 text-xs text-indigo-600 dark:text-indigo-400 font-serif italic truncate flex items-center gap-1.5 opacity-90">
-                                                <span className="text-[8px] font-sans font-bold uppercase tracking-wider text-[var(--text-muted)] not-italic">
+                                            <div className="mt-0.5 text-xs text-amber-700 dark:text-amber-300 font-serif italic truncate flex items-center gap-1.5 opacity-90">
+                                                <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-[var(--text-muted)] not-italic">
                                                     Ex:
                                                 </span>
                                                 <MathDisplay content={mathExample} />
@@ -140,9 +140,9 @@ function TopicLevelInspector({
                                 </div>
 
                                 <div className="shrink-0">
-                                    <div className={`w-5 h-5 rounded-md flex items-center justify-center border-2 transition-all ${
+                                    <div className={`w-5 h-5 rounded-lg flex items-center justify-center border transition-all ${
                                         isSelected 
-                                            ? 'bg-amber-500 border-amber-500 text-white shadow-xs' 
+                                            ? 'bg-amber-600 border-amber-600 text-white shadow-2xs' 
                                             : 'border-[var(--border-strong)] bg-[var(--bg-card)]'
                                     }`}>
                                         {isSelected && <Check size={12} strokeWidth={3} />}
@@ -205,7 +205,6 @@ export default function CheckpointModal({
         return initialExpanded;
     });
 
-    // 🟢 SYNCHRONOUS WORD PROBLEM COMPATIBILITY GUARD
     const hasWordProblemSupport = useMemo(() => {
         return Object.entries(selection).some(([topicId, conf]) => {
             if (!conf?.enabled || !conf?.levels) return false;
@@ -307,61 +306,65 @@ export default function CheckpointModal({
     }, [curriculumSearch, lang]);
 
     return (
-        <div className="fixed inset-0 z-[500] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 animate-in fade-in select-none">
-            <div className="bg-[var(--bg-card)] border-2 border-[var(--border-main)] rounded-3xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden text-[var(--text-main)]">
+        <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150 select-none font-sans">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden text-[var(--text-main)]">
                 
                 {/* 1. Modal Header */}
                 <div className="px-6 py-4 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-surface)] shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-2xs shrink-0">
                             <Beaker size={20} />
                         </div>
                         <div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 block leading-tight">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block leading-tight">
                                 {lang === 'sv' ? "Checkpunkt / Delprov" : "Checkpoint Test"}
                             </span>
-                            <h3 className="text-base font-black text-[var(--text-main)] truncate">
+                            <h3 className="text-base font-extrabold text-[var(--text-main)] truncate mt-0.5">
                                 {targetPart?.customTitle || getTopicLabel(targetPart?.topicId, lang) || (lang === 'sv' ? "Skapa Delprov" : "Create Checkpoint")}
                             </h3>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-xl hover:bg-[var(--bg-surface-hover)] transition-colors cursor-pointer">
-                        <X size={20} />
+                    <button 
+                        type="button"
+                        onClick={onClose} 
+                        className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] rounded-xl transition-colors cursor-pointer"
+                    >
+                        <X size={18} />
                     </button>
                 </div>
 
                 {/* 2. Modal Body */}
                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6 bg-[var(--bg-card)]">
                     
-                    {/* Centered Primary Config Stack */}
-                    <div className="bg-[var(--bg-surface)] border border-[var(--border-main)] p-5 rounded-2xl space-y-4 shadow-sm">
+                    {/* Primary Config Stack */}
+                    <div className="bg-[var(--bg-surface)] border border-[var(--border-main)] p-5 rounded-2xl space-y-4">
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
                                 {lang === 'sv' ? "Provtitel" : "Checkpoint Title"}
                             </label>
                             <input 
                                 type="text"
                                 value={testTitle}
                                 onChange={(e) => setTestTitle(e.target.value)}
-                                className="w-full bg-[var(--bg-card)] border-2 border-[var(--border-strong)] focus:border-amber-500 rounded-xl px-4 py-2.5 text-sm font-bold text-[var(--text-main)] outline-none transition-all shadow-inner"
+                                className="w-full bg-[var(--bg-card)] border border-[var(--border-strong)] focus:border-amber-600 rounded-xl px-4 py-2.5 text-sm font-bold text-[var(--text-main)] outline-none transition-colors"
                                 placeholder={lang === 'sv' ? "T.ex. Delprov: Ekvationer & Bråk" : "E.g. Checkpoint: Equations"}
                             />
                         </div>
 
-                        {/* Centered Controls */}
+                        {/* Controls Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
                             {/* Mode Toggle */}
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)] block mb-1">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
                                     {lang === 'sv' ? "Läge" : "Mode"}
                                 </label>
                                 <div className="grid grid-cols-2 gap-1 bg-[var(--bg-card)] p-1 rounded-xl border border-[var(--border-strong)]">
                                     <button
                                         type="button"
                                         onClick={() => setTestMode('practice')}
-                                        className={`py-2 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${
+                                        className={`py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                                             testMode === 'practice' 
-                                                ? 'bg-amber-500 text-white shadow-sm' 
+                                                ? 'bg-amber-600 text-white shadow-2xs' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                                         }`}
                                     >
@@ -370,9 +373,9 @@ export default function CheckpointModal({
                                     <button
                                         type="button"
                                         onClick={() => setTestMode('exam')}
-                                        className={`py-2 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${
+                                        className={`py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                                             testMode === 'exam' 
-                                                ? 'bg-rose-500 text-white shadow-sm' 
+                                                ? 'bg-rose-600 text-white shadow-2xs' 
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                                         }`}
                                     >
@@ -383,13 +386,13 @@ export default function CheckpointModal({
 
                             {/* Length */}
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)] block mb-1">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
                                     {lang === 'sv' ? "Omfattning" : "Length"}
                                 </label>
                                 <select
                                     value={questionCount}
                                     onChange={(e) => setQuestionCount(Number(e.target.value))}
-                                    className="w-full bg-[var(--bg-card)] border border-[var(--border-strong)] focus:border-amber-500 rounded-xl px-3 py-2 text-xs font-black text-[var(--text-main)] outline-none cursor-pointer h-[38px]"
+                                    className="w-full bg-[var(--bg-card)] border border-[var(--border-strong)] focus:border-amber-600 rounded-xl px-3 py-2 text-xs font-bold text-[var(--text-main)] outline-none cursor-pointer h-[38px]"
                                 >
                                     <option value={5}>5 {lang === 'sv' ? "frågor" : "questions"}</option>
                                     <option value={10}>10 {lang === 'sv' ? "frågor" : "questions"}</option>
@@ -399,9 +402,9 @@ export default function CheckpointModal({
                                 </select>
                             </div>
 
-                            {/* 🟢 Guarded Word Problems */}
+                            {/* Guarded Word Problems */}
                             <div>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)] block mb-1">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
                                     {lang === 'sv' ? "Textuppgifter" : "Word Problems"}
                                 </label>
                                 <button
@@ -409,11 +412,11 @@ export default function CheckpointModal({
                                     disabled={!hasWordProblemSupport}
                                     onClick={() => setUseWordProblems(!useWordProblems)}
                                     title={!hasWordProblemSupport ? (lang === 'sv' ? "Inga valda områden har textuppgifter" : "No selected topics support word problems") : ""}
-                                    className={`w-full h-[38px] px-3 rounded-xl border transition-all flex items-center justify-between text-xs font-black uppercase ${
+                                    className={`w-full h-[38px] px-3 rounded-xl border transition-all flex items-center justify-between text-xs font-bold ${
                                         !hasWordProblemSupport 
                                             ? 'opacity-40 cursor-not-allowed bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-muted)]'
                                             : useWordProblems 
-                                                ? 'bg-emerald-500 text-white border-emerald-600 shadow-sm cursor-pointer' 
+                                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs cursor-pointer' 
                                                 : 'bg-[var(--bg-card)] border-[var(--border-strong)] text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer'
                                     }`}
                                 >
@@ -429,25 +432,25 @@ export default function CheckpointModal({
                     </div>
 
                     {/* 3. Priority Pre-Selected Levels (In This Part) */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2">
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between border-b border-[var(--border-main)] pb-2">
                             <div className="flex items-center gap-2">
-                                <Layers size={16} className="text-amber-500" />
-                                <span className="text-xs font-black uppercase tracking-wider text-[var(--text-main)]">
+                                <Layers size={15} className="text-amber-600 dark:text-amber-400" />
+                                <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-main)]">
                                     {lang === 'sv' ? "Förvalda områden i denna del" : "Topics in this part"}
                                 </span>
                             </div>
-                            <span className="text-[11px] font-black text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-md border border-amber-200 dark:border-amber-900/60">
+                            <span className="text-[11px] font-bold font-mono text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
                                 {totalSelectedLevels} {lang === 'sv' ? "nivåer valda" : "levels selected"}
                             </span>
                         </div>
 
                         {Object.keys(defaultSelection).length === 0 ? (
-                            <div className="p-6 rounded-2xl border-2 border-dashed border-[var(--border-main)] text-center text-xs text-[var(--text-muted)] italic">
+                            <div className="p-6 rounded-xl border border-dashed border-[var(--border-strong)] text-center text-xs text-[var(--text-muted)] font-medium">
                                 {lang === 'sv' ? "Inga övningsnivåer fanns i denna del ännu. Välj från listan nedan." : "No practice levels in this part yet. Expand the topics below."}
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {Object.keys(defaultSelection).map(tId => (
                                     <TopicLevelInspector
                                         key={tId}
@@ -464,39 +467,37 @@ export default function CheckpointModal({
                         )}
                     </div>
 
-                    {/* 4. Curriculum Broad Expansion Drawer (🟢 2-Column Grid) */}
+                    {/* 4. Curriculum Broad Expansion Drawer */}
                     <div className="pt-2 border-t border-[var(--border-main)]">
                         <button
                             type="button"
                             onClick={() => setShowAllCategories(!showAllCategories)}
-                            className="flex items-center justify-between w-full p-3.5 rounded-xl bg-[var(--bg-surface)] text-xs font-black uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer border border-[var(--border-main)]"
+                            className="flex items-center justify-between w-full p-3 rounded-xl bg-[var(--bg-surface)] text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer border border-[var(--border-main)]"
                         >
                             <span>{lang === 'sv' ? "+ Välj ytterligare ämnen från hela läroplanen" : "+ Add other topics from entire curriculum"}</span>
                             {showAllCategories ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                         </button>
 
                         {showAllCategories && (
-                            <div className="mt-4 space-y-5 max-h-96 overflow-y-auto custom-scrollbar p-4 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-main)] animate-in fade-in">
-                                
+                            <div className="mt-3 space-y-4 max-h-80 overflow-y-auto custom-scrollbar p-4 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-main)] animate-in fade-in duration-150">
                                 <div className="relative">
-                                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                                    <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
                                     <input 
                                         type="text"
                                         value={curriculumSearch}
                                         onChange={(e) => setCurriculumSearch(e.target.value)}
                                         placeholder={lang === 'sv' ? "Sök bland alla moment..." : "Search all topics..."}
-                                        className="w-full pl-10 pr-4 py-2 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-xl text-xs font-bold text-[var(--text-main)] outline-none focus:border-amber-500 shadow-inner"
+                                        className="w-full pl-9 pr-3 py-2 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-xl text-xs font-semibold text-[var(--text-main)] outline-none focus:border-amber-600"
                                     />
                                 </div>
 
                                 {filteredCategories.map(([catKey, category]) => (
-                                    <div key={catKey} className="space-y-3">
-                                        <h5 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 border-b border-[var(--border-subtle)] pb-1">
+                                    <div key={catKey} className="space-y-2.5">
+                                        <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 border-b border-[var(--border-subtle)] pb-1">
                                             {category.label[lang] || catKey}
                                         </h5>
 
-                                        {/* 🟢 2-COLUMN TOPIC INSPECTORS */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                                             {category.topics
                                                 .filter(tObj => !defaultSelection[tObj.id])
                                                 .map(tObj => (
@@ -521,20 +522,20 @@ export default function CheckpointModal({
                 </div>
 
                 {/* 3. Modal Footer */}
-                <div className="px-6 py-4 border-t border-[var(--border-main)] flex justify-end gap-3 bg-[var(--bg-surface)] shrink-0">
+                <div className="px-6 py-3.5 border-t border-[var(--border-main)] flex justify-end gap-2.5 bg-[var(--bg-surface)] shrink-0">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-5 py-2.5 rounded-xl border border-[var(--border-strong)] text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] transition-colors cursor-pointer"
+                        className="px-4 py-2 rounded-xl border border-[var(--border-strong)] text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] transition-colors cursor-pointer"
                     >
                         {lang === 'sv' ? "Avbryt" : "Cancel"}
                     </button>
                     <button
                         type="button"
                         onClick={handleSave}
-                        className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black uppercase tracking-wider shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                        className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all active:scale-[0.98] cursor-pointer flex items-center gap-1.5 shadow-2xs"
                     >
-                        <Check size={16} strokeWidth={3} />
+                        <Check size={15} strokeWidth={3} />
                         <span>{lang === 'sv' ? "Infoga Delprov" : "Insert Checkpoint"}</span>
                     </button>
                 </div>

@@ -21,13 +21,13 @@ export default function StudentActivityView({
     lang = 'sv',
     onBack
 }) {
-    // 🟢 1. Dedicated live state for room data so teacher clicks force instant re-render
+    // 1. Dedicated live state for room data so teacher clicks force instant re-render
     const roomId = engine?.session?.id || initialSession?.id;
     const initialActiveData = engine?.session?.active_question_data || initialSession?.active_question_data || {};
     
     const [liveActiveData, setLiveActiveData] = useState(initialActiveData);
 
-    // 🟢 2. Direct real-time room listener (Bypasses any parent memoization/prop lag)
+    // 2. Direct real-time room listener (Bypasses any parent memoization/prop lag)
     useEffect(() => {
         if (!roomId) return;
 
@@ -78,7 +78,7 @@ export default function StudentActivityView({
     const dimensions = liveActiveData?.board?.dimensions || liveActiveData?.settings?.dimensions || { columns: 4, rows: 4 };
     const activeTile = liveActiveData?.activeTile;
 
-    // 🟢 Correctly extract the question object from either activeQuestion or root payload
+    // Correctly extract the question object from either activeQuestion or root payload
     const activeQuestion = liveActiveData?.activeQuestion || (isFourCorners && liveActiveData?.renderData ? liveActiveData : null);
     
     const points = liveActiveData?.points || 100;
@@ -118,28 +118,25 @@ export default function StudentActivityView({
     const [localCanvas, setLocalCanvas] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // 🟢 Snabbräknaren: Sticky opt-in state across rounds
+    // Snabbräknaren: Sticky opt-in state across rounds
     const [autoPracticeEnabled, setAutoPracticeEnabled] = useState(false);
 
-    // 🟢 Extract active topics from room packet/categories for Snabbräknaren
+    // Extract active topics from room packet/categories for Snabbräknaren
     const sessionTopics = useMemo(() => {
-        // 1. Four Corners / Playlist packets
         if (Array.isArray(liveActiveData?.packet)) {
             return [...new Set(liveActiveData.packet.map(q => q.topicId).filter(Boolean))];
         }
-        // 2. Category Clash / Board packets
         if (liveActiveData?.board?.categories || liveActiveData?.settings?.categories) {
             const cats = liveActiveData?.board?.categories || liveActiveData?.settings?.categories || [];
             return [...new Set(cats.map(c => c.topic).filter(Boolean))];
         }
-        // 3. Fallback to current question's topic
         if (activeQuestion?.topicId) {
             return [activeQuestion.topicId];
         }
         return ['basic_arithmetic'];
     }, [liveActiveData, activeQuestion]);
 
-    // 🟢 3. Reset student answer input when teacher rolls new numbers or switches tile
+    // Reset student answer input when teacher rolls new numbers or switches tile
     useEffect(() => {
         const targetKey = isFourCorners ? `round_${activeQuestion?.roundIndex || 0}` : activeTile;
         
@@ -163,7 +160,6 @@ export default function StudentActivityView({
     const currentAnswer = localAnswers[activeTile] || '';
     const isCompleted = Boolean(localCompleted[activeTile]);
 
-    // 🟢 Target key for the currently active prompt
     const activeTargetKey = isFourCorners ? `round_${activeQuestion?.roundIndex || 0}` : activeTile;
     const hasAnsweredCurrent = Boolean(localCompleted[activeTargetKey]);
 
@@ -188,7 +184,7 @@ export default function StudentActivityView({
     );
     const showVisual = activeQuestion?.showVisual !== false;
 
-    // 🟢 HANDLER 1: For Four Corners & DynamicResponseInput
+    // HANDLER 1: For Four Corners & DynamicResponseInput
     const handleSendAnswer = async (answerVal) => {
         if (isSubmitting || !roomId) return;
         setIsSubmitting(true);
@@ -208,7 +204,6 @@ export default function StudentActivityView({
             const { error } = await supabase.from('responses').insert([payload]);
             if (error && error.code !== '23505') throw error;
 
-            // 🟢 Record that current round is completed locally to trigger the drawer
             const targetKey = `round_${activeQuestion?.roundIndex || 0}`;
             setLocalCompleted(prev => ({ ...prev, [targetKey]: true }));
             
@@ -223,7 +218,7 @@ export default function StudentActivityView({
         }
     };
 
-    // 🟢 HANDLER 2: For Category Clash Matrix Tiles
+    // HANDLER 2: For Category Clash Matrix Tiles
     const handleTileSubmit = async (overrideAnswer = null) => {
         const finalAnswer = overrideAnswer !== null ? overrideAnswer : currentAnswer;
         if (!finalAnswer.trim() || isSubmitting || isCompleted || !activeTile) return;
@@ -278,54 +273,53 @@ export default function StudentActivityView({
         }
     };
 
-    // Check if waiting state should be displayed
     const isWaitingForQuestion = isFourCorners 
         ? (!activeQuestion || !activeQuestion.renderData) 
         : (!activeTile || !activeQuestion);
 
     return (
-        <div className="min-h-screen bg-[var(--bg-canvas,#020617)] text-[var(--text-main,#f8fafc)] flex flex-col font-sans select-none">
+        <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans select-none">
             
             {/* Top Bar */}
-            <header className="bg-[var(--bg-card,#0f172a)] border-b border-[var(--border-main,#1e293b)] px-4 py-2.5 sticky top-0 z-50 flex items-center justify-between gap-4 shrink-0">
+            <header className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-4 py-2.5 sticky top-0 z-50 flex items-center justify-between gap-4 shrink-0 shadow-2xs">
                 <div className="flex items-center gap-3">
                     {teams.length > 1 ? (
-                        <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-800 border border-slate-700 shadow-xs">
-                            <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: myTeam?.color }} />
+                        <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-strong)] shadow-2xs">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: myTeam?.color }} />
                             <select
                                 value={selectedTeamId}
                                 onChange={(e) => setSelectedTeamId(e.target.value)}
-                                className="bg-transparent text-xs font-black uppercase text-slate-200 outline-none cursor-pointer"
+                                className="bg-transparent text-xs font-bold uppercase text-[var(--text-main)] outline-none cursor-pointer"
                             >
                                 {teams.map(t => (
-                                    <option key={t.id} value={t.id} className="bg-slate-900 text-white">
+                                    <option key={t.id} value={t.id} className="bg-[var(--bg-card)] text-[var(--text-main)]">
                                         {t.name}
                                     </option>
                                 ))}
                             </select>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-black uppercase tracking-wider">
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider">
                             <span>{isFourCorners ? '4 Hörn' : (myTeam?.name || (lang === 'sv' ? 'Individuellt' : 'Solo'))}</span>
                         </div>
                     )}
 
-                    <span className="text-xs font-mono font-bold text-slate-400">
+                    <span className="text-xs font-mono font-bold text-[var(--text-muted)]">
                         {studentAlias}
                     </span>
 
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-mono font-black shadow-xs">
-                        <Trophy size={12} className="text-amber-400 shrink-0" />
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-mono font-black shadow-2xs">
+                        <Trophy size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
                         <span>{myPersonalScore}p</span>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <PreferencesToggle />
                     <button
                         type="button"
                         onClick={onBack}
-                        className="p-2 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl transition-colors cursor-pointer"
+                        className="p-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 rounded-xl transition-colors cursor-pointer"
                         title={lang === 'sv' ? "Lämna" : "Leave"}
                     >
                         <LogOut size={16} />
@@ -339,50 +333,51 @@ export default function StudentActivityView({
                 {/* STATE 1: WAITING FOR TEACHER */}
                 {isWaitingForQuestion ? (
                     <div className="w-full max-w-xl flex flex-col items-center gap-4">
-                        <div className="w-full bg-slate-900/90 border border-slate-800 rounded-[2.5rem] p-8 sm:p-12 text-center shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-300">
-                            <div className="w-20 h-20 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl flex items-center justify-center text-amber-400 mb-6 shadow-inner">
-                                <Trophy size={40} />
+                        <div className="w-full bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-8 sm:p-10 text-center shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-150">
+                            <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-center text-amber-600 dark:text-amber-400 mb-5 shadow-inner">
+                                <Trophy size={32} />
                             </div>
                             
-                            <h2 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tight text-white mb-2">
+                            <h2 className="text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-[var(--text-main)] mb-1.5">
                                 {lang === 'sv' ? "Väntar på nästa uppgift..." : "Waiting for next question..."}
                             </h2>
                             
-                            <p className="text-sm font-medium text-slate-400 mb-6 max-w-md">
+                            <p className="text-xs font-medium text-[var(--text-muted)] mb-6 max-w-md leading-relaxed">
                                 {lang === 'sv' 
                                     ? "Läraren förbereder nästa runda på storskärmen. Håll dig redo!" 
                                     : "The teacher is setting up the next round on the board. Get ready!"}
                             </p>
 
-                            {/* 🟢 Opt-In Trigger Button */}
+                            {/* Opt-In Trigger Button */}
                             {!autoPracticeEnabled ? (
                                 <button
                                     type="button"
                                     onClick={() => setAutoPracticeEnabled(true)}
-                                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-indigo-950/40 active:scale-95 transition-all cursor-pointer"
+                                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-2xs active:scale-[0.98] transition-all cursor-pointer"
                                 >
-                                    <Zap size={16} className="fill-current" />
+                                    <Zap size={15} className="fill-current" />
                                     <span>{lang === 'sv' ? "Starta Snabbräknare (Medan du väntar)" : "Start Quick Practice (While waiting)"}</span>
                                 </button>
                             ) : null}
-                            <div className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono font-black text-sm">
-                                <Trophy size={16} className="text-amber-400" />
+
+                            <div className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-mono font-bold text-xs">
+                                <Trophy size={14} className="text-amber-600 dark:text-amber-400" />
                                 <span>{lang === 'sv' ? "Dina poäng:" : "Your score:"} {myPersonalScore}p</span>
                             </div>
 
                             {teams.length > 0 && !isFourCorners && (
-                                <div className="w-full bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 space-y-2.5 mt-6">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-1">
+                                <div className="w-full bg-[var(--bg-surface)] rounded-xl p-4 border border-[var(--border-main)] space-y-2 mt-5">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
                                         {lang === 'sv' ? "Aktuell Ställning" : "Current Standings"}
                                     </span>
                                     <div className="grid grid-cols-2 gap-2">
                                         {teams.map(t => (
-                                            <div key={t.id} className="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-slate-800">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: t.color }} />
-                                                    <span className="text-xs font-bold text-slate-300">{t.name}</span>
+                                            <div key={t.id} className="flex items-center justify-between p-2.5 bg-[var(--bg-card)] rounded-xl border border-[var(--border-strong)]">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
+                                                    <span className="text-xs font-bold text-[var(--text-main)] truncate">{t.name}</span>
                                                 </div>
-                                                <span className="text-xs font-black text-amber-300 font-mono">{t.score}p</span>
+                                                <span className="text-xs font-bold font-mono text-amber-700 dark:text-amber-400 shrink-0">{t.score}p</span>
                                             </div>
                                         ))}
                                     </div>
@@ -390,7 +385,7 @@ export default function StudentActivityView({
                             )}
                         </div>
 
-                        {/* 🟢 Render Drawer directly below the waiting card when opted in */}
+                        {/* Render Drawer directly below the waiting card when opted in */}
                         {autoPracticeEnabled && (
                             <StudentQuickPracticeDrawer
                                 isOpen={isWaitingForQuestion}
@@ -402,33 +397,33 @@ export default function StudentActivityView({
                     </div>
                 ) : isFourCorners ? (
 
-                    /* 🟢 STATE 2A: FOUR CORNERS MATCHED SPLIT-STAGE VIEW */
-                    <div className="w-full max-w-7xl h-full flex flex-col min-h-0 animate-in fade-in duration-300">
+                    /* STATE 2A: FOUR CORNERS MATCHED SPLIT-STAGE VIEW */
+                    <div className="w-full max-w-7xl h-full flex flex-col min-h-0 animate-in fade-in duration-150">
                         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 min-h-0 items-stretch">
                             
-                            {/* LEFT STAGE (7 Cols / ~58%): Prompt, Diagram Visual, Protected LaTeX */}
-                            <div className="lg:col-span-7 bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-main)] rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-xl border overflow-y-auto custom-scrollbar">
+                            {/* LEFT STAGE: Prompt, Diagram Visual, Protected LaTeX */}
+                            <div className="lg:col-span-7 bg-[var(--bg-card)] border-[var(--border-strong)] text-[var(--text-main)] rounded-2xl p-6 sm:p-7 flex flex-col justify-between shadow-xl border overflow-y-auto custom-scrollbar">
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <span className="badge-brand font-black text-xs px-3 py-1">
+                                        <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-xs px-3 py-1 rounded-xl">
                                             {lang === 'sv' ? `Runda ${activeQuestion?.roundIndex || 1}` : `Round ${activeQuestion?.roundIndex || 1}`}
                                         </span>
 
                                         {isWordProblem && (
-                                            <span className="badge-brand theme-amber text-[10px]">
+                                            <span className="bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-xl">
                                                 {lang === 'sv' ? "Textuppgift" : "Word Problem"}
                                             </span>
                                         )}
                                     </div>
 
                                     {effectiveShowText && rd.description && (
-                                        <div className="text-xl sm:text-2xl font-bold leading-relaxed">
+                                        <div className="text-lg sm:text-xl font-bold text-[var(--text-main)] leading-relaxed">
                                             <MathDisplay content={rd.description} />
                                         </div>
                                     )}
 
                                     {showVisual && hasVisualElement && (
-                                        <div className="whiteboard-protect w-full flex justify-center py-3 border border-slate-200 rounded-2xl overflow-hidden shadow-xs my-2">
+                                        <div className="whiteboard-protect w-full flex justify-center py-3 border border-[var(--border-main)] rounded-xl overflow-hidden shadow-2xs my-2 bg-[var(--bg-surface)]">
                                             <VisualRenderer 
                                                 data={rd} 
                                                 isWordProblem={isWordProblem} 
@@ -437,14 +432,14 @@ export default function StudentActivityView({
                                     )}
 
                                     {effectiveShowLatex && rd.latex && (
-                                        <div className="bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--brand-solid)] text-3xl sm:text-4xl font-serif font-black p-6 rounded-2xl border text-center my-3 shadow-inner">
+                                        <div className="bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] text-2xl sm:text-3xl font-serif font-bold p-5 rounded-xl border text-center my-3 shadow-inner">
                                             <MathDisplay content={`$$${rd.latex}$$`} />
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            {/* RIGHT STAGE (5 Cols / ~42%): Either 4 Corners Input OR Snabbräknaren Drawer */}
+                            {/* RIGHT STAGE: Either 4 Corners Input OR Snabbräknaren Drawer */}
                             <div className="lg:col-span-5 h-full flex flex-col min-h-[350px]">
                                 {!hasAnsweredCurrent ? (
                                     <DynamicResponseInput
@@ -456,15 +451,15 @@ export default function StudentActivityView({
                                         lang={lang}
                                     />
                                 ) : (
-                                    <div className="w-full h-full flex flex-col gap-3 animate-in fade-in duration-300">
-                                        <div className="p-4 rounded-2xl border bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-main)] flex items-center justify-between shadow-sm">
+                                    <div className="w-full h-full flex flex-col gap-3 animate-in fade-in duration-150">
+                                        <div className="p-4 rounded-xl border bg-[var(--bg-card)] border-[var(--border-strong)] text-[var(--text-main)] flex items-center justify-between shadow-2xs">
                                             <div className="flex items-center gap-2.5">
-                                                <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+                                                <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                                                 <div>
                                                     <p className="text-xs font-bold leading-tight">
                                                         {lang === 'sv' ? "Ditt svar är sparat!" : "Your answer is saved!"}
                                                     </p>
-                                                    <p className="text-[10px]" style={{ color: 'var(--text-muted, #64748b)' }}>
+                                                    <p className="text-[10px] text-[var(--text-muted)]">
                                                         {lang === 'sv' ? "Väntar på att alla ska svara..." : "Waiting for classmates..."}
                                                     </p>
                                                 </div>
@@ -474,7 +469,7 @@ export default function StudentActivityView({
                                                 <button
                                                     type="button"
                                                     onClick={() => setAutoPracticeEnabled(true)}
-                                                    className="btn-brand px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs cursor-pointer"
+                                                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-2xs cursor-pointer"
                                                 >
                                                     <Zap size={12} className="fill-current" />
                                                     <span>{lang === 'sv' ? "Räkna snabbt" : "Practice"}</span>
@@ -502,16 +497,16 @@ export default function StudentActivityView({
                 ) : (
 
                     /* STATE 2B: CATEGORY CLASH MATRIX TILE VIEW */
-                    <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-5 items-start animate-in fade-in duration-300">
+                    <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-5 items-start animate-in fade-in duration-150">
                         
                         {/* Question Card (Left 7 Cols) */}
-                        <div className="lg:col-span-7 bg-[var(--bg-card)] text-[var(--text-main)] rounded-[2rem] p-6 sm:p-8 shadow-xl border border-[var(--border-main)] flex flex-col space-y-6">
-                            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                                <span className="text-xs font-black uppercase tracking-wider px-3 py-1 bg-amber-500/10 text-amber-600 rounded-lg">
+                        <div className="lg:col-span-7 bg-[var(--bg-card)] text-[var(--text-main)] rounded-2xl p-6 sm:p-7 shadow-xl border border-[var(--border-strong)] flex flex-col space-y-5">
+                            <div className="flex items-center justify-between pb-3.5 border-b border-[var(--border-main)]">
+                                <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-xl">
                                     {points} {lang === 'sv' ? "Poäng" : "Points"}
                                 </span>
                                 {isCompleted && (
-                                    <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-xs">
+                                    <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold text-xs">
                                         <CheckCircle2 size={16} />
                                         <span>{lang === 'sv' ? "Svar inskickat" : "Answer submitted"}</span>
                                     </div>
@@ -520,14 +515,14 @@ export default function StudentActivityView({
                             
                             {/* Question Text Prompt */}
                             {effectiveShowText && rd.description && (
-                                <div className="text-xl sm:text-2xl font-bold text-[var(--text-main)] leading-relaxed">
+                                <div className="text-lg sm:text-xl font-bold text-[var(--text-main)] leading-relaxed">
                                     <MathDisplay content={rd.description} />
                                 </div>
                             )}
 
                             {/* Diagram / Visual Geometry */}
                             {showVisual && hasVisualElement && (
-                                <div className="whiteboard-protect w-full flex justify-center py-2 border border-slate-100 rounded-2xl overflow-hidden drop-shadow-xs">
+                                <div className="whiteboard-protect w-full flex justify-center py-2 border border-[var(--border-main)] rounded-xl overflow-hidden shadow-2xs bg-[var(--bg-surface)]">
                                     <VisualRenderer 
                                         data={rd} 
                                         isWordProblem={isWordProblem} 
@@ -537,14 +532,14 @@ export default function StudentActivityView({
 
                             {/* LaTeX Display */}
                             {(effectiveShowLatex || (!rd.description && !hasVisualElement)) && rd.latex && (
-                                <div className="w-full bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-2xl p-6 text-center text-2xl sm:text-3xl text-[var(--brand-solid)] font-serif">
+                                <div className="w-full bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-xl p-5 text-center text-2xl sm:text-3xl text-[var(--text-main)] font-serif font-bold shadow-inner">
                                     <MathDisplay content={`$$${rd.latex}$$`} />
                                 </div>
                             )}
 
                             {/* Multiple Choice Alternatives */}
                             {isMultipleChoice && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                                     {options.map((opt, i) => {
                                         const choiceLabel = typeof opt === 'object' ? opt.label : opt;
                                         const choiceVal = String(typeof opt === 'object' ? opt.value : opt);
@@ -558,14 +553,14 @@ export default function StudentActivityView({
                                                 onClick={() => {
                                                     setLocalAnswers(prev => ({ ...prev, [activeTile]: choiceVal }));
                                                 }}
-                                                className={`p-4 rounded-2xl border-2 text-left font-bold text-base transition-all flex items-center justify-between cursor-pointer active:scale-95 ${
+                                                className={`p-3.5 rounded-xl border text-left font-bold text-xs transition-all flex items-center justify-between cursor-pointer active:scale-[0.98] ${
                                                     isSelected 
-                                                        ? 'border-indigo-500 bg-indigo-500/15 text-[var(--text-main)] ring-2 ring-indigo-500/40' 
-                                                        : 'border-[var(--border-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)]'
+                                                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-[var(--text-main)] shadow-2xs' 
+                                                        : 'border-[var(--border-strong)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)]'
                                                 } ${isCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
                                                 <MathDisplay content={String(choiceLabel)} />
-                                                {isSelected && <Check size={18} className="text-indigo-600 shrink-0 ml-2" />}
+                                                {isSelected && <Check size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0 ml-2" />}
                                             </button>
                                         );
                                     })}
@@ -574,25 +569,19 @@ export default function StudentActivityView({
                         </div>
 
                         {/* Solution & Input Pane (Right 5 Cols) */}
-                        <div className="lg:col-span-5 bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-main)] rounded-[2rem] p-6 shadow-xl border flex flex-col space-y-4">
+                        <div className="lg:col-span-5 bg-[var(--bg-card)] border-[var(--border-strong)] text-[var(--text-main)] rounded-2xl p-6 shadow-xl border flex flex-col space-y-4">
                             {!hasAnsweredCurrent ? (
                                 <>
                                     {/* Work Area Tabs */}
                                     {allowCanvas && allowScratchpad && (
-                                        <div 
-                                            className="flex p-1 rounded-xl border mb-2"
-                                            style={{
-                                                backgroundColor: 'var(--bg-surface, #f8fafc)',
-                                                borderColor: 'var(--border-main, #e2e8f0)'
-                                            }}
-                                        >
+                                        <div className="flex p-1 rounded-xl border bg-[var(--bg-surface)] border-[var(--border-strong)] mb-1">
                                             <button
                                                 type="button"
                                                 onClick={() => setActiveWorkTab('scratchpad')}
                                                 className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                                                     activeWorkTab === 'scratchpad' 
-                                                        ? 'bg-[var(--bg-card,#ffffff)] shadow-xs text-[var(--text-main,#0f172a)]' 
-                                                        : 'text-[var(--text-muted,#64748b)]'
+                                                        ? 'bg-[var(--bg-card)] shadow-2xs text-[var(--text-main)] font-extrabold' 
+                                                        : 'text-[var(--text-muted)]'
                                                 }`}
                                             >
                                                 <Calculator size={13} />
@@ -603,8 +592,8 @@ export default function StudentActivityView({
                                                 onClick={() => setActiveWorkTab('canvas')}
                                                 className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                                                     activeWorkTab === 'canvas' 
-                                                        ? 'bg-[var(--bg-card,#ffffff)] shadow-xs text-[var(--text-main,#0f172a)]' 
-                                                        : 'text-[var(--text-muted,#64748b)]'
+                                                        ? 'bg-[var(--bg-card)] shadow-2xs text-[var(--text-main)] font-extrabold' 
+                                                        : 'text-[var(--text-muted)]'
                                                 }`}
                                             >
                                                 <PenTool size={13} />
@@ -615,7 +604,7 @@ export default function StudentActivityView({
 
                                     {/* Workspaces */}
                                     {allowCanvas && (activeWorkTab === 'canvas' || !allowScratchpad) && (
-                                        <div className="w-full h-48 relative border-2 border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-[#f9fbf7]">
+                                        <div className="w-full h-44 relative border border-[var(--border-strong)] rounded-xl overflow-hidden bg-[var(--bg-card)] shadow-inner">
                                             <InteractiveCanvas
                                                 lang={lang}
                                                 elements={localCanvas[activeTile] || []}
@@ -640,8 +629,8 @@ export default function StudentActivityView({
 
                                     {/* Free-Response Answer Input */}
                                     {!isMultipleChoice && (
-                                        <div className="space-y-1.5 pt-2">
-                                            <label className="text-xs font-bold" style={{ color: 'var(--text-muted, #64748b)' }}>
+                                        <div className="space-y-1.5 pt-1">
+                                            <label className="text-xs font-bold text-[var(--text-muted)]">
                                                 {lang === 'sv' ? "Ditt svar:" : "Your answer:"}
                                             </label>
                                             <SmartMathInput
@@ -660,18 +649,18 @@ export default function StudentActivityView({
                                         type="button"
                                         onClick={() => handleTileSubmit()}
                                         disabled={isSubmitting || !currentAnswer.trim() || isCompleted}
-                                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-30 active:scale-95 transition-all cursor-pointer"
+                                        className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-2xs disabled:opacity-30 active:scale-[0.98] transition-all cursor-pointer"
                                     >
                                         {isSubmitting ? (
-                                            <Loader2 className="animate-spin" size={18} />
+                                            <Loader2 className="animate-spin" size={16} />
                                         ) : isCompleted ? (
                                             <>
-                                                <CheckCircle2 size={18} />
+                                                <CheckCircle2 size={16} />
                                                 <span>{lang === 'sv' ? "Svar Inlämnat" : "Submitted"}</span>
                                             </>
                                         ) : (
                                             <>
-                                                <Send size={16} />
+                                                <Send size={15} />
                                                 <span>
                                                     {lang === 'sv' 
                                                         ? `Skicka in för ${myTeam?.name || 'laget'}` 
@@ -683,21 +672,15 @@ export default function StudentActivityView({
                                 </>
                             ) : (
                                 /* Answer Submitted: Confirmation Banner + Snabbräknaren Drawer */
-                                <div className="w-full flex flex-col gap-3 animate-in fade-in duration-300">
-                                    <div 
-                                        className="p-4 rounded-2xl border flex items-center justify-between shadow-xs"
-                                        style={{
-                                            backgroundColor: 'var(--bg-surface, #f8fafc)',
-                                            borderColor: 'var(--border-main, #e2e8f0)'
-                                        }}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+                                <div className="w-full flex flex-col gap-3 animate-in fade-in duration-150">
+                                    <div className="p-4 rounded-xl border bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] flex items-center justify-between shadow-2xs">
+                                        <div className="flex items-center gap-2.5">
+                                            <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                                             <div>
-                                                <p className="text-xs font-bold text-inherit">
+                                                <p className="text-xs font-bold leading-tight">
                                                     {lang === 'sv' ? "Svar inskickat för brickan!" : "Answer submitted for this tile!"}
                                                 </p>
-                                                <p className="text-[10px]" style={{ color: 'var(--text-muted, #64748b)' }}>
+                                                <p className="text-[10px] text-[var(--text-muted)]">
                                                     {lang === 'sv' ? "Väntar på att läraren stänger brickan..." : "Waiting for teacher to close tile..."}
                                                 </p>
                                             </div>
@@ -707,25 +690,28 @@ export default function StudentActivityView({
                                             <button
                                                 type="button"
                                                 onClick={() => setAutoPracticeEnabled(true)}
-                                                className="btn-brand px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs cursor-pointer"
+                                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-2xs cursor-pointer"
                                             >
-                                                <Zap size={12} className="fill-current" />
+                                                <Zap size={13} className="fill-current" />
                                                 <span>{lang === 'sv' ? "Räkna snabbt" : "Practice"}</span>
                                             </button>
                                         )}
                                     </div>
 
                                     {autoPracticeEnabled && (
-                                        <StudentQuickPracticeDrawer
-                                            isOpen={hasAnsweredCurrent}
-                                            sessionTopics={sessionTopics}
-                                            lang={lang}
-                                            onClose={() => setAutoPracticeEnabled(false)}
-                                        />
+                                        <div className="flex-1 min-h-0">
+                                            <StudentQuickPracticeDrawer
+                                                isOpen={hasAnsweredCurrent}
+                                                sessionTopics={sessionTopics}
+                                                lang={lang}
+                                                onClose={() => setAutoPracticeEnabled(false)}
+                                            />
+                                        </div>
                                     )}
                                 </div>
                             )}
                         </div>
+                        
                     </div>
                 )}
             </main>

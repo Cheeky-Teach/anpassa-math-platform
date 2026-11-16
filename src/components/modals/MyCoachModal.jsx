@@ -62,16 +62,14 @@ const renderCoachVisual = (rd) => {
     if (rd.compareArea || rd.geometry?.type === 'compare_area') return <CompareShapesArea data={rd.compareArea || rd.geometry} />;
     if (rd.tree || rd.geometry?.type === 'pathway') return <ProbabilityTree data={rd.tree || rd.geometry} />;
     
-    // 🟢 CHANGED: Increased default width & height from 160x140 to 240x200
-    if (rd.geometry) return <GeometryVisual data={rd.geometry} width={240} height={200} />;
-    return null;
+    return <GeometryVisual data={rd.geometry} width={240} height={200} />;
 };
 
 export default function MyCoachModal({
     lang = 'sv',
     onClose,
-    inlineMode = false, // Adapts layouts for center container presentation takeovers
-    question = null,    // Receives question data containing geometry render tracks
+    inlineMode = false, 
+    question = null,    
     steps,
     currentStep,
     totalSteps,
@@ -87,21 +85,18 @@ export default function MyCoachModal({
     const boardEndRef = useRef(null);
     const textEndRef = useRef(null);
 
-    // Auto-scroll the traditional whiteboard so new lines are kept inside the view fold
     useEffect(() => {
         if (boardEndRef.current) {
             boardEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
     }, [historyStack.length, activeLine]);
 
-    // Auto-scroll the text column log when transitions to a new frame occur
     useEffect(() => {
         if (textEndRef.current) {
             textEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
     }, [currentStep]);
 
-    // Local Translations Matrix
     const textDict = {
         sv: {
             title: "Min Personliga Coach",
@@ -131,31 +126,31 @@ export default function MyCoachModal({
     const rd = question?.resolvedData?.renderData || question?.renderData || null;
 
     return (
-        <div className={inlineMode ? "w-full h-full p-0 select-none" : "fixed inset-0 z-[400] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none animate-in fade-in duration-200"}>
+        <div className={inlineMode ? "w-full h-full p-0 select-none font-sans" : "fixed inset-0 z-[400] bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 select-none animate-in fade-in duration-150 font-sans"}>
             {/* Main Shell Panel Container */}
-            <div className={`bg-[var(--bg-card)] w-full border border-[var(--border-main)] flex flex-col overflow-hidden duration-300 ${
-                inlineMode ? 'h-full rounded-[2rem] shadow-inner' : 'w-[98vw] max-w-none h-[92vh] rounded-[2rem] shadow-2xl animate-in zoom-in-95'
+            <div className={`bg-[var(--bg-card)] w-full border border-[var(--border-strong)] flex flex-col overflow-hidden text-[var(--text-main)] duration-200 ${
+                inlineMode ? 'h-full rounded-2xl shadow-inner' : 'w-[98vw] max-w-none h-[92vh] rounded-2xl shadow-2xl animate-in zoom-in-95'
             }`}>
                 
-                {/* Upper Status Navbar Strip (Kept strictly dark for high contrast) */}
-                <header className="bg-slate-900 px-6 py-2.5 flex justify-between items-center text-white border-b border-slate-800 shrink-0">
+                {/* Upper Status Navbar Strip */}
+                <header className="bg-[var(--bg-surface)] px-6 py-3 flex justify-between items-center border-b border-[var(--border-main)] shrink-0">
                     <div className="flex items-center gap-3">
-                        <h2 className="text-[13px] font-black uppercase tracking-wider text-amber-400 leading-none">{ui.title}</h2>
-                        <span className="hidden sm:inline-block text-slate-600 font-bold">•</span>
-                        <p className="hidden sm:block text-[11px] font-medium text-slate-400 tracking-wide leading-none">{ui.subtitle}</p>
+                        <h2 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 leading-none">{ui.title}</h2>
+                        <span className="hidden sm:inline-block text-[var(--text-muted)] font-bold">•</span>
+                        <p className="hidden sm:block text-xs font-semibold text-[var(--text-muted)] tracking-wide leading-none">{ui.subtitle}</p>
                     </div>
                     
                     {/* Progress Checklist Dot Nodes */}
                     <div className="hidden md:flex items-center gap-2 max-w-md overflow-x-auto px-4">
                         {steps.map((_, idx) => (
                             <React.Fragment key={`dot-${idx}`}>
-                                {idx > 0 && <div className={`w-6 h-0.5 shrink-0 ${idx <= currentStep ? 'bg-emerald-500' : 'bg-slate-700'}`} />}
+                                {idx > 0 && <div className={`w-6 h-0.5 shrink-0 ${idx <= currentStep ? 'bg-emerald-600' : 'bg-[var(--border-strong)]'}`} />}
                                 {idx < currentStep ? (
-                                    <CheckCircle2 size={15} className="text-emerald-500 shrink-0 animate-in fade-in duration-300" />
+                                    <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0 animate-in fade-in duration-200" />
                                 ) : idx === currentStep ? (
-                                    <div className="w-3.5 h-3.5 rounded-full bg-amber-400 border-4 border-amber-500/30 scale-110 shrink-0 transition-transform duration-300" />
+                                    <div className="w-3.5 h-3.5 rounded-full bg-amber-500 border-4 border-amber-500/30 scale-110 shrink-0 transition-transform duration-200" />
                                 ) : (
-                                    <Circle size={13} className="text-slate-600 shrink-0" />
+                                    <Circle size={13} className="text-[var(--text-muted)] shrink-0" />
                                 )}
                             </React.Fragment>
                         ))}
@@ -163,8 +158,9 @@ export default function MyCoachModal({
 
                     {!inlineMode && (
                         <button 
+                            type="button"
                             onClick={onClose}
-                            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors cursor-pointer text-slate-400 hover:text-white ui-ignore"
+                            className="p-1.5 hover:bg-[var(--bg-card)] rounded-xl transition-colors cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-main)] ui-ignore border border-transparent hover:border-[var(--border-main)]"
                         >
                             <X size={18} />
                         </button>
@@ -175,7 +171,7 @@ export default function MyCoachModal({
                 <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
                     
                     {/* LEFT PANEL: Traditional Whiteboard styled like square-grid graph paper */}
-                    <div className="flex-1 bg-[var(--bg-surface)] relative overflow-y-auto custom-scrollbar p-6 flex flex-col justify-start border-b md:border-b-0 md:border-r border-[var(--border-main)]">
+                    <div className="flex-1 bg-[var(--bg-canvas)] relative overflow-y-auto custom-scrollbar p-6 flex flex-col justify-start border-b md:border-b-0 md:border-r border-[var(--border-main)]">
                         {/* Blueprint Math Graph Paper Effect Layer */}
                         <div 
                             className="absolute inset-0 opacity-[0.035] pointer-events-none z-0 dark:opacity-[0.08]" 
@@ -192,7 +188,7 @@ export default function MyCoachModal({
                             {historyStack.map((line, idx) => (
                                 <div 
                                     key={`hist-${idx}`} 
-                                    className="opacity-40 blur-[0.4px] transition-all duration-500 scale-95 origin-center text-[var(--text-main)] text-xl border-b border-[var(--border-main)] pb-2"
+                                    className="opacity-40 blur-[0.3px] transition-all duration-300 scale-95 origin-center text-[var(--text-main)] text-xl border-b border-[var(--border-main)] pb-2"
                                 >
                                     <CoachMathDisplay content={`$$${line.latex}$$`} />
                                 </div>
@@ -200,18 +196,18 @@ export default function MyCoachModal({
 
                             {/* Active, High-Contrast Equation Row */}
                             {activeLine && (
-                                <div className="bg-[var(--bg-card)] border-2 border-[var(--border-strong)] p-4 rounded-2xl text-center font-serif text-[var(--text-main)] shadow-md animate-in slide-in-from-top-4 fade-in duration-300 text-2xl font-black">
+                                <div className="bg-[var(--bg-card)] border-2 border-[var(--border-strong)] p-4 rounded-2xl text-center font-serif text-[var(--text-main)] shadow-md animate-in slide-in-from-top-4 fade-in duration-200 text-2xl font-bold">
                                     <CoachMathDisplay content={`$$${activeLine}$$`} />
                                 </div>
                             )}
 
                             {/* STICKY GEOMETRIC DIAGRAM AT THE BASE HEAD OF THE WHITEBOARD CHALKBOARD */}
                             {rd && (rd.graph || rd.geometry || rd.volume || rd.pattern || rd.probabilityTree || rd.probabilityMarbles || rd.probabilitySpinner || rd.scale || rd.similarity || rd.compareShapesArea || rd.frequencyTable || rd.percentGrid || rd.angles) && (
-                                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] shadow-sm p-4 pt-6 rounded-2xl flex justify-center items-center max-w-sm mx-auto shrink-0 mb-2 relative overflow-visible animate-in zoom-in-95 duration-200">
+                                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] shadow-2xs p-4 pt-6 rounded-2xl flex justify-center items-center max-w-sm mx-auto shrink-0 mb-2 relative overflow-visible animate-in zoom-in-95 duration-150">
                                     <div className="w-full flex items-center justify-center overflow-visible">
                                         {renderCoachVisual(rd)}
                                     </div>
-                                    <div className="absolute top-1.5 left-3 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                                    <div className="absolute top-2 left-3 text-[9px] font-bold font-mono uppercase tracking-wider text-[var(--text-muted)]">
                                         {lang === 'sv' ? "Figur" : "Diagram"}
                                     </div>
                                 </div>
@@ -234,11 +230,11 @@ export default function MyCoachModal({
                                     return (
                                         <div 
                                             key={`text-hist-${idx}`}
-                                            className="bg-[var(--bg-card)] p-3.5 rounded-2xl border border-[var(--border-main)] shadow-xs w-full max-w-sm opacity-35 blur-[0.2px] scale-95 origin-center transition-all duration-500 shrink-0"
+                                            className="bg-[var(--bg-card)] p-3.5 rounded-xl border border-[var(--border-main)] shadow-2xs w-full max-w-sm opacity-40 blur-[0.2px] scale-95 origin-center transition-all duration-300 shrink-0"
                                         >
                                             <CoachMathDisplay 
                                                 content={step.text} 
-                                                className="text-[var(--text-muted)] font-bold text-xs text-center leading-relaxed" 
+                                                className="text-[var(--text-muted)] font-semibold text-xs text-center leading-relaxed" 
                                             />
                                         </div>
                                     );
@@ -247,11 +243,11 @@ export default function MyCoachModal({
                                 return (
                                     <div 
                                         key={`text-active-${idx}`}
-                                        className="bg-[var(--bg-card)] p-5 rounded-3xl border-2 border-[var(--brand-solid)] border-l-8 shadow-lg w-full max-w-sm animate-in zoom-in-95 duration-200 min-h-[100px] flex flex-col justify-center shrink-0"
+                                        className="bg-[var(--bg-card)] p-5 rounded-2xl border-2 border-emerald-600 dark:border-emerald-500 border-l-6 shadow-md w-full max-w-sm animate-in zoom-in-95 duration-150 min-h-[90px] flex flex-col justify-center shrink-0"
                                     >
                                         <CoachMathDisplay 
                                             content={step.text} 
-                                            className="text-[var(--text-main)] font-black text-sm text-center leading-relaxed" 
+                                            className="text-[var(--text-main)] font-bold text-sm text-center leading-relaxed" 
                                         />
                                     </div>
                                 );
@@ -261,15 +257,15 @@ export default function MyCoachModal({
 
                             {/* Note-Taking Pacing Indicator Box */}
                             {isCooldownActive && activeLine && (
-                                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[var(--brand-text)] animate-pulse bg-[var(--brand-bg)] px-4 py-1.5 rounded-full border border-[var(--brand-border)] shrink-0">
+                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 animate-pulse bg-emerald-50 dark:bg-emerald-950/50 px-4 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 shrink-0">
                                     <span className="inline-block animate-bounce font-serif font-normal text-base">✏️</span>
-                                    {ui.copyCue}
+                                    <span>{ui.copyCue}</span>
                                 </div>
                             )}
 
                             {/* Success Celebration Alert Callout */}
                             {currentStep === totalSteps - 1 && (
-                                <div className="text-xs font-black uppercase tracking-widest text-[var(--theme-emerald-text)] bg-[var(--theme-emerald-bg)] px-4 py-2 rounded-xl border border-[var(--theme-emerald-border)] animate-in fade-in duration-500 shrink-0">
+                                <div className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 px-4 py-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 animate-in fade-in duration-300 shrink-0">
                                     {ui.done}
                                 </div>
                             )}
@@ -279,37 +275,41 @@ export default function MyCoachModal({
                         <footer className="p-4 bg-[var(--bg-card)] border-t border-[var(--border-main)] flex items-center justify-between gap-4 shrink-0">
                             {/* Autoplay Sequencer Loop Toggle */}
                             <button
+                                type="button"
                                 onClick={toggleAutoplay}
-                                className={`p-2.5 rounded-xl border transition-all active:scale-95 cursor-pointer ui-ignore flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest min-w-[110px]
-                                    ${isAutoplayActive 
-                                        ? 'bg-amber-500 border-amber-600 text-white' 
-                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'}`}
+                                className={`px-3 py-2.5 rounded-xl border transition-all active:scale-[0.98] cursor-pointer ui-ignore flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider min-w-[100px] ${
+                                    isAutoplayActive 
+                                        ? 'bg-amber-600 border-amber-700 text-white shadow-2xs' 
+                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-emerald-600'
+                                }`}
                             >
                                 {isAutoplayActive ? (
-                                    <><Pause size={13} fill="currentColor" /> {ui.pause}</>
+                                    <><Pause size={13} fill="currentColor" /> <span>{ui.pause}</span></>
                                 ) : (
-                                    <><Play size={13} fill="currentColor" /> {ui.autoplay}</>
+                                    <><Play size={13} fill="currentColor" /> <span>{ui.autoplay}</span></>
                                 )}
                             </button>
 
                             {/* Manual Progression Tracking Buttons */}
                             <div className="flex items-center bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1 shadow-inner">
                                 <button
+                                    type="button"
                                     onClick={prevStep}
                                     disabled={currentStep === 0}
-                                    className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] disabled:opacity-20 cursor-pointer transition-all disabled:hover:bg-transparent"
+                                    className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] disabled:opacity-20 cursor-pointer transition-colors disabled:hover:bg-transparent"
                                 >
                                     <ChevronLeft size={16} strokeWidth={2.5} />
                                 </button>
                                 
-                                <span className="text-[11px] font-black tracking-widest text-[var(--text-muted)] px-3 min-w-[45px] text-center">
+                                <span className="text-xs font-bold font-mono tracking-wider text-[var(--text-muted)] px-3 min-w-[45px] text-center">
                                     {currentStep + 1} / {totalSteps}
                                 </span>
 
                                 <button
+                                    type="button"
                                     onClick={nextStep}
                                     disabled={currentStep === totalSteps - 1 || isCooldownActive}
-                                    className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] disabled:opacity-20 cursor-pointer transition-all disabled:hover:bg-transparent"
+                                    className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] disabled:opacity-20 cursor-pointer transition-colors disabled:hover:bg-transparent"
                                 >
                                     <ChevronRight size={16} strokeWidth={2.5} />
                                 </button>

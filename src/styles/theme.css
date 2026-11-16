@@ -79,23 +79,23 @@ body, .font-sans {
 }
 
 :root {
-  /* ☀️ 1. ARCHIVAL PAPER LIGHT THEME (DEFAULT — Warm Stone & Crisp White) */
-  --bg-canvas: #fafaf9;        /* stone-50: warm archival paper */
-  --bg-card: #ffffff;          /* pure sheet white */
-  --bg-surface: #f5f5f4;       /* stone-100: recessed control surface */
+  /* ☀️ 1. ARCHIVAL PAPER LIGHT THEME (Warm Stone — Zero Blue-Grey) */
+  --bg-canvas: #fafaf9;        /* stone-50: warm archival paper background */
+  --bg-card: #ffffff;          /* pure sheet white cards */
+  --bg-surface: #f5f5f4;       /* stone-100: recessed control wells */
   --bg-surface-hover: #e7e5e4; /* stone-200 */
 
-  --text-main: #1c1917;        /* stone-900: high-contrast ink */
+  --text-main: #1c1917;        /* stone-900: high-contrast dark ink */
   --text-muted: #57534e;       /* stone-600: legible secondary ink */
   --text-inverse: #ffffff;
 
   --border-subtle: #f5f5f4;
-  --border-main: #e7e5e4;      /* stone-200: crisp hairline */
+  --border-main: #e7e5e4;      /* stone-200: crisp structural hairline */
   --border-strong: #d6d3d1;    /* stone-300 */
 
-  /* Standardized Geometry */
-  --radius-card: 1rem;         /* 16px: architectural card corner */
-  --radius-btn: 0.75rem;       /* 12px: crisp button corner */
+  /* Standardized Proportions */
+  --radius-card: 1rem;         /* 16px */
+  --radius-btn: 0.75rem;       /* 12px */
   
   --pad-sm: 0.5rem;
   --pad-md: 1rem;
@@ -534,4 +534,120 @@ html {
 .animate-search-glow:focus,
 .animate-search-glow:hover {
   animation: none;
+}
+
+/* =========================================================================
+   ACCESSIBLE CALLOUT & NOTICE CARDS (Prevents Pastel Contrast Clashes)
+   ========================================================================= */
+.callout {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-main);
+  border-left-width: 4px;
+  border-radius: var(--radius-card);
+  padding: 1rem 1.25rem;
+  color: var(--text-main);
+}
+
+.callout p {
+  color: var(--text-muted);
+}
+
+.callout strong,
+.callout h4 {
+  color: var(--text-main);
+}
+
+/* Strict Accent Border Variants (Zero Pastel Washes) */
+.callout-danger {
+  border-left-color: #e11d48; /* rose-600 */
+}
+
+.callout-warning {
+  border-left-color: #d97706; /* amber-600 */
+}
+
+.callout-success {
+  border-left-color: #059669; /* emerald-600 */
+}
+
+.callout-info {
+  border-left-color: #0284c7; /* sky-600 */
+}
+
+/* ========================================= */
+/* PRACTICE VIEW TWO-COLUMN LAYOUT           */
+/* ========================================= */
+.layout-twocol {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.layout-main {
+  min-width: 0; /* Prevents flex/grid blowouts from wide math elements */
+}
+
+.layout-sidebar {
+  min-width: 0;
+}
+
+/* Responsive fallback for tablets and mobile */
+@media (max-width: 1024px) {
+  .layout-twocol {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================================
+   1. PRACTICE VIEW LAYOUT (Sidebar on Right)
+   ========================================================================= */
+.practice-twocol {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.practice-main {
+  min-width: 0; /* Prevents flex/grid blowouts from wide math elements */
+}
+
+.practice-sidebar {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .practice-twocol {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================================
+   2. TEST LAB VIEW LAYOUT (Sticky Command Center Sidebar on Left)
+   ========================================================================= */
+.lab-twocol {
+  display: grid;
+  grid-template-columns: 360px 1fr; /* 360px Sidebar on Left, Main on Right */
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.lab-sidebar {
+  min-width: 0;
+  position: sticky;
+  top: 1.5rem; /* Locks the command center in view while scrolling topics */
+}
+
+.lab-main {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .lab-twocol {
+    grid-template-columns: 1fr;
+  }
+  .lab-sidebar {
+    position: static;
+  }
 }

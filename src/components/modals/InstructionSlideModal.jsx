@@ -14,7 +14,6 @@ export default function InstructionSlideModal({
 }) {
     const [currentSlideIndex, setCurrentSlideIndex] = useState(initialSlideIndex);
     
-    // 🟢 1. Local state for BOTH slides and the packet (the true source of math data)
     const [localSlides, setLocalSlides] = useState([]);
     const [localPacket, setLocalPacket] = useState([]);
     const [isRegenerating, setIsRegenerating] = useState(false);
@@ -37,14 +36,11 @@ export default function InstructionSlideModal({
         if (currentSlideIndex < localSlides.length - 1) setCurrentSlideIndex(prev => prev + 1);
     };
 
-    // 🟢 2. The exact same regeneration logic used in TeacherLiveView (but local only)
     const handleRegenerate = async (passedId, passedTopic, passedVariation) => {
         if (isRegenerating) return;
         setIsRegenerating(true);
         
         try {
-            // Determine which items to update. 
-            // If the button passed specific info, use it. Otherwise, find all active items on the slide.
             let itemsToUpdate = [];
 
             if (passedId && passedTopic && passedVariation) {
@@ -62,7 +58,6 @@ export default function InstructionSlideModal({
 
             if (itemsToUpdate.length === 0) return;
 
-            // Fetch new data concurrently just like TeacherLiveView
             const updatedItems = await Promise.all(itemsToUpdate.map(async ({ item, topicId, variationKey }) => {
                 const isWordProblem = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
                 const res = await fetch(`/api/question?topic=${topicId}&variation=${variationKey}&lang=${lang}&wordProblem=${isWordProblem}`);
@@ -73,11 +68,10 @@ export default function InstructionSlideModal({
                 return {
                     ...item,
                     resolvedData: data,
-                    regenVersion: Date.now() // Force re-render
+                    regenVersion: Date.now()
                 };
             }));
 
-            // 🟢 Update the local packet (SlideViewerCore will instantly react to this)
             setLocalPacket(prev => {
                 const next = [...prev];
                 itemsToUpdate.forEach((obj, i) => {
@@ -94,45 +88,43 @@ export default function InstructionSlideModal({
     };
 
     return (
-        <div className="fixed inset-0 z-[300] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200 select-none">
-            <div className="bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden relative">
+        <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150 select-none font-sans">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden relative text-[var(--text-main)]">
                 
                 {/* 1. Header Bar */}
-                <div className="px-6 py-3.5 bg-slate-900/95 border-b border-slate-800 flex items-center justify-between shrink-0">
+                <div className="px-6 py-3.5 bg-[var(--bg-surface)] border-b border-[var(--border-main)] flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md">
-                            <BookOpen size={16} />
+                        <div className="w-9 h-9 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 shadow-2xs">
+                            <BookOpen size={17} />
                         </div>
                         <div className="min-w-0">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 block leading-tight">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-sky-700 dark:text-sky-400 block leading-tight">
                                 {lang === 'sv' ? "Instruktionsgenomgång" : "Instruction Walkthrough"}
                             </span>
-                            <h3 className="text-sm font-black text-white truncate leading-tight">
+                            <h3 className="text-sm font-extrabold text-[var(--text-main)] truncate leading-tight mt-0.5">
                                 {sheetTitle || (lang === 'sv' ? "Genomgång" : "Presentation")}
                             </h3>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                        {/* Slide Counter Indicator */}
                         {localSlides.length > 1 && (
-                            <div className="text-[11px] font-black text-slate-400 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
+                            <div className="text-xs font-bold font-mono text-[var(--text-muted)] bg-[var(--bg-card)] px-3 py-1 rounded-xl border border-[var(--border-main)]">
                                 {currentSlideIndex + 1} / {localSlides.length}
                             </div>
                         )}
                         <button
                             type="button"
                             onClick={onClose}
-                            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] rounded-xl transition-colors cursor-pointer"
                         >
-                            <X size={20} />
+                            <X size={18} />
                         </button>
                     </div>
                 </div>
 
                 {/* 2. Main 16:9 Presentation Viewport */}
-                <div className="flex-1 bg-transparent p-4 sm:p-6 flex items-center justify-center relative overflow-hidden min-h-0">                    
-                    
+                <div className="flex-1 bg-[var(--bg-canvas)] p-4 sm:p-6 flex items-center justify-center relative overflow-hidden min-h-0">                    
                     {/* Navigation Arrows */}
                     {localSlides.length > 1 && (
                         <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-30">
@@ -140,17 +132,17 @@ export default function InstructionSlideModal({
                                 type="button"
                                 onClick={handlePrev}
                                 disabled={currentSlideIndex === 0}
-                                className="w-11 h-11 rounded-xl bg-slate-900/90 text-white border border-slate-700 hover:bg-indigo-600 disabled:opacity-0 disabled:pointer-events-none pointer-events-auto flex items-center justify-center transition-all shadow-lg cursor-pointer"
+                                className="w-10 h-10 rounded-xl bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-strong)] hover:bg-emerald-600 hover:text-white disabled:opacity-0 disabled:pointer-events-none pointer-events-auto flex items-center justify-center transition-all shadow-md cursor-pointer"
                             >
-                                <ChevronLeft size={24} />
+                                <ChevronLeft size={20} />
                             </button>
                             <button
                                 type="button"
                                 onClick={handleNext}
                                 disabled={isLastSlide}
-                                className="w-11 h-11 rounded-xl bg-slate-900/90 text-white border border-slate-700 hover:bg-indigo-600 disabled:opacity-0 disabled:pointer-events-none pointer-events-auto flex items-center justify-center transition-all shadow-lg cursor-pointer"
+                                className="w-10 h-10 rounded-xl bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-strong)] hover:bg-emerald-600 hover:text-white disabled:opacity-0 disabled:pointer-events-none pointer-events-auto flex items-center justify-center transition-all shadow-md cursor-pointer"
                             >
-                                <ChevronRight size={24} />
+                                <ChevronRight size={20} />
                             </button>
                         </div>
                     )}
@@ -159,7 +151,7 @@ export default function InstructionSlideModal({
                     <div className="w-full h-full max-w-[1400px] max-h-[787px] flex items-center justify-center">
                         <SlideViewerCore
                             slide={currentSlide}
-                            livePacket={localPacket} // 🟢 Pass local packet here!
+                            livePacket={localPacket}
                             lang={lang}
                             bgType="blank"
                             globalZoom={1.2}
@@ -170,7 +162,7 @@ export default function InstructionSlideModal({
                                 currentFocusedQuestion: null,
                                 coachProps: {},
                                 onSpotlight: () => {},
-                                onRegenerate: handleRegenerate, // 🟢 Inject real function
+                                onRegenerate: handleRegenerate,
                                 setIsSaving: () => {}
                             }}
                             interactiveCanvasProps={{
@@ -187,24 +179,24 @@ export default function InstructionSlideModal({
 
                 {/* Loading indicator overlay during regen */}
                 {isRegenerating && (
-                    <div className="absolute inset-0 bg-slate-950/20 z-[350] flex flex-col items-center justify-center pointer-events-none">
-                        <div className="bg-slate-900 text-white px-4 py-2 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2">
-                            <RefreshCw size={16} className="animate-spin text-indigo-400" />
-                            <span className="text-xs font-black tracking-widest uppercase">{lang === 'sv' ? "Hämtar..." : "Loading..."}</span>
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-xs z-[350] flex flex-col items-center justify-center pointer-events-none">
+                        <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] text-[var(--text-main)] px-4 py-2 rounded-xl shadow-lg flex items-center gap-2">
+                            <RefreshCw size={15} className="animate-spin text-emerald-600 dark:text-emerald-400" />
+                            <span className="text-xs font-bold uppercase tracking-wider">{lang === 'sv' ? "Hämtar..." : "Loading..."}</span>
                         </div>
                     </div>
                 )}
 
                 {/* 3. Bottom Action Bar */}
-                <div className="px-6 py-3.5 bg-slate-900/95 border-t border-slate-800 flex items-center justify-between shrink-0">
+                <div className="px-6 py-3.5 bg-[var(--bg-surface)] border-t border-[var(--border-main)] flex items-center justify-between shrink-0">
                     <div>
                         {localSlides.length > 1 && !isLastSlide && (
                             <button
                                 type="button"
                                 onClick={handleNext}
-                                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+                                className="px-4 py-2 bg-[var(--bg-card)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-[var(--text-main)] text-xs font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
                             >
-                                {lang === 'sv' ? "Nästa slide ➡" : "Next Slide ➡"}
+                                {lang === 'sv' ? "Nästa slide →" : "Next Slide →"}
                             </button>
                         )}
                     </div>
@@ -212,10 +204,10 @@ export default function InstructionSlideModal({
                     <button
                         type="button"
                         onClick={onCompleteAndAdvance}
-                        className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-emerald-900/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                        className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
                     >
-                        <Check size={16} strokeWidth={3} />
-                        <span>{lang === 'sv' ? "Klar! Gå till övning ➡" : "Done! Go to practice ➡"}</span>
+                        <Check size={15} strokeWidth={3} />
+                        <span>{lang === 'sv' ? "Klar! Gå till övning →" : "Done! Go to practice →"}</span>
                     </button>
                 </div>
             </div>

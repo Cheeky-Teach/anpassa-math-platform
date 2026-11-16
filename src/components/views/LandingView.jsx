@@ -1,14 +1,13 @@
-// LandingView.jsx
+// src/components/views/LandingView.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-    Zap, FileText, Grid3X3, Users, Globe, CheckCircle2,
-    Sparkles, Layers, ShieldCheck, Target, GraduationCap, 
-    Monitor, Signal, Check, XCircle, RefreshCcw, Calculator, Shuffle, Loader2,
-    ArrowRight, BookOpen, Clock, BarChart, PenTool, Printer
+    Users, Globe, CheckCircle2,
+    Layers, ShieldCheck, Target, GraduationCap, 
+    Monitor, Signal, Check, XCircle, Calculator, Shuffle, Loader2,
+    ArrowRight, BookOpen, PenTool, Printer
 } from 'lucide-react';
 
 import VisualRenderer from '../visuals/VisualRenderer';
-import InstructionSlideModal from '../modals/InstructionSlideModal';
 import InstructionSlideCard from '../shared/InstructionSlideCard';
 
 // Interactive Whiteboard Imports
@@ -43,7 +42,7 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed text-inherit ${className}`} />;
 };
 
-// --- HARDCODED DEMO PACKET FOR LIVE INTERACTIVE PREVIEW ---
+// --- LIVE INTERACTIVE DEMO PACKET ---
 const INITIAL_DEMO_QUESTION = {
     id: 'demo_geom_1',
     topicId: 'volume',
@@ -72,22 +71,22 @@ const INITIAL_DEMO_QUESTION = {
 
 const DO_NOW_SETS = [
     [
-        { eq: `\\frac{3}{4} + \\frac{1}{2}`, icon: <Calculator size={20} className="text-slate-300"/> },
-        { eq: `x^2 = 16`, icon: <CheckCircle2 size={20} className="text-emerald-300"/> },
-        { eq: `V = \\pi \\cdot 2^2 \\cdot 10`, icon: <Layers size={20} className="text-amber-300"/> },
-        { eq: `10^3 \\cdot 0,1`, icon: <Target size={20} className="text-pink-300"/> }
+        { eq: `\\frac{3}{4} + \\frac{1}{2}`, label: "Bråk" },
+        { eq: `x^2 = 16`, label: "Algebra" },
+        { eq: `V = \\pi \\cdot 2^2 \\cdot 10`, label: "Geometri" },
+        { eq: `10^3 \\cdot 0,1`, label: "Potenser" }
     ],
     [
-        { eq: `\\frac{5}{8} - \\frac{1}{4}`, icon: <Calculator size={20} className="text-slate-300"/> },
-        { eq: `2x + 4 = 20`, icon: <CheckCircle2 size={20} className="text-emerald-300"/> },
-        { eq: `V = \\pi \\cdot 5^2 \\cdot 8`, icon: <Layers size={20} className="text-amber-300"/> },
-        { eq: `\\frac{10^4}{100}`, icon: <Target size={20} className="text-pink-300"/> }
+        { eq: `\\frac{5}{8} - \\frac{1}{4}`, label: "Bråk" },
+        { eq: `2x + 4 = 20`, label: "Algebra" },
+        { eq: `V = \\pi \\cdot 5^2 \\cdot 8`, label: "Geometri" },
+        { eq: `\\frac{10^4}{100}`, label: "Potenser" }
     ],
     [
-        { eq: `\\frac{2}{3} \\cdot \\frac{3}{5}`, icon: <Calculator size={20} className="text-slate-300"/> },
-        { eq: `\\sqrt{x} = 9`, icon: <CheckCircle2 size={20} className="text-emerald-300"/> },
-        { eq: `A = \\frac{4 \\cdot 7}{2}`, icon: <Layers size={20} className="text-amber-300"/> },
-        { eq: `10^{-2} \\cdot 1000`, icon: <Target size={20} className="text-pink-300"/> }
+        { eq: `\\frac{2}{3} \\cdot \\frac{3}{5}`, label: "Bråk" },
+        { eq: `\\sqrt{x} = 9`, label: "Algebra" },
+        { eq: `A = \\frac{4 \\cdot 7}{2}`, label: "Geometri" },
+        { eq: `10^{-2} \\cdot 1000`, label: "Potenser" }
     ]
 ];
 
@@ -96,26 +95,29 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
     const [liveCode, setLiveCode] = useState('');
     const [classCode, setClassCode] = useState('');
 
-    const [roadmapStep, setRoadmapStep] = useState(0);
-    const [testLabToggle, setTestLabToggle] = useState(false);
     const [gridVersion, setGridVersion] = useState(0);
+    const [activeStageTab, setActiveStageTab] = useState('walkthrough');
+    const [testLabToggle, setTestLabToggle] = useState(false);
+
+    useEffect(() => {
+        const interval = setInterval(() => setTestLabToggle(prev => !prev), 3200);
+        return () => clearInterval(interval);
+    }, []);
 
     const [demoQuestion, setDemoQuestion] = useState(INITIAL_DEMO_QUESTION);
     const [demoElements, setDemoElements] = useState([]);
     const [demoActiveDrawer, setDemoActiveDrawer] = useState(null);
 
     const [ghostStudents, setGhostStudents] = useState([
-        { id: 1, name: 'Anna K.', progress: 15, status: 'solving' },
-        { id: 2, name: 'Leo M.', progress: 45, status: 'correct' },
-        { id: 3, name: 'Sara J.', progress: 30, status: 'error' }
+        { id: 1, name: 'Anna K.', progress: 35, status: 'solving' },
+        { id: 2, name: 'Leo M.', progress: 75, status: 'correct' },
+        { id: 3, name: 'Sara J.', progress: 50, status: 'error' }
     ]);
 
     const liveInputRef = useRef(null);
 
-    // 🟢 GUARANTEE VIEWPORT IS AT TOP ON MOUNT
     useEffect(() => {
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-        // Overwrite any lower component focus after initial paint
         const timer = setTimeout(() => {
             window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
             if (liveInputRef.current) {
@@ -125,22 +127,11 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
         return () => clearTimeout(timer);
     }, []);
 
-    // Animations
-    useEffect(() => {
-        const interval = setInterval(() => setRoadmapStep(prev => (prev + 1) % 4), 2000);
-        return () => clearInterval(interval);
-    }, []);
-
-    useEffect(() => {
-        const interval = setInterval(() => setTestLabToggle(prev => !prev), 3000);
-        return () => clearInterval(interval);
-    }, []);
-
     useEffect(() => {
         const interval = setInterval(() => {
             setGhostStudents(prev => prev.map(s => {
-                if (s.progress >= 100) return { ...s, progress: 100, status: 'done' };
-                const jump = Math.floor(Math.random() * 15) + 5;
+                if (s.progress >= 100) return { ...s, progress: 20, status: 'solving' };
+                const jump = Math.floor(Math.random() * 14) + 6;
                 const isError = Math.random() > 0.85;
                 return {
                     ...s,
@@ -148,11 +139,10 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                     status: isError ? 'error' : (s.progress + jump >= 100 ? 'done' : 'correct')
                 };
             }));
-        }, 2500);
+        }, 2800);
         return () => clearInterval(interval);
     }, []);
 
-    // 🟢 Fixed math calculation syntax:
     const handleDemoRegenerate = async () => {
         const r = Math.floor(Math.random() * 6) + 3;
         const h = Math.floor(Math.random() * 10) + 5;
@@ -182,17 +172,17 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
         let newEl = null;
 
         if (type === 'calculator') {
-            newEl = { id, type: 'calculator', x: 100, y: 50, width: 280, height: 480, expression: "", result: "", ans: "", calcMode: "LTR", stroke: '#06b6d4', rotation: 0, opacity: 1 };
+            newEl = { id, type: 'calculator', x: 100, y: 50, width: 280, height: 480, expression: "", result: "", ans: "", calcMode: "LTR", stroke: '#059669', rotation: 0, opacity: 1 };
         } else if (type === 'algebra_tile') {
             const { kind, sign } = payload;
             newEl = AlgebraTileTool.create(200, 150, kind, sign);
         } else if (['frac_rect', 'frac_circle', 'spinner'].includes(type)) {
-            newEl = FractionShapesTool.createDefault(id, '#6366f1', type);
+            newEl = FractionShapesTool.createDefault(id, '#059669', type);
             if (newEl) { newEl.x = 200; newEl.y = 150; }
         } else if (type === 'coord') {
-            newEl = CoordinatePlaneTool.createDefault(id, '#6366f1');
+            newEl = CoordinatePlaneTool.createDefault(id, '#0284c7');
         } else if (['rect', 'circle', 'triangle'].includes(type)) {
-            newEl = { id, type, x: 200, y: 150, width: 200, height: 200, stroke: '#6366f1', strokeWidth: 3, fill: 'rgba(99, 102, 241, 0.1)', rotation: 0, opacity: 1, ...(type === 'triangle' ? { triangleType: 'right' } : {}) };
+            newEl = { id, type, x: 200, y: 150, width: 200, height: 200, stroke: '#0284c7', strokeWidth: 3, fill: 'rgba(2, 132, 199, 0.08)', rotation: 0, opacity: 1, ...(type === 'triangle' ? { triangleType: 'right' } : {}) };
         }
 
         if (newEl) setDemoElements(prev => [...prev, newEl]);
@@ -200,122 +190,119 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
 
     const t = {
         sv: {
-            hero_badge: "Noll förberedelse. Maximal effekt.",
-            hero_title: "Rätt stöd. Direkt.",
-            hero_subtitle: "Skräddarsy lektioner, generera oändliga uppgifter och följ elevernas utveckling i realtid. Byggt av lärare, för lärare.",
+            nav_meta: "Matematikstudio",
+            hero_title: "Rätt stöd i klassrummet.",
+            hero_title_accent: "Direkt.",
+            hero_subtitle: "Generera unika uppgifter, håll interaktiva genomgångar på tavlan och följ elevernas lösningar i realtid. Utvecklat för svensk matematikundervisning.",
             path_live_h: "Live-lektion",
-            path_live_p: "Anslut till rum",
+            path_live_p: "Ange klasskod från lärarens skärm",
             path_practice_h: "Egen träning",
-            path_practice_p: "Öva med kod",
-            btn_live: "Gå med",
-            btn_practice: "Börja öva",
-            btn_teacher: "Lärare & Skolor",
-            
-            curriculum_title: "Din pedagogik. Obegränsat material.",
-            curriculum_subtitle: "Vår motor.",
-            curriculum_desc: "Bygg egna moduler, prov och arbetsblad. Välj område, svårighetsgrad och låt systemet generera unika uppgifter. Du får aldrig slut på material.",
-            roadmap_step_1: "Genomgång: Ekvationer",
-            roadmap_step_2: "Övning: Nivå 1-3",
-            roadmap_step_3: "Delprov: Självrättande",
+            path_practice_p: "Öva med elevkod eller provlänk",
+            btn_live: "Anslut",
+            btn_practice: "Starta",
+            btn_teacher: "Lärarinloggning",
 
-            studio_title: "Digitalt eller papper.",
-            studio_subtitle: "På dina villkor.",
-            studio_desc: "Skapa arbetsblad och Do Now-grids på sekunder. Dela digitalt med dina elever eller skriv ut på papper. Behöver du en ny version? Klicka på blanda för att generera helt nya uppgifter.",
-            btn_shuffle: "Blanda Uppgifter",
-            
-            presentation_title: "Presentationer som anpassas.",
-            presentation_subtitle: "I realtid.",
-            presentation_desc: "Ett exempel på tavlan som inte klickade? Klicka dig igenom lösningen steg-för-steg och klicka på slumpa för att få en ny variant med nya siffror, utan att vända ryggen till klassen. Prova själv här intill!",
-            
-            whiteboard_title: "Interaktiv tavla.",
-            whiteboard_subtitle: "Byggd för matte.",
-            whiteboard_desc: "Släpp externa ritprogram. Vår inbyggda digitala tavla låter dig rita, dra in bråkcirklar, algebrabrickor och grafer direkt över presentationen. Prova att öppna verktygslådan!",
-            btn_tools: "Öppna Verktygslådan",
+            pillars_heading: "Tre arbetsytor i ett verktyg",
+            p1_title: "Modulbaserad planering",
+            p1_desc: "Bygg egna arbetsområden som kombinerar genomgångar, adaptiv mängdträning och självrättande delprov i en tydlig elevvy.",
+            p1_step_1: "1. Genomgång: Ekvationer",
+            p1_step_2: "2. Övning: Nivå 1–3",
+            p1_step_3: "3. Delprov: Auto-rättning",
 
-            live_title: "Fånga aha-ögonblicken",
-            live_subtitle: "i realtid.",
-            live_desc: "Teacher Live View ger dig fullständig överblick. Se exakt när en elev fastnar, vilken uppgift som ställer till det, och vem som är redo för en utmaning – allt medan lektionen pågår.",
+            p2_title: "Arbetsblad & Do Now-grids",
+            p2_desc: "Skapa lektionsstarter och utskriftsklara A4-blad på sekunder. Blanda fram nya talvärden med ett klick när klassen behöver mer träning.",
+            btn_shuffle: "Slumpa nya tal",
 
-            testlab_title: "Oändligt med övningsprov.",
-            testlab_subtitle: "Noll letande.",
-            testlab_desc: "Sluta leta efter instuderingsuppgifter inför provveckan. Välj svårighetsgrad och område, så genererar systemet unika övningsprov till varje elev så att de kan mängdträna helt på egen hand.",
-            
-            footer_title: "Skapa din första anpassade planering på under 3 minuter.",
-            feature_1: "Drag-and-drop planeringsverktyg",
-            feature_2: "1000+ dynamiska uppgiftstyper",
-            feature_3: "Live-telemetri i klassrummet",
-            feature_4: "Designat för LGR22",
-            footer_motto: "Anpassa Math Platform — Designad för mastery."
+            p3_title: "Unika prov i Test Lab",
+            p3_desc: "Välj centralt innehåll och svårighetsnivåer. Varje elev får en egen uppsättning uppgifter med omedelbar återkoppling eller provläge.",
+
+            stage_eyebrow: "Prova direkt i webbläsaren",
+            stage_title: "Tavlan som räknar med dig",
+            stage_desc: "Växla mellan steg-för-steg-genomgångar med slumpade talvärden och en digital mattetavla med bråkcirklar, algebrabrickor och koordinatsystem.",
+            tab_walkthrough: "Steg-för-steg-genomgång",
+            tab_whiteboard: "Interaktiv mattetavla",
+            btn_tools: "Öppna bråkverktyg",
+
+            live_title: "Fånga missuppfattningar medan lektionen pågår",
+            live_desc: "I Live-vyn ser du varje elevs uträkningar och framsteg i realtid. Lyft anonyma elevlösningar till storskärmen och jämför lösningsmetoder.",
+            live_status: "Aktiv lektion • Klass 9B",
+
+            footer_title: "Redo att använda Anpassa i ditt klassrum?",
+            footer_sub: "Logga in som lärare för att skapa planeringar, arbetsblad och live-rum.",
+            footer_motto: "Anpassa Math Platform — LGR22 • Digitalt & Utskrift"
         },
         en: {
-            hero_badge: "Zero Prep. Maximum Impact.",
-            hero_title: "Right support. Instantly.",
-            hero_subtitle: "Tailor lessons, generate infinite tasks, and track student progress in real-time. Built by teachers, for teachers.",
+            nav_meta: "Classroom Mathematics Studio",
+            hero_title: "Right classroom support.",
+            hero_title_accent: "Instantly.",
+            hero_subtitle: "Generate unique math tasks, lead interactive board walkthroughs, and follow student work in real time. Built for teachers.",
             path_live_h: "Live Session",
-            path_live_p: "Join active room",
+            path_live_p: "Enter the room code shown on the board",
             path_practice_h: "Self Practice",
-            path_practice_p: "Practice with code",
+            path_practice_p: "Practice using a student or test code",
             btn_live: "Join",
             btn_practice: "Start",
-            btn_teacher: "Teachers & Schools",
-            
-            curriculum_title: "Your pedagogy. Unlimited material.",
-            curriculum_subtitle: "Our engine.",
-            curriculum_desc: "Build your own modules, tests, and worksheets. Select the topic, set the difficulty, and let the system generate unique tasks. You will never run out of material.",
-            roadmap_step_1: "Instruction: Equations",
-            roadmap_step_2: "Practice: Levels 1-3",
-            roadmap_step_3: "Checkpoint: Auto-graded",
+            btn_teacher: "Teacher Login",
 
-            studio_title: "Digital or paper.",
-            studio_subtitle: "On your terms.",
-            studio_desc: "Create worksheets and Do Now grids in seconds. Share digitally with your students or print them out. Need a new version? Hit shuffle to generate entirely new tasks instantly.",
-            btn_shuffle: "Shuffle Board",
+            pillars_heading: "Three workspaces in one studio",
+            p1_title: "Modular Curriculum Builder",
+            p1_desc: "Sequence direct instruction, adaptive practice sets, and auto-graded checkpoints into a single structured student roadmap.",
+            p1_step_1: "1. Instruction: Equations",
+            p1_step_2: "2. Practice: Levels 1–3",
+            p1_step_3: "3. Checkpoint: Auto-graded",
 
-            presentation_title: "Presentations that adapt.",
-            presentation_subtitle: "In real-time.",
-            presentation_desc: "Example on the board didn't click? Step through the solution dynamically, and hit regenerate to instantly get a brand new variation without turning your back to the class. Try it yourself!",
-            
-            whiteboard_title: "Interactive whiteboard.",
-            whiteboard_subtitle: "Built for math.",
-            whiteboard_desc: "Ditch external drawing tools. Our built-in digital canvas lets you draw, drop fraction circles, algebra tiles, and graphs directly onto your presentation. Try opening the toolbox!",
-            btn_tools: "Open Toolbox",
+            p2_title: "Worksheets & Do Now Grids",
+            p2_desc: "Build lesson starters and clean print-ready A4 sheets in seconds. Shuffle fresh numbers with a single click whenever you need a new version.",
+            btn_shuffle: "Shuffle numbers",
 
-            live_title: "Catch the Aha! moments",
-            live_subtitle: "in real-time.",
-            live_desc: "Teacher Live View gives you complete oversight. See exactly when a student gets stuck, which task is causing trouble, and who is ready for a challenge — while the lesson is happening.",
+            p3_title: "Unique Exams in Test Lab",
+            p3_desc: "Pick topics and difficulty tiers. Every student receives a distinct set of problems in either instant-feedback or exam mode.",
 
-            testlab_title: "Endless practice tests.",
-            testlab_subtitle: "Zero searching.",
-            testlab_desc: "Stop hunting for study material before test week. Choose difficulty and topic, and the system generates unique practice tests for every student so they can drill on their own.",
-            
-            footer_title: "Create your first custom unit in under 3 minutes.",
-            feature_1: "Drag-and-drop Curriculum Builder",
-            feature_2: "1000+ Dynamic Question Types",
-            feature_3: "Live Classroom Telemetry",
-            feature_4: "Curriculum Aligned",
-            footer_motto: "Anpassa Math Platform — Built for mastery."
+            stage_eyebrow: "Try it right here",
+            stage_title: "A board built for mathematics",
+            stage_desc: "Switch between step-by-step worked derivations with live number regeneration and a math canvas stocked with fraction shapes, algebra tiles, and coordinate planes.",
+            tab_walkthrough: "Step-by-Step Walkthrough",
+            tab_whiteboard: "Interactive Math Canvas",
+            btn_tools: "Toggle Fraction Tools",
+
+            live_title: "Catch misconceptions while the lesson happens",
+            live_desc: "Live View shows every student's steps and progress in real time. Spotlight anonymous student work onto the main screen to compare strategies.",
+            live_status: "Active Session • Class 9B",
+
+            footer_title: "Ready to bring Anpassa to your classroom?",
+            footer_sub: "Sign in as a teacher to build units, print worksheets, and launch live sessions.",
+            footer_motto: "Anpassa Math Platform — Digital & Print Studio"
         }
     }[lang];
 
     const currentGrid = DO_NOW_SETS[gridVersion % DO_NOW_SETS.length];
 
     return (
-        <div className="min-h-screen bg-[#f9fbf7] font-sans text-slate-800 selection:bg-emerald-100 overflow-x-hidden transition-colors duration-500 flex flex-col">
+        <div className="min-h-screen bg-[#f9fbf7] font-sans text-slate-900 selection:bg-emerald-100 selection:text-emerald-950 overflow-x-clip flex flex-col">
             
             {/* =========================================================================
-                NAVBAR
+                UTILITY BAR (Clean, uncrowded top bar without redundant corner logo)
                 ========================================================================= */}
-            <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-100 px-4 sm:px-6 py-3">
-                <div className="max-w-7xl mx-auto flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-md"><Sparkles size={16} className="text-white" /></div>
-                        <span className="text-lg sm:text-xl font-black tracking-tighter italic text-emerald-800 uppercase">ANPASSA</span>
-                    </div>
-                    <div className="flex items-center gap-3 sm:gap-6">
-                        <button onClick={() => setLang(lang === 'sv' ? 'en' : 'sv')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-emerald-600 transition-colors flex items-center gap-1.5">
-                            <Globe size={14} /> <span className="hidden sm:inline">{lang === 'sv' ? 'English' : 'Svenska'}</span>
+            <nav className="sticky top-0 left-0 right-0 z-50 bg-[#f9fbf7]/90 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-3">
+                <div className="max-w-7xl mx-auto flex justify-between items-center gap-4">
+                    <span className="text-xs font-mono font-bold text-slate-500 truncate">
+                        {t.nav_meta}
+                    </span>
+
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                        <button 
+                            type="button"
+                            onClick={() => setLang(lang === 'sv' ? 'en' : 'sv')} 
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                        >
+                            <Globe size={14} /> 
+                            <span>{lang === 'sv' ? 'English' : 'Svenska'}</span>
                         </button>
-                        <button onClick={onTeacherLogin} className="bg-emerald-900 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-md active:scale-95 whitespace-nowrap">
+                        <button 
+                            type="button"
+                            onClick={onTeacherLogin} 
+                            className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs active:scale-[0.98] whitespace-nowrap cursor-pointer"
+                        >
                             {t.btn_teacher}
                         </button>
                     </div>
@@ -323,412 +310,395 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             </nav>
 
             {/* =========================================================================
-                HERO SECTION
+                HERO SECTION: Prominent Brand Masthead + Immediate Student Entry Dock
                 ========================================================================= */}
-            <header className="pt-28 pb-16 px-4 sm:px-6 text-center w-full max-w-6xl mx-auto relative z-10 min-h-[85dvh] flex flex-col justify-center items-center">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-widest mb-6 border border-emerald-100">
-                    <Zap size={14} className="fill-emerald-500" /> {t.hero_badge}
-                </div>
-                
-                <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tighter leading-none mb-6 text-slate-900 italic uppercase">
-                    {t.hero_title}
-                </h1>
-                
-                <p className="text-base sm:text-lg text-slate-500 max-w-2xl mx-auto mb-10 font-medium leading-relaxed">
-                    {t.hero_subtitle}
-                </p>
-                
-                <div className="flex flex-col lg:flex-row w-full max-w-6xl gap-6 mx-auto">
+            <header className="pt-8 pb-14 sm:pt-12 sm:pb-20 px-4 sm:px-8 max-w-7xl mx-auto w-full">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
                     
-                    {/* LIVE LESSON */}
-                    <div className="bg-white p-5 sm:p-6 rounded-[2rem] shadow-xl border border-emerald-100 flex flex-col xl:flex-row items-center justify-between gap-6 group hover:border-emerald-500 transition-all flex-1 w-full">
-                        <div className="flex items-center gap-4 w-full xl:w-auto flex-1 min-w-0">
-                            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-                                <Users size={28} />
-                            </div>
-                            <div className="text-left flex-1 min-w-0">
-                                <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-800 truncate">{t.path_live_h}</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{t.path_live_p}</p>
-                            </div>
+                    {/* Left 7 Cols: Prominent Editorial Masthead + Proposition */}
+                    <div className="lg:col-span-7 space-y-5">
+                        <div className="pb-4 border-b border-slate-200 flex items-baseline justify-between gap-4">
+                            <span className="text-4xl sm:text-5xl lg:text-[3.5rem] font-black tracking-tight leading-none text-emerald-800">
+                                Anpassa
+                            </span>
                         </div>
-                        <form onSubmit={(e) => { e.preventDefault(); onStudentJoin('live', liveCode); }} className="flex w-full sm:w-auto gap-2 shrink-0">
-                            <input 
-                                ref={liveInputRef}
-                                type="text" 
-                                maxLength={6} 
-                                value={liveCode} 
-                                onChange={(e) => setLiveCode(e.target.value.toUpperCase())} 
-                                placeholder="KOD" 
-                                className="w-full sm:w-32 px-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-center font-black text-lg tracking-[0.2em] outline-none focus:border-emerald-500 focus:bg-white transition-all" 
-                            />
-                            <button type="submit" className="px-6 py-4 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-500 shadow-md active:scale-95 transition-all whitespace-nowrap shrink-0">
-                                {t.btn_live}
-                            </button>
-                        </form>
+                        
+                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-[1.15] text-slate-900 pt-1">
+                            {t.hero_title}{' '}
+                            <span className="text-emerald-700">{t.hero_title_accent}</span>
+                        </h1>
+                        
+                        <p className="text-base sm:text-lg text-slate-600 max-w-xl font-normal leading-relaxed">
+                            {t.hero_subtitle}
+                        </p>
                     </div>
 
-                    {/* SELF PRACTICE */}
-                    <div className="bg-white p-5 sm:p-6 rounded-[2rem] shadow-xl border border-amber-100 flex flex-col xl:flex-row items-center justify-between gap-6 group hover:border-amber-500 transition-all flex-1 w-full">
-                        <div className="flex items-center gap-4 w-full xl:w-auto flex-1 min-w-0">
-                            <div className="w-14 h-14 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-                                <GraduationCap size={28} />
+                    {/* Right 5 Cols: Student Login Dock (Always immediately visible above the fold) */}
+                    <div className="lg:col-span-5 space-y-3.5 w-full">
+                        
+                        {/* 1. LIVE LESSON (Primary Filled CTA) */}
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 focus-within:border-emerald-600 transition-colors">
+                            <div className="flex items-center gap-3 mb-3.5">
+                                <div className="w-10 h-10 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl flex items-center justify-center shrink-0">
+                                    <Users size={20} />
+                                </div>
+                                <div className="min-w-0">
+                                    <h2 className="text-base font-bold text-slate-900 leading-tight">{t.path_live_h}</h2>
+                                    <p className="text-xs text-slate-500 truncate">{t.path_live_p}</p>
+                                </div>
                             </div>
-                            <div className="text-left flex-1 min-w-0">
-                                <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-800 truncate">{t.path_practice_h}</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{t.path_practice_p}</p>
-                            </div>
+                            <form onSubmit={(e) => { e.preventDefault(); onStudentJoin('live', liveCode); }} className="flex gap-2">
+                                <input 
+                                    ref={liveInputRef}
+                                    type="text" 
+                                    maxLength={6} 
+                                    value={liveCode} 
+                                    onChange={(e) => setLiveCode(e.target.value.toUpperCase())} 
+                                    placeholder="KOD" 
+                                    aria-label={t.path_live_h}
+                                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-[#f9fbf7] border border-slate-300 rounded-xl text-center font-mono font-bold text-base tracking-[0.2em] text-slate-900 outline-none focus:border-emerald-600 focus:bg-white transition-all uppercase placeholder:text-slate-400" 
+                                />
+                                <button 
+                                    type="submit" 
+                                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-2xs active:scale-[0.98] transition-all whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5"
+                                >
+                                    <span>{t.btn_live}</span>
+                                    <ArrowRight size={14} />
+                                </button>
+                            </form>
                         </div>
-                        <form onSubmit={(e) => { e.preventDefault(); onStudentJoin('practice', classCode); }} className="flex w-full sm:w-auto gap-2 shrink-0">
-                            <input type="text" maxLength={12} value={classCode} onChange={(e) => setClassCode(e.target.value.toUpperCase())} placeholder="KOD" className="w-full sm:w-40 px-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-center font-black text-lg tracking-[0.1em] outline-none focus:border-amber-500 focus:bg-white transition-all" />
-                            <button type="submit" className="px-6 py-4 bg-amber-500 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-amber-600 shadow-md active:scale-95 transition-all whitespace-nowrap shrink-0">
-                                {t.btn_practice}
-                            </button>
-                        </form>
+
+                        {/* 2. SELF PRACTICE (Secondary Outlined CTA) */}
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 focus-within:border-amber-500 transition-colors">
+                            <div className="flex items-center gap-3 mb-3.5">
+                                <div className="w-10 h-10 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl flex items-center justify-center shrink-0">
+                                    <GraduationCap size={20} />
+                                </div>
+                                <div className="min-w-0">
+                                    <h2 className="text-base font-bold text-slate-900 leading-tight">{t.path_practice_h}</h2>
+                                    <p className="text-xs text-slate-500 truncate">{t.path_practice_p}</p>
+                                </div>
+                            </div>
+                            <form onSubmit={(e) => { e.preventDefault(); onStudentJoin('practice', classCode); }} className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    maxLength={12} 
+                                    value={classCode} 
+                                    onChange={(e) => setClassCode(e.target.value.toUpperCase())} 
+                                    placeholder="KOD" 
+                                    aria-label={t.path_practice_h}
+                                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-[#f9fbf7] border border-slate-300 rounded-xl text-center font-mono font-bold text-base tracking-[0.12em] text-slate-900 outline-none focus:border-amber-500 focus:bg-white transition-all uppercase placeholder:text-slate-400" 
+                                />
+                                <button 
+                                    type="submit" 
+                                    className="px-5 py-2.5 bg-amber-50 hover:bg-amber-500 text-amber-900 hover:text-white border border-amber-300 hover:border-amber-500 rounded-xl font-bold text-xs active:scale-[0.98] transition-all whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5"
+                                >
+                                    <span>{t.btn_practice}</span>
+                                    <ArrowRight size={14} />
+                                </button>
+                            </form>
+                        </div>
+
                     </div>
-                    
                 </div>
             </header>
 
             {/* =========================================================================
-                SECTION 1: CUSTOM CURRICULUM ENGINE
+                BAND 1: THREE WORKSPACES (Asymmetric 3-Column Bento Grid)
                 ========================================================================= */}
-            <section className="py-20 sm:py-28 bg-white relative overflow-hidden border-t border-slate-100">
-                <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                    <div className="space-y-6">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-bold uppercase tracking-widest border border-indigo-100">
-                            <Layers size={14} /> Curriculum Builder
-                        </div>
-                        <h2 className="text-4xl md:text-5xl font-black uppercase italic text-slate-900 tracking-tighter leading-none">
-                            {t.curriculum_title}<br/>
-                            <span className="text-indigo-600">{t.curriculum_subtitle}</span>
+            <section className="py-16 sm:py-20 bg-white border-t border-slate-200 px-4 sm:px-8">
+                <div className="max-w-7xl mx-auto space-y-8">
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-200 pb-5">
+                        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                            {t.pillars_heading}
                         </h2>
-                        <p className="text-base sm:text-lg text-slate-500 font-medium leading-relaxed">
-                            {t.curriculum_desc}
-                        </p>
+                        <span className="text-xs font-mono font-bold text-slate-500">
+                            LGR22 • Åk 7–9 & Gy
+                        </span>
                     </div>
 
-                    <div className="bg-slate-50 rounded-[3rem] p-6 sm:p-8 border-4 border-slate-100 shadow-2xl relative min-h-[350px] flex flex-col justify-center">
-                        <div className="space-y-4 relative">
-                            <div className="absolute left-6 top-6 bottom-6 w-1 bg-slate-200 rounded-full" />
-                            
-                            <div className={`relative flex items-center gap-4 transition-all duration-500 ${roadmapStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 z-10 shadow-md">
-                                    <BookOpen size={20} />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        {/* COLUMN 1: Curriculum Roadmap */}
+                        <div className="bg-[#f9fbf7] rounded-2xl p-6 border border-slate-200 flex flex-col justify-between gap-6">
+                            <div className="space-y-2.5">
+                                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 border border-sky-200 flex items-center justify-center">
+                                    <Layers size={18} />
                                 </div>
-                                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex-1">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 block mb-1">Del 1</span>
-                                    <h4 className="font-bold text-sm text-slate-800">{t.roadmap_step_1}</h4>
-                                </div>
+                                <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">{t.p1_title}</h3>
+                                <p className="text-sm text-slate-600 leading-relaxed">{t.p1_desc}</p>
                             </div>
 
-                            <div className={`relative flex items-center gap-4 transition-all duration-500 ${roadmapStep >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                                <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 z-10 shadow-md">
-                                    <Target size={20} />
+                            <div className="space-y-2 pt-2">
+                                <div className="bg-white px-3.5 py-2.5 rounded-xl border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800">
+                                    <span className="flex items-center gap-2"><BookOpen size={14} className="text-sky-600"/> {t.p1_step_1}</span>
+                                    <span className="font-mono text-[11px] text-slate-400">Slide</span>
                                 </div>
-                                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex-1">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 block mb-1">Del 2</span>
-                                    <h4 className="font-bold text-sm text-slate-800">{t.roadmap_step_2}</h4>
+                                <div className="bg-white px-3.5 py-2.5 rounded-xl border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800">
+                                    <span className="flex items-center gap-2"><Target size={14} className="text-emerald-600"/> {t.p1_step_2}</span>
+                                    <span className="font-mono text-[11px] text-emerald-700">Nivå 1–3</span>
                                 </div>
-                            </div>
-
-                            <div className={`relative flex items-center gap-4 transition-all duration-500 ${roadmapStep >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                                <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 z-10 shadow-md">
-                                    <CheckCircle2 size={20} />
+                                <div className="bg-white px-3.5 py-2.5 rounded-xl border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800">
+                                    <span className="flex items-center gap-2"><CheckCircle2 size={14} className="text-amber-600"/> {t.p1_step_3}</span>
+                                    <span className="font-mono text-[11px] text-amber-700">Prov</span>
                                 </div>
-                                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex-1">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-500 block mb-1">Del 3</span>
-                                    <h4 className="font-bold text-sm text-slate-800">{t.roadmap_step_3}</h4>
-                                </div>
-                            </div>
-
-                            <div className={`relative flex items-center gap-4 transition-all duration-500 ${roadmapStep === 0 ? 'opacity-100' : 'opacity-40'}`}>
-                                <div className="w-12 h-12 rounded-2xl bg-slate-200 text-slate-400 flex items-center justify-center shrink-0 z-10 border-2 border-dashed border-slate-300">
-                                    <RefreshCcw size={20} className={roadmapStep === 0 ? "animate-spin-slow" : ""} />
-                                </div>
-                                <div className="h-14 border-2 border-dashed border-slate-200 rounded-2xl flex-1 bg-slate-50/50" />
                             </div>
                         </div>
+
+                        {/* COLUMN 2: Interactive Do Now Grid */}
+                        <div className="bg-[#f9fbf7] rounded-2xl p-6 border border-slate-200 flex flex-col justify-between gap-6">
+                            <div className="space-y-2.5">
+                                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center">
+                                    <Printer size={18} />
+                                </div>
+                                <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">{t.p2_title}</h3>
+                                <p className="text-sm text-slate-600 leading-relaxed">{t.p2_desc}</p>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-2">
+                                    {currentGrid.map((card, i) => (
+                                        <div key={i} className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col justify-between min-h-[84px]">
+                                            <span className="text-[10px] font-mono font-bold text-slate-400">{card.label}</span>
+                                            <div className="text-center font-serif text-sm text-slate-900">
+                                                <MathDisplay content={`$$${card.eq}$$`} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => setGridVersion(v => v + 1)}
+                                    className="w-full py-2 px-3 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-xl font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
+                                >
+                                    <Shuffle size={13} className="text-emerald-600" />
+                                    <span>{t.btn_shuffle}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* COLUMN 3: Test Lab Variants */}
+                        <div className="bg-[#f9fbf7] rounded-2xl p-6 border border-slate-200 flex flex-col justify-between gap-6">
+                            <div className="space-y-2.5">
+                                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center">
+                                    <ShieldCheck size={18} />
+                                </div>
+                                <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">{t.p3_title}</h3>
+                                <p className="text-sm text-slate-600 leading-relaxed">{t.p3_desc}</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2.5 pt-2">
+                                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
+                                    <div className="bg-slate-50 px-2.5 py-1.5 border-b border-slate-200 text-[10px] font-mono font-bold text-slate-600 text-center">
+                                        Elev A
+                                    </div>
+                                    <div className="p-2 flex items-center justify-center h-[126px]">
+                                        <div className="transform scale-[0.45] origin-center">
+                                            <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '4', h: '10' } } }} />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
+                                    <div className="bg-slate-50 px-2.5 py-1.5 border-b border-slate-200 text-[10px] font-mono font-bold text-slate-600 text-center">
+                                        Elev B
+                                    </div>
+                                    <div className="p-2 flex items-center justify-center h-[126px] relative">
+                                        <div className={`transition-opacity duration-500 ${testLabToggle ? 'opacity-100' : 'opacity-0 absolute'}`}>
+                                            <div className="transform scale-[0.45] origin-center">
+                                                <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '7', h: '3' } } }} />
+                                            </div>
+                                        </div>
+                                        <div className={`transition-opacity duration-500 ${!testLabToggle ? 'opacity-100' : 'opacity-0 absolute'}`}>
+                                            <div className="transform scale-[0.45] origin-center">
+                                                <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '5', h: '8' } } }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </section>
 
             {/* =========================================================================
-                SECTION 2: QUESTION STUDIO (WORKSHEETS & DO NOWS)
+                BAND 2: INTERACTIVE STUDIO STAGE (Full-Width Workbench)
                 ========================================================================= */}
-            <section className="py-20 sm:py-28 bg-[#f9fbf7] relative overflow-hidden border-t border-slate-100">
-                <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <section className="py-20 sm:py-24 bg-[#0f172a] text-white border-t border-slate-800 px-4 sm:px-8">
+                <div className="max-w-7xl mx-auto space-y-8">
                     
-                    <div className="order-2 lg:order-1 relative">
-                        <div className="grid grid-cols-2 gap-4">
-                            {currentGrid.map((card, i) => (
-                                <div key={i} className="bg-white p-6 rounded-3xl shadow-lg border border-slate-200/60 flex flex-col items-center justify-center text-center aspect-square transition-all duration-300">
-                                    <div className="w-full flex justify-end mb-2">{card.icon}</div>
-                                    <MathDisplay content={`$$${card.eq}$$`} className="text-xl text-slate-700 font-serif" />
-                                </div>
-                            ))}
+                    <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                        <div className="space-y-2 max-w-2xl">
+                            <p className="text-xs font-bold text-emerald-400">{t.stage_eyebrow}</p>
+                            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+                                {t.stage_title}
+                            </h2>
+                            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+                                {t.stage_desc}
+                            </p>
                         </div>
-                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-                            <button 
-                                onClick={() => setGridVersion(v => v + 1)}
-                                className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-4 rounded-full font-black uppercase tracking-widest text-[10px] shadow-xl hover:bg-indigo-500 active:scale-95 transition-all whitespace-nowrap border-4 border-[#f9fbf7]"
+
+                        {/* Interactive Mode Switcher */}
+                        <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-700 shrink-0 self-start lg:self-end">
+                            <button
+                                type="button"
+                                onClick={() => setActiveStageTab('walkthrough')}
+                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                                    activeStageTab === 'walkthrough'
+                                        ? 'bg-emerald-600 text-white shadow-2xs'
+                                        : 'text-slate-400 hover:text-white'
+                                }`}
                             >
-                                <Shuffle size={16} /> {t.btn_shuffle}
+                                <Monitor size={14} />
+                                <span>{t.tab_walkthrough}</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveStageTab('whiteboard')}
+                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                                    activeStageTab === 'whiteboard'
+                                        ? 'bg-sky-600 text-white shadow-2xs'
+                                        : 'text-slate-400 hover:text-white'
+                                }`}
+                            >
+                                <PenTool size={14} />
+                                <span>{t.tab_whiteboard}</span>
                             </button>
                         </div>
                     </div>
 
-                    <div className="order-1 lg:order-2 space-y-6">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-fuchsia-100 text-fuchsia-700 rounded-full text-[10px] font-bold uppercase tracking-widest border border-fuchsia-200">
-                            <Printer size={14} /> Question Studio
-                        </div>
-                        <h2 className="text-4xl md:text-5xl font-black uppercase italic text-slate-900 tracking-tighter leading-none">
-                            {t.studio_title}<br/>
-                            <span className="text-fuchsia-600">{t.studio_subtitle}</span>
-                        </h2>
-                        <p className="text-base sm:text-lg text-slate-500 font-medium leading-relaxed">
-                            {t.studio_desc}
-                        </p>
-                    </div>
-
-                </div>
-            </section>
-
-            {/* =========================================================================
-                SECTION 3: PRESENTATION BUILDER & LIVE DEMO
-                ========================================================================= */}
-            <section className="py-20 sm:py-28 bg-slate-900 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
-                    <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] bg-emerald-500 blur-[120px] rounded-full"></div>
-                </div>
-
-                <div className="max-w-[1500px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center relative z-10">
-                    
-                    <div className="order-2 lg:order-1 relative lg:col-span-7 xl:col-span-8">
-                        <div className="h-[500px] sm:h-[600px] w-full bg-white rounded-[2rem] shadow-2xl border-4 border-slate-800 overflow-hidden flex relative pointer-events-auto">
+                    {/* Full-Width Interactive Product Viewport */}
+                    {activeStageTab === 'walkthrough' ? (
+                        <div className="h-[520px] sm:h-[580px] w-full bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden flex relative">
                             <InstructionSlideCard 
                                 question={demoQuestion} 
                                 lang={lang} 
                                 onRegenerate={handleDemoRegenerate}
                             />
                         </div>
-                    </div>
-
-                    <div className="order-1 lg:order-2 space-y-6 text-white lg:col-span-5 xl:col-span-4">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 border border-emerald-500/30">
-                            <Monitor size={14} className="fill-emerald-400" /> Walkthrough Builder
+                    ) : (
+                        <div className="space-y-3">
+                            <div className="flex justify-end">
+                                <button 
+                                    type="button"
+                                    onClick={() => setDemoActiveDrawer(prev => prev ? null : 'fractions')}
+                                    className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs transition-all cursor-pointer inline-flex items-center gap-2 whitespace-nowrap"
+                                >
+                                    <PenTool size={14} />
+                                    <span>{t.btn_tools}</span>
+                                </button>
+                            </div>
+                            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-700 h-[480px] sm:h-[540px] relative flex">
+                                <InteractiveCanvas 
+                                    elements={demoElements} 
+                                    setElements={setDemoElements}
+                                    resolution={{ w: 1920, h: 1080 }}
+                                    lang={lang}
+                                    bgType="grid"
+                                />
+                                
+                                <WhiteboardDrawer
+                                    activeDrawer={demoActiveDrawer}
+                                    onClose={() => setDemoActiveDrawer(null)}
+                                    onSpawn={handleDemoSpawn}
+                                    lang={lang}
+                                    showDividingLine={false}
+                                />
+                            </div>
                         </div>
-                        <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter leading-none">
-                            {t.presentation_title}<br/>
-                            <span className="text-emerald-400">{t.presentation_subtitle}</span>
-                        </h2>
-                        <p className="text-base sm:text-lg text-slate-300 font-medium leading-relaxed">
-                            {t.presentation_desc}
-                        </p>
-                    </div>
-
+                    )}
                 </div>
             </section>
 
             {/* =========================================================================
-                SECTION 4: INTERACTIVE WHITEBOARD
+                BAND 3: LIVE TELEMETRY (Reversed Split: Copy Left, Feed Right)
                 ========================================================================= */}
-            <section className="py-20 sm:py-28 bg-indigo-950 relative overflow-hidden text-white border-t-8 border-indigo-900">
-                <div className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <section className="py-16 sm:py-24 bg-white border-t border-slate-200 px-4 sm:px-8">
+                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
                     
-                    <div className="space-y-6">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-800 text-indigo-300 rounded-full text-[10px] font-bold uppercase tracking-widest border border-indigo-700 shadow-inner">
-                            <PenTool size={14} className="text-indigo-400" /> Whiteboard
+                    <div className="lg:col-span-5 space-y-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold border border-rose-200">
+                            <Signal size={14} className="text-rose-600" /> 
+                            <span>Live Telemetry</span>
                         </div>
-                        <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter leading-none">
-                            {t.whiteboard_title}<br/>
-                            <span className="text-indigo-400">{t.whiteboard_subtitle}</span>
+                        <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                            {t.live_title}
                         </h2>
-                        <p className="text-base sm:text-lg text-indigo-200 font-medium leading-relaxed">
-                            {t.whiteboard_desc}
+                        <p className="text-base text-slate-600 leading-relaxed">
+                            {t.live_desc}
                         </p>
-                        <button 
-                            onClick={() => setDemoActiveDrawer(prev => prev ? null : 'fractions')}
-                            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black uppercase text-xs tracking-widest transition-all shadow-md active:scale-95"
-                        >
-                            {t.btn_tools}
-                        </button>
                     </div>
 
-                    <div className="relative">
-                        <div className="bg-white rounded-[2rem] overflow-hidden shadow-2xl border-4 border-indigo-500/30 aspect-video relative pointer-events-auto flex">
-                            <InteractiveCanvas 
-                                elements={demoElements} 
-                                setElements={setDemoElements}
-                                resolution={{ w: 1920, h: 1080 }}
-                                lang={lang}
-                                bgType="grid"
-                            />
-                            
-                            <WhiteboardDrawer
-                                activeDrawer={demoActiveDrawer}
-                                onClose={() => setDemoActiveDrawer(null)}
-                                onSpawn={handleDemoSpawn}
-                                lang={lang}
-                                showDividingLine={false}
-                            />
-                        </div>
-                    </div>
-
-                </div>
-            </section>
-
-            {/* =========================================================================
-                SECTION 5: LIVE TELEMETRY
-                ========================================================================= */}
-            <section className="py-20 sm:py-28 bg-white relative overflow-hidden border-t border-slate-100">
-                <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                    
-                    <div className="order-2 lg:order-1 relative">
-                        <div className="bg-slate-50 rounded-[3rem] p-6 sm:p-8 border border-slate-200 shadow-2xl space-y-4">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Klass 9B • Live</h3>
-                                <div className="flex items-center gap-2 text-[10px] font-bold text-rose-600 uppercase tracking-widest bg-rose-100 px-3 py-1 rounded-full animate-pulse border border-rose-200">
-                                    <div className="w-2 h-2 rounded-full bg-rose-500"></div> Aktiv Session
-                                </div>
+                    <div className="lg:col-span-7">
+                        <div className="bg-[#f9fbf7] rounded-2xl p-5 sm:p-6 border border-slate-200 space-y-3">
+                            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+                                <span className="font-bold text-slate-900 text-xs font-mono">{t.live_status}</span>
+                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600" /> Live
+                                </span>
                             </div>
                             
                             {ghostStudents.map((student) => (
-                                <div key={student.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-4">
-                                    <div className="flex items-center gap-3 w-1/4 min-w-[80px]">
-                                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-black text-slate-500 shrink-0">{student.name.charAt(0)}</div>
-                                        <span className="font-bold text-sm text-slate-700 truncate">{student.name}</span>
+                                <div key={student.id} className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3 w-1/3 min-w-[100px]">
+                                        <div className="w-7 h-7 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-mono font-bold text-slate-700 shrink-0">
+                                            {student.name.charAt(0)}
+                                        </div>
+                                        <span className="font-bold text-sm text-slate-800 truncate">{student.name}</span>
                                     </div>
-                                    <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden relative">
+                                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden relative border border-slate-200">
                                         <div 
-                                            className={`absolute top-0 left-0 h-full transition-all duration-1000 ease-out
-                                                ${student.status === 'error' ? 'bg-rose-500' : student.status === 'done' ? 'bg-emerald-500' : 'bg-amber-400'}`}
+                                            className={`absolute top-0 left-0 h-full transition-all duration-700 ease-out
+                                                ${student.status === 'error' ? 'bg-rose-500' : student.status === 'done' ? 'bg-emerald-600' : 'bg-amber-500'}`}
                                             style={{ width: `${student.progress}%` }}
                                         />
                                     </div>
-                                    <div className="w-8 flex justify-end shrink-0">
-                                        {student.status === 'error' && <XCircle size={18} className="text-rose-500" />}
-                                        {student.status === 'done' && <CheckCircle2 size={18} className="text-emerald-500" />}
-                                        {student.status === 'solving' && <Loader2 size={18} className="text-amber-400 animate-spin" />}
-                                        {student.status === 'correct' && <Check size={18} className="text-emerald-500" />}
+                                    <div className="w-16 flex items-center justify-end gap-2 shrink-0">
+                                        <span className="text-xs font-mono font-bold text-slate-600 tabular-nums">{student.progress}%</span>
+                                        {student.status === 'error' && <XCircle size={16} className="text-rose-600 shrink-0" />}
+                                        {student.status === 'done' && <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />}
+                                        {student.status === 'solving' && <Loader2 size={16} className="text-amber-500 animate-spin shrink-0" />}
+                                        {student.status === 'correct' && <Check size={16} className="text-emerald-600 shrink-0" />}
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div className="order-1 lg:order-2 space-y-6">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-rose-50 text-rose-600 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 border border-rose-100">
-                            <Signal size={14} className="fill-rose-500" /> Live Telemetry
-                        </div>
-                        <h2 className="text-4xl md:text-5xl font-black uppercase italic text-slate-900 tracking-tighter leading-none">
-                            {t.live_title}<br/>
-                            <span className="text-rose-500">{t.live_subtitle}</span>
-                        </h2>
-                        <p className="text-base sm:text-lg text-slate-500 font-medium leading-relaxed">
-                            {t.live_desc}
-                        </p>
-                    </div>
-
                 </div>
             </section>
 
             {/* =========================================================================
-                SECTION 6: TEST LAB
+                FOOTER & TEACHER CTA
                 ========================================================================= */}
-            <section className="py-20 sm:py-28 bg-[#f9fbf7] relative overflow-hidden border-t border-slate-200">
-                <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                    <div className="space-y-6">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-50 text-amber-700 rounded-full text-[10px] font-bold uppercase tracking-widest border border-amber-100">
-                            <ShieldCheck size={14} /> Test Lab
+            <footer className="bg-[#f9fbf7] border-t border-slate-200 py-14 px-4 sm:px-8 text-slate-900">
+                <div className="max-w-7xl mx-auto flex flex-col gap-10">
+                    <div className="bg-white rounded-2xl p-6 sm:p-10 border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                        <div className="space-y-1.5 max-w-xl">
+                            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                                {t.footer_title}
+                            </h2>
+                            <p className="text-sm text-slate-600">
+                                {t.footer_sub}
+                            </p>
                         </div>
-                        <h2 className="text-4xl md:text-5xl font-black uppercase italic text-slate-900 tracking-tighter leading-none">
-                            {t.testlab_title}<br/>
-                            <span className="text-amber-500">{t.testlab_subtitle}</span>
-                        </h2>
-                        <p className="text-base sm:text-lg text-slate-500 font-medium leading-relaxed">
-                            {t.testlab_desc}
-                        </p>
+                        <button 
+                            type="button"
+                            onClick={onTeacherLogin} 
+                            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition-all shadow-2xs active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
+                        >
+                            <span>{t.btn_teacher}</span>
+                            <ArrowRight size={15} />
+                        </button>
                     </div>
 
-                    <div className="relative">
-                        <div className="flex gap-4 h-[280px]">
-                            {/* Student A */}
-                            <div className="flex-1 bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
-                                <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
-                                    Elev A
-                                </div>
-                                <div className="flex-1 flex flex-col items-center justify-center p-4">
-                                    <div className="transform scale-[0.5] sm:scale-[0.6] origin-center">
-                                        <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '4', h: '10' } } }} />
-                                    </div>
-                                    <div className="w-full h-8 border-2 border-dashed border-slate-200 rounded-lg mt-4" />
-                                </div>
-                            </div>
-                            
-                            {/* Student B */}
-                            <div className="flex-1 bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
-                                <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">
-                                    Elev B
-                                </div>
-                                <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
-                                    <div className={`absolute inset-0 flex flex-col items-center justify-center p-4 transition-all duration-700 ${testLabToggle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                                        <div className="transform scale-[0.5] sm:scale-[0.6] origin-center">
-                                            <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '7', h: '3' } } }} />
-                                        </div>
-                                        <div className="w-full h-8 border-2 border-dashed border-slate-200 rounded-lg mt-4" />
-                                    </div>
-                                    <div className={`absolute inset-0 flex flex-col items-center justify-center p-4 transition-all duration-700 ${!testLabToggle ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-                                        <div className="transform scale-[0.5] sm:scale-[0.6] origin-center">
-                                            <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '4', h: '10' } } }} />
-                                        </div>
-                                        <div className="w-full h-8 border-2 border-dashed border-slate-200 rounded-lg mt-4" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-                            <div className="bg-amber-500 text-white px-6 py-4 rounded-full font-black uppercase tracking-widest text-[10px] shadow-xl flex items-center gap-2 border-4 border-[#f9fbf7]">
-                                <RefreshCcw size={16} className={testLabToggle ? "animate-spin" : ""} /> {lang === 'sv' ? "Generera Unika Prov" : "Generate Unique Tests"}
-                            </div>
-                        </div>
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-xs">
+                        <span className="text-sm font-extrabold tracking-tight text-emerald-800">
+                            Anpassa
+                        </span>
+                        <p>{t.footer_motto}</p>
                     </div>
-                </div>
-            </section>
-
-            {/* =========================================================================
-                FOOTER & CTA
-                ========================================================================= */}
-            <footer className="bg-slate-900 pt-24 pb-12 flex flex-col items-center px-6 relative text-white">
-                <div className="max-w-4xl mx-auto flex flex-col items-center gap-10 relative z-10 w-full">
-                    
-                    <div className="text-center space-y-6 mb-4">
-                        <h2 className="text-3xl sm:text-4xl font-black uppercase italic tracking-tighter leading-tight max-w-2xl mx-auto">
-                            {t.footer_title}
-                        </h2>
-                        
-                        <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-6 text-xs sm:text-sm font-bold text-emerald-300">
-                            <span className="flex items-center justify-center gap-2"><CheckCircle2 size={16}/> {t.feature_1}</span>
-                            <span className="flex items-center justify-center gap-2"><CheckCircle2 size={16}/> {t.feature_2}</span>
-                            <span className="flex items-center justify-center gap-2"><CheckCircle2 size={16}/> {t.feature_3}</span>
-                            <span className="flex items-center justify-center gap-2"><CheckCircle2 size={16}/> {t.feature_4}</span>
-                        </div>
-                    </div>
-
-                    <button 
-                        onClick={onTeacherLogin} 
-                        className="px-8 sm:px-12 py-4 sm:py-5 bg-emerald-500 text-white rounded-2xl sm:rounded-[2rem] font-black uppercase tracking-[0.1em] text-xs sm:text-sm hover:bg-emerald-400 transition-all shadow-xl hover:scale-105 active:scale-95 flex items-center gap-3"
-                    >
-                        {t.btn_teacher} <ArrowRight size={18} />
-                    </button>
-                    
-                    <div className="w-full h-px bg-slate-800 mt-8" />
-                    
-                    <div className="flex items-center gap-3 opacity-40">
-                        <Sparkles size={20} className="text-emerald-500" />
-                        <span className="font-black tracking-tighter italic uppercase text-lg text-slate-300">Anpassa</span>
-                    </div>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] sm:tracking-[0.4em] text-center">{t.footer_motto}</p>
                 </div>
             </footer>
         </div>

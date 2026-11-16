@@ -1,3 +1,4 @@
+// src/components/views/PresentationView.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { 
     X, ChevronLeft, ChevronRight, ChevronDown, Monitor, PanelLeftClose, 
@@ -52,7 +53,7 @@ export default function PresentationView({
     const [activeDrawer, setActiveDrawer] = useState(null);
     const [showLibraryModal, setShowLibraryModal] = useState(false);
     
-    // 🟢 NEW: File Menu & Save to Unit States
+    // File Menu & Save to Unit States
     const [isFileMenuOpen, setIsFileMenuOpen] = useState(false);
     const [showSaveToUnitModal, setShowSaveToUnitModal] = useState(false);
     const [teacherId, setTeacherId] = useState(null);
@@ -62,7 +63,6 @@ export default function PresentationView({
         return !localStorage.getItem(storageKey);
     });
 
-    // Add near your top-level state declarations:
     const [isDirty, setIsDirty] = useState(false);
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
     const [showSaveChoiceModal, setShowSaveChoiceModal] = useState(false);
@@ -72,7 +72,7 @@ export default function PresentationView({
         const handleBeforeUnload = (e) => {
             if (isDirty) {
                 e.preventDefault();
-                e.returnValue = ''; // Standard browser prompt
+                e.returnValue = '';
             }
         };
 
@@ -114,11 +114,8 @@ export default function PresentationView({
         const toolDef = getToolDefinition(type);
         if (!toolDef || typeof toolDef.createDefault !== 'function') return;
 
-        // Guaranteed unique ID with high-entropy timestamp + random salt
         const id = `el_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-        // Pass-through: guarantees payload contains the tool/shape type
-        const newEl = toolDef.createDefault(id, '#06b6d4', { type, ...payload });
+        const newEl = toolDef.createDefault(id, '#059669', { type, ...payload });
 
         updateCurrentSlideElements(prev => [...prev, newEl]);
     };
@@ -222,12 +219,9 @@ export default function PresentationView({
         if (sidebarTab === 'slides') setActiveIds(JSON.parse(currentPinnedIds));
     }, [activeSlideIndex, sidebarTab, currentPinnedIds]);
 
-    // Mark dirty whenever content changes:
     useEffect(() => {
-        // Flag changes whenever slides, questions, title, or settings change
         setIsDirty(true);
     }, [slides, livePacket, localTitle, presentationTheme, bgType, viewMode]);
-
 
     useEffect(() => {
         if (clueViewMode === 'coach' && presentationBoardEndRef.current) {
@@ -355,7 +349,7 @@ export default function PresentationView({
         syncProgress('whiteboard_clue_pushed', { app_mode: 'presentation_builder', tool_used: 'dynamic_box', has_latex: true, has_text: true });
         updateCurrentSlideElements(prev => [...prev, {
             id: Date.now().toString(), type: 'dynamicClues', x: 50, y: 150, width: 450, height: 400,
-            questionId: qId, stroke: '#1e293b', rotation: 0, opacity: 1
+            questionId: qId, stroke: '#0f172a', rotation: 0, opacity: 1
         }]);
     };
 
@@ -399,20 +393,19 @@ export default function PresentationView({
         if ((mode === 'both' || mode === 'text') && text && text.trim() !== '') {
             newElements.push({
                 id: Date.now().toString(), type: 'richText', x: 50, y: 150, width: 400, height: 100,
-                content: `<p style="font-size:32px; font-weight:bold; font-family: sans-serif; line-height: normal;">${text}</p>`, stroke: '#1e293b', rotation: 0, opacity: 1
+                content: `<p style="font-size:32px; font-weight:bold; font-family: sans-serif; line-height: normal;">${text}</p>`, stroke: '#0f172a', rotation: 0, opacity: 1
             });
         }
         if ((mode === 'both' || mode === 'math') && latex) {
             newElements.push({
                 id: (Date.now() + 1).toString(), type: 'math', x: 50, y: (mode === 'both' && text) ? 280 : 150, width: 400, height: 80,
-                label: latex, fontSize: 48, stroke: '#1e293b', rotation: 0, opacity: 1
+                label: latex, fontSize: 48, stroke: '#0f172a', rotation: 0, opacity: 1
             });
         }
         updateCurrentSlideElements(prev => [...prev, ...newElements]);
     };
 
-    // --- NEW / UPDATED SAVE FUNCTIONS ---
-    // 1. Core Save Worker: accepts an optional forceNewCopy flag
+    // --- SAVE & EXPORT STATES ---
     const executeSave = async ({ forceNewCopy = false, silent = false } = {}) => {
         setIsSaving(true);
         syncBatchProgress('presentation_saved', livePacket, { app_mode: 'presentation_builder' });
@@ -440,18 +433,16 @@ export default function PresentationView({
             };
 
             let res;
-            // If updating an existing sheet and NOT forcing a new copy:
             if (boardId && !forceNewCopy) {
                 res = await supabase.from('saved_sheets').update(payload).eq('id', boardId).select().single();
             } else {
-                // Fresh insert (creates a new boardId)
                 res = await supabase.from('saved_sheets').insert([payload]).select().single();
             }
 
             if (res.error) throw res.error;
 
             setBoardId(res.data.id);
-            setIsDirty(false); // Reset dirty flag after successful save
+            setIsDirty(false);
 
             if (!silent) {
                 alert(
@@ -471,9 +462,7 @@ export default function PresentationView({
         }
     };
 
-    // 2. High-Level Handler for the File Menu "Save"
     const handleSave = async (silent = false) => {
-        // If it's an existing presentation loaded from the library, ask whether to overwrite or fork
         if (boardId && !silent) {
             setShowSaveChoiceModal(true);
             return boardId;
@@ -481,16 +470,13 @@ export default function PresentationView({
         return await executeSave({ forceNewCopy: false, silent });
     };
 
-    // 3. Explicit Handler for "Save As New Copy"
     const handleSaveAsCopy = async () => {
         setIsFileMenuOpen(false);
         await executeSave({ forceNewCopy: true, silent: false });
     };
 
-    // --- 🟢 CORE SAVE TO CUSTOM UNIT MODULE ---
     const handleOpenSaveToUnit = async () => {
         setIsFileMenuOpen(false);
-        // Always save to saved_sheets first so the record exists, is up-to-date with any title changes or slide edits, and returns a valid boardId
         const currentBoardId = await handleSave(true);
         if (currentBoardId) {
             setShowSaveToUnitModal(true);
@@ -503,7 +489,6 @@ export default function PresentationView({
 
     const handleConfirmSaveToUnit = async ({ unitId, partId, insertIndex, title }) => {
         try {
-            // Safety check: ensure we have a valid boardId
             let targetBoardId = boardId;
             if (!targetBoardId) {
                 targetBoardId = await handleSave(true);
@@ -519,7 +504,6 @@ export default function PresentationView({
             const partIndex = currentPayload.findIndex(p => p.id === partId);
             if (partIndex === -1) throw new Error("Part not found");
             
-            // Prioritize user-entered title in modal, falling back to localTitle
             const finalTitle = (title && title.trim() && title !== "Min Presentation" && title !== "My Presentation")
                 ? title.trim()
                 : (localTitle.trim() || (lang === 'sv' ? "Namnlös Presentation" : "Untitled Presentation"));
@@ -553,7 +537,6 @@ export default function PresentationView({
 
         setIsSaving(true);
         
-        // 🟢 RESTORED TELEMETRY PAYLOAD
         syncBatchProgress('presentation_saved', livePacket, {
             app_mode: 'presentation_builder',
             save_type: 'save_and_launch'
@@ -713,7 +696,6 @@ export default function PresentationView({
         }
     };
 
-        // --- PRESENTATION MODE STATE ---
     const [isPresenting, setIsPresenting] = useState(false);
 
     const togglePresentMode = async () => {
@@ -723,7 +705,7 @@ export default function PresentationView({
                     await document.documentElement.requestFullscreen();
                 }
             } catch {
-                // Fullscreen might be blocked by browser permissions, continue anyway
+                // Fullscreen blocked, proceed anyway
             }
             setIsPresenting(true);
         } else {
@@ -734,10 +716,8 @@ export default function PresentationView({
         }
     };
 
-    // Listen for ESC or F5 / 'P' to toggle Present Mode
     useEffect(() => {
         const handleKeyDown = (e) => {
-            // Prevent interfering when teacher is typing in an input
             if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
 
             if (e.key === 'p' || e.key === 'P') {
@@ -757,28 +737,29 @@ export default function PresentationView({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isPresenting, activeSlideIndex, slides.length]);
 
-    const sizeClasses = { desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l', visualClass: 'scale-100 max-h-[180px] mb-2' };
+    const sizeClasses = { desc: 'text-sm', latex: 'text-lg', clue: 'text-sm', headerText: 'text-base', visualClass: 'scale-100 max-h-[180px] mb-2' };
     const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
 
     const currentTheme = PRESENTATION_THEMES[presentationTheme] || PRESENTATION_THEMES.clean;
 
     return (
         <div 
-            className={`presentation-container fixed inset-0 z-[100] flex flex-col font-sans overflow-hidden animate-in fade-in ${currentTheme.wrapperClass}`}
+            className={`presentation-container fixed inset-0 z-[100] flex flex-col font-sans overflow-hidden animate-in fade-in bg-[var(--bg-canvas)] text-[var(--text-main)] ${currentTheme.wrapperClass}`}
             style={currentTheme.cssVars}
         >
-            {/* 🟢 NEW: CONDENSED RESPONSIVE HEADER */}
-            <header className="bg-slate-900 text-white px-4 sm:px-6 py-2 flex justify-between items-center shadow-md z-50 select-none gap-4">
+            {/* CONDENSED RESPONSIVE HEADER */}
+            <header className="bg-[var(--bg-card)] border-b border-[var(--border-main)] text-[var(--text-main)] px-4 sm:px-6 py-2.5 flex justify-between items-center shadow-2xs z-50 select-none gap-4">
                 
                 {/* 1. LEFT SIDE: Title & File Menu */}
                 <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                     <div className="relative">
                         <button 
+                            type="button"
                             onClick={() => setIsFileMenuOpen(!isFileMenuOpen)} 
-                            className={`p-2 rounded-xl flex items-center gap-2 transition-colors border ${isFileMenuOpen ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-800 text-slate-200 border-slate-700/60 hover:bg-slate-700'}`}
+                            className={`p-2 rounded-xl flex items-center gap-2 transition-colors border cursor-pointer ${isFileMenuOpen ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' : 'bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border-strong)] hover:bg-[var(--bg-surface-hover)]'}`}
                         >
                             <Menu size={18} />
-                            <span className="text-[12px] font-black uppercase tracking-wider hidden sm:inline">
+                            <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">
                                 {lang === 'sv' ? "Arkiv" : "File"}
                             </span>
                         </button>
@@ -787,57 +768,63 @@ export default function PresentationView({
                         {isFileMenuOpen && (
                             <>
                                 <div className="fixed inset-0 z-40" onClick={() => setIsFileMenuOpen(false)} />
-                                <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-slate-800 flex flex-col animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="absolute top-full left-0 mt-2 w-56 bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-strong)] py-2 z-50 text-[var(--text-main)] flex flex-col animate-in fade-in slide-in-from-top-2 duration-150">
                                     <button 
+                                        type="button"
                                         onClick={() => { setShowLibraryModal(true); setIsFileMenuOpen(false); }} 
-                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left text-xs font-bold"
+                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--bg-surface)] transition-colors text-left text-xs font-bold cursor-pointer"
                                     >
-                                        <FolderOpen size={16} className="text-slate-400" />
+                                        <FolderOpen size={16} className="text-[var(--text-muted)]" />
                                         {lang === 'sv' ? "Öppna från arkiv..." : "Open from library..."}
                                     </button>
-                                    <div className="w-full h-px bg-slate-100 my-1" />
+                                    <div className="w-full h-px bg-[var(--border-main)] my-1" />
                                     <button 
+                                        type="button"
                                         onClick={() => { handleSave(); setIsFileMenuOpen(false); }} 
-                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left text-xs font-bold"
+                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--bg-surface)] transition-colors text-left text-xs font-bold cursor-pointer"
                                     >
-                                        <UploadCloud size={16} className="text-indigo-500" />
+                                        <UploadCloud size={16} className="text-emerald-600 dark:text-emerald-400" />
                                         {lang === 'sv' ? "Spara till molnet" : "Save to cloud"}
                                     </button>
-                                    {/* 🟢 NEW: Save As Copy Option (always available or enabled when a sheet is loaded) */}
                                     <button 
+                                        type="button"
                                         onClick={handleSaveAsCopy} 
-                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left text-xs font-bold"
+                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--bg-surface)] transition-colors text-left text-xs font-bold cursor-pointer"
                                     >
-                                        <Copy size={16} className="text-cyan-500" />
+                                        <Copy size={16} className="text-sky-600 dark:text-sky-400" />
                                         {lang === 'sv' ? "Spara som ny kopia..." : "Save as new copy..."}
                                     </button>
                                     <button 
+                                        type="button"
                                         onClick={handleOpenSaveToUnit} 
-                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left text-xs font-bold"
+                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--bg-surface)] transition-colors text-left text-xs font-bold cursor-pointer"
                                     >
                                         <BookmarkPlus size={16} className="text-amber-500" />
                                         {lang === 'sv' ? "Spara till planering/modul" : "Save to curriculum unit"}
                                     </button>
-                                    <div className="w-full h-px bg-slate-100 my-1" />
+                                    <div className="w-full h-px bg-[var(--border-main)] my-1" />
                                     <button 
+                                        type="button"
                                         onClick={exportToCSV} 
-                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left text-xs font-bold"
+                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--bg-surface)] transition-colors text-left text-xs font-bold cursor-pointer"
                                     >
-                                        <Download size={16} className="text-emerald-500" />
+                                        <Download size={16} className="text-emerald-600 dark:text-emerald-400" />
                                         {lang === 'sv' ? "Exportera text (CSV)" : "Export text (CSV)"}
                                     </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const keys = Object.keys(PRESENTATION_THEMES);
-                                            const nextIdx = (keys.indexOf(presentationTheme) + 1) % keys.length;
-                                            setPresentationTheme(keys[nextIdx]);
-                                            setIsSaving(false);
-                                        }}
-                                        className="p-1.5 rounded-lg text-xs font-black uppercase text-slate-300 hover:text-white bg-slate-800 border border-slate-700/60"
-                                    >
-                                        {PRESENTATION_THEMES[presentationTheme]?.name[lang] || 'Tema'}
-                                    </button>
+                                    <div className="px-3 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const keys = Object.keys(PRESENTATION_THEMES);
+                                                const nextIdx = (keys.indexOf(presentationTheme) + 1) % keys.length;
+                                                setPresentationTheme(keys[nextIdx]);
+                                                setIsSaving(false);
+                                            }}
+                                            className="w-full py-1.5 px-3 rounded-xl text-xs font-bold uppercase tracking-wider text-[var(--text-main)] bg-[var(--bg-surface)] border border-[var(--border-strong)] hover:border-emerald-600 cursor-pointer transition-all"
+                                        >
+                                            {PRESENTATION_THEMES[presentationTheme]?.name[lang] || 'Tema'}
+                                        </button>
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -848,76 +835,79 @@ export default function PresentationView({
                         value={localTitle}
                         onChange={(e) => setLocalTitle(e.target.value)}
                         placeholder={lang === 'sv' ? "Namnge presentationen..." : "Name presentation..."}
-                        className="bg-white/10 text-white px-3 py-1.5 rounded-lg text-sm sm:text-base font-bold outline-none border-2 border-transparent focus:border-indigo-400 focus:bg-white focus:text-slate-900 transition-all w-32 sm:w-64 lg:w-80 shadow-sm placeholder-white/50"
+                        className="bg-[var(--bg-surface)] text-[var(--text-main)] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold outline-none border border-[var(--border-strong)] focus:border-emerald-600 transition-all w-32 sm:w-64 lg:w-80 shadow-inner placeholder:text-[var(--text-muted)]"
                     />
                 </div>
                 
-                {/* 2. CENTER SIDE: View & Zoom Controls (Hidden on very tiny mobile, visible on tablets/desktops) */}
-                <div className="hidden md:flex flex-1 items-center justify-center gap-4">
-                    <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700/60 gap-1 shadow-inner">
-                        <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
-                            <List size={14} /> <span className="text-[12px]">{lang === 'sv' ? "List" : "List"}</span>
+                {/* 2. CENTER SIDE: View & Zoom Controls */}
+                <div className="hidden md:flex flex-1 items-center justify-center gap-3">
+                    <div className="flex items-center bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1 shadow-inner">
+                        <button type="button" onClick={() => setViewMode('list')} className={`px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === 'list' ? 'bg-emerald-600 text-white shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+                            <List size={14} /> <span>{lang === 'sv' ? "List" : "List"}</span>
                         </button>
-                        <button onClick={() => setViewMode('sheet')} className={`p-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === 'sheet' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-100 hover:text-white'}`}>
-                            <FileText size={14} /> <span className="text-[12px]">{lang === 'sv' ? "Blad" : "Sheet"}</span>
+                        <button type="button" onClick={() => setViewMode('sheet')} className={`px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === 'sheet' ? 'bg-emerald-600 text-white shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+                            <FileText size={14} /> <span>{lang === 'sv' ? "Blad" : "Sheet"}</span>
                         </button>
                     </div>
 
-                    <div className="w-px h-6 bg-slate-700/60" />
+                    <div className="w-px h-5 bg-[var(--border-main)]" />
 
-                    <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700/60 gap-1 shadow-inner">
-                        <button onClick={() => setGlobalZoom(prev => Math.max(0.5, prev - 0.1))} className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-slate-500 cursor-pointer transition-colors" title="Zoom Out">
+                    <div className="flex items-center bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1 shadow-inner">
+                        <button type="button" onClick={() => setGlobalZoom(prev => Math.max(0.5, prev - 0.1))} className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] cursor-pointer transition-colors" title="Zoom Out">
                             <ZoomOut size={14} />
                         </button>
-                        <span className="text-[12px] font-black uppercase tracking-widest text-slate-100 px-2 min-w-[50px] text-center select-none">
+                        <span className="text-xs font-bold font-mono tracking-wider text-[var(--text-main)] px-2 min-w-[45px] text-center select-none">
                             {Math.round(globalZoom * 100)}%
                         </span>
-                        <button onClick={() => setGlobalZoom(prev => Math.min(2.5, prev + 0.1))} className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-slate-700 cursor-pointer transition-colors" title="Zoom In">
+                        <button type="button" onClick={() => setGlobalZoom(prev => Math.min(2.5, prev + 0.1))} className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] cursor-pointer transition-colors" title="Zoom In">
                             <ZoomIn size={14} />
                         </button>
                     </div>
                 </div>
 
                 {/* 3. RIGHT SIDE: Core Actions */}
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
                     <button
+                        type="button"
                         onClick={() => {
                             if (window.confirm(lang === 'sv' ? "Rensa alla valda uppgifter?" : "Clear all selected questions?")) {
                                 setActiveIds([]);
                             }
                         }}
-                        className="p-2 bg-slate-800 hover:bg-rose-600 border border-slate-700/60 text-slate-300 hover:text-white rounded-xl transition-all cursor-pointer hidden lg:block"
+                        className="p-2 bg-[var(--bg-surface)] hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-[var(--border-strong)] text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 rounded-xl transition-all cursor-pointer hidden lg:block shadow-2xs"
                         title={lang === 'sv' ? "Nollställ" : "Reset Canvas"}
                     >
-                        <RefreshCw size={16} />
+                        <RefreshCw size={15} />
                     </button>
                     
-                    <button
+                    <button 
                         type="button"
                         onClick={() => setShowTutorial(true)}
-                        className="p-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700/60 rounded-xl transition-all cursor-pointer shadow-sm hidden sm:block"
+                        className="p-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-amber-500 border border-[var(--border-strong)] rounded-xl transition-all cursor-pointer shadow-2xs hidden sm:block"
                         title={lang === 'sv' ? "Snabbguide & Hjälp" : "Quick Guide & Help"}
                     >
-                        <HelpCircle size={16} />
+                        <HelpCircle size={15} />
                     </button>
                     
                     <div className="hidden sm:block">
                         <PreferencesToggle />
                     </div>
 
-                    <div className="w-px h-6 bg-slate-700/60 mx-1 hidden sm:block" />
+                    <div className="w-px h-5 bg-[var(--border-main)] mx-0.5 hidden sm:block" />
 
                     <button 
-                        onClick={() => setShowGameLauncher(true)} 
-                        className="p-2 bg-slate-800 hover:bg-indigo-600 text-amber-400 rounded-xl border border-slate-700/60"
+                        type="button"
+                        onClick={() => setShowActivityHub(true)} 
+                        className="p-2 bg-[var(--bg-surface)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-amber-500 rounded-xl border border-[var(--border-strong)] cursor-pointer shadow-2xs"
                         title="Spela Poängjakten"
                     >
-                        <Gamepad2 size={16} />
+                        <Gamepad2 size={15} />
                     </button>
+                    
                     <button 
                         type="button"
                         onClick={togglePresentMode}
-                        className="px-3.5 py-2 rounded-xl text-white bg-indigo-600 hover:bg-indigo-500 transition-all cursor-pointer flex items-center gap-2 shadow-md active:scale-95 font-black text-xs uppercase tracking-wider"
+                        className="px-3 py-2 rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-[0.98] font-bold text-xs uppercase tracking-wider"
                         title={lang === 'sv' ? "Starta helskärmspresentation (Tangent: P)" : "Present Fullscreen (Key: P)"}
                     >
                         <Presentation size={15} />
@@ -925,19 +915,20 @@ export default function PresentationView({
                     </button>
 
                     <button 
+                        type="button"
                         onClick={handleGoLive}
-                        className="px-3 sm:px-4 py-2 rounded-xl text-white bg-rose-600 hover:bg-rose-500 transition-all cursor-pointer flex items-center gap-1.5 shadow-md shadow-rose-900/50 active:scale-95"
+                        className="px-3 py-2 rounded-xl text-white bg-rose-600 hover:bg-rose-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-[0.98] font-bold text-xs uppercase tracking-wider"
                     >
                         <Monitor size={14} />
-                        <span className="text-[12px] font-black uppercase tracking-wider hidden sm:inline">
+                        <span className="hidden sm:inline">
                             {lang === 'sv' ? "Gå Live" : "Go Live"}
                         </span>
                     </button>
 
-                    {/* Change onClick={onClose} to: */}
                     <button 
+                        type="button"
                         onClick={handleAppClose} 
-                        className="bg-white/10 hover:bg-rose-500 px-3 sm:px-4 py-2 rounded-xl text-[12px] font-black uppercase tracking-widest transition-all cursor-pointer"
+                        className="p-2 sm:px-3 sm:py-2 bg-[var(--bg-surface)] hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 border border-[var(--border-strong)] rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-2xs"
                     >
                         <X size={16} className="sm:hidden" />
                         <span className="hidden sm:inline">{lang === 'sv' ? "Stäng" : "Close"}</span>
@@ -950,13 +941,14 @@ export default function PresentationView({
                 style={{ gridTemplateColumns: `${isLeftCollapsed ? '72px' : '288px'} 1fr ${isRightCollapsed ? '64px' : '320px'}` }}
             >
                 {/* COLUMN 1: COLLAPSIBLE WORKSPACE SELECTION PICKER */}
-                <div className={`whiteboard-protect bg-white border-r border-slate-200 overflow-y-auto custom-scrollbar flex flex-col transition-all duration-300 select-none shrink-0 z-10 min-w-0 ${isLeftCollapsed ? 'w-[72px] items-center' : 'w-[288px]'}`}>
+                <div className={`whiteboard-protect bg-[var(--bg-card)] border-r border-[var(--border-main)] text-[var(--text-main)] overflow-y-auto custom-scrollbar flex flex-col transition-all duration-300 select-none shrink-0 z-10 min-w-0 ${isLeftCollapsed ? 'w-[72px] items-center' : 'w-[288px]'}`}>
                     
-                    <div className={`flex items-center justify-between p-3 border-b border-slate-100 w-full mb-3 ${isLeftCollapsed ? 'flex-col gap-2' : ''}`}>
-                        {!isLeftCollapsed && <span className="font-black text-xs text-slate-400 uppercase tracking-widest pl-2">Verktyg</span>}
+                    <div className={`flex items-center justify-between p-3 border-b border-[var(--border-main)] w-full mb-3 ${isLeftCollapsed ? 'flex-col gap-2' : ''}`}>
+                        {!isLeftCollapsed && <span className="font-bold text-xs text-[var(--text-muted)] uppercase tracking-wider pl-2">Verktyg</span>}
                         <button 
+                            type="button"
                             onClick={() => setIsLeftCollapsed(!isLeftCollapsed)}
-                            className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 hover:bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-xl transition-colors cursor-pointer"
                         >
                             {isLeftCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
                         </button>
@@ -965,26 +957,26 @@ export default function PresentationView({
                     <div className="w-full px-4 mb-4 shrink-0 flex flex-col gap-2">
                         {isLeftCollapsed ? (
                             <>
-                                <button onClick={handleAddSlide} className="w-12 h-12 bg-emerald-500 text-white hover:bg-emerald-600 rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer mx-auto" title={lang === 'sv' ? "Lägg till Slide" : "Add Slide"}>
-                                    <Presentation size={20} strokeWidth={2.5} />
+                                <button type="button" onClick={handleAddSlide} className="w-12 h-12 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl flex items-center justify-center transition-all shadow-2xs active:scale-[0.98] cursor-pointer mx-auto" title={lang === 'sv' ? "Lägg till Slide" : "Add Slide"}>
+                                    <Presentation size={18} strokeWidth={2.5} />
                                 </button>
-                                <button onClick={() => setIsSummonerOpen(true)} className="w-12 h-12 bg-purple-600 text-white hover:bg-purple-700 rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer mx-auto" title={lang === 'sv' ? "Välj ny uppgift" : "Select Question"}>
-                                    <FileQuestion size={20} strokeWidth={2.5} />
+                                <button type="button" onClick={() => setIsSummonerOpen(true)} className="w-12 h-12 bg-sky-600 text-white hover:bg-sky-700 rounded-xl flex items-center justify-center transition-all shadow-2xs active:scale-[0.98] cursor-pointer mx-auto" title={lang === 'sv' ? "Välj ny uppgift" : "Select Question"}>
+                                    <FileQuestion size={18} strokeWidth={2.5} />
                                 </button>
                             </>
                         ) : (
                             <div className="flex gap-2">
-                                <button onClick={handleAddSlide} className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-1.5 transition-all shadow-md active:scale-[0.98] cursor-pointer">
-                                    <Presentation size={18} strokeWidth={2.5} />
+                                <button type="button" onClick={handleAddSlide} className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-wider flex flex-col items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-[0.98] cursor-pointer">
+                                    <Presentation size={16} strokeWidth={2.5} />
                                     {lang === 'sv' ? "Ny Slide" : "New Slide"}
                                 </button>
                                 <div className="flex-1 flex flex-col gap-2">
-                                    <button onClick={() => setIsSummonerOpen(true)} className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] cursor-pointer">
-                                        <FileQuestion size={14} strokeWidth={2.5} />
+                                    <button type="button" onClick={() => setIsSummonerOpen(true)} className="flex-1 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-[0.98] cursor-pointer">
+                                        <FileQuestion size={13} strokeWidth={2.5} />
                                         {lang === 'sv' ? "Uppgift" : "Math"}
                                     </button>
-                                    <button onClick={() => setIsPromptBuilderOpen(true)} className="flex-1 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] cursor-pointer">
-                                        <MessageSquare size={14} strokeWidth={2.5} />
+                                    <button type="button" onClick={() => setIsPromptBuilderOpen(true)} className="flex-1 py-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-strong)] rounded-xl font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-[0.98] cursor-pointer">
+                                        <MessageSquare size={13} strokeWidth={2.5} />
                                         {lang === 'sv' ? "Textfråga" : "Prompt"}
                                     </button>
                                 </div>
@@ -992,37 +984,40 @@ export default function PresentationView({
                         )}
                     </div>
 
-                    <div className={`flex bg-slate-100 p-1 rounded-xl mb-3 shadow-inner border border-slate-200/60 ${isLeftCollapsed ? 'flex-col gap-1 mx-2' : 'flex-row gap-1 mx-4'}`}>
+                    <div className={`flex bg-[var(--bg-surface)] p-1 rounded-xl mb-3 shadow-inner border border-[var(--border-main)] ${isLeftCollapsed ? 'flex-col gap-1 mx-2' : 'flex-row gap-1 mx-4'}`}>
                         <button 
+                            type="button"
                             onClick={() => setSidebarTab('slides')} 
-                            className={`flex-1 py-2 flex items-center justify-center rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${sidebarTab === 'slides' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                            className={`flex-1 py-2 flex items-center justify-center rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${sidebarTab === 'slides' ? 'bg-[var(--bg-card)] text-emerald-600 dark:text-emerald-400 shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                             title={lang === 'sv' ? "Slides" : "Slides"}
                         >
-                            {isLeftCollapsed ? <Presentation size={16} /> : "Slides"}
+                            {isLeftCollapsed ? <Presentation size={15} /> : "Slides"}
                         </button>
                         <button 
+                            type="button"
                             onClick={() => setSidebarTab('questions')} 
-                            className={`flex-1 py-2 flex items-center justify-center rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${sidebarTab === 'questions' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                            className={`flex-1 py-2 flex items-center justify-center rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${sidebarTab === 'questions' ? 'bg-[var(--bg-card)] text-sky-600 dark:text-sky-400 shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                             title={lang === 'sv' ? "Uppgifter" : "Questions"}
                         >
-                            {isLeftCollapsed ? < FileQuestion size={16} /> : (lang === 'sv' ? 'Uppgifter' : 'Questions')}
+                            {isLeftCollapsed ? <FileQuestion size={15} /> : (lang === 'sv' ? 'Uppgifter' : 'Questions')}
                         </button>
                     </div>
 
                     {!isLeftCollapsed && sidebarTab === 'questions' && livePacket.length > 0 && (
                         <div className="px-4 mb-3">
                             <button 
+                                type="button"
                                 onClick={handleAutoDistribute} 
-                                className="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
+                                className="w-full py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-strong)] rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-2xs cursor-pointer"
                             >
-                                < FileQuestion size={14}/> {lang === 'sv' ? "Fördela 1 uppgift per slide" : "1 question per slide"}
+                                <FileQuestion size={14}/> {lang === 'sv' ? "Fördela 1 uppgift per slide" : "1 question per slide"}
                             </button>
                         </div>
                     )}
                     
                     {!isLeftCollapsed && (
                         <div className="px-5 mb-2">
-                            <h2 className="text-[12px] font-black text-slate-400 uppercase tracking-widest truncate">
+                            <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider truncate">
                                 {sidebarTab === 'slides' 
                                     ? `${lang === 'sv' ? 'Slides' : 'Slides'} (${slides.length})` 
                                     : `${lang === 'sv' ? 'Uppgifter' : 'Questions'} (${livePacket.length})`
@@ -1031,7 +1026,7 @@ export default function PresentationView({
                         </div>
                     )}
 
-                    <div className="flex-1 flex flex-col gap-3 w-full min-w-0 pb-12 px-4">
+                    <div className="flex-1 flex flex-col gap-2.5 w-full min-w-0 pb-12 px-4">
                         {sidebarTab === 'slides' ? (
                             slides.map((slide, idx) => {
                                 const isActive = activeSlideIndex === idx;
@@ -1039,11 +1034,13 @@ export default function PresentationView({
                                 if (isLeftCollapsed) {
                                     return (
                                         <button 
+                                            type="button"
                                             key={slide.id} onClick={() => setActiveSlideIndex(idx)}
-                                            className={`w-12 h-10 rounded-xl font-black text-[10px] uppercase border-2 flex items-center justify-center transition-all cursor-pointer shadow-sm shrink-0
-                                                ${isActive ? 'bg-emerald-500 border-emerald-600 text-white font-black scale-105' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-400'}`}
+                                            className={`w-12 h-10 rounded-xl font-bold font-mono text-xs uppercase border flex items-center justify-center transition-all cursor-pointer shadow-2xs shrink-0 ${
+                                                isActive ? 'bg-emerald-600 text-white border-emerald-600 scale-105' : 'bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-muted)] hover:border-[var(--border-strong)]'
+                                            }`}
                                         >
-                                            S {idx + 1}
+                                            S{idx + 1}
                                         </button>
                                     );
                                 }
@@ -1056,19 +1053,24 @@ export default function PresentationView({
                                         onDragOver={(e) => handleSlideDragOver(e, idx)}
                                         onDragEnd={handleSlideDragEnd}
                                         onClick={() => setActiveSlideIndex(idx)}
-                                        className={`group p-3 rounded-2xl border-2 cursor-pointer transition-all shrink-0 min-w-0 flex items-center justify-between ${isActive ? 'border-emerald-500 bg-emerald-50 shadow-md scale-[1.02]' : 'border-slate-100 hover:border-slate-300 bg-white'} ${draggedSlideIndex === idx ? 'opacity-40 border-dashed border-emerald-400' : ''}`}
+                                        className={`group p-3 rounded-xl border cursor-pointer transition-all shrink-0 min-w-0 flex items-center justify-between shadow-2xs ${
+                                            isActive ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/40' : 'border-[var(--border-main)] hover:border-[var(--border-strong)] bg-[var(--bg-card)]'
+                                        } ${draggedSlideIndex === idx ? 'opacity-40 border-dashed border-emerald-500' : ''}`}
                                     >
-                                        <div className="flex items-center gap-3 overflow-hidden w-full">
-                                            <GripVertical size={14} className="text-slate-300 shrink-0 cursor-grab group-hover:text-slate-400" />
+                                        <div className="flex items-center gap-2.5 overflow-hidden w-full">
+                                            <GripVertical size={14} className="text-[var(--text-muted)] shrink-0 cursor-grab group-hover:text-[var(--text-main)]" />
                                             
-                                            <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-black text-[11px] ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                            <div className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center font-bold font-mono text-xs ${
+                                                isActive ? 'bg-emerald-600 text-white' : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-main)]'
+                                            }`}>
                                                 {idx + 1}
                                             </div>
                                             
                                             {editingSlideIndex === idx ? (
                                                 <input 
                                                     autoFocus
-                                                    className="w-full text-[12px] font-black uppercase tracking-wider bg-transparent outline-none border-b-2 border-emerald-400 text-emerald-800"
+                                                    type="text"
+                                                    className="w-full text-xs font-bold uppercase tracking-wider bg-transparent outline-none border-b border-emerald-500 text-[var(--text-main)]"
                                                     defaultValue={slide.title}
                                                     onBlur={(e) => {
                                                         handleRenameSlide(idx, e.target.value);
@@ -1085,7 +1087,7 @@ export default function PresentationView({
                                             ) : (
                                                 <span 
                                                     onDoubleClick={(e) => { e.stopPropagation(); setEditingSlideIndex(idx); }}
-                                                    className={`text-[12px] font-black uppercase tracking-wider truncate flex-1 ${isActive ? 'text-emerald-700' : 'text-slate-500'}`}
+                                                    className={`text-xs font-bold uppercase tracking-wider truncate flex-1 ${isActive ? 'text-emerald-700 dark:text-emerald-300' : 'text-[var(--text-main)]'}`}
                                                     title={lang === 'sv' ? "Dubbelklicka för att byta namn" : "Double-click to rename"}
                                                 >
                                                     {slide.title}
@@ -1095,20 +1097,22 @@ export default function PresentationView({
 
                                         <div className={`flex gap-1 shrink-0 ml-2 transition-all opacity-0 group-hover:opacity-100 ${isActive ? 'opacity-100' : ''}`}>
                                             <button
+                                                type="button"
                                                 onClick={(e) => handleDuplicateSlide(e, idx)}
-                                                className="p-1.5 rounded-lg transition-all text-slate-300 hover:text-indigo-500 hover:bg-indigo-100"
+                                                className="p-1.5 rounded-lg transition-colors text-[var(--text-muted)] hover:text-emerald-600 hover:bg-[var(--bg-surface)] cursor-pointer"
                                                 title={lang === 'sv' ? "Duplicera slide" : "Duplicate slide"}
                                             >
-                                                <Copy size={14} />
+                                                <Copy size={13} />
                                             </button>
                                             
                                             {slides.length > 1 && (
                                                 <button
+                                                    type="button"
                                                     onClick={(e) => handleDeleteSlide(e, idx)}
-                                                    className="p-1.5 rounded-lg transition-all text-slate-300 hover:text-rose-500 hover:bg-rose-100"
+                                                    className="p-1.5 rounded-lg transition-colors text-[var(--text-muted)] hover:text-rose-600 hover:bg-[var(--bg-surface)] cursor-pointer"
                                                     title={lang === 'sv' ? "Ta bort slide" : "Delete slide"}
                                                 >
-                                                    <Trash2 size={14} />
+                                                    <Trash2 size={13} />
                                                 </button>
                                             )}
                                         </div>
@@ -1122,53 +1126,58 @@ export default function PresentationView({
                                     if (isLeftCollapsed) {
                                         return (
                                             <button 
+                                                type="button"
                                                 key={q.id} onClick={() => toggleQuestion(q.id)}
-                                                className={`w-12 h-10 rounded-xl font-black text-[10px] uppercase border-2 flex items-center justify-center transition-all cursor-pointer shadow-sm shrink-0
-                                                    ${isActive ? 'bg-purple-500 border-purple-600 text-white font-black scale-105' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-400'}`}
+                                                className={`w-12 h-10 rounded-xl font-bold font-mono text-xs uppercase border flex items-center justify-center transition-all cursor-pointer shadow-2xs shrink-0 ${
+                                                    isActive ? 'bg-sky-600 border-sky-600 text-white scale-105' : 'bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-muted)] hover:border-[var(--border-strong)]'
+                                                }`}
                                             >
-                                                Q {idx + 1}
+                                                Q{idx + 1}
                                             </button>
                                         );
                                     }
                                     return (
                                         <div 
                                             key={q.id} onClick={() => toggleQuestion(q.id)}
-                                            className={`p-4 rounded-2xl border-2 cursor-pointer transition-all shrink-0 min-w-0 ${isActive ? 'border-purple-500 bg-purple-50 shadow-md scale-[1.01]' : 'border-slate-100 hover:border-slate-300 bg-white'}`}
+                                            className={`p-3.5 rounded-xl border cursor-pointer transition-all shrink-0 min-w-0 shadow-2xs ${
+                                                isActive ? 'border-sky-500 bg-sky-50/60 dark:bg-sky-950/40' : 'border-[var(--border-main)] hover:border-[var(--border-strong)] bg-[var(--bg-card)]'
+                                            }`}
                                         >
                                             <div className="flex justify-between items-center mb-2">
-                                                <span className="text-[14px] font-black text-purple-900 uppercase tracking-wider">
+                                                <span className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider font-mono">
                                                     {lang === 'sv' ? 'Uppgift' : 'Question'} {idx + 1}
                                                 </span>
                                                 <div className="flex items-center gap-1.5">
                                                     <button 
+                                                        type="button"
                                                         onClick={(e) => togglePinToSpecificSlide(e, q.id, activeSlideIndex)}
-                                                        className={`p-1.5 rounded-lg border transition-all ${
+                                                        className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                                                             (slides[activeSlideIndex]?.activeIds || []).includes(q.id) 
-                                                                ? 'bg-emerald-500 text-white border-emerald-600 shadow-sm scale-110' 
-                                                                : 'bg-white text-slate-300 hover:text-emerald-500 border-slate-200 hover:bg-emerald-50'
+                                                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs scale-105' 
+                                                                : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-emerald-600 border-[var(--border-main)]'
                                                         }`}
                                                         title={lang === 'sv' ? "Fäst på aktuell slide" : "Pin to active slide"}
                                                     >
-                                                        <Monitor size={14}/>
+                                                        <Monitor size={13}/>
                                                     </button>
-                                                    {/* Delete Button */}
                                                     <button
+                                                        type="button"
                                                         onClick={(e) => handleDeleteQuestion(e, q.id)}
-                                                        className="p-1.5 rounded-lg border bg-white text-slate-300 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-200 border-slate-200 transition-all"
+                                                        className="p-1.5 rounded-lg border bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-rose-600 border-[var(--border-main)] transition-colors cursor-pointer"
                                                         title={lang === 'sv' ? "Ta bort uppgift" : "Delete question"}
                                                     >
-                                                        <Trash2 size={14} />
+                                                        <Trash2 size={13} />
                                                     </button>
-                                                    {isActive && <span className="w-2 h-2 rounded-full bg-purple-500 shadow-sm ml-0.5" />}
+                                                    {isActive && <span className="w-2 h-2 rounded-full bg-sky-600 shadow-2xs ml-0.5" />}
                                                 </div>
                                             </div>
                                             
-                                            <div className="text-xs font-bold line-clamp-2 text-slate-600 truncate mb-3">
+                                            <div className="text-xs font-semibold line-clamp-2 text-[var(--text-muted)] truncate mb-2.5">
                                                 <MathDisplay content={compileAnchoredStory(q, lang)} />
                                             </div>
 
-                                            <div className="flex flex-col gap-1.5 mt-auto pt-2 border-t border-slate-100" onPointerDown={e => e.stopPropagation()}>
-                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                            <div className="flex flex-col gap-1 mt-auto pt-2 border-t border-[var(--border-main)]" onPointerDown={e => e.stopPropagation()}>
+                                                <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
                                                     {lang === 'sv' ? "Fäst på Slide:" : "Pin to Slide:"}
                                                 </span>
                                                 <div className="flex flex-wrap gap-1">
@@ -1176,22 +1185,24 @@ export default function PresentationView({
                                                         const isPinned = (s.activeIds || []).includes(q.id);
                                                         return (
                                                             <button
+                                                                type="button"
                                                                 key={s.id}
                                                                 onClick={(e) => togglePinToSpecificSlide(e, q.id, sIdx)}
-                                                                className={`w-6 h-6 rounded-md border text-[9px] font-black transition-all ${
+                                                                className={`w-6 h-6 rounded-md border text-[9px] font-bold font-mono transition-all cursor-pointer ${
                                                                     isPinned 
-                                                                        ? 'bg-emerald-500 text-white border-emerald-600 shadow-sm scale-110' 
-                                                                        : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200'
+                                                                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' 
+                                                                        : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-main)] hover:border-emerald-600 hover:text-emerald-600'
                                                                 }`}
                                                                 title={s.title}
                                                             >
                                                                 {sIdx + 1}
                                                             </button>
-                                                        )
+                                                        );
                                                     })}
                                                     <button
+                                                        type="button"
                                                         onClick={(e) => createSlideWithQuestion(e, q.id)}
-                                                        className="w-6 h-6 rounded-md border border-dashed border-slate-300 text-slate-400 hover:text-emerald-600 hover:border-emerald-400 hover:bg-emerald-50 flex items-center justify-center transition-all"
+                                                        className="w-6 h-6 rounded-md border border-dashed border-[var(--border-strong)] text-[var(--text-muted)] hover:text-emerald-600 hover:border-emerald-600 flex items-center justify-center transition-all cursor-pointer"
                                                         title={lang === 'sv' ? "Skapa ny slide med denna uppgift" : "Create new slide with this question"}
                                                     >
                                                         <Plus size={10} strokeWidth={3} />
@@ -1207,34 +1218,35 @@ export default function PresentationView({
                 </div>
 
                 {/* COLUMN 2: WORKSPACE CANVAS INTERACTION SHELF */}
-                <main className="relative overflow-hidden h-full w-full flex flex-col items-center justify-center bg-slate-900 transition-colors duration-300 p-6">
+                <main className="relative overflow-hidden h-full w-full flex flex-col items-center justify-center bg-[var(--bg-canvas)] transition-colors duration-300 p-6">
                     
-                    {/* Floating Navigation Header (Overlays the Canvas Layer) */}
+                    {/* Floating Navigation Header */}
                     <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
                         <button 
+                            type="button"
                             onClick={handleCanvasPrev}
                             disabled={sidebarTab === 'slides' ? activeSlideIndex === 0 : (livePacket.length === 0 || (activeIds.length > 0 && presentationIndex === 0))}
-                            className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
+                            className="w-11 h-11 bg-[var(--bg-card)] text-[var(--text-main)] rounded-xl flex items-center justify-center shadow-lg hover:bg-emerald-600 hover:text-white transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border border-[var(--border-strong)] pointer-events-auto animate-in fade-in"
                         >
-                            <ChevronLeft size={28} />
+                            <ChevronLeft size={24} />
                         </button>
 
-                        <div className="bg-slate-800/90 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest backdrop-blur-md shadow-lg border border-slate-700 pointer-events-auto flex items-center gap-2.5 transition-all">
+                        <div className="bg-[var(--bg-card)] text-[var(--text-main)] px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider backdrop-blur-xs shadow-lg border border-[var(--border-strong)] pointer-events-auto flex items-center gap-2.5 transition-all">
                             {sidebarTab === 'slides' ? (
                                 <>
-                                    <Presentation size={15} className="text-emerald-400"/>
+                                    <Presentation size={15} className="text-emerald-600 dark:text-emerald-400"/>
                                     <span className="truncate max-w-[150px]">{slides[activeSlideIndex]?.title}</span>
-                                    <span className="text-white/50 px-1 border-l border-white/20">{activeSlideIndex + 1} / {slides.length}</span>
-                                    <span className="text-emerald-400 text-[10px] bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60">16:9</span>
-                                    {/* 🟢 Slide Layout Toggle Pill */}
-                                    <div className="flex bg-slate-900/80 p-0.5 rounded-lg border border-slate-700 ml-2">
+                                    <span className="text-[var(--text-muted)] px-1 border-l border-[var(--border-main)] font-mono">{activeSlideIndex + 1} / {slides.length}</span>
+                                    <span className="text-emerald-700 dark:text-emerald-400 text-[10px] bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 font-mono">16:9</span>
+                                    
+                                    <div className="flex bg-[var(--bg-surface)] p-0.5 rounded-lg border border-[var(--border-main)] ml-2">
                                         <button
                                             type="button"
                                             onClick={() => handleToggleSlideLayout(activeSlideIndex, 'canvas')}
-                                            className={`px-2 py-0.5 rounded text-[10px] font-black transition-all cursor-pointer ${
+                                            className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                                                 slides[activeSlideIndex]?.layout !== 'instruction_template'
-                                                    ? 'bg-emerald-500 text-white'
-                                                    : 'text-slate-400 hover:text-white'
+                                                    ? 'bg-emerald-600 text-white shadow-2xs'
+                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                                             }`}
                                         >
                                             Canvas
@@ -1242,10 +1254,10 @@ export default function PresentationView({
                                         <button
                                             type="button"
                                             onClick={() => handleToggleSlideLayout(activeSlideIndex, 'instruction_template')}
-                                            className={`px-2 py-0.5 rounded text-[10px] font-black transition-all cursor-pointer ${
+                                            className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                                                 slides[activeSlideIndex]?.layout === 'instruction_template'
-                                                    ? 'bg-indigo-600 text-white'
-                                                    : 'text-slate-400 hover:text-white'
+                                                    ? 'bg-sky-600 text-white shadow-2xs'
+                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                                             }`}
                                         >
                                             {lang === 'sv' ? "Instruktion" : "Instruction"}
@@ -1254,27 +1266,27 @@ export default function PresentationView({
                                 </>
                             ) : (
                                 <>
-                                    <FileQuestion size={15} className="text-purple-400"/>
+                                    <FileQuestion size={15} className="text-sky-600 dark:text-sky-400"/>
                                     {activeIds.length > 0 ? (lang === 'sv' ? `Uppgift ${presentationIndex + 1} av ${livePacket.length}` : `Question ${presentationIndex + 1} of ${livePacket.length}`) : (lang === 'sv' ? 'Ingen uppgift vald' : 'No Question Selected')}
                                 </>
                             )}
                         </div>
 
                         <button 
+                            type="button"
                             onClick={handleCanvasNext}
                             disabled={sidebarTab === 'slides' ? activeSlideIndex >= slides.length - 1 : (livePacket.length === 0 || (activeIds.length > 0 && presentationIndex >= livePacket.length - 1))}
-                            className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
+                            className="w-11 h-11 bg-[var(--bg-card)] text-[var(--text-main)] rounded-xl flex items-center justify-center shadow-lg hover:bg-emerald-600 hover:text-white transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border border-[var(--border-strong)] pointer-events-auto animate-in fade-in"
                         >
-                            <ChevronRight size={28} />
+                            <ChevronRight size={24} />
                         </button>
                     </div>
 
-                    {/* 🟢 3. The 16:9 Slide Canvas Wrapper */}
+                    {/* The 16:9 Slide Canvas Wrapper */}
                     <div className="relative w-full h-full max-w-[1600px] max-h-[900px] flex items-center justify-center">
                         {viewMode === 'sheet' ? (
-                            /* Sheet Mode Container */
                             <div 
-                                className={`relative w-full flex flex-col items-center shadow-[0_25px_70px_rgba(0,0,0,0.6)] rounded-3xl border-4 border-slate-700/80 transition-colors duration-300 overflow-hidden ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}
+                                className={`relative w-full flex flex-col items-center shadow-2xl rounded-2xl border border-[var(--border-strong)] transition-colors duration-300 overflow-hidden ${bgType === 'grid' ? 'bg-[var(--bg-card)]' : 'bg-[var(--bg-card)]'}`}
                                 style={{
                                     aspectRatio: '16/9',
                                     height: '100%',
@@ -1282,12 +1294,12 @@ export default function PresentationView({
                                 }}
                             >
                                 <div className="absolute inset-0 overflow-y-auto custom-scrollbar pt-16 pb-32 flex flex-col justify-start items-center z-10 pointer-events-auto">
-                                    <div className="bg-white shadow-2xl w-[210mm] h-auto min-h-[297mm] p-[15mm] pb-[40mm] flex flex-col rounded-sm border border-slate-300 animate-in fade-in zoom-in-95 duration-300 select-none mb-8 mt-2 relative z-20">
-                                        <header className="border-b-2 border-black pb-2 mb-6 flex items-end justify-between">
-                                            <h1 className="text-md font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1>
-                                            <div className="flex gap-6 w-2/3 justify-end text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                                <div className="border-b border-slate-200 pb-0.5 flex gap-2 flex-1 max-w-[160px]"><span>{lang === 'sv' ? "Namn:" : "Name:"}</span></div>
-                                                <div className="border-b border-slate-200 pb-0.5 flex gap-2 w-[100px]"><span>{lang === 'sv' ? "Datum:" : "Date:"}</span></div>
+                                    <div className="bg-[var(--bg-card)] shadow-2xl w-[210mm] h-auto min-h-[297mm] p-[15mm] pb-[40mm] flex flex-col rounded-xl border border-[var(--border-strong)] animate-in fade-in zoom-in-95 duration-150 select-none mb-8 mt-2 relative z-20 text-[var(--text-main)]">
+                                        <header className="border-b-2 border-[var(--border-strong)] pb-2 mb-6 flex items-end justify-between">
+                                            <h1 className="text-sm font-extrabold uppercase tracking-tight w-1/3 truncate leading-none">{sheetTitle || "Matematik"}</h1>
+                                            <div className="flex gap-6 w-2/3 justify-end text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono">
+                                                <div className="border-b border-[var(--border-strong)] pb-0.5 flex gap-2 flex-1 max-w-[160px]"><span>{lang === 'sv' ? "Namn:" : "Name:"}</span></div>
+                                                <div className="border-b border-[var(--border-strong)] pb-0.5 flex gap-2 w-[100px]"><span>{lang === 'sv' ? "Datum:" : "Date:"}</span></div>
                                             </div>
                                         </header>
 
@@ -1303,9 +1315,8 @@ export default function PresentationView({
                                                 return (
                                                     <React.Fragment key={item.id}>
                                                         {displayStory && (item.instructionMode === 'header' || !item.instructionMode) && (
-                                                            <div className={`col-span-6 border-l-4 border-indigo-500 pl-4 bg-slate-50/40 rounded-r-xl py-2.5 transition-all duration-300
-                                                                ${hasAnyFocus && !isFocused ? 'opacity-25' : 'opacity-100'}`}>
-                                                                <div className={`font-black text-slate-800 italic uppercase tracking-tight ${sizeClasses.headerText}`}>
+                                                            <div className={`col-span-6 border-l-4 border-emerald-600 pl-4 bg-[var(--bg-surface)] rounded-r-xl py-2.5 transition-all duration-300 ${hasAnyFocus && !isFocused ? 'opacity-25' : 'opacity-100'}`}>
+                                                                <div className={`font-bold text-[var(--text-main)] tracking-tight ${sizeClasses.headerText}`}>
                                                                     <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                                 </div>
                                                             </div>
@@ -1313,27 +1324,27 @@ export default function PresentationView({
 
                                                         <div 
                                                             onClick={() => focusSingleQuestionOnWorksheet(item.id)}
-                                                            className={`relative transition-all duration-300 rounded-2xl flex flex-col p-3 cursor-pointer group
-                                                                ${getColSpanClass(item.columnSpan || 6)}
-                                                                ${isFocused ? 'bg-indigo-50/50 ring-2 ring-indigo-500/30 opacity-100 scale-[1.01]' : hasAnyFocus ? 'opacity-25' : 'hover:bg-slate-50'}`}
+                                                            className={`relative transition-all duration-300 rounded-xl flex flex-col p-3 cursor-pointer group ${getColSpanClass(item.columnSpan || 6)} ${
+                                                                isFocused ? 'bg-emerald-50/60 dark:bg-emerald-950/40 ring-2 ring-emerald-600 opacity-100 scale-[1.01]' : hasAnyFocus ? 'opacity-25' : 'hover:bg-[var(--bg-surface)]'
+                                                            }`}
                                                         >
-                                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50 flex gap-1 bg-white p-1 rounded-full shadow-lg border border-slate-200" onPointerDown={(e) => e.stopPropagation()}>
-                                                                <div className="flex bg-slate-100 rounded-full p-0.5">
+                                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50 flex gap-1 bg-[var(--bg-card)] p-1 rounded-xl shadow-lg border border-[var(--border-strong)]" onPointerDown={(e) => e.stopPropagation()}>
+                                                                <div className="flex bg-[var(--bg-surface)] rounded-lg p-0.5 border border-[var(--border-main)]">
                                                                     {['start', 'center', 'end'].map(align => (
-                                                                        <button key={align} onClick={() => {
+                                                                        <button type="button" key={align} onClick={() => {
                                                                             setLivePacket(prev => prev.map(p => p.id === item.id ? { ...p, align } : p));
                                                                             setIsSaving(false);
-                                                                        }} className={`px-2 py-1 rounded-full text-[9px] font-black uppercase transition-all ${item.align === align ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-indigo-600'}`}>
+                                                                        }} className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase transition-all cursor-pointer ${item.align === align ? 'bg-emerald-600 text-white shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
                                                                             {align}
                                                                         </button>
                                                                     ))}
                                                                 </div>
-                                                                <div className="flex bg-slate-100 rounded-full p-0.5">
+                                                                <div className="flex bg-[var(--bg-surface)] rounded-lg p-0.5 border border-[var(--border-main)]">
                                                                     {[2, 3, 4, 6].map(span => (
-                                                                        <button key={span} onClick={() => {
+                                                                        <button type="button" key={span} onClick={() => {
                                                                             setLivePacket(prev => prev.map(p => p.id === item.id ? { ...p, columnSpan: span } : p));
                                                                             setIsSaving(false);
-                                                                        }} className={`px-2 py-1 rounded-full text-[9px] font-black uppercase transition-all ${item.columnSpan === span ? 'bg-amber-500 text-white' : 'text-slate-500 hover:text-amber-600'}`}>
+                                                                        }} className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase transition-all cursor-pointer ${item.columnSpan === span ? 'bg-amber-600 text-white shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
                                                                             W{span}
                                                                         </button>
                                                                     ))}
@@ -1342,22 +1353,22 @@ export default function PresentationView({
 
                                                             <div className={`text-xs flex flex-col h-full justify-between items-${item.align || 'center'} text-${item.align === 'start' ? 'left' : item.align === 'end' ? 'right' : 'center'}`}>
                                                                 <div>
-                                                                    <div className="font-black mb-1 text-slate-400 text-[10px] tracking-widest">{idx + 1}.</div>
+                                                                    <div className="font-bold font-mono mb-1 text-[var(--text-muted)] text-[10px]">{idx + 1}.</div>
                                                                     {displayStory && item.instructionMode === 'inline' && (
-                                                                        <div className={`font-bold text-slate-800 mb-2 leading-tight border-b border-slate-100 pb-2 ${sizeClasses.desc}`}>
+                                                                        <div className={`font-bold text-[var(--text-main)] mb-2 leading-tight border-b border-[var(--border-main)] pb-2 ${sizeClasses.desc}`}>
                                                                             <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                                         </div>
                                                                     )}
                                                                     {displayLatex && rd?.latex && (
-                                                                        <div className={`py-3 text-center font-serif text-slate-900 ${sizeClasses.latex}`}>
+                                                                        <div className={`py-3 text-center font-serif text-[var(--text-main)] ${sizeClasses.latex}`}>
                                                                             <MathDisplay content={`$$${rd.latex}$$`} />
                                                                         </div>
                                                                     )}
                                                                     {rd?.options && rd.options.length > 0 && (
                                                                         <div className="mt-2 grid grid-cols-2 gap-1.5 w-full">
                                                                             {rd.options.map((opt, oIdx) => (
-                                                                                <div key={oIdx} className="flex items-center gap-1.5 text-[10px] bg-slate-50/60 p-1.5 rounded-lg border border-slate-100">
-                                                                                    <span className="font-black text-indigo-500">{['A','B','C','D','E','F'][oIdx]}</span>
+                                                                                <div key={oIdx} className="flex items-center gap-1.5 text-xs bg-[var(--bg-surface)] p-2 rounded-xl border border-[var(--border-main)]">
+                                                                                    <span className="font-bold font-mono text-emerald-700 dark:text-emerald-400">{['A','B','C','D','E','F'][oIdx]}</span>
                                                                                     <MathDisplay content={opt} />
                                                                                 </div>
                                                                             ))}
@@ -1408,16 +1419,17 @@ export default function PresentationView({
                                     setIsSaving: setIsSaving
                                 }}
                                 interactiveCanvasProps={{
-                                key: `presenter_canvas_${slides[activeSlideIndex]?.id}`,
-                                forceActive: true,
-                                setElements: updateCurrentSlideElements,
-                                onToggleBg: () => setBgType(prev => prev === 'blank' ? 'grid' : 'blank'),
-                                clueProgress,
-                                activeDrawer,
-                                onToggleDrawer: handleToggleDrawer,
-                                renderDrawer: false,
-                                toolbarMode: "teacher"
-                            }}
+                                    key: `presenter_canvas_${slides[activeSlideIndex]?.id}`,
+                                    forceActive: true,
+                                    isOverlay: slides[activeSlideIndex]?.layout === 'instruction_template',
+                                    setElements: updateCurrentSlideElements,
+                                    onToggleBg: () => setBgType(prev => prev === 'blank' ? 'grid' : 'blank'),
+                                    clueProgress,
+                                    activeDrawer,
+                                    onToggleDrawer: handleToggleDrawer,
+                                    renderDrawer: false,
+                                    toolbarMode: "teacher"
+                                }}
                             />
                         )}
                     </div>
@@ -1435,18 +1447,20 @@ export default function PresentationView({
 
                 {/* COLUMN 3: SOLUTIONS & COMPACT ANSWER KEY DRAWER PANEL */}
                 <div 
-                    className={`whiteboard-protect bg-white border-l border-slate-200 flex flex-col shrink-0 select-none h-full transition-all duration-300 relative min-h-0 overflow-hidden
-                        ${isRightCollapsed ? 'w-16 p-2 items-center justify-start pt-4' : 'w-80 p-6 gap-6'}`}
+                    className={`whiteboard-protect bg-[var(--bg-card)] border-l border-[var(--border-main)] text-[var(--text-main)] flex flex-col shrink-0 select-none h-full transition-all duration-300 relative min-h-0 overflow-hidden ${
+                        isRightCollapsed ? 'w-16 p-2 items-center justify-start pt-4' : 'w-80 p-6 gap-6'
+                    }`}
                 >
                     {isRightCollapsed ? (
                         <button
+                            type="button"
                             onClick={() => setIsRightCollapsed(false)}
-                            className="w-12 flex-1 flex flex-col items-center justify-start py-6 bg-slate-50 hover:bg-indigo-50 border border-slate-200/60 rounded-2xl cursor-pointer group transition-all text-slate-400 hover:text-indigo-600 gap-4"
+                            className="w-12 flex-1 flex flex-col items-center justify-start py-6 bg-[var(--bg-surface)] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border border-[var(--border-main)] rounded-2xl cursor-pointer group transition-all text-[var(--text-muted)] hover:text-emerald-600 gap-4"
                             title={lang === 'sv' ? "Expandera panel" : "Expand Panel"}
                         >
                             <Layers size={16} className="shrink-0 transition-transform group-hover:scale-110" />
                             <span 
-                                className="text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap mt-4 select-none"
+                                className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap mt-4 select-none"
                                 style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
                             >
                                 {clueViewMode === 'steps' ? (lang === 'sv' ? "Ledtråd" : "Clues") : (lang === 'sv' ? "Facit" : "Answer Key")}
@@ -1454,51 +1468,52 @@ export default function PresentationView({
                         </button>
                     ) : (
                         <>
-                            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div className="flex items-center justify-between border-b border-[var(--border-main)] pb-3">
                                 <div className="flex items-center gap-2">
                                     <button 
+                                        type="button"
                                         onClick={() => setIsRightCollapsed(true)}
-                                        className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer mr-0.5"
+                                        className="p-1.5 hover:bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-xl transition-colors cursor-pointer mr-0.5"
                                         title={lang === 'sv' ? "Minimera panel" : "Minimize Panel"}
                                     >
                                         <ChevronRight size={16} />
                                     </button>
-                                    <Layers size={14} className="text-slate-400" />
-                                    <h2 className="text-[12px] font-black text-slate-400 uppercase tracking-widest">
+                                    <Layers size={14} className="text-[var(--text-muted)]" />
+                                    <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
                                         {clueViewMode === 'steps' ? (lang === 'sv' ? "Steg-för-steg" : "Solution Steps") : (lang === 'sv' ? "Facit" : "Answer Key")}
                                     </h2>
                                 </div>
                                 
-                                <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-inner gap-0.5">
-                                    <button onClick={() => setClueViewMode('steps')} className={`px-2 py-1 text-[10px] font-black uppercase rounded-md transition-all cursor-pointer ${clueViewMode === 'steps' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                                <div className="flex bg-[var(--bg-surface)] p-0.5 rounded-xl border border-[var(--border-main)] shadow-inner gap-0.5">
+                                    <button type="button" onClick={() => setClueViewMode('steps')} className={`px-2 py-1 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer ${clueViewMode === 'steps' ? 'bg-[var(--bg-card)] text-emerald-600 dark:text-emerald-400 shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
                                         {lang === 'sv' ? "Steg" : "Steps"}
                                     </button>
-                                    <button onClick={() => setClueViewMode('coach')} className={`px-2 py-1 text-[10px] font-black uppercase rounded-md transition-all cursor-pointer ${clueViewMode === 'coach' ? 'bg-purple-600 text-white shadow-sm' : 'text-purple-500 hover:text-purple-700'}`}>
+                                    <button type="button" onClick={() => setClueViewMode('coach')} className={`px-2 py-1 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer ${clueViewMode === 'coach' ? 'bg-purple-600 text-white shadow-2xs' : 'text-purple-600 dark:text-purple-400 hover:text-purple-700'}`}>
                                         Coach
                                     </button>
-                                    <button onClick={() => setClueViewMode('answers')} className={`px-2 py-1 text-[10px] font-black uppercase rounded-md transition-all cursor-pointer ${clueViewMode === 'answers' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                                    <button type="button" onClick={() => setClueViewMode('answers')} className={`px-2 py-1 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer ${clueViewMode === 'answers' ? 'bg-[var(--bg-card)] text-emerald-600 dark:text-emerald-400 shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
                                         {lang === 'sv' ? "Svar" : "Answers"}
                                     </button>
                                 </div>
                             </div>
                             {clueViewMode === 'coach' ? (
-                                <div className="flex-1 flex flex-col min-h-0 justify-center items-center bg-slate-50/60 p-6 rounded-2xl border border-dashed border-slate-200 text-center animate-in fade-in duration-200">
-                                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mb-3 animate-pulse shadow-sm">
+                                <div className="flex-1 flex flex-col min-h-0 justify-center items-center bg-[var(--bg-surface)] p-6 rounded-2xl border border-dashed border-[var(--border-strong)] text-center animate-in fade-in duration-150">
+                                    <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-3 animate-pulse shadow-2xs">
                                         <Layers size={20} />
                                     </div>
-                                    <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)] mb-1">
                                         {lang === 'sv' ? "Coach Aktiv i Mitten" : "Coach View Active"}
                                     </h4>
-                                    <p className="text-[11px] font-bold text-slate-400 max-w-[200px] leading-relaxed">
+                                    <p className="text-xs font-semibold text-[var(--text-muted)] max-w-[200px] leading-relaxed">
                                         {lang === 'sv' ? "Hela genomgången med tavelkontroller och förklaringar visas nu på stora skärmen." : "The complete walkthrough dashboard is now displayed on the main center board."}
                                     </p>
                                 </div>
                             ) : clueViewMode === 'answers' ? (
-                                <div className="flex-1 flex flex-col min-h-0 animate-in fade-in duration-200 overflow-y-auto custom-scrollbar">
+                                <div className="flex-1 flex flex-col min-h-0 animate-in fade-in duration-150 overflow-y-auto custom-scrollbar">
                                     {livePacket.length === 0 ? (
-                                        <div className="text-center text-slate-300 italic text-m mt-12">Tomt arbetsblad</div>
+                                        <div className="text-center text-[var(--text-muted)] italic text-xs mt-12">Tomt arbetsblad</div>
                                     ) : (
-                                        <div className={`columns-2 gap-x-4 gap-y-2 font-bold leading-normal break-inside-avoid text-slate-700 ${sizeClasses.latex}`}>
+                                        <div className="space-y-2">
                                             {livePacket.map((q, idx) => {
                                                 const rd = q.resolvedData?.renderData;
                                                 const clues = q?.clues || q?.resolvedData?.clues || [];
@@ -1513,10 +1528,10 @@ export default function PresentationView({
                                                 const inlineMathAnswer = `$${String(finalPayload).replace(/\$/g, '')}$`;
 
                                                 return (
-                                                    <div key={`key-ans-${q.id}`} className="inline-block w-full py-2 px-3 mb-2 bg-slate-50 border border-slate-200/60 rounded-xl overflow-hidden text-ellipsis transition-all duration-200">
-                                                        <span className="font-black text-indigo-600 mr-2 text-[14px] select-none inline-block align-middle">{idx + 1}:</span>
-                                                        <div className="inline-block align-middle max-w-[80%] overflow-hidden text-ellipsis">
-                                                            <MathDisplay content={inlineMathAnswer} className="font-bold text-slate-800" />
+                                                    <div key={`key-ans-${q.id}`} className="w-full py-2 px-3 bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-xl flex items-center justify-between gap-2">
+                                                        <span className="font-bold font-mono text-emerald-600 dark:text-emerald-400 text-xs shrink-0">{idx + 1}:</span>
+                                                        <div className="flex-1 min-w-0 truncate text-right">
+                                                            <MathDisplay content={inlineMathAnswer} className="font-bold text-[var(--text-main)]" />
                                                         </div>
                                                     </div>
                                                 );
@@ -1527,7 +1542,7 @@ export default function PresentationView({
                             ) : (
                                 <div className="flex-1 flex flex-col min-h-0 gap-4 overflow-y-auto custom-scrollbar pr-1">
                                     {activeIds.length === 0 && (
-                                        <div className="text-center text-slate-300 italic text-xs mt-12 px-4">
+                                        <div className="text-center text-[var(--text-muted)] italic text-xs mt-12 px-4">
                                             {lang === 'sv' ? "Klicka på en uppgift i arbetsbladet för att visa tillhörande lösningssteg." : "Click any question inside the worksheet page to load its clues."}
                                         </div>
                                     )}
@@ -1541,26 +1556,28 @@ export default function PresentationView({
                                         if (!q || clues.length === 0) return null;
 
                                         return (
-                                            <div key={`clues-${id}`} className="bg-slate-50/80 p-4 rounded-2xl border border-slate-100 animate-in slide-in-from-right-4 duration-300 mb-2 shrink-0">
-                                                <div className="flex items-center justify-between mb-4 bg-white p-2 rounded-xl border border-slate-200/60 shadow-sm gap-2 overflow-hidden">
-                                                    <div className="text-[11px] font-black uppercase text-indigo-600 tracking-wider whitespace-nowrap">
+                                            <div key={`clues-${id}`} className="bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--border-main)] animate-in slide-in-from-right-4 duration-150 mb-2 shrink-0">
+                                                <div className="flex items-center justify-between mb-3 bg-[var(--bg-card)] p-2 rounded-xl border border-[var(--border-main)] shadow-2xs gap-2 overflow-hidden">
+                                                    <div className="text-xs font-bold uppercase text-emerald-700 dark:text-emerald-400 tracking-wider font-mono">
                                                         Q{masterIndex}
                                                     </div>
                                                     <div className="flex items-center gap-1 shrink-0">
                                                         <button
+                                                            type="button"
                                                             onClick={() => pushDynamicCluesToCanvas(id)}
-                                                            className="px-1.5 py-1 text-amber-600 hover:text-white rounded bg-amber-50 hover:bg-amber-500 border border-amber-200 transition-colors cursor-pointer text-[9px] font-black uppercase tracking-tight flex items-center gap-1 shadow-sm"
+                                                            className="px-2 py-1 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-600 border border-amber-200 dark:border-amber-800 transition-colors cursor-pointer text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-2xs"
                                                             title={lang === 'sv' ? "Lägg till dynamisk lösningsbox" : "Add dynamic solution box"}
                                                         >
-                                                            <Plus size={10}/> Box
+                                                            <Plus size={12}/> Box
                                                         </button>
                                                         {progress > 0 && (
                                                             <button
+                                                                type="button"
                                                                 onClick={() => setClueProgress({ ...clueProgress, [id]: 0 })}
-                                                                className="p-1 text-slate-400 hover:text-rose-500 rounded bg-slate-50 border border-slate-100 hover:border-rose-100 transition-colors cursor-pointer"
+                                                                className="p-1 text-[var(--text-muted)] hover:text-rose-600 rounded-lg bg-[var(--bg-card)] border border-[var(--border-main)] transition-colors cursor-pointer"
                                                                 title={lang === 'sv' ? "Dölj" : "Reset"}
                                                             >
-                                                                <RefreshCw size={12}/>
+                                                                <RefreshCw size={13}/>
                                                             </button>
                                                         )}
                                                     </div>
@@ -1571,23 +1588,23 @@ export default function PresentationView({
                                                         const text = typeof clue === 'object' ? clue[lang] || clue.text : clue;
                                                         const latex = typeof clue === 'object' ? clue.latex : null;
                                                         return (
-                                                            <div key={idx} className="group relative bg-white p-3 rounded-xl shadow-sm border-l-4 border-amber-400 animate-in slide-in-from-top-2 duration-200">
-                                                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex gap-1 bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-sm border border-amber-100">
+                                                            <div key={idx} className="group relative bg-[var(--bg-card)] p-3 rounded-xl shadow-2xs border border-[var(--border-main)] border-l-4 border-l-amber-500 animate-in slide-in-from-top-2 duration-150">
+                                                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex gap-1 bg-[var(--bg-card)] backdrop-blur-xs p-1 rounded-lg shadow-2xs border border-[var(--border-strong)]">
                                                                     {text && (
-                                                                        <button onClick={() => pushClueToCanvas(clue, 'text')} className="px-2 py-1 bg-amber-50 text-amber-700 hover:bg-amber-500 hover:text-white rounded text-[9px] font-black uppercase transition-all" title="Lägg till som Text">T</button>
+                                                                        <button type="button" onClick={() => pushClueToCanvas(clue, 'text')} className="px-2 py-1 bg-[var(--bg-surface)] text-amber-700 dark:text-amber-300 hover:bg-amber-600 hover:text-white rounded text-[9px] font-bold uppercase transition-all cursor-pointer" title="Lägg till som Text">T</button>
                                                                     )}
                                                                     {latex && (
-                                                                        <button onClick={() => pushClueToCanvas(clue, 'math')} className="px-2 py-1 bg-amber-50 text-amber-700 hover:bg-amber-500 hover:text-white rounded text-[9px] font-black uppercase transition-all" title="Lägg till som Math/LaTeX">∑</button>
+                                                                        <button type="button" onClick={() => pushClueToCanvas(clue, 'math')} className="px-2 py-1 bg-[var(--bg-surface)] text-amber-700 dark:text-amber-300 hover:bg-amber-600 hover:text-white rounded text-[9px] font-bold uppercase transition-all cursor-pointer" title="Lägg till som Math/LaTeX">∑</button>
                                                                     )}
                                                                     {text && latex && (
-                                                                        <button onClick={() => pushClueToCanvas(clue, 'both')} className="px-2 py-1 bg-amber-50 text-amber-700 hover:bg-amber-500 hover:text-white rounded text-[9px] font-black uppercase transition-all" title="Lägg till båda">+</button>
+                                                                        <button type="button" onClick={() => pushClueToCanvas(clue, 'both')} className="px-2 py-1 bg-[var(--bg-surface)] text-amber-700 dark:text-amber-300 hover:bg-amber-600 hover:text-white rounded text-[9px] font-bold uppercase transition-all cursor-pointer" title="Lägg till båda">+</button>
                                                                     )}
                                                                 </div>
-                                                                <div className={`font-bold text-slate-700 leading-snug pr-12 ${sizeClasses.clue}`}>
+                                                                <div className="font-bold text-xs text-[var(--text-main)] leading-snug pr-12">
                                                                     <MathDisplay content={text}/>
                                                                 </div>
                                                                 {latex && (
-                                                                    <div className="mt-2 text-center text-indigo-600 font-serif bg-indigo-50/20 py-1.5 rounded border border-indigo-50/50 scale-95 origin-center">
+                                                                    <div className="mt-2 text-center text-indigo-600 dark:text-indigo-400 font-serif bg-[var(--bg-surface)] py-1.5 rounded-xl border border-[var(--border-main)] text-xs">
                                                                         <MathDisplay content={`$$${latex}$$`}/>
                                                                     </div>
                                                                 )}
@@ -1609,14 +1626,14 @@ export default function PresentationView({
             {spotlightVisual && (
                 <div 
                     onClick={() => setSpotlightVisual(null)} 
-                    className="fixed inset-0 z-[300] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-12 cursor-zoom-out animate-in fade-in duration-200 select-none"
+                    className="fixed inset-0 z-[300] bg-black/70 backdrop-blur-xs flex flex-col items-center justify-center p-12 cursor-zoom-out animate-in fade-in duration-150 select-none font-sans"
                 >
-                    <div className="absolute top-6 text-white/40 text-[11px] font-black uppercase tracking-widest bg-white/5 border border-white/10 px-4 py-1.5 rounded-full shadow">
+                    <div className="absolute top-6 text-[var(--text-main)] text-xs font-bold uppercase tracking-wider bg-[var(--bg-card)] border border-[var(--border-strong)] px-4 py-1.5 rounded-xl shadow-lg">
                         {lang === 'sv' ? "Klicka var som helst för att gå tillbaka" : "Click anywhere to close spotlight"}
                     </div>
                     <div 
                         onClick={(e) => e.stopPropagation()} 
-                        className="bg-white p-12 rounded-[2.5rem] shadow-2xl flex items-center justify-center border border-slate-100 max-w-4xl max-h-[75vh] min-w-[450px] min-h-[350px] transform scale-[1.65] origin-center shadow-emerald-950/20"
+                        className="bg-[var(--bg-card)] p-12 rounded-2xl shadow-2xl flex items-center justify-center border border-[var(--border-strong)] max-w-4xl max-h-[75vh] min-w-[450px] min-h-[350px] transform scale-[1.4] origin-center text-[var(--text-main)]"
                     >
                         <VisualRenderer data={spotlightVisual} isWordProblem={false} />
                     </div>
@@ -1653,25 +1670,25 @@ export default function PresentationView({
             
             {/* SECURITY-HARDENED CUSTOM PROMPT MODAL */}
             {isPromptBuilderOpen && (
-                <div className="fixed inset-0 z-[400] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-                    <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-lg">
-                        <h3 className="text-lg font-black text-slate-800 mb-4 uppercase tracking-wider">
+                <div className="fixed inset-0 z-[400] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 select-none font-sans">
+                    <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl shadow-2xl p-6 w-full max-w-lg text-[var(--text-main)]">
+                        <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3">
                             {lang === 'sv' ? "Skapa Diskussionsfråga" : "Create Discussion Prompt"}
                         </h3>
                         <textarea 
                             value={customPromptText}
                             onChange={(e) => setCustomPromptText(e.target.value)}
                             maxLength={1500}
-                            className="w-full h-32 p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none resize-none mb-2 font-medium text-slate-700"
+                            className="w-full h-32 p-3 bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-xl focus:border-emerald-600 outline-none resize-none mb-2 font-medium text-xs text-[var(--text-main)] shadow-inner"
                             placeholder={lang === 'sv' ? "Skriv din fråga här (t.ex. 'Förklara hur du tänkte...')" : "Type your prompt here..."}
                         />
-                        <div className="flex justify-between items-center mb-6">
-                            <span className="text-xs font-bold text-slate-400">{customPromptText.length}/1500</span>
-                            {customPromptText.length > 1400 && <span className="text-xs font-bold text-rose-500 animate-pulse">{lang === 'sv' ? "Närmar sig maxgränsen" : "Approaching limit"}</span>}
+                        <div className="flex justify-between items-center mb-5">
+                            <span className="text-xs font-bold font-mono text-[var(--text-muted)]">{customPromptText.length}/1500</span>
+                            {customPromptText.length > 1400 && <span className="text-xs font-bold text-rose-600 dark:text-rose-400 animate-pulse">{lang === 'sv' ? "Närmar sig maxgränsen" : "Approaching limit"}</span>}
                         </div>
-                        <div className="flex justify-end gap-3">
-                            <button onClick={() => { setIsPromptBuilderOpen(false); setCustomPromptText(''); }} className="px-5 py-2.5 text-slate-500 font-bold hover:bg-slate-100 rounded-xl transition-all">{lang === 'sv' ? "Avbryt" : "Cancel"}</button>
-                            <button onClick={handleAddCustomPrompt} disabled={!customPromptText.trim()} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl transition-all disabled:opacity-50">{lang === 'sv' ? "Lägg till fråga" : "Add Prompt"}</button>
+                        <div className="flex justify-end gap-2.5">
+                            <button type="button" onClick={() => { setIsPromptBuilderOpen(false); setCustomPromptText(''); }} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] rounded-xl transition-colors cursor-pointer">{lang === 'sv' ? "Avbryt" : "Cancel"}</button>
+                            <button type="button" onClick={handleAddCustomPrompt} disabled={!customPromptText.trim()} className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-40 cursor-pointer shadow-2xs">{lang === 'sv' ? "Lägg till fråga" : "Add Prompt"}</button>
                         </div>
                     </div>
                 </div>
@@ -1691,21 +1708,21 @@ export default function PresentationView({
                 }}
             />
             
-            {/* 🟢 PRESENTATION GUIDE MODAL */}
+            {/* PRESENTATION GUIDE MODAL */}
             <PresentationTutorialModal 
                 isOpen={showTutorial} 
                 onClose={handleCloseTutorial} 
                 lang={lang} 
             />
             
-            {/* 🟢 NAMING & SAVE CHOICE MODAL */}
+            {/* NAMING & SAVE CHOICE MODAL */}
             {showNamingModal && (
-                <div className="fixed inset-0 z-[500] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-                    <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
-                        <h3 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-wider">
+                <div className="fixed inset-0 z-[500] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 select-none font-sans">
+                    <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl shadow-2xl p-6 w-full max-w-md text-[var(--text-main)]">
+                        <h3 className="text-sm font-extrabold uppercase tracking-wider mb-2">
                             {lang === 'sv' ? "Namnge din presentation" : "Name Your Presentation"}
                         </h3>
-                        <p className="text-xs font-bold text-slate-400 mb-6 leading-relaxed">
+                        <p className="text-xs font-medium text-[var(--text-muted)] mb-5 leading-relaxed">
                             {lang === 'sv' 
                                 ? "Välj hur du vill fortsätta med denna session innan den startar live." 
                                 : "Choose how you'd like to proceed with this session before going live."}
@@ -1714,26 +1731,28 @@ export default function PresentationView({
                         <input 
                             autoFocus type="text" value={tempTitleInput} onChange={(e) => setTempTitleInput(e.target.value)} maxLength={100}
                             placeholder={lang === 'sv' ? "T.ex. Genomgång Ekvationer v. 12" : "E.g. Equations Review"}
-                            className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none mb-6 font-bold text-slate-800"
+                            className="w-full px-3.5 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-xl focus:border-emerald-600 outline-none mb-5 font-semibold text-xs text-[var(--text-main)] shadow-inner"
                             onKeyDown={(e) => { if (e.key === 'Enter' && tempTitleInput.trim()) handleSaveAndLaunch(); }}
                         />
 
                         <div className="flex flex-col gap-2.5">
                             <button 
+                                type="button"
                                 onClick={handleSaveAndLaunch} disabled={!tempTitleInput.trim() || isSaving}
-                                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs tracking-widest rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-2xs disabled:opacity-40 cursor-pointer flex items-center justify-center gap-2"
                             >
-                                <Save size={14} /> {lang === 'sv' ? "Spara i arkivet & Gå Live" : "Save to Archive & Go Live"}
+                                <Save size={15} /> {lang === 'sv' ? "Spara i arkivet & Gå Live" : "Save to Archive & Go Live"}
                             </button>
                             
                             <button 
+                                type="button"
                                 onClick={handleLaunchWithoutSaving} disabled={!tempTitleInput.trim()}
-                                className="w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-black uppercase text-xs tracking-widest rounded-xl transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-strong)] font-bold text-xs uppercase tracking-wider rounded-xl transition-all disabled:opacity-40 cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
                             >
-                                <Monitor size={14} /> {lang === 'sv' ? "Gå Live utan att spara" : "Go Live Without Saving"}
+                                <Monitor size={15} /> {lang === 'sv' ? "Gå Live utan att spara" : "Go Live Without Saving"}
                             </button>
 
-                            <button onClick={() => setShowNamingModal(false)} className="w-full py-2 text-slate-400 hover:text-slate-600 font-bold uppercase text-[11px] tracking-wider transition-colors mt-2 cursor-pointer">
+                            <button type="button" onClick={() => setShowNamingModal(false)} className="w-full py-2 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-xs uppercase transition-colors cursor-pointer mt-1">
                                 {lang === 'sv' ? "Avbryt" : "Cancel"}
                             </button>
                         </div>
@@ -1758,12 +1777,12 @@ export default function PresentationView({
                 }}
             />
             {showSaveChoiceModal && (
-                <div className="fixed inset-0 z-[500] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-                    <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md">
-                        <h3 className="text-base font-black text-slate-800 uppercase tracking-wider mb-2">
+                <div className="fixed inset-0 z-[500] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 select-none font-sans">
+                    <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl shadow-2xl p-6 w-full max-w-md text-[var(--text-main)]">
+                        <h3 className="text-sm font-extrabold uppercase tracking-wider mb-2">
                             {lang === 'sv' ? "Hur vill du spara?" : "How would you like to save?"}
                         </h3>
-                        <p className="text-xs font-medium text-slate-500 mb-6 leading-relaxed">
+                        <p className="text-xs font-medium text-[var(--text-muted)] mb-5 leading-relaxed">
                             {lang === 'sv' 
                                 ? "Denna presentation finns redan sparad. Vill du skriva över originalet eller spara dina ändringar som en ny presentation?"
                                 : "This presentation already exists. Would you like to overwrite the original or save as a new copy?"}
@@ -1771,30 +1790,33 @@ export default function PresentationView({
 
                         <div className="flex flex-col gap-2.5">
                             <button
+                                type="button"
                                 onClick={async () => {
                                     setShowSaveChoiceModal(false);
                                     await executeSave({ forceNewCopy: false, silent: false });
                                 }}
-                                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase text-xs tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
                             >
                                 <Save size={15} />
                                 <span>{lang === 'sv' ? "Skriv över originalet" : "Overwrite original"}</span>
                             </button>
 
                             <button
+                                type="button"
                                 onClick={async () => {
                                     setShowSaveChoiceModal(false);
                                     await executeSave({ forceNewCopy: true, silent: false });
                                 }}
-                                className="w-full py-3 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 font-black uppercase text-xs tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-strong)] font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
                             >
                                 <Copy size={15} />
                                 <span>{lang === 'sv' ? "Spara som ny kopia" : "Save as new copy"}</span>
                             </button>
 
                             <button 
+                                type="button"
                                 onClick={() => setShowSaveChoiceModal(false)}
-                                className="w-full py-2 text-slate-400 hover:text-slate-600 font-bold text-xs uppercase transition-colors"
+                                className="w-full py-2 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-xs uppercase transition-colors cursor-pointer"
                             >
                                 {lang === 'sv' ? "Avbryt" : "Cancel"}
                             </button>
@@ -1804,12 +1826,12 @@ export default function PresentationView({
             )}
 
             {showUnsavedChangesModal && (
-                <div className="fixed inset-0 z-[500] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-                    <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md">
-                        <h3 className="text-base font-black text-slate-800 uppercase tracking-wider mb-2">
+                <div className="fixed inset-0 z-[500] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 select-none font-sans">
+                    <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl shadow-2xl p-6 w-full max-w-md text-[var(--text-main)]">
+                        <h3 className="text-sm font-extrabold uppercase tracking-wider mb-2">
                             {lang === 'sv' ? "Osparade ändringar" : "Unsaved Changes"}
                         </h3>
-                        <p className="text-xs font-medium text-slate-500 mb-6 leading-relaxed">
+                        <p className="text-xs font-medium text-[var(--text-muted)] mb-5 leading-relaxed">
                             {lang === 'sv'
                                 ? "Du har osparade ändringar i presentationen. Vill du spara innan du stänger?"
                                 : "You have unsaved changes in your presentation. Would you like to save before closing?"}
@@ -1817,30 +1839,33 @@ export default function PresentationView({
 
                         <div className="flex flex-col gap-2.5">
                             <button
+                                type="button"
                                 onClick={async () => {
                                     setShowUnsavedChangesModal(false);
                                     const savedId = await executeSave({ forceNewCopy: false, silent: true });
                                     if (savedId) onClose();
                                 }}
-                                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
                             >
                                 <Save size={15} />
                                 <span>{lang === 'sv' ? "Spara och stäng" : "Save and exit"}</span>
                             </button>
 
                             <button
+                                type="button"
                                 onClick={() => {
                                     setShowUnsavedChangesModal(false);
                                     onClose();
                                 }}
-                                className="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-black uppercase text-xs tracking-wider rounded-xl transition-all cursor-pointer"
+                                className="w-full py-2.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-2xs"
                             >
                                 {lang === 'sv' ? "Stäng utan att spara" : "Exit without saving"}
                             </button>
 
                             <button
+                                type="button"
                                 onClick={() => setShowUnsavedChangesModal(false)}
-                                className="w-full py-2 text-slate-400 hover:text-slate-600 font-bold text-xs uppercase transition-colors"
+                                className="w-full py-2 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-xs uppercase transition-colors cursor-pointer"
                             >
                                 {lang === 'sv' ? "Fortsätt redigera" : "Keep editing"}
                             </button>
@@ -1849,7 +1874,7 @@ export default function PresentationView({
                 </div>
             )}
 
-            {/* 🟢 NEW: SAVE TO CUSTOM UNIT MODAL */}
+            {/* SAVE TO CUSTOM UNIT MODAL */}
             <SaveToUnitModal 
                 key={showSaveToUnitModal ? `unit_modal_${boardId || 'new'}_${localTitle}` : 'modal_closed'}
                 isOpen={showSaveToUnitModal}
@@ -1862,13 +1887,11 @@ export default function PresentationView({
                 teacherId={teacherId}
                 lang={lang}
             />
-            {/* ========================================================================= */}
-            {/* 🟢 FULLSCREEN TEACHER PRESENTATION STAGE                                   */}
-            {/* ========================================================================= */}
+
+            {/* FULLSCREEN TEACHER PRESENTATION STAGE */}
             {isPresenting && (
-                <div className="fixed inset-0 z-[600] bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none p-3 sm:p-6 animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-[600] bg-black flex flex-col items-center justify-center overflow-hidden select-none p-3 sm:p-6 animate-in fade-in duration-150">
                     
-                    {/* Main 16:9 Slide Stage (Scaled to max viewport height/width) */}
                     <div className="w-full h-full max-w-[177.78vh] max-h-[56.25vw] flex items-center justify-center relative">
                         <SlideViewerCore
                             slide={slides[activeSlideIndex]}
@@ -1904,43 +1927,36 @@ export default function PresentationView({
                         />
                     </div>
 
-                    {/* Floating Bottom Navigation & Controls Dock */}
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[650] flex items-center gap-2 bg-slate-900/95 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-700/80 shadow-2xl text-white">
-                        {/* Previous Slide */}
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[650] flex items-center gap-2 bg-[var(--bg-card)]/95 backdrop-blur-xs px-4 py-2 rounded-2xl border border-[var(--border-strong)] shadow-2xl text-[var(--text-main)]">
                         <button
                             type="button"
                             onClick={() => setActiveSlideIndex(prev => Math.max(0, prev - 1))}
                             disabled={activeSlideIndex === 0}
-                            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
-                            title={lang === 'sv' ? "Föregående slide (Vänsterpil)" : "Previous slide (Left Arrow)"}
+                            className="p-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
                         >
                             <ChevronLeft size={18} />
                         </button>
 
-                        {/* Slide Indicator & Title */}
                         <div className="flex items-center gap-2 px-2">
-                            <span className="text-xs font-black uppercase text-emerald-400">
+                            <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
                                 {activeSlideIndex + 1} / {slides.length}
                             </span>
-                            <span className="text-xs font-bold text-slate-300 max-w-[140px] truncate hidden md:inline">
+                            <span className="text-xs font-bold text-[var(--text-muted)] max-w-[140px] truncate hidden md:inline">
                                 • {slides[activeSlideIndex]?.title}
                             </span>
                         </div>
 
-                        {/* Next Slide */}
                         <button
                             type="button"
                             onClick={() => setActiveSlideIndex(prev => Math.min(slides.length - 1, prev + 1))}
                             disabled={activeSlideIndex === slides.length - 1}
-                            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
-                            title={lang === 'sv' ? "Nästa slide (Högerpil / Mellanslag)" : "Next slide (Right Arrow / Space)"}
+                            className="p-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
                         >
                             <ChevronRight size={18} />
                         </button>
 
-                        <div className="w-px h-5 bg-slate-700 mx-1" />
+                        <div className="w-px h-5 bg-[var(--border-strong)] mx-1" />
 
-                        {/* Quick Regenerate numbers if instruction slide */}
                         {slides[activeSlideIndex]?.layout === 'instruction_template' && (
                             <button
                                 type="button"
@@ -1948,20 +1964,17 @@ export default function PresentationView({
                                     const targetId = slides[activeSlideIndex]?.boundQuestionId || slides[activeSlideIndex]?.activeIds?.[0];
                                     if (targetId) handleRegenerateQuestion(targetId);
                                 }}
-                                className="px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
-                                title={lang === 'sv' ? "Slumpa nya värden" : "Roll new numbers"}
+                                className="px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300 border border-amber-500/40 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
                                 <RefreshCw size={13} />
                                 <span className="hidden sm:inline">{lang === 'sv' ? "Nytt exempel" : "New"}</span>
                             </button>
                         )}
 
-                        {/* Exit Presentation Mode */}
                         <button
                             type="button"
                             onClick={togglePresentMode}
-                            className="p-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 transition-colors cursor-pointer ml-1"
-                            title={lang === 'sv' ? "Avsluta presentation (Esc)" : "Exit Presenter (Esc)"}
+                            className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer ml-1"
                         >
                             <X size={16} />
                         </button>
@@ -1969,7 +1982,7 @@ export default function PresentationView({
 
                 </div>
             )}
-            {/* ACTIVITY / GAME LAUNCHER & ENGINE */}
+
             <ActivityHubModal
                 isOpen={showActivityHub}
                 onClose={() => setShowActivityHub(false)}

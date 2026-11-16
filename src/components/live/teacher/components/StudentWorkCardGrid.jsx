@@ -52,7 +52,7 @@ export default function StudentWorkCardGrid({
 
     if (displayResponses.length === 0) {
         return (
-            <div className="col-span-full py-16 text-center text-[var(--text-muted)] font-bold uppercase tracking-widest text-xs italic">
+            <div className="col-span-full py-16 text-center text-[var(--text-muted)] font-bold uppercase tracking-wider text-xs italic">
                 {lang === 'sv' 
                     ? "Inga elevsvar inskickade på denna slide än." 
                     : "No student work submitted for this slide yet."}
@@ -61,7 +61,7 @@ export default function StudentWorkCardGrid({
     }
 
     return (
-        <div className={`grid gap-3.5 ${
+        <div className={`grid gap-4 ${
             isComparing 
                 ? (starredStudents.length <= 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3') 
                 : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3'
@@ -77,10 +77,10 @@ export default function StudentWorkCardGrid({
                 return (
                     <div 
                         key={r.id || `${r.student_alias}_${i}`} 
-                        className={`bg-[var(--bg-card)] p-3.5 rounded-2xl border shadow-sm flex flex-col relative group/card transition-all ${
+                        className={`bg-[var(--bg-card)] p-4 rounded-2xl border shadow-2xs flex flex-col relative group/card transition-all ${
                             isStarred 
-                                ? 'border-amber-400 ring-2 ring-amber-400/30' 
-                                : 'border-[var(--border-main)]'
+                                ? 'border-amber-500 ring-2 ring-amber-500/20' 
+                                : 'border-[var(--border-strong)]'
                         }`}
                     >
                         {/* Star Toggle */}
@@ -90,31 +90,31 @@ export default function StudentWorkCardGrid({
                                 e.stopPropagation(); 
                                 toggleStar(r.student_alias); 
                             }}
-                            className={`absolute -top-2.5 -right-2.5 p-1.5 bg-[var(--bg-card)] rounded-full border border-[var(--border-main)] shadow-sm hover:scale-110 transition-all z-20 cursor-pointer ${
+                            className={`absolute -top-3 -right-3 p-1.5 bg-[var(--bg-card)] rounded-xl border shadow-2xs hover:scale-105 transition-all z-20 cursor-pointer ${
                                 isStarred 
-                                    ? 'border-amber-300 opacity-100' 
-                                    : 'opacity-0 group-hover/card:opacity-100'
+                                    ? 'border-amber-500 opacity-100' 
+                                    : 'border-[var(--border-strong)] opacity-0 group-hover/card:opacity-100'
                             }`}
                         >
                             <Star 
                                 size={14} 
-                                className={isStarred ? 'fill-amber-400 text-amber-500' : 'text-[var(--text-muted)]'} 
+                                className={isStarred ? 'fill-amber-500 text-amber-500' : 'text-[var(--text-muted)]'} 
                             />
                         </button>
 
                         {/* Header */}
-                        <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-[var(--border-main)]">
-                            <span className="font-bold text-xs text-[var(--text-main)] truncate max-w-[140px]">
+                        <div className="flex justify-between items-center mb-3 pb-2.5 border-b border-[var(--border-main)]">
+                            <span className="font-extrabold text-xs text-[var(--text-main)] truncate max-w-[150px]">
                                 {isAnonymous ? `Elev ${i + 1}` : r.student_alias}
                             </span>
-                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider ${
                                 isSlideCanvasOnly
-                                    ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30'
+                                    ? 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800'
                                     : isFreeText 
-                                        ? 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/30' 
+                                        ? 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800' 
                                         : r.is_correct 
-                                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30' 
-                                            : 'bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30'
+                                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' 
+                                            : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
                             }`}>
                                 {isSlideCanvasOnly 
                                     ? (lang === 'sv' ? "Tavla" : "Canvas") 
@@ -129,7 +129,7 @@ export default function StudentWorkCardGrid({
                         {hasCanvas && (
                             <div 
                                 onClick={() => onOpenSpotlight && onOpenSpotlight(r)} 
-                                className="w-full aspect-video relative bg-[#f9fbf7] border border-[var(--border-main)] rounded-xl overflow-hidden mb-2 cursor-zoom-in group/canvas shadow-inner"
+                                className="w-full aspect-video relative bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-xl overflow-hidden mb-3 cursor-zoom-in group/canvas shadow-inner"
                             >
                                 <div className="absolute inset-0 pointer-events-none opacity-80">
                                     <SlideRenderer
@@ -158,7 +158,7 @@ export default function StudentWorkCardGrid({
                                 </div>
 
                                 <div className="absolute inset-0 bg-slate-900/10 group-hover/canvas:bg-transparent transition-colors flex items-end justify-end p-2 pointer-events-none">
-                                    <span className="p-1.5 bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 rounded-lg shadow-sm">
+                                    <span className="p-1 bg-[var(--bg-card)] text-[var(--text-main)] rounded-lg shadow-2xs border border-[var(--border-strong)]">
                                         <Maximize2 size={12} />
                                     </span>
                                 </div>
@@ -167,16 +167,16 @@ export default function StudentWorkCardGrid({
 
                         {/* Free Text Answers */}
                         {isFreeText && (
-                            <div className="p-2.5 bg-[var(--bg-surface)] rounded-xl text-xs font-medium text-[var(--text-main)] max-h-36 overflow-y-auto custom-scrollbar mb-2 leading-relaxed">
+                            <div className="p-3 bg-[var(--bg-surface)] rounded-xl text-xs font-medium text-[var(--text-main)] max-h-36 overflow-y-auto custom-scrollbar mb-2 leading-relaxed border border-[var(--border-strong)] shadow-inner">
                                 {r.answer}
                             </div>
                         )}
 
                         {/* Math Scratchpad Lines */}
                         {hasScratchpad && (
-                            <div className="space-y-1 overflow-x-auto custom-scrollbar py-1 text-xs">
+                            <div className="space-y-1.5 overflow-x-auto custom-scrollbar py-1 text-xs">
                                 {r.work_steps.map((line, lineIdx) => (
-                                    <div key={lineIdx} className="bg-[var(--bg-surface)] px-2 py-1 rounded text-[var(--text-main)] font-serif">
+                                    <div key={lineIdx} className="bg-[var(--bg-surface)] px-2.5 py-1.5 rounded-xl text-[var(--text-main)] font-serif border border-[var(--border-strong)] shadow-2xs">
                                         <MathDisplay content={`$\\displaystyle ${line}$`} />
                                     </div>
                                 ))}
@@ -185,7 +185,7 @@ export default function StudentWorkCardGrid({
 
                         {/* Final Answer Fallback */}
                         {!hasCanvas && !hasScratchpad && !isFreeText && (
-                            <div className="text-[10px] text-[var(--text-muted)] italic py-2 text-center">
+                            <div className="text-[11px] text-[var(--text-muted)] italic py-3 text-center">
                                 {lang === 'sv' ? "Bara slutsvar inskickat" : "Only final answer submitted"}
                             </div>
                         )}

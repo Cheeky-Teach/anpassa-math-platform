@@ -20,22 +20,22 @@ export default function StudentGateway({ buckets, onSelectBucket, onSelectFreePl
                 {/* 2. PROMINENT HERO: HELA MATEMATIKBIBLIOTEKET */}
                 <div
                     onClick={onSelectFreePlay}
-                    className="w-full text-left bg-gradient-to-r from-[var(--bg-card)] via-[var(--bg-surface)] to-[var(--bg-card)] hover:to-[var(--bg-surface-hover)] border-2 border-emerald-500/60 hover:border-emerald-500 rounded-2xl p-4 sm:p-5 shadow-[0_4px_0_0_rgba(16,185,129,0.3)] hover:shadow-[0_4px_0_0_rgba(16,185,129,0.6)] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer"
+                    className="w-full text-left bg-gradient-to-r from-[var(--bg-card)] via-[var(--bg-surface)] to-[var(--bg-card)] hover:to-[var(--bg-surface-hover)] border border-emerald-600/40 hover:border-emerald-600 rounded-2xl p-4 sm:p-5 shadow-sm transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer"
                 >
                     <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
-                        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 group-hover:rotate-3 transition-transform">
-                            <Compass size={24} />
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 group-hover:rotate-3 transition-transform">
+                            <Compass size={22} />
                         </div>
                         <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                                <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[8px] sm:text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                                <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                                     {lang === 'sv' ? "Öppen träning" : "Open access"}
                                 </span>
                             </div>
-                            <h2 className="text-sm sm:text-base font-black uppercase tracking-tight text-[var(--text-main)] mt-0.5">
+                            <h2 className="text-sm sm:text-base font-extrabold tracking-tight text-[var(--text-main)] mt-1">
                                 {lang === 'sv' ? "Hela Matematikbiblioteket" : "All Topics & Full Curriculum"}
                             </h2>
-                            <p className="text-[11px] font-bold text-[var(--text-muted)] truncate">
+                            <p className="text-xs font-semibold text-[var(--text-muted)] truncate">
                                 {lang === 'sv' 
                                     ? "Träna fritt på alla moment & nivåer utanför tilldelade mappar" 
                                     : "Explore the full curriculum with complete freedom"}
@@ -43,9 +43,9 @@ export default function StudentGateway({ buckets, onSelectBucket, onSelectFreePl
                             
                             {/* Class Code Pill */}
                             <div className="flex items-center gap-2 mt-2">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-[11px] font-black uppercase tracking-wider text-[var(--text-muted)]">
-                                    {lang === 'sv' ? "Klasskod:" : "Class:"} <span className="text-[var(--text-main)] font-mono tracking-widest">{classCode}</span>
+                                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                                    {lang === 'sv' ? "Klasskod:" : "Class:"} <span className="text-[var(--text-main)] font-mono tracking-widest font-extrabold">{classCode}</span>
                                 </span>
                             </div>
                         </div>
@@ -59,10 +59,10 @@ export default function StudentGateway({ buckets, onSelectBucket, onSelectFreePl
                                 e.stopPropagation();
                                 onLeave();
                             }}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-[var(--bg-surface)] hover:bg-[var(--theme-rose-bg)] text-[var(--text-muted)] hover:text-rose-600 border border-[var(--border-main)] hover:border-rose-300 rounded-xl font-black uppercase tracking-widest text-[11px] transition-all active:scale-95 shadow-xs"
+                            className="flex items-center gap-1.5 px-3 py-2 bg-[var(--bg-card)] hover:bg-rose-50 dark:hover:bg-rose-950/30 text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 border border-[var(--border-strong)] hover:border-rose-200 rounded-xl font-bold uppercase tracking-wider text-xs transition-colors cursor-pointer shadow-2xs"
                         >
                             <LogOut size={14} />
-                            {lang === 'sv' ? "Lämna" : "Leave"}
+                            <span>{lang === 'sv' ? "Lämna" : "Leave"}</span>
                         </button>
 
                         <button
@@ -71,19 +71,19 @@ export default function StudentGateway({ buckets, onSelectBucket, onSelectFreePl
                                 e.stopPropagation();
                                 onSelectFreePlay();
                             }}
-                            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black text-xs uppercase tracking-wider transition-all active:scale-95 shadow-xs"
+                            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer shadow-2xs active:scale-[0.98]"
                         >
                             <span>{lang === 'sv' ? "Öppna" : "Explore"}</span>
-                            <ArrowRight size={15} />
+                            <ArrowRight size={14} />
                         </button>
                     </div>
                 </div>
 
                 {/* 3. VÄLJ DITT OMRÅDE SECTION DIVIDER */}
-                <div className="flex items-center gap-3 pt-3">
+                <div className="flex items-center gap-3 pt-2">
                     <div className="flex items-center gap-2">
                         <FolderKanban size={15} className="text-[var(--text-muted)]" />
-                        <h2 className="text-xs sm:text-sm font-black uppercase italic tracking-tight text-[var(--text-main)]">
+                        <h2 className="text-xs sm:text-sm font-extrabold uppercase tracking-tight text-[var(--text-main)]">
                             {lang === 'sv' ? "Välj ditt område" : "Assigned Topics"}
                         </h2>
                     </div>
@@ -92,9 +92,9 @@ export default function StudentGateway({ buckets, onSelectBucket, onSelectFreePl
 
                 {/* 4. ASSIGNED FOLDERS & BUCKETS */}
                 {Object.keys(groupedBuckets).length === 0 ? (
-                    <div className="text-center py-10 bg-[var(--bg-card)] rounded-xl border-2 border-dashed border-[var(--border-main)]">
+                    <div className="text-center py-10 bg-[var(--bg-card)] rounded-xl border border-dashed border-[var(--border-strong)]">
                         <LayoutGrid size={32} className="mx-auto text-[var(--text-muted)] opacity-30 mb-2" />
-                        <p className="text-[var(--text-muted)] font-bold text-xs">
+                        <p className="text-[var(--text-muted)] font-semibold text-xs">
                             {lang === 'sv' ? "Inga specifika grupper utdelade just nu. Klicka ovan för att träna fritt!" : "No custom folders assigned right now. Use the open library above!"}
                         </p>
                     </div>
@@ -103,10 +103,10 @@ export default function StudentGateway({ buckets, onSelectBucket, onSelectFreePl
                         {Object.entries(groupedBuckets).map(([folderName, folderBuckets]) => (
                             <div key={folderName} className="animate-in slide-in-from-bottom-2">
                                 <div className="flex items-center gap-3 mb-2.5">
-                                    <h3 className="text-[11px] font-black uppercase tracking-wider bg-[var(--text-main)] text-[var(--bg-canvas)] px-3 py-1 rounded-md shadow-xs">
+                                    <h3 className="text-[11px] font-bold uppercase tracking-wider bg-[var(--text-main)] text-[var(--bg-card)] px-2.5 py-0.5 rounded-lg shadow-2xs">
                                         {folderName}
                                     </h3>
-                                    <div className="h-px bg-[var(--border-strong)] opacity-30 flex-1 rounded-full" />
+                                    <div className="h-px bg-[var(--border-main)] flex-1 rounded-full" />
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 items-stretch">
@@ -116,40 +116,41 @@ export default function StudentGateway({ buckets, onSelectBucket, onSelectFreePl
                                         return (
                                             <button
                                                 key={bucket.id}
+                                                type="button"
                                                 onClick={() => onSelectBucket(bucket)}
-                                                className={`group relative text-left border rounded-xl p-3 transition-all duration-200 flex items-center justify-between gap-3 overflow-hidden active:scale-[0.98] h-full
-                                                    ${isFocused 
-                                                        ? 'theme-amber bg-[var(--brand-bg)] border-[var(--brand-solid)] shadow-[0_3px_0_0_var(--brand-solid)]' 
-                                                        : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-surface-hover)] shadow-[0_2px_0_0_var(--border-main)]'
-                                                    }`}
+                                                className={`group relative text-left border rounded-xl p-3 transition-colors duration-150 flex items-center justify-between gap-3 overflow-hidden active:scale-[0.98] h-full cursor-pointer ${
+                                                    isFocused 
+                                                        ? 'bg-amber-50/60 dark:bg-amber-950/40 border-amber-500 shadow-2xs' 
+                                                        : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-surface)] shadow-2xs'
+                                                }`}
                                             >
                                                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shadow-inner shrink-0 transition-transform group-hover:scale-105
-                                                        ${isFocused ? 'bg-[var(--brand-solid)] text-white' : 'bg-[var(--text-main)] text-[var(--bg-card)]'}
-                                                    `}>
-                                                        <Layers size={17} />
+                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
+                                                        isFocused ? 'bg-amber-600 text-white shadow-2xs' : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
+                                                    }`}>
+                                                        <Layers size={15} />
                                                     </div>
                                                     
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex items-start gap-1.5 flex-wrap">
-                                                            <h4 className="font-black text-xs sm:text-sm tracking-tight text-[var(--text-main)] leading-snug break-words hyphens-auto">
+                                                            <h4 className="font-bold text-xs sm:text-sm tracking-tight text-[var(--text-main)] leading-snug break-words hyphens-auto">
                                                                 {bucket.name}
                                                             </h4>
                                                             {isFocused && (
-                                                                <span className="bg-[var(--brand-solid)] text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0 flex items-center gap-0.5 self-center">
+                                                                <span className="bg-amber-600 text-white text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded shrink-0 flex items-center gap-0.5 self-center">
                                                                     <Star size={9} fill="currentColor" /> {lang === 'sv' ? "Fokus" : "Focus"}
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <span className={`text-[10px] font-bold uppercase tracking-wider block mt-0.5 ${isFocused ? 'text-[var(--brand-text)]' : 'text-[var(--text-muted)]'}`}>
+                                                        <span className={`text-[10px] font-semibold font-mono block mt-0.5 ${isFocused ? 'text-amber-800 dark:text-amber-300' : 'text-[var(--text-muted)]'}`}>
                                                             {(bucket.payload || []).length} {lang === 'sv' ? "Nivåer" : "Levels"}
                                                         </span>
                                                     </div>
                                                 </div>
 
-                                                <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-all
-                                                    ${isFocused ? 'bg-[var(--brand-solid)] text-white group-hover:opacity-85' : 'bg-[var(--bg-surface)] text-[var(--text-muted)] group-hover:bg-[var(--text-main)] group-hover:text-white'}
-                                                `}>
+                                                <div className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                                                    isFocused ? 'bg-amber-600 text-white' : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-strong)] group-hover:text-[var(--text-main)]'
+                                                }`}>
                                                     <ChevronRight size={14} />
                                                 </div>
                                             </button>

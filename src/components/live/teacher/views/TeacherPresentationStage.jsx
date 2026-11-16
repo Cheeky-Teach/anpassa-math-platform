@@ -82,7 +82,6 @@ export default function TeacherPresentationStage({
         }
     };
 
-    // 🟢 Restored slide-scoping calculation from original monolith (lines 323-340)
     const activePacketIndices = React.useMemo(() => {
         const currentSlideObj = liveSlides[activeSlideIndex];
         if (!currentSlideObj) return engine.livePacket.map((_, idx) => idx);
@@ -93,7 +92,6 @@ export default function TeacherPresentationStage({
             return acc;
         }, []);
 
-        // If slide has no question cards, treat active slide itself as single column index
         if (matched.length === 0) {
             return [activeSlideIndex];
         }
@@ -104,24 +102,24 @@ export default function TeacherPresentationStage({
     const activeIds = liveSlides[activeSlideIndex]?.activeIds || [];
 
     return (
-        <div className="flex flex-col lg:flex-row gap-6 h-full max-w-[2000px] w-full mx-auto">
+        <div className="flex flex-col lg:flex-row gap-5 h-full max-w-[2000px] w-full mx-auto font-sans text-[var(--text-main)]">
             {/* LEFT: Slide Viewer / Teleprompter */}
-            <div className={`flex flex-col gap-4 transition-all duration-500 ease-in-out ${isMatrixCollapsed ? 'w-full lg:w-[calc(100%-80px)]' : 'w-full lg:w-5/12 xl:w-1/2'}`}>
-                <div className="flex justify-between items-center bg-[var(--bg-card,#0f172a)] px-3 py-2 rounded-xl shadow-xs border border-[var(--border-main,#1e293b)] shrink-0">
+            <div className={`flex flex-col gap-3 transition-all duration-300 ease-in-out ${isMatrixCollapsed ? 'w-full lg:w-[calc(100%-60px)]' : 'w-full lg:w-5/12 xl:w-1/2'}`}>
+                <div className="flex justify-between items-center bg-[var(--bg-card)] px-4 py-2.5 rounded-xl shadow-2xs border border-[var(--border-strong)] shrink-0">
                     <button 
                         type="button" 
                         onClick={() => handleSlideChange(activeSlideIndex - 1)} 
                         disabled={activeSlideIndex === 0} 
-                        className="p-1.5 bg-[var(--bg-surface,#1e293b)] hover:bg-indigo-600/20 text-slate-400 hover:text-indigo-300 rounded-lg disabled:opacity-30 transition-all cursor-pointer"
+                        className="p-1.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-lg disabled:opacity-30 transition-colors cursor-pointer border border-[var(--border-main)]"
                     >
                         <ChevronLeft size={16}/>
                     </button>
 
                     <div className="flex items-center gap-3">
-                        <div className="text-[11px] font-black uppercase tracking-widest text-[var(--text-main,#f8fafc)] flex items-center gap-1.5">
-                            <Monitor size={14} className="text-indigo-400" />
-                            {liveSlides[activeSlideIndex]?.title || `Slide ${activeSlideIndex + 1}`}
-                            <span className="opacity-50">({activeSlideIndex + 1} / {liveSlides.length})</span>
+                        <div className="text-xs font-extrabold uppercase tracking-tight text-[var(--text-main)] flex items-center gap-2">
+                            <Monitor size={15} className="text-emerald-600 dark:text-emerald-400" />
+                            <span>{liveSlides[activeSlideIndex]?.title || `Slide ${activeSlideIndex + 1}`}</span>
+                            <span className="text-[var(--text-muted)] font-mono">({activeSlideIndex + 1} / {liveSlides.length})</span>
                         </div>
 
                         {activeIds.length > 0 ? (
@@ -129,9 +127,9 @@ export default function TeacherPresentationStage({
                                 type="button"
                                 onClick={() => engine.handleRegenerateQuestion(activeSlideIndex)}
                                 disabled={engine.isRegenerating}
-                                className="px-2.5 py-1 bg-indigo-950/40 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-900/50 rounded-md text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-50 active:scale-95 cursor-pointer"
+                                className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-2xs disabled:opacity-50 active:scale-[0.98] cursor-pointer"
                             >
-                                <RefreshCw size={12} className={engine.isRegenerating ? "animate-spin" : ""} />
+                                <RefreshCw size={13} className={engine.isRegenerating ? "animate-spin" : ""} />
                                 <span className="hidden sm:inline">{lang === 'sv' ? "Slumpa Ny" : "Regen"}</span>
                             </button>
                         ) : (
@@ -139,9 +137,9 @@ export default function TeacherPresentationStage({
                                 type="button"
                                 onClick={handleNewSlideRound}
                                 disabled={engine.isRegenerating}
-                                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-50 active:scale-95 cursor-pointer"
+                                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-2xs disabled:opacity-50 active:scale-[0.98] cursor-pointer"
                             >
-                                <RefreshCw size={12} className={engine.isRegenerating ? "animate-spin" : ""} />
+                                <RefreshCw size={13} className={engine.isRegenerating ? "animate-spin" : ""} />
                                 <span className="hidden sm:inline">{lang === 'sv' ? "Ny Omgång" : "New Round"}</span>
                             </button>
                         )}
@@ -151,7 +149,7 @@ export default function TeacherPresentationStage({
                         type="button"
                         onClick={() => handleSlideChange(activeSlideIndex + 1)} 
                         disabled={activeSlideIndex === liveSlides.length - 1} 
-                        className="p-1.5 bg-[var(--bg-surface,#1e293b)] hover:bg-indigo-600/20 text-slate-400 hover:text-indigo-300 rounded-lg disabled:opacity-30 transition-all cursor-pointer"
+                        className="p-1.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-lg disabled:opacity-30 transition-colors cursor-pointer border border-[var(--border-main)]"
                     >
                         <ChevronRight size={16}/>
                     </button>
@@ -175,18 +173,21 @@ export default function TeacherPresentationStage({
             </div>
 
             {/* RIGHT: Dual Drawer (Student Work vs Matrix) */}
-            <div className={`bg-[var(--bg-card,#0f172a)] rounded-3xl shadow-xl border border-[var(--border-main,#1e293b)] overflow-hidden flex flex-col h-full transition-all duration-500 ease-in-out shrink-0 ${
-                isMatrixCollapsed ? 'w-full lg:w-[64px] bg-[var(--bg-surface,#1e293b)]' : 'w-full lg:w-7/12 xl:w-1/2'
+            <div className={`bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-strong)] overflow-hidden flex flex-col h-full transition-all duration-300 ease-in-out shrink-0 ${
+                isMatrixCollapsed ? 'w-full lg:w-[60px] bg-[var(--bg-surface)]' : 'w-full lg:w-7/12 xl:w-1/2'
             }`}>
                 {isMatrixCollapsed ? (
                     <div 
-                        className="w-full h-full flex flex-col items-center justify-start py-6 text-slate-400 hover:text-indigo-400 transition-colors cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                        className="w-full h-full flex flex-col items-center justify-start py-6 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
                         onClick={() => setIsMatrixCollapsed(false)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsMatrixCollapsed(false); }}
                         title={lang === 'sv' ? "Visa Elevsvar" : "Show Student Work"}
                     >
-                        <PanelRightOpen size={20} className="shrink-0 mb-8" />
-                        <div className="flex items-center gap-3 opacity-60" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">
+                        <PanelRightOpen size={18} className="shrink-0 mb-8" />
+                        <div className="flex items-center gap-3 opacity-70 font-sans" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                            <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
                                 {lang === 'sv' ? "Elevsvar" : "Student Work"} ({engine.students.length})
                             </span>
                             <Users size={14} className="rotate-90" />
@@ -194,22 +195,22 @@ export default function TeacherPresentationStage({
                     </div>
                 ) : (
                     <>
-                        <div className="p-3 border-b border-[var(--border-main,#1e293b)] flex justify-between items-center bg-[var(--bg-surface,#1e293b)] shrink-0 gap-2">
-                            <div className="flex items-center gap-1.5">
+                        <div className="p-3 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-surface)] shrink-0 gap-2">
+                            <div className="flex items-center gap-2">
                                 <button 
                                     type="button"
                                     onClick={() => setIsMatrixCollapsed(true)}
-                                    className="p-1.5 text-slate-400 hover:text-indigo-400 rounded-md transition-colors cursor-pointer"
+                                    className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-xl hover:bg-[var(--bg-card)] transition-colors cursor-pointer"
                                 >
                                     <PanelRightClose size={16} />
                                 </button>
                                 
-                                <div className="flex bg-[var(--bg-card,#0f172a)] p-0.5 rounded-lg border border-[var(--border-main,#1e293b)]">
+                                <div className="flex bg-[var(--bg-card)] p-0.5 rounded-xl border border-[var(--border-main)] shadow-2xs">
                                     <button
                                         type="button"
                                         onClick={() => setDrawerTab('work')}
-                                        className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                                            drawerTab === 'work' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-slate-200'
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                            drawerTab === 'work' ? 'bg-emerald-600 text-white shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                                         }`}
                                     >
                                         {lang === 'sv' ? "Elevlösningar" : "Student Work"}
@@ -217,8 +218,8 @@ export default function TeacherPresentationStage({
                                     <button
                                         type="button"
                                         onClick={() => setDrawerTab('matrix')}
-                                        className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                                            drawerTab === 'matrix' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-slate-200'
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                            drawerTab === 'matrix' ? 'bg-emerald-600 text-white shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                                         }`}
                                     >
                                         {lang === 'sv' ? "Klassmatris" : "Matrix"}
@@ -226,7 +227,7 @@ export default function TeacherPresentationStage({
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2.5">
                                 {engine.starredStudents.length > 0 && (
                                     <button
                                         type="button"
@@ -236,20 +237,20 @@ export default function TeacherPresentationStage({
                                             if (packetIdx !== -1) onOpenZoom(packetIdx);
                                             engine.setIsComparing(true);
                                         }}
-                                        className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-amber-950 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer active:scale-[0.98]"
                                     >
-                                        <Star size={12} className="fill-amber-950" />
+                                        <Star size={13} className="fill-white" />
                                         <span>{lang === 'sv' ? `Jämför (${engine.starredStudents.length})` : `Compare (${engine.starredStudents.length})`}</span>
                                     </button>
                                 )}
 
-                                <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-[var(--bg-card,#0f172a)] px-2.5 py-1 rounded-md border border-[var(--border-main,#1e293b)]">
+                                <div className="text-[10px] font-bold font-mono text-[var(--text-muted)] uppercase tracking-wider bg-[var(--bg-card)] px-3 py-1.5 rounded-xl border border-[var(--border-main)] shadow-2xs">
                                     {engine.students.length} {lang === 'sv' ? "Elever" : "Students"}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="overflow-x-auto overflow-y-auto custom-scrollbar flex-1 p-3">
+                        <div className="overflow-x-auto overflow-y-auto custom-scrollbar flex-1 p-4 bg-[var(--bg-card)]">
                             {drawerTab === 'matrix' ? (
                                 <ClassMatrixTable
                                     engine={engine}

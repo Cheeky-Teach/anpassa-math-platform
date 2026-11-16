@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
     X, Grid, Trophy, Shuffle, Calculator, Type,
-    Play, Info, HelpCircle, ArrowRight
+    Play, Info, HelpCircle, ArrowRight, Layers, Sliders, Users
 } from 'lucide-react';
 import { SKILL_BUCKETS, isTopicWordProblemReady } from '../../../constants/skillBuckets.js';
 import { extractSeedsFromPacket } from '../../../hooks/useGameQuestionPool.js';
@@ -77,7 +77,7 @@ export default function CategoryClashSetupModal({
             3: lang === 'sv' ? 'Lag Gul' : 'Team Yellow'
         };
     });
-    const teamColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b'];
+    const teamColors = ['#059669', '#0284c7', '#d97706', '#e11d48'];
 
     // 6. Source packet integration
     const rawTiles = useMemo(() => {
@@ -137,20 +137,20 @@ export default function CategoryClashSetupModal({
             subtitle: "Poängjakten • Category Clash",
             game_desc_title: "Frågesportbräde med Automatisk Nivåtrappa",
             game_desc: "Välj ett nivåspann för varje ämne. Spelet fördelar automatiskt svårighetsgraden så att frågorna blir stegvis svårare för högre poäng.",
-            grid_size: "Brädstorlek (Kolumner x Rader)",
+            grid_size_title: "1. Brädlayout & Storlek",
             cols_label: "Kolumner (Områden)",
             rows_label: "Rader (Poängnivåer)",
-            categories_title: "Områden & Svårighetsspann per kolumn",
+            categories_title: "2. Områden & Svårighetsspann per kolumn",
             from_level: "Från:",
             to_level: "Till:",
             inspect_btn: "Visa nivåer",
             level_word: "Nivå",
             point_scale: "Poängskala",
             teams_title: "Spelläge & Gruppindelning",
+            game_settings_title: "3. Poäng & Spelläge",
             solo: "Solo",
             teams: "Lag",
             randomize: "Slumpa",
-            word_problems: "Aktivera textuppgifter / problemlösning",
             cancel: "Avbryt",
             open_board: "Öppna Spelplan",
             level_overview_sub: "Nivåöversikt & Delmoment",
@@ -161,20 +161,20 @@ export default function CategoryClashSetupModal({
             subtitle: "Category Clash • Trivia Board",
             game_desc_title: "Trivia Board with Automatic Progression",
             game_desc: "Choose a level range for each category. The game automatically distributes tiers so higher points correspond to harder questions.",
-            grid_size: "Grid Size (Columns x Rows)",
+            grid_size_title: "1. Board Layout & Size",
             cols_label: "Columns (Topics)",
             rows_label: "Rows (Point Tiers)",
-            categories_title: "Topics & Difficulty Range per Column",
+            categories_title: "2. Topics & Difficulty Range per Column",
             from_level: "From:",
             to_level: "To:",
             inspect_btn: "View levels",
             level_word: "Level",
             point_scale: "Point Scale",
             teams_title: "Game Mode & Teams",
+            game_settings_title: "3. Points & Game Mode",
             solo: "Solo",
             teams: "Teams",
             randomize: "Randomize",
-            word_problems: "Enable story problems & context",
             cancel: "Cancel",
             open_board: "Open Game Board",
             level_overview_sub: "Level Overview & Subtopics",
@@ -280,40 +280,40 @@ export default function CategoryClashSetupModal({
     };
 
     return (
-        <div className="fixed inset-0 z-[500] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in select-none">
+        <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150 select-none font-sans">
             <div 
-                className="rounded-[2.5rem] shadow-2xl border w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden relative"
+                className="rounded-2xl shadow-2xl border w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden relative animate-in zoom-in-95 duration-150"
                 style={{
                     backgroundColor: 'var(--bg-card)',
-                    borderColor: 'var(--border-main)',
+                    borderColor: 'var(--border-strong)',
                     color: 'var(--text-main)'
                 }}
             >
                 {/* Header */}
                 <div 
-                    className="px-8 py-5 border-b flex items-center justify-between shrink-0"
+                    className="px-6 py-4 border-b flex items-center justify-between shrink-0"
                     style={{
                         backgroundColor: 'var(--bg-surface)',
                         borderColor: 'var(--border-main)'
                     }}
                 >
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/30">
-                            <Grid size={22} />
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 flex items-center justify-center shadow-2xs">
+                            <Grid size={20} />
                         </div>
                         <div>
-                            <h2 className="text-lg font-black uppercase tracking-wider text-inherit">{t.title}</h2>
-                            <p className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>{t.subtitle}</p>
+                            <h2 className="text-base font-extrabold uppercase tracking-tight text-inherit">{t.title}</h2>
+                            <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t.subtitle}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
                             onClick={() => setIsHelpOpen(true)}
-                            className="p-2 rounded-xl border transition-colors cursor-pointer hover:border-amber-400"
+                            className="p-1.5 rounded-xl border transition-colors cursor-pointer hover:border-emerald-600 shadow-2xs"
                             style={{
                                 backgroundColor: 'var(--bg-card)',
-                                borderColor: 'var(--border-main)',
+                                borderColor: 'var(--border-strong)',
                                 color: 'var(--text-muted)'
                             }}
                             title={t.guide_tooltip}
@@ -321,8 +321,9 @@ export default function CategoryClashSetupModal({
                             <HelpCircle size={16} />
                         </button>
                         <button 
+                            type="button"
                             onClick={onClose} 
-                            className="p-2 rounded-xl transition-colors cursor-pointer hover:bg-rose-500 hover:text-white"
+                            className="p-1.5 rounded-xl transition-colors cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-400"
                             style={{ color: 'var(--text-muted)' }}
                         >
                             <X size={18} />
@@ -331,89 +332,101 @@ export default function CategoryClashSetupModal({
                 </div>
 
                 {/* Form Body */}
-                <form onSubmit={(e) => { e.preventDefault(); handleDoLaunch(); }} className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-6">
+                <form onSubmit={(e) => { e.preventDefault(); handleDoLaunch(); }} className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
                     
                     {/* Visual Concept Banner */}
-                    <div className="bg-slate-900 text-white rounded-3xl p-5 border border-slate-800 shadow-md flex items-center gap-5">
-                        <div className="shrink-0 grid grid-cols-3 gap-1 bg-slate-950 p-2 rounded-xl border border-slate-800 w-28 text-center font-mono">
-                            <div className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px] py-1 rounded font-bold">{t.level_word} 1</div>
-                            <div className="bg-indigo-500/30 text-indigo-200 border border-indigo-500/40 text-[9px] py-1 rounded font-bold">{t.level_word} 2</div>
-                            <div className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] py-1 rounded font-black">{t.level_word} 4</div>
+                    <div className="bg-[var(--bg-surface)] text-[var(--text-main)] rounded-xl p-4 border border-[var(--border-main)] shadow-2xs flex items-center gap-4">
+                        <div className="shrink-0 grid grid-cols-3 gap-1 bg-[var(--bg-card)] p-2 rounded-lg border border-[var(--border-strong)] w-24 text-center font-mono">
+                            <div className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[9px] py-1 rounded font-bold">L1</div>
+                            <div className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[9px] py-1 rounded font-bold">L2</div>
+                            <div className="bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[9px] py-1 rounded font-black">L4</div>
                         </div>
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                                <Trophy size={16} className="text-amber-400" />
-                                <h3 className="text-sm font-black uppercase tracking-wider text-white">
+                                <Trophy size={15} className="text-amber-600 dark:text-amber-400" />
+                                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-main)]">
                                     {t.game_desc_title}
                                 </h3>
                             </div>
-                            <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                            <p className="text-xs text-[var(--text-muted)] leading-relaxed font-medium">
                                 {t.game_desc}
                             </p>
                         </div>
                     </div>
 
-                    {/* Dimensions */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div 
-                            className="p-3.5 rounded-2xl border"
-                            style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
-                        >
-                            <span className="text-[11px] font-bold block mb-2" style={{ color: 'var(--text-muted)' }}>{t.cols_label}</span>
-                            <div className="flex gap-1.5">
-                                {[3, 4, 5, 6].map(num => (
-                                    <button
-                                        key={num}
-                                        type="button"
-                                        onClick={() => setColumns(num)}
-                                        className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                                            columns === num 
-                                                ? 'bg-indigo-600 text-white shadow-sm' 
-                                                : 'border hover:border-indigo-400'
-                                        }`}
-                                        style={columns !== num ? { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', color: 'var(--text-main)' } : {}}
-                                    >
-                                        {num}
-                                    </button>
-                                ))}
-                            </div>
+                    {/* SECTION 1: Grid Dimensions (Sky Blue Accent) */}
+                    <div className="space-y-2.5">
+                        <div className="flex items-center gap-2">
+                            <Sliders size={15} className="text-sky-600 dark:text-sky-400" />
+                            <h3 className="text-xs font-extrabold uppercase tracking-wider text-sky-700 dark:text-sky-400">
+                                {t.grid_size_title}
+                            </h3>
                         </div>
 
-                        <div 
-                            className="p-3.5 rounded-2xl border"
-                            style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
-                        >
-                            <span className="text-[11px] font-bold block mb-2" style={{ color: 'var(--text-muted)' }}>{t.rows_label}</span>
-                            <div className="flex gap-1.5">
-                                {[3, 4, 5].map(num => (
-                                    <button
-                                        key={num}
-                                        type="button"
-                                        onClick={() => setRows(num)}
-                                        className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                                            rows === num 
-                                                ? 'bg-indigo-600 text-white shadow-sm' 
-                                                : 'border hover:border-indigo-400'
-                                        }`}
-                                        style={rows !== num ? { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', color: 'var(--text-main)' } : {}}
-                                    >
-                                        {num}
-                                    </button>
-                                ))}
+                        <div className="grid grid-cols-2 gap-3.5">
+                            <div 
+                                className="p-3.5 rounded-xl border shadow-2xs"
+                                style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
+                            >
+                                <span className="text-[10px] font-bold uppercase tracking-wider block mb-2" style={{ color: 'var(--text-muted)' }}>{t.cols_label}</span>
+                                <div className="flex gap-1.5">
+                                    {[3, 4, 5, 6].map(num => (
+                                        <button
+                                            key={num}
+                                            type="button"
+                                            onClick={() => setColumns(num)}
+                                            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                                columns === num 
+                                                    ? 'bg-sky-600 text-white shadow-2xs' 
+                                                    : 'border hover:border-sky-500'
+                                            }`}
+                                            style={columns !== num ? { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-strong)', color: 'var(--text-main)' } : {}}
+                                        >
+                                            {num}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div 
+                                className="p-3.5 rounded-xl border shadow-2xs"
+                                style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
+                            >
+                                <span className="text-[10px] font-bold uppercase tracking-wider block mb-2" style={{ color: 'var(--text-muted)' }}>{t.rows_label}</span>
+                                <div className="flex gap-1.5">
+                                    {[3, 4, 5].map(num => (
+                                        <button
+                                            key={num}
+                                            type="button"
+                                            onClick={() => setRows(num)}
+                                            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                                rows === num 
+                                                    ? 'bg-sky-600 text-white shadow-2xs' 
+                                                    : 'border hover:border-sky-500'
+                                            }`}
+                                            style={rows !== num ? { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-strong)', color: 'var(--text-main)' } : {}}
+                                        >
+                                            {num}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Categories & Difficulty Selector */}
-                    <div className="space-y-3">
+                    {/* SECTION 2: Categories & Difficulty Selector (Emerald Green Accent) */}
+                    <div className="space-y-2.5">
                         <div className="flex items-center justify-between">
-                            <label className="text-xs font-black uppercase tracking-wider block" style={{ color: 'var(--text-main)' }}>
-                                {t.categories_title}
-                            </label>
+                            <div className="flex items-center gap-2">
+                                <Layers size={15} className="text-emerald-600 dark:text-emerald-400" />
+                                <h3 className="text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                                    {t.categories_title}
+                                </h3>
+                            </div>
                             <button
                                 type="button"
                                 onClick={handleRandomizeTopics}
-                                className="text-[11px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-300 hover:underline flex items-center gap-1 cursor-pointer"
+                                className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
                             >
                                 <Shuffle size={12} />
                                 {t.randomize}
@@ -433,14 +446,13 @@ export default function CategoryClashSetupModal({
                                 return (
                                     <div 
                                         key={colIdx} 
-                                        className="p-3 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                                        className="p-3 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs"
                                         style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
                                     >
                                         {/* Column Number & Topic Dropdown */}
-                                        <div className="flex items-center gap-2 flex-1 min-w-0 w-full sm:w-auto">
-                                            {/* Column Number badge: high-contrast border and text */}
+                                        <div className="flex items-center gap-2.5 flex-1 min-w-0 w-full sm:w-auto">
                                             <span 
-                                                className="w-7 h-7 rounded-xl font-mono font-black text-xs flex items-center justify-center shrink-0 border"
+                                                className="w-7 h-7 rounded-lg font-mono font-bold text-xs flex items-center justify-center shrink-0 border"
                                                 style={{
                                                     backgroundColor: 'var(--bg-card)',
                                                     borderColor: 'var(--border-strong)',
@@ -452,10 +464,10 @@ export default function CategoryClashSetupModal({
                                             <select
                                                 value={currentTopicId}
                                                 onChange={(e) => handleTopicChange(colIdx, e.target.value)}
-                                                className="w-full border px-3 py-1.5 rounded-xl text-xs font-bold outline-none cursor-pointer truncate shadow-xs focus:ring-2 focus:ring-indigo-500/40"
+                                                className="w-full border px-3 py-2 rounded-xl text-xs font-semibold outline-none cursor-pointer truncate shadow-inner focus:border-emerald-600 transition-colors"
                                                 style={{ 
                                                     backgroundColor: 'var(--bg-card)', 
-                                                    borderColor: 'var(--border-main)', 
+                                                    borderColor: 'var(--border-strong)', 
                                                     color: 'var(--text-main)' 
                                                 }}
                                             >
@@ -465,7 +477,7 @@ export default function CategoryClashSetupModal({
                                                         value={topic.id} 
                                                         style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}
                                                     >
-                                                        {topic.categoryName} • {topic.name}
+                                                        {topic.categoryName} — {topic.name}
                                                     </option>
                                                 ))}
                                             </select>
@@ -474,18 +486,18 @@ export default function CategoryClashSetupModal({
                                         {/* Min / Max Range Pickers */}
                                         <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                                             <div 
-                                                className="flex items-center gap-2 px-3 py-1 rounded-xl border shadow-xs"
-                                                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)' }}
+                                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border shadow-2xs"
+                                                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-strong)' }}
                                             >
                                                 {/* FROM LEVEL */}
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="text-[10px] font-black uppercase" style={{ color: 'var(--text-muted)' }}>
+                                                    <span className="text-[10px] font-bold uppercase" style={{ color: 'var(--text-muted)' }}>
                                                         {t.from_level}
                                                     </span>
                                                     <select
                                                         value={currentRange.min}
                                                         onChange={(e) => updateColumnMin(colIdx, e.target.value, availableLevels[availableLevels.length - 1])}
-                                                        className="font-black text-xs px-2 py-1 rounded-lg border outline-none cursor-pointer"
+                                                        className="font-bold font-mono text-xs px-2 py-1 rounded-lg border outline-none cursor-pointer"
                                                         style={{ 
                                                             backgroundColor: 'var(--bg-surface)', 
                                                             borderColor: 'var(--border-strong)',
@@ -508,13 +520,13 @@ export default function CategoryClashSetupModal({
 
                                                 {/* TO LEVEL */}
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="text-[10px] font-black uppercase" style={{ color: 'var(--text-muted)' }}>
+                                                    <span className="text-[10px] font-bold uppercase" style={{ color: 'var(--text-muted)' }}>
                                                         {t.to_level}
                                                     </span>
                                                     <select
                                                         value={currentRange.max}
                                                         onChange={(e) => updateColumnMax(colIdx, e.target.value, availableLevels[0])}
-                                                        className="font-black text-xs px-2 py-1 rounded-lg border outline-none cursor-pointer"
+                                                        className="font-bold font-mono text-xs px-2 py-1 rounded-lg border outline-none cursor-pointer"
                                                         style={{ 
                                                             backgroundColor: 'var(--bg-surface)', 
                                                             borderColor: 'var(--border-strong)',
@@ -537,19 +549,19 @@ export default function CategoryClashSetupModal({
 
                                             {/* Math vs Story Mode Toggle per Column */}
                                             <div 
-                                                className="flex items-center p-0.5 rounded-xl border shadow-xs"
-                                                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)' }}
+                                                className="flex items-center p-0.5 rounded-xl border shadow-2xs"
+                                                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-strong)' }}
                                             >
                                                 <button
                                                     type="button"
                                                     onClick={() => setColumnModes(prev => ({ ...prev, [colIdx]: 'math' }))}
-                                                    className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
+                                                    className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
                                                         (columnModes[colIdx] || 'math') === 'math'
-                                                            ? 'bg-indigo-600 text-white shadow-xs'
+                                                            ? 'bg-emerald-600 text-white shadow-2xs'
                                                             : 'opacity-60 hover:opacity-100'
                                                     }`}
                                                     style={(columnModes[colIdx] || 'math') !== 'math' ? { color: 'var(--text-main)' } : {}}
-                                                    title="Vanligt tal / formel"
+                                                    title="Standard math"
                                                 >
                                                     <Calculator size={11} />
                                                     <span>Tal</span>
@@ -558,15 +570,15 @@ export default function CategoryClashSetupModal({
                                                     type="button"
                                                     disabled={!isTopicWordProblemReady(currentTopicId)}
                                                     onClick={() => setColumnModes(prev => ({ ...prev, [colIdx]: 'story' }))}
-                                                    className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 ${
+                                                    className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
                                                         columnModes[colIdx] === 'story'
-                                                            ? 'bg-amber-500 text-slate-950 font-black shadow-xs cursor-pointer'
+                                                            ? 'bg-amber-500 text-white shadow-2xs cursor-pointer'
                                                             : isTopicWordProblemReady(currentTopicId)
                                                                 ? 'opacity-60 hover:opacity-100 cursor-pointer'
                                                                 : 'opacity-25 cursor-not-allowed'
                                                     }`}
                                                     style={columnModes[colIdx] !== 'story' ? { color: 'var(--text-main)' } : {}}
-                                                    title={!isTopicWordProblemReady(currentTopicId) ? "Inga textuppgifter tillgängliga för detta område" : "Textuppgift / vardagsproblem"}
+                                                    title={!isTopicWordProblemReady(currentTopicId) ? "No word problems available" : "Word problem"}
                                                 >
                                                     <Type size={11} />
                                                     <span>Text</span>
@@ -576,10 +588,10 @@ export default function CategoryClashSetupModal({
                                             <button
                                                 type="button"
                                                 onClick={() => setInspectedTopic(topicMeta)}
-                                                className="p-2 rounded-xl border transition-colors shadow-xs cursor-pointer hover:border-indigo-400"
+                                                className="p-2 rounded-xl border transition-colors shadow-2xs cursor-pointer hover:border-emerald-600"
                                                 style={{ 
                                                     backgroundColor: 'var(--bg-card)', 
-                                                    borderColor: 'var(--border-main)', 
+                                                    borderColor: 'var(--border-strong)', 
                                                     color: 'var(--text-main)' 
                                                 }}
                                                 title={t.inspect_btn}
@@ -593,63 +605,72 @@ export default function CategoryClashSetupModal({
                         </div>
                     </div>
 
-                    {/* Point Presets & Teams */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-black uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
-                                {t.point_scale}
-                            </label>
-                            <div className="flex gap-2">
-                                {[
-                                    { key: '100_500', label: '100 – 500 p' },
-                                    { key: '10_50', label: '10 – 50 p' },
-                                    { key: '1_5', label: '1 – 5 p' }
-                                ].map(p => (
-                                    <button
-                                        key={p.key}
-                                        type="button"
-                                        onClick={() => setPointScalePreset(p.key)}
-                                        className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer border ${
-                                            pointScalePreset === p.key 
-                                                ? 'bg-amber-500 text-slate-950 font-black border-amber-500 shadow-sm' 
-                                                : 'hover:border-amber-400'
-                                        }`}
-                                        style={pointScalePreset !== p.key ? { 
-                                            backgroundColor: 'var(--bg-surface)', 
-                                            borderColor: 'var(--border-main)', 
-                                            color: 'var(--text-main)' 
-                                        } : {}}
-                                    >
-                                        {p.label}
-                                    </button>
-                                ))}
-                            </div>
+                    {/* SECTION 3: Point Scale & Teams (Amber & Indigo Accent) */}
+                    <div className="space-y-2.5">
+                        <div className="flex items-center gap-2">
+                            <Trophy size={15} className="text-amber-600 dark:text-amber-400" />
+                            <h3 className="text-xs font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                                {t.game_settings_title}
+                            </h3>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-black uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
-                                {t.teams_title}
-                            </label>
-                            <div className="flex gap-2">
-                                {[1, 2, 3, 4].map(num => (
-                                    <button
-                                        key={num}
-                                        type="button"
-                                        onClick={() => setTeamCount(num)}
-                                        className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${
-                                            teamCount === num 
-                                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
-                                                : 'hover:border-indigo-400'
-                                        }`}
-                                        style={teamCount !== num ? { 
-                                            backgroundColor: 'var(--bg-surface)', 
-                                            borderColor: 'var(--border-main)', 
-                                            color: 'var(--text-main)' 
-                                        } : {}}
-                                    >
-                                        {num} {num === 1 ? t.solo : t.teams}
-                                    </button>
-                                ))}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
+                                    {t.point_scale}
+                                </label>
+                                <div className="flex gap-2">
+                                    {[
+                                        { key: '100_500', label: '100 – 500 p' },
+                                        { key: '10_50', label: '10 – 50 p' },
+                                        { key: '1_5', label: '1 – 5 p' }
+                                    ].map(p => (
+                                        <button
+                                            key={p.key}
+                                            type="button"
+                                            onClick={() => setPointScalePreset(p.key)}
+                                            className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer border shadow-2xs ${
+                                                pointScalePreset === p.key 
+                                                    ? 'bg-amber-600 text-white border-amber-600 shadow-2xs' 
+                                                    : 'hover:border-amber-600'
+                                            }`}
+                                            style={pointScalePreset !== p.key ? { 
+                                                backgroundColor: 'var(--bg-surface)', 
+                                                borderColor: 'var(--border-strong)', 
+                                                color: 'var(--text-main)' 
+                                            } : {}}
+                                        >
+                                            {p.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
+                                    {t.teams_title}
+                                </label>
+                                <div className="flex gap-2">
+                                    {[1, 2, 3, 4].map(num => (
+                                        <button
+                                            key={num}
+                                            type="button"
+                                            onClick={() => setTeamCount(num)}
+                                            className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer border shadow-2xs ${
+                                                teamCount === num 
+                                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' 
+                                                    : 'hover:border-emerald-600'
+                                            }`}
+                                            style={teamCount !== num ? { 
+                                                backgroundColor: 'var(--bg-surface)', 
+                                                borderColor: 'var(--border-strong)', 
+                                                color: 'var(--text-main)' 
+                                            } : {}}
+                                        >
+                                            {num} {num === 1 ? t.solo : t.teams}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -662,8 +683,7 @@ export default function CategoryClashSetupModal({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-5 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                            style={{ color: 'var(--text-muted)' }}
+                            className="px-4 py-2 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-card)] text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer shadow-2xs"
                         >
                             {t.cancel}
                         </button>
@@ -671,9 +691,9 @@ export default function CategoryClashSetupModal({
                         <button
                             type="button"
                             onClick={handleDoLaunch}
-                            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
+                            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-2xs active:scale-[0.98] transition-all cursor-pointer"
                         >
-                            <Play size={14} />
+                            <Play size={14} fill="currentColor" />
                             <span>{t.open_board}</span>
                         </button>
                     </div>
@@ -682,12 +702,12 @@ export default function CategoryClashSetupModal({
 
                 {/* Level Inspector Modal */}
                 {inspectedTopic && (
-                    <div className="absolute inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-6 animate-in fade-in">
+                    <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-6 animate-in fade-in duration-150">
                         <div 
-                            className="rounded-3xl border w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh] overflow-hidden"
+                            className="rounded-2xl border w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh] overflow-hidden"
                             style={{ 
                                 backgroundColor: 'var(--bg-card)', 
-                                borderColor: 'var(--border-main)', 
+                                borderColor: 'var(--border-strong)', 
                                 color: 'var(--text-main)' 
                             }}
                         >
@@ -699,47 +719,47 @@ export default function CategoryClashSetupModal({
                                 }}
                             >
                                 <div>
-                                    <h4 className="text-sm font-black uppercase tracking-wider text-inherit">
+                                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-inherit">
                                         {inspectedTopic.name}
                                     </h4>
-                                    <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-300">
+                                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
                                         {t.level_overview_sub}
                                     </span>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => setInspectedTopic(null)}
-                                    className="p-1.5 rounded-xl transition-colors cursor-pointer hover:bg-rose-500 hover:text-white"
+                                    className="p-1.5 rounded-xl transition-colors cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-400"
                                     style={{ color: 'var(--text-muted)' }}
                                 >
                                     <X size={16} />
                                 </button>
                             </div>
 
-                            <div className="p-6 overflow-y-auto custom-scrollbar space-y-4">
+                            <div className="p-6 overflow-y-auto custom-scrollbar space-y-3">
                                 {inspectedTopic.availableLevels.map(lvl => {
                                     const variations = inspectedTopic.levelMap?.[lvl] || [];
                                     return (
                                         <div 
                                             key={lvl} 
-                                            className="p-3.5 rounded-2xl border space-y-1.5"
+                                            className="p-3.5 rounded-xl border space-y-1.5 shadow-2xs"
                                             style={{ 
                                                 backgroundColor: 'var(--bg-surface)', 
                                                 borderColor: 'var(--border-main)' 
                                             }}
                                         >
                                             <div className="flex items-center gap-2">
-                                                <span className="px-2 py-0.5 rounded-md bg-indigo-600 text-white font-black text-[10px]">
+                                                <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-bold font-mono text-[10px]">
                                                     {t.level_word} {lvl}
                                                 </span>
                                             </div>
                                             {variations.map(v => (
                                                 <div key={v.key} className="pl-1">
-                                                    <div className="text-xs font-bold text-inherit">
+                                                    <div className="text-xs font-semibold text-inherit">
                                                         {v.name?.[lang] || v.name?.sv || v.key}
                                                     </div>
                                                     {v.desc && (
-                                                        <p className="text-[11px] italic" style={{ color: 'var(--text-muted)' }}>
+                                                        <p className="text-[11px] italic font-medium" style={{ color: 'var(--text-muted)' }}>
                                                             {v.desc?.[lang] || v.desc?.sv}
                                                         </p>
                                                     )}

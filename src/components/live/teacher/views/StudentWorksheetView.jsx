@@ -56,8 +56,8 @@ export default function StudentWorksheetView({
 
     if (!currentItem) {
         return (
-            <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-white">
-                <Loader2 size={32} className="animate-spin text-indigo-500" />
+            <div className="min-h-screen bg-[var(--bg-canvas)] flex items-center justify-center p-6 text-[var(--text-main)]">
+                <Loader2 size={32} className="animate-spin text-emerald-600 dark:text-emerald-400" />
             </div>
         );
     }
@@ -106,48 +106,48 @@ export default function StudentWorksheetView({
     );
 
     return (
-        <div className="min-h-screen bg-[var(--bg-canvas,#020617)] text-[var(--text-main,#f8fafc)] flex flex-col font-sans select-none">
+        <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans select-none">
             {/* Header: Progress, Pill & Options */}
-            <header className="bg-[var(--bg-card,#0f172a)] border-b border-[var(--border-main,#1e293b)] px-4 py-2.5 sticky top-0 z-50 shadow-xs shrink-0">
+            <header className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-4 py-2.5 sticky top-0 z-50 shadow-2xs shrink-0">
                 <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
                     <div className="flex flex-col min-w-0 flex-1">
-                        <h1 className="text-sm font-black uppercase tracking-widest leading-none truncate mb-1">
+                        <h1 className="text-xs font-bold uppercase tracking-wider leading-none truncate mb-1">
                             {session?.title || "Live Lektion"}
                         </h1>
-                        <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5">
-                            <span className="truncate max-w-[140px] text-slate-200">{studentAlias}</span>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-1.5 font-mono">
+                            <span className="truncate max-w-[140px] text-[var(--text-main)]">{studentAlias}</span>
                             <span className="opacity-40">•</span>
-                            <span className="uppercase font-mono tracking-wider">{session?.class_code}</span>
+                            <span className="uppercase tracking-wider">{session?.class_code}</span>
                         </p>
                     </div>
 
                     {/* Question Pill */}
                     <div className="shrink-0 flex items-center">
                         {pacingMode === 'open' ? (
-                            <div className="flex items-center bg-slate-800/90 p-1 rounded-2xl border border-slate-700 shadow-xs gap-1">
+                            <div className="flex items-center bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-strong)] shadow-2xs gap-1">
                                 <button
                                     type="button"
                                     onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                                     disabled={currentIndex === 0}
-                                    className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-20 cursor-pointer transition-all"
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] disabled:opacity-20 cursor-pointer transition-all border border-[var(--border-main)]"
                                 >
-                                    <ChevronLeft size={18} strokeWidth={2.5} />
+                                    <ChevronLeft size={16} strokeWidth={2.5} />
                                 </button>
-                                <span className="text-xs font-black uppercase tracking-wider text-white px-3 min-w-[75px] text-center font-mono">
+                                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)] px-3 min-w-[75px] text-center font-mono">
                                     {currentIndex + 1} / {localPacket.length}
                                 </span>
                                 <button
                                     type="button"
                                     onClick={() => setCurrentIndex(prev => Math.min(localPacket.length - 1, prev + 1))}
                                     disabled={currentIndex === localPacket.length - 1}
-                                    className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-20 cursor-pointer transition-all"
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] disabled:opacity-20 cursor-pointer transition-all border border-[var(--border-main)]"
                                 >
-                                    <ChevronRight size={18} strokeWidth={2.5} />
+                                    <ChevronRight size={16} strokeWidth={2.5} />
                                 </button>
                             </div>
                         ) : (
-                            <div className="flex items-center px-4 py-1.5 bg-slate-800/90 rounded-2xl border border-slate-700 shadow-xs">
-                                <span className="text-xs font-black uppercase tracking-wider text-slate-200 font-mono">
+                            <div className="flex items-center px-3.5 py-1.5 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-strong)] shadow-2xs">
+                                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)] font-mono">
                                     {lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} / {localPacket.length}
                                 </span>
                             </div>
@@ -159,19 +159,19 @@ export default function StudentWorksheetView({
                         <button 
                             type="button"
                             onClick={handleExitRequest} 
-                            className="p-2 hover:bg-rose-500/20 rounded-xl text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                            className="p-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
                         >
-                            <LogOut size={18} />
+                            <LogOut size={16} />
                         </button>
                     </div>
                 </div>
 
-                <div className="flex max-w-xs mx-auto h-1 bg-slate-800 rounded-full gap-1 p-0 mt-2">
+                <div className="flex max-w-xs mx-auto h-1 bg-[var(--bg-surface)] rounded-full gap-1 p-0 mt-2">
                     {localPacket.map((_, i) => (
                         <div 
                             key={i} 
                             className={`flex-1 rounded-full transition-all duration-300 ${
-                                i === currentIndex ? 'bg-indigo-500 ring-2 ring-indigo-500/30' : Boolean(completed[i]) ? 'bg-emerald-500' : 'bg-transparent'
+                                i === currentIndex ? 'bg-emerald-600 ring-2 ring-emerald-600/30' : Boolean(completed[i]) ? 'bg-emerald-600/60' : 'bg-transparent'
                             }`} 
                         />
                     ))}
@@ -179,49 +179,49 @@ export default function StudentWorksheetView({
             </header>
 
             {/* Stage */}
-            <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 overflow-hidden flex flex-col">
+            <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 overflow-hidden flex flex-col">
                 <div className={`flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-y-auto lg:overflow-hidden transition-all duration-300 ${isCompleted ? 'opacity-50 scale-[0.99] pointer-events-none' : ''}`}>
                     
                     {/* Left Card */}
-                    <div className="flex-[3] whiteboard-protect rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative min-h-[300px] bg-white text-slate-900 border border-slate-200">
+                    <div className="flex-[3] whiteboard-protect rounded-2xl shadow-xl flex flex-col overflow-hidden relative min-h-[300px] bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-strong)]">
                         
                         {/* 1. Header Bar */}
-                        <div className="px-6 py-4 lg:px-10 lg:py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
-                            <span className="text-sm font-bold text-slate-500">
+                        <div className="px-6 py-3.5 lg:px-8 lg:py-4 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-surface)] shrink-0">
+                            <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
                                 {lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} av {localPacket.length}
                             </span>
                             {isCompleted && (
                                 <div className="flex items-center gap-2">
-                                    <span className="text-sm font-bold text-emerald-600">
+                                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
                                         {lang === 'sv' ? "Svar mottaget" : "Answer received"}
                                     </span>
-                                    <CheckCircle2 className="text-emerald-500" size={18} />
+                                    <CheckCircle2 className="text-emerald-600 dark:text-emerald-400" size={18} />
                                 </div>
                             )}
                         </div>
 
-                        {/* 2. Inner Body (Stacked vertically, full width, preserving white background) */}
-                        <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-6 lg:p-10 space-y-6">
+                        {/* 2. Inner Body */}
+                        <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-6 lg:p-8 space-y-5">
                             
                             {/* Question Text */}
-                            <div className="text-xl lg:text-2xl font-bold text-slate-800 leading-relaxed">
+                            <div className="text-lg lg:text-xl font-bold text-[var(--text-main)] leading-relaxed">
                                 <MathDisplay content={rd?.description || currentItem?.text || currentItem?.prompt || (lang === 'sv' ? "Diskussionsuppgift" : "Discussion Question")} />
                             </div>
 
                             {/* LaTeX Box */}
                             {shouldShowLatexBox && (
-                                <div className="w-full bg-indigo-50/50 border border-indigo-100/50 rounded-2xl p-4 lg:p-8 overflow-x-auto custom-scrollbar">
-                                    <div className="min-w-max flex justify-center text-2xl lg:text-4xl text-indigo-600 font-serif">
+                                <div className="w-full bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-xl p-4 lg:p-6 overflow-x-auto custom-scrollbar shadow-inner text-center">
+                                    <div className="min-w-max flex justify-center text-xl lg:text-3xl text-[var(--text-main)] font-serif">
                                         <MathDisplay content={`$$${rd.latex}$$`} />
                                     </div>
                                 </div>
                             )}
 
-                            {/* Visual underneath, centered and scaled to prevent clipping */}
+                            {/* Visual underneath */}
                             {rd && (rd.graph || rd.geometry || rd.pattern) && (
-                                <div className="w-full flex items-center justify-center py-4 bg-slate-50/50 rounded-2xl border border-slate-100 overflow-x-auto no-scrollbar">
+                                <div className="w-full flex items-center justify-center py-4 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-main)] overflow-x-auto no-scrollbar shadow-2xs">
                                     <WordProblemVisualGuard isActive={Boolean(rd?.isWordProblemApplied)} lang={lang} questionKey={currentItem?.id || currentIndex} allowReveal={false}>
-                                        <div className="max-w-full flex items-center justify-center drop-shadow-xs">
+                                        <div className="max-w-full flex items-center justify-center drop-shadow-2xs">
                                             <VisualRenderer data={rd} isWordProblem={Boolean(rd?.isWordProblemApplied)} />
                                         </div>
                                     </WordProblemVisualGuard>
@@ -232,37 +232,37 @@ export default function StudentWorksheetView({
                     </div>
 
                     {/* Right Card */}
-                    <div className="flex-[2] lg:max-w-[480px] whiteboard-protect rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden shrink-0 bg-white text-slate-900 border border-slate-200">
-                        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+                    <div className="flex-[2] lg:max-w-[480px] whiteboard-protect rounded-2xl shadow-xl flex flex-col overflow-hidden shrink-0 bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-strong)]">
+                        <div className="px-5 py-3 border-b border-[var(--border-main)] flex items-center justify-between bg-[var(--bg-surface)] shrink-0">
                             {showScratchpad && showCanvas ? (
-                                <div className="flex bg-slate-200/80 p-0.5 rounded-xl border border-slate-300">
-                                    <button type="button" onClick={() => setActiveWorkTab('scratchpad')} className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${activeWorkTab === 'scratchpad' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'}`}>
+                                <div className="flex bg-[var(--bg-card)] p-0.5 rounded-xl border border-[var(--border-main)] shadow-2xs">
+                                    <button type="button" onClick={() => setActiveWorkTab('scratchpad')} className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${activeWorkTab === 'scratchpad' ? 'bg-emerald-600 text-white shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
                                         <Calculator size={13} />
                                         <span>{lang === 'sv' ? "Kladdpapper" : "Scratchpad"}</span>
                                     </button>
-                                    <button type="button" onClick={() => setActiveWorkTab('canvas')} className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${activeWorkTab === 'canvas' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'}`}>
+                                    <button type="button" onClick={() => setActiveWorkTab('canvas')} className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${activeWorkTab === 'canvas' ? 'bg-emerald-600 text-white shadow-2xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
                                         <PenTool size={13} />
                                         <span>{lang === 'sv' ? "Rityta" : "Canvas"}</span>
                                     </button>
                                 </div>
                             ) : (
-                                <span className="text-sm font-bold text-slate-500">
+                                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
                                     {showCanvas && !showScratchpad ? (lang === 'sv' ? "Rityta" : "Drawing Canvas") : (lang === 'sv' ? "Din lösning" : "Your solution")}
                                 </span>
                             )}
 
                             {showCanvas && activeWorkTab === 'canvas' && (
-                                <button type="button" onClick={() => setIsCanvasExpanded(true)} className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer">
+                                <button type="button" onClick={() => setIsCanvasExpanded(true)} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] rounded-xl transition-colors cursor-pointer border border-[var(--border-main)]">
                                     <Maximize2 size={15} />
                                 </button>
                             )}
                         </div>
 
-                        <div className="flex-1 p-4 lg:p-6 flex flex-col justify-between bg-white text-slate-900 space-y-4">
+                        <div className="flex-1 p-4 lg:p-5 flex flex-col justify-between bg-[var(--bg-card)] text-[var(--text-main)] space-y-4">
                             {!isCompleted ? (
                                 <div className="w-full space-y-4">
                                     {showCanvas && (activeWorkTab === 'canvas' || !showScratchpad) && (
-                                        <div className="w-full h-64 relative border-2 border-slate-200 rounded-2xl overflow-hidden bg-[#f9fbf7] shadow-inner">
+                                        <div className="w-full h-56 relative border border-[var(--border-strong)] rounded-xl overflow-hidden bg-[var(--bg-surface)] shadow-inner">
                                             <InteractiveCanvas
                                                 lang={lang}
                                                 elements={canvasElements[currentIndex] || currentItem?.canvas_state || []}
@@ -288,7 +288,7 @@ export default function StudentWorksheetView({
 
                                     {isMultipleChoice ? (
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-slate-500 block mb-1">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
                                                 {lang === 'sv' ? 'Välj ett alternativ:' : 'Select an option:'}
                                             </label>
                                             <div className="grid grid-cols-1 gap-2.5 w-full">
@@ -302,8 +302,8 @@ export default function StudentWorksheetView({
                                                             type="button"
                                                             disabled={isSubmitting}
                                                             onClick={() => setAnswers(prev => ({ ...prev, [currentIndex]: choiceValue }))}
-                                                            className={`w-full p-3.5 border-2 rounded-2xl text-base font-bold transition-all text-center cursor-pointer active:scale-95 ${
-                                                                isSelected ? 'border-indigo-600 bg-indigo-50 text-indigo-950 ring-2 ring-indigo-400' : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-300'
+                                                            className={`w-full p-3.5 border rounded-xl text-xs font-bold transition-all text-center cursor-pointer active:scale-[0.98] shadow-2xs ${
+                                                                isSelected ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-[var(--text-main)] ring-1 ring-emerald-600' : 'border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-main)] hover:border-emerald-600'
                                                             }`}
                                                         >
                                                             <MathDisplay content={String(choiceLabel)} />
@@ -313,22 +313,22 @@ export default function StudentWorksheetView({
                                             </div>
                                         </div>
                                     ) : isFreeText ? (
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-500 block mb-1">
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] block">
                                                 {lang === 'sv' ? 'Ditt svar / motivering:' : 'Your answer / explanation:'}
                                             </label>
                                             <textarea
                                                 value={answers[currentIndex] || ''}
                                                 onChange={(e) => setAnswers(prev => ({ ...prev, [currentIndex]: e.target.value }))}
                                                 placeholder={lang === 'sv' ? "Skriv ditt svar här..." : "Write your answer here..."}
-                                                rows={5}
+                                                rows={4}
                                                 disabled={isSubmitting}
-                                                className="w-full p-3 text-base border-2 border-slate-200 rounded-xl outline-none focus:border-indigo-500 transition-all text-slate-900 bg-white resize-none"
+                                                className="w-full p-3 text-xs font-medium border border-[var(--border-strong)] rounded-xl outline-none focus:border-emerald-600 transition-all text-[var(--text-main)] bg-[var(--bg-surface)] resize-none shadow-inner"
                                             />
                                         </div>
                                     ) : (
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-500 block mb-1">
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] block">
                                                 {lang === 'sv' ? 'Slutsvar:' : 'Final Answer:'}
                                             </label>
                                             <SmartMathInput 
@@ -354,17 +354,17 @@ export default function StudentWorksheetView({
                                         type="button"
                                         onClick={() => submitAnswer()} 
                                         disabled={isSubmitting || !answers[currentIndex]} 
-                                        className="w-full bg-indigo-600 text-white py-4 rounded-2xl text-sm font-bold active:scale-95 disabled:opacity-30 hover:bg-indigo-700 flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+                                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider active:scale-[0.98] disabled:opacity-30 flex items-center justify-center gap-2 transition-all shadow-2xs cursor-pointer"
                                     >
-                                        {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <><Send size={18} /> <span>{lang === 'sv' ? 'Skicka in svar & arbete' : 'Submit answer & work'}</span></>}
+                                        {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <><Send size={15} /> <span>{lang === 'sv' ? 'Skicka in svar & arbete' : 'Submit answer & work'}</span></>}
                                     </button>
                                 </div>
                             ) : (
                                 <div className="py-16 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100 shadow-inner">
-                                        <Loader2 className="animate-spin text-indigo-500" size={28} />
+                                    <div className="w-16 h-16 bg-[var(--bg-surface)] rounded-2xl flex items-center justify-center border border-[var(--border-main)] shadow-inner">
+                                        <Loader2 className="animate-spin text-emerald-600 dark:text-emerald-400" size={28} />
                                     </div>
-                                    <p className="text-sm text-slate-500 font-bold italic">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] italic">
                                         {pacingMode === 'teacher' ? (lang === 'sv' ? "Väntar på läraren..." : "Waiting for teacher...") : (lang === 'sv' ? "Laddar nästa fråga..." : "Loading next question...")}
                                     </p>
                                 </div>
@@ -376,22 +376,22 @@ export default function StudentWorksheetView({
 
             {/* Fullscreen Canvas Modal */}
             {isCanvasExpanded && (
-                <div className="fixed inset-0 z-[600] bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden">
-                        <div className="px-6 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                            <span className="text-xs font-black uppercase text-slate-800 tracking-wider">
+                <div className="fixed inset-0 z-[600] bg-black/70 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-150 font-sans">
+                    <div className="bg-[var(--bg-card)] rounded-2xl shadow-2xl border border-[var(--border-strong)] w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden text-[var(--text-main)]">
+                        <div className="px-6 py-3.5 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-surface)] shrink-0">
+                            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
                                 {lang === 'sv' ? `Rityta — Uppgift ${currentIndex + 1}` : `Drawing Canvas — Question ${currentIndex + 1}`}
                             </span>
                             <button
                                 type="button"
                                 onClick={() => setIsCanvasExpanded(false)}
-                                className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 cursor-pointer"
+                                className="px-3.5 py-1.5 bg-[var(--bg-card)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-[var(--text-main)] font-bold text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 cursor-pointer shadow-2xs"
                             >
                                 <Minimize2 size={14} />
                                 <span>{lang === 'sv' ? "Klar" : "Done"}</span>
                             </button>
                         </div>
-                        <div className="flex-1 bg-[#f9fbf7] relative">
+                        <div className="flex-1 bg-[var(--bg-surface)] relative">
                             <InteractiveCanvas
                                 lang={lang}
                                 elements={canvasElements[currentIndex] || currentItem?.canvas_state || []}
