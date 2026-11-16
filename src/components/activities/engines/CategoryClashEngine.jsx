@@ -1,5 +1,6 @@
 // src/components/activities/engines/CategoryClashEngine.jsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     X, Play, Edit3, Save, RotateCcw,
     RefreshCcw, Lock, Building2, HelpCircle,
@@ -13,6 +14,7 @@ import MathDisplay from '../../shared/MathDisplay.jsx';
 import CategoryClashHelpModal from '../shared/CategoryClashHelpModal.jsx';
 import { saveActivityToLibrary } from '../../live/core/activityQuestionUtils.js';
 import { useActivityEngineSession } from '../hooks/useActivityEngineSession.js';
+import PreferencesToggle from '../../ui/PreferencesToggle.jsx';
 
 const parseTeamId = (alias) => {
     const match = String(alias || '').match(/^\[(team_\d+)\]\s*(.*)$/);
@@ -141,7 +143,6 @@ export default function CategoryClashEngine({
         }
     }[lang] || {};
 
-    // 1. Core State
     const [title, setTitle] = useState(
         savedBoard?.title || 
         session?.title || 
@@ -157,7 +158,6 @@ export default function CategoryClashEngine({
     const [studentScoreAdjustments, setStudentScoreAdjustments] = useState({});
     const [showAllStudents, setShowAllStudents] = useState(false);
 
-    // Grid configuration
     const dimensions = initialConfig?.dimensions || savedBoard?.packet?.dimensions || session?.active_question_data?.settings?.dimensions || { columns: 4, rows: 4 };
     const pointScale = initialConfig?.pointScale || savedBoard?.packet?.pointScale || session?.active_question_data?.settings?.pointScale || [100, 200, 300, 400];
     const categories = initialConfig?.categories || savedBoard?.packet?.categories || session?.active_question_data?.settings?.categories || [];
@@ -170,7 +170,6 @@ export default function CategoryClashEngine({
     const teamsRef = useRef(teams);
     useEffect(() => { teamsRef.current = teams; }, [teams]);
 
-    // Tile Clear State & Real-Time Synchronized Reference
     const [clearedTiles, setClearedTiles] = useState(
         session?.active_question_data?.board?.clearedTiles || 
         savedBoard?.packet?.clearedTiles || 
@@ -191,7 +190,6 @@ export default function CategoryClashEngine({
         updateSlotManually
     } = useGameQuestionPool({ lang });
 
-    // Dynamic Coordinates & Slot Properties Solver
     const parseSlotCoords = (slotId) => {
         if (!slotId) return { colIdx: 0, rowIdx: 0 };
         const match = String(slotId).match(/^c(\d+)_r(\d+)$/);
@@ -223,7 +221,6 @@ export default function CategoryClashEngine({
         return { topic, level: targetLevel, colIdx, rowIdx, cat };
     };
 
-    // Helper to resolve answer regardless of question schema
     const resolveQuestionAnswer = (q) => {
         if (!q) return null;
         const rd = q.renderData || q.resolvedData?.renderData || {};
@@ -246,8 +243,7 @@ export default function CategoryClashEngine({
         return null;
     };
 
-    // 2. Unified Session Hook
-    const {
+    const { 
         roomId,
         classCode,
         isLive,
@@ -311,7 +307,6 @@ export default function CategoryClashEngine({
                               session?.active_question_data?.packet || 
                               session?.packet;
 
-        // 1. If tiles already have explicit slotId keys, ingest as-is
         if (rawTiles && !Array.isArray(rawTiles) && Object.keys(rawTiles).some(k => /^c\d+_r\d+$/.test(k))) {
             ingestAsIs(Object.values(rawTiles));
             return;
@@ -334,7 +329,6 @@ export default function CategoryClashEngine({
         const numCols = Math.max(categories.length, dimensions.columns || 4);
         const numRows = dimensions.rows || 4;
 
-        // 2. If we have questions and matching categories, sort and normalize
         if (candidateArray && candidateArray.length > 0 && categories.length > 0) {
             const slotMap = {};
             const slotsToGenerate = [];
@@ -487,7 +481,6 @@ export default function CategoryClashEngine({
             return;
         }
 
-        // 3. Fallback: Procedural generation for entire board
         if (categories && categories.length > 0) {
             generateGridFromSeeds({
                 topics: categories.map(c => c.topic),
@@ -515,7 +508,6 @@ export default function CategoryClashEngine({
         pointScale[parseInt(activeSlotId.split('_r')[1], 10)] || 100
     ) : 100;
 
-    // Team Live Response Listener
     useEffect(() => {
         if (!isLive || liveResponses.length === 0 || teams.length === 0) return;
         const latest = liveResponses[liveResponses.length - 1];
@@ -534,7 +526,6 @@ export default function CategoryClashEngine({
         }
     }, [liveResponses]);
 
-    // Live Analytics Derivations
     const studentScoresRef = useRef({});
     const { leaderboard, studentScoresMap, streakList, totalClassScore, activeStudentCount } = useMemo(() => {
         const studentMap = {};
@@ -614,9 +605,9 @@ export default function CategoryClashEngine({
         };
     }, [liveResponses, studentScoreAdjustments, dimensions.columns, pointScale, lang]);
 
-        useEffect(() => {
-            studentScoresRef.current = studentScoresMap;
-            if (!isLive || mode !== 'play') return;
+    useEffect(() => {
+        studentScoresRef.current = studentScoresMap;
+        if (!isLive || mode !== 'play') return;
         broadcastRoomState(activeSlotId, activeQuestion, teamsRef.current, clearedTilesRef.current, studentScoresMap);
     }, [studentScoresMap]);
 
@@ -627,7 +618,6 @@ export default function CategoryClashEngine({
         }));
     };
 
-    // Tile Click & Reopen
     const handleTileClick = async (slotId) => {
         if (clearedTilesRef.current[slotId] && (mode === 'play' || isLive)) {
             const confirmReopen = window.confirm(
@@ -651,7 +641,6 @@ export default function CategoryClashEngine({
         }
     };
 
-    // Persistent Clear & Modal Dismissal
     const handleFinishAndClear = async () => {
         const targetSlot = activeSlotId;
         const nextCleared = targetSlot ? { ...clearedTilesRef.current, [targetSlot]: true } : clearedTilesRef.current;
@@ -665,7 +654,6 @@ export default function CategoryClashEngine({
         }
     };
 
-    // Standard Close (X or Avbryt): Dismisses modal without clearing the tile
     const handleCloseStageModal = async () => {
         setIsStageModalOpen(false);
         setActiveSlotId(null);
@@ -731,7 +719,6 @@ export default function CategoryClashEngine({
         }
     };
     
-    // Authoritative Slot Re-roll & Level Lock with Answer and Clues Hoisted
     const handleRegenerateSlot = async (slotId, overrideWordProblem = undefined) => {
         if (!slotId) return;
         const current = pool[slotId];
@@ -879,225 +866,214 @@ export default function CategoryClashEngine({
     const progressPercent = Math.min(100, Math.round((progressInLevel / levelTarget) * 100));
 
     return (
-        <div 
-            className="dark arcade-dark-protect fixed inset-0 z-[500] bg-slate-950 text-slate-100 flex flex-col font-sans select-none overflow-hidden animate-in fade-in"
-            style={{
-                colorScheme: 'dark',
-                '--text-main': '#f8fafc',
-                '--text-muted': '#94a3b8',
-                '--bg-canvas': '#0f172a',
-                '--bg-card': '#1e293b'
-            }}
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[500] flex flex-col font-sans select-none overflow-hidden"
+            style={{ backgroundColor: 'var(--bg-canvas)', color: 'var(--text-main)' }}
         >
             {/* Top Navigation & Status Bar */}
-            <header className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between text-white shrink-0 gap-4">
-                
-                {/* LEFT: Game Title, Save, Visibility */}
-                <div className="flex items-center gap-3">
-                    <span className="px-2.5 py-1 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black text-xs shrink-0">
-                        {t.game_title}
+<header className="px-6 py-2.5 flex items-center justify-between shrink-0 z-20 shadow-xs border-b transition-colors bg-[var(--bg-card)] border-[var(--border-main)] gap-4">
+    
+    {/* LEFT: Game Title, Save & Visibility */}
+    <div className="flex items-center gap-3">
+        <span className="badge-brand font-black text-xs px-2.5 py-1 shrink-0">
+            {t.game_title}
+        </span>
+
+        <div className="flex items-center rounded-xl border px-2.5 py-1 shadow-xs transition-all focus-within:ring-2 focus-within:ring-indigo-500/40 bg-[var(--bg-surface)] border-[var(--border-strong)]">
+            <Edit3 size={13} className="mr-2 shrink-0 text-[var(--text-muted)]" />
+            <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={t.title_placeholder}
+                className="text-xs sm:text-sm font-bold tracking-tight outline-none bg-transparent w-36 sm:w-48 text-[var(--text-main)] placeholder-[var(--text-muted)]"
+            />
+            {Object.keys(pool).length > 0 && !isLive && (
+                <button
+                    type="button"
+                    onClick={handleSaveBoard}
+                    disabled={isSaving}
+                    className="ml-2 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                    title={t.save_tooltip}
+                >
+                    <Save size={12} className={isSaving ? "animate-spin" : ""} />
+                    <span>{isSaving ? t.saving : t.save}</span>
+                </button>
+            )}
+        </div>
+
+        {!isLive && (
+            <div className="hidden sm:flex items-center gap-0.5 p-1 rounded-xl border shadow-xs bg-[var(--bg-surface)] border-[var(--border-main)]">
+                <button
+                    type="button"
+                    onClick={() => setVisibility('private')}
+                    className={`p-1.5 rounded-lg text-xs font-black transition-colors cursor-pointer ${visibility === 'private' ? 'bg-indigo-600 text-white shadow-xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                    title={t.private_tooltip}
+                >
+                    <Lock size={13} />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setVisibility('school')}
+                    className={`p-1.5 rounded-lg text-xs font-black transition-colors cursor-pointer ${visibility === 'school' ? 'bg-indigo-600 text-white shadow-xs' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                    title={t.school_tooltip}
+                >
+                    <Building2 size={13} />
+                </button>
+            </div>
+        )}
+    </div>
+
+    {/* CENTER: Mode & View Navigation */}
+    <div className="flex items-center gap-2">
+        <div className="flex items-center p-1 rounded-xl border bg-[var(--bg-surface)] border-[var(--border-main)]">
+            <button
+                type="button"
+                onClick={async () => {
+                    setMode('curate');
+                    if (isLive) await broadcastRoomState(null, null);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                    mode === 'curate' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+            >
+                <Edit3 size={13} />
+                {t.setup_curate}
+            </button>
+            <button
+                type="button"
+                onClick={() => setMode('play')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                    mode === 'play' ? 'bg-emerald-500 text-white shadow-md' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+            >
+                <Play size={13} />
+                {t.play}
+            </button>
+        </div>
+
+        {mode === 'curate' && (
+            <div className="hidden md:flex items-center p-1 rounded-xl border bg-[var(--bg-surface)] border-[var(--border-main)]">
+                <button
+                    type="button"
+                    onClick={() => setCurateView('grid')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
+                        curateView === 'grid' ? 'bg-indigo-600 text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                    }`}
+                >
+                    <LayoutGrid size={12} />
+                    <span>{t.grid_view}</span>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setCurateView('audit')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
+                        curateView === 'audit' ? 'bg-indigo-600 text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                    }`}
+                >
+                    <ListFilter size={12} />
+                    <span>{t.audit_view}</span>
+                </button>
+            </div>
+        )}
+
+        {mode === 'play' && teams.length > 1 && (
+            <div className="hidden xl:flex items-center gap-2 border-l border-[var(--border-main)] pl-3">
+                {teams.map(team => (
+                    <div key={team.id} className="flex items-center gap-2 px-3 py-1 rounded-xl border shadow-xs bg-[var(--bg-surface)] border-[var(--border-main)]">
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: team.color }} />
+                        <span className="text-xs font-black uppercase text-[var(--text-main)]">{team.name}:</span>
+                        <span className="text-sm font-black text-amber-500 font-mono">{team.score}p</span>
+                        
+                        <div className="flex items-center gap-0.5 border-l border-[var(--border-main)] pl-1">
+                            <button onClick={() => handleManualScoreAdjust(team.id, -50)} className="p-0.5 rounded hover:bg-[var(--bg-surface-hover)] text-[var(--text-muted)] hover:text-rose-500 cursor-pointer" title="-50p">
+                                <Minus size={11} />
+                            </button>
+                            <button onClick={() => handleManualScoreAdjust(team.id, 50)} className="p-0.5 rounded hover:bg-[var(--bg-surface-hover)] text-[var(--text-muted)] hover:text-emerald-500 cursor-pointer" title="+50p">
+                                <Plus size={11} />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+
+    {/* RIGHT: Preferences, Utilities, Live Status & Close */}
+    <div className="flex items-center gap-2">
+        <PreferencesToggle />
+
+        {mode === 'curate' && (
+            <button
+                onClick={handleRegenerateAll}
+                disabled={isLoading}
+                className="p-2 rounded-xl border text-xs font-black transition-all cursor-pointer disabled:opacity-50 bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                title={t.reroll_all_tooltip}
+            >
+                <RefreshCcw size={15} className={isLoading ? "animate-spin" : ""} />
+            </button>
+        )}
+
+        <button
+            type="button"
+            onClick={() => setIsHelpOpen(true)}
+            className="p-2 rounded-xl border transition-colors cursor-pointer bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
+            title={t.guide_tooltip}
+        >
+            <HelpCircle size={16} />
+        </button>
+
+        <button
+            onClick={handleResetScores}
+            className="p-2 rounded-xl border cursor-pointer bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
+            title={t.reset_tooltip}
+        >
+            <RotateCcw size={15} />
+        </button>
+
+        {isLive && classCode ? (
+            <div className="bg-rose-500/10 border-2 border-rose-500/40 px-3 py-1 rounded-xl flex items-center gap-2 shadow-xs shrink-0">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                <div className="flex flex-col">
+                    <span className="text-[7px] font-black uppercase tracking-widest text-rose-500 leading-none">
+                        {t.pin_label}
                     </span>
-
-                    <div className="flex items-center rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-1 shadow-xs transition-all focus-within:ring-2 focus-within:ring-indigo-500/40">
-                        <Edit3 size={13} className="mr-2 shrink-0 text-slate-400" />
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder={t.title_placeholder}
-                            className="text-xs sm:text-sm font-bold tracking-tight outline-none bg-transparent w-40 sm:w-56 text-white placeholder-slate-500"
-                        />
-                        {Object.keys(pool).length > 0 && !isLive && (
-                            <button
-                                type="button"
-                                onClick={handleSaveBoard}
-                                disabled={isSaving}
-                                className="ml-2 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-                                title={t.save_tooltip}
-                            >
-                                <Save size={12} className={isSaving ? "animate-spin" : ""} />
-                                <span>{isSaving ? t.saving : t.save}</span>
-                            </button>
-                        )}
-                    </div>
-
-                    {!isLive && (
-                        <div className="flex items-center gap-0.5 bg-slate-800 p-1 rounded-xl border border-slate-700 shadow-xs">
-                            <button
-                                type="button"
-                                onClick={() => setVisibility('private')}
-                                className={`p-1.5 rounded-lg text-xs font-black transition-colors cursor-pointer ${visibility === 'private' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
-                                title={t.private_tooltip}
-                            >
-                                <Lock size={13} />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setVisibility('school')}
-                                className={`p-1.5 rounded-lg text-xs font-black transition-colors cursor-pointer ${visibility === 'school' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
-                                title={t.school_tooltip}
-                            >
-                                <Building2 size={13} />
-                            </button>
-                        </div>
-                    )}
+                    <span className="text-base font-mono font-black text-[var(--text-main)] tracking-wider leading-tight">
+                        {classCode}
+                    </span>
                 </div>
+            </div>
+        ) : canHostLiveRoom ? (
+            <button
+                type="button"
+                disabled={isGoingLive || Object.keys(pool).length === 0}
+                onClick={handleGoLive}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                title={t.go_live_tooltip}
+            >
+                {isGoingLive ? <Loader2 size={13} className="animate-spin" /> : <Monitor size={13} />}
+                <span>{t.go_live}</span>
+            </button>
+        ) : null}
 
-                {/* CENTER: Curate vs Play Controls */}
-                <div className="flex items-center gap-3 flex-wrap">
-                    <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700">
-                        <button
-                            type="button"
-                            onClick={async () => {
-                                setMode('curate');
-                                if (isLive) {
-                                    await broadcastRoomState(null, null);
-                                }
-                            }}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
-                                mode === 'curate' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
-                            }`}
-                        >
-                            <Edit3 size={13} />
-                            {t.setup_curate}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setMode('play')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
-                                mode === 'play' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
-                            }`}
-                        >
-                            <Play size={13} />
-                            {t.play}
-                        </button>
-                    </div>
-
-                    {mode === 'curate' && (
-                        <div className="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700/80">
-                            <button
-                                type="button"
-                                onClick={() => setCurateView('grid')}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
-                                    curateView === 'grid' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
-                                }`}
-                            >
-                                <LayoutGrid size={12} />
-                                <span>{t.grid_view}</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setCurateView('audit')}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
-                                    curateView === 'audit' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
-                                }`}
-                            >
-                                <ListFilter size={12} />
-                                <span>{t.audit_view} ({dimensions.columns * dimensions.rows})</span>
-                            </button>
-                        </div>
-                    )}
-
-                    {mode === 'play' && teams.length > 1 && (
-                        <div className="flex items-center gap-2 border-l border-slate-800 pl-3">
-                            {teams.map(team => (
-                                <div key={team.id} className="flex items-center gap-2 bg-slate-800/90 px-3 py-1 rounded-xl border border-slate-700/80 shadow-xs">
-                                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: team.color }} />
-                                    <span className="text-xs font-black uppercase text-slate-200">{team.name}:</span>
-                                    <span className="text-sm font-black text-amber-300 font-mono">{team.score}p</span>
-                                    
-                                    <div className="flex items-center gap-0.5 border-l border-slate-700 pl-1">
-                                        <button
-                                            onClick={() => handleManualScoreAdjust(team.id, -50)}
-                                            className="p-0.5 rounded hover:bg-slate-700 text-slate-400 hover:text-rose-400 cursor-pointer"
-                                            title="-50p"
-                                        >
-                                            <Minus size={11} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleManualScoreAdjust(team.id, 50)}
-                                            className="p-0.5 rounded hover:bg-slate-700 text-slate-400 hover:text-emerald-400 cursor-pointer"
-                                            title="+50p"
-                                        >
-                                            <Plus size={11} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* RIGHT: Status & Live Controls */}
-                <div className="flex items-center gap-2">
-                    {mode === 'curate' && (
-                        <button
-                            onClick={handleRegenerateAll}
-                            disabled={isLoading}
-                            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border border-slate-700 cursor-pointer disabled:opacity-50"
-                            title={t.reroll_all_tooltip}
-                        >
-                            <RefreshCcw size={13} className={isLoading ? "animate-spin" : ""} />
-                            <span className="hidden md:inline">{t.reroll_all}</span>
-                        </button>
-                    )}
-
-                    <button
-                        type="button"
-                        onClick={() => setIsHelpOpen(true)}
-                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 border border-slate-700 transition-colors cursor-pointer"
-                        title={t.guide_tooltip}
-                    >
-                        <HelpCircle size={16} />
-                    </button>
-
-                    <button
-                        onClick={handleResetScores}
-                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 border border-slate-700 cursor-pointer"
-                        title={t.reset_tooltip}
-                    >
-                        <RotateCcw size={15} />
-                    </button>
-
-                    {isLive && classCode ? (
-                        <div className="bg-rose-500/10 border-2 border-rose-500/40 px-3.5 py-1.5 rounded-2xl flex items-center gap-2.5 shadow-lg shadow-rose-950/20 shrink-0">
-                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
-                            <div className="flex flex-col">
-                                <span className="text-[8px] font-black uppercase tracking-widest text-rose-400 leading-none">
-                                    {t.pin_label}
-                                </span>
-                                <span className="text-xl sm:text-2xl font-mono font-black text-white tracking-widest leading-tight">
-                                    {classCode}
-                                </span>
-                            </div>
-                        </div>
-                    ) : canHostLiveRoom ? (
-                        <button
-                            type="button"
-                            disabled={isGoingLive || Object.keys(pool).length === 0}
-                            onClick={handleGoLive}
-                            className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-rose-950/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50 shrink-0"
-                            title={t.go_live_tooltip}
-                        >
-                            {isGoingLive ? <Loader2 size={13} className="animate-spin" /> : <Monitor size={13} />}
-                            <span>{t.go_live}</span>
-                        </button>
-                    ) : null}
-
-                    <button
-                        onClick={handleCloseEngine}
-                        className="p-2 rounded-xl bg-slate-800 hover:bg-rose-500 hover:text-white text-slate-400 border border-slate-700 transition-colors cursor-pointer"
-                    >
-                        <X size={16} />
-                    </button>
-                </div>
-            </header>
+        <button
+            onClick={handleCloseEngine}
+            className="p-2 rounded-xl border transition-colors cursor-pointer bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-muted)] hover:bg-rose-500 hover:text-white"
+            title={t.cancel}
+        >
+            <X size={16} />
+        </button>
+    </div>
+</header>
 
             {/* Live Lobby Banner */}
             {isLive && mode === 'curate' && (
                 <div className="bg-amber-500/10 border-b border-amber-500/30 px-6 py-2 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-2 text-amber-300 text-xs font-bold">
-                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-300 text-xs font-bold">
+                        <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
                         <span>{t.lobby_banner}</span>
                     </div>
                     <button
@@ -1112,316 +1088,343 @@ export default function CategoryClashEngine({
 
             {/* Main Stage */}
             <main className="flex-1 overflow-hidden p-4 sm:p-6 flex flex-col lg:flex-row items-stretch justify-center gap-6">
-                
-                {/* 1. AUDIT VIEW */}
-                {mode === 'curate' && curateView === 'audit' ? (
-                    <div className="w-full max-w-6xl bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col h-full max-h-[82vh] overflow-hidden">
-                        <div className="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
-                            <div>
-                                <h3 className="text-sm font-black uppercase tracking-wider text-white">
-                                    {t.audit_heading}
-                                </h3>
-                                <p className="text-xs font-medium text-slate-400">
-                                    {t.audit_sub}
-                                </p>
+                <AnimatePresence mode="wait">
+                    {/* 1. AUDIT VIEW */}
+                    {mode === 'curate' && curateView === 'audit' ? (
+                        <motion.div 
+                            key="audit"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="w-full max-w-6xl rounded-3xl p-6 shadow-2xl flex flex-col h-full max-h-[82vh] overflow-hidden bg-[var(--bg-card)] border border-[var(--border-main)]"
+                        >
+                            <div className="flex items-center justify-between pb-4 border-b border-[var(--border-main)] shrink-0">
+                                <div>
+                                    <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-main)]">
+                                        {t.audit_heading}
+                                    </h3>
+                                    <p className="text-xs font-medium text-[var(--text-muted)]">
+                                        {t.audit_sub}
+                                    </p>
+                                </div>
+                                <span className="text-xs font-black px-2.5 py-1 rounded-xl bg-indigo-500/20 text-indigo-500 border border-indigo-500/30">
+                                    {dimensions.columns * dimensions.rows} {t.total_tiles}
+                                </span>
                             </div>
-                            <span className="text-xs font-black px-2.5 py-1 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                                {dimensions.columns * dimensions.rows} {t.total_tiles}
-                            </span>
-                        </div>
 
-                        <div className="flex-1 overflow-auto custom-scrollbar pt-4">
-                            <table className="w-full text-left border-collapse text-xs">
-                                <thead>
-                                    <tr className="border-b border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                        <th className="pb-3 w-16">{t.th_slot}</th>
-                                        <th className="pb-3 w-28">{t.th_category}</th>
-                                        <th className="pb-3 w-16 text-center">{t.th_level}</th>
-                                        <th className="pb-3 w-16 text-center">{t.th_points}</th>
-                                        <th className="pb-3">{t.th_prompt}</th>
-                                        <th className="pb-3 w-32">{t.th_answer}</th>
-                                        <th className="pb-3 w-32 text-center">{t.th_visibility}</th>
-                                        <th className="pb-3 w-24 text-right">{t.th_action}</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-800/60">
+                            <div className="flex-1 overflow-auto custom-scrollbar pt-4">
+                                <table className="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr className="border-b border-[var(--border-main)] text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                            <th className="pb-3 w-16">{t.th_slot}</th>
+                                            <th className="pb-3 w-28">{t.th_category}</th>
+                                            <th className="pb-3 w-16 text-center">{t.th_level}</th>
+                                            <th className="pb-3 w-16 text-center">{t.th_points}</th>
+                                            <th className="pb-3">{t.th_prompt}</th>
+                                            <th className="pb-3 w-32">{t.th_answer}</th>
+                                            <th className="pb-3 w-32 text-center">{t.th_visibility}</th>
+                                            <th className="pb-3 w-24 text-right">{t.th_action}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-[var(--border-subtle)]">
+                                        {Array.from({ length: dimensions.columns }).map((_, colIdx) => (
+                                            <React.Fragment key={colIdx}>
+                                                {Array.from({ length: dimensions.rows }).map((_, rowIdx) => {
+                                                    const slotId = `c${colIdx}_r${rowIdx}`;
+                                                    const tileQuestion = pool[slotId];
+                                                    const points = pointScale[rowIdx] || 100;
+                                                    const catObj = categories[colIdx];
+                                                    const renderData = tileQuestion?.renderData || tileQuestion?.resolvedData?.renderData || {};
+                                                    const answer = resolveQuestionAnswer(tileQuestion);
+
+                                                    return (
+                                                        <tr key={slotId} className="hover:bg-[var(--bg-surface-hover)] transition-colors">
+                                                            <td className="py-3 font-mono font-bold text-[var(--text-muted)]">{slotId}</td>
+                                                            <td className="py-3 font-black text-indigo-500 truncate max-w-[120px]">{catObj?.name || `${t.category_prefix} ${colIdx + 1}`}</td>
+                                                            <td className="py-3 text-center">
+                                                                <span className="px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] font-bold text-[10px]">
+                                                                    {t.level_prefix.charAt(0)}{tileQuestion?.level || (rowIdx + 1)}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-3 text-center font-black font-mono text-amber-500">{points}p</td>
+                                                            <td className="py-3 pr-4 max-w-md">
+                                                                {tileQuestion ? (
+                                                                    <div>
+                                                                        {renderData.description && (
+                                                                            <div className="font-medium text-[var(--text-main)] line-clamp-2 leading-relaxed">
+                                                                                <MathDisplay content={renderData.description} />
+                                                                            </div>
+                                                                        )}
+                                                                        {renderData.latex && (
+                                                                            <div className={`font-serif text-[11px] mt-0.5 ${tileQuestion.showLatex === false ? 'line-through text-[var(--text-muted)]' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                                                                <MathDisplay content={`$$${renderData.latex}$$`} />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="text-[var(--text-muted)] italic">{t.loading_question}</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="py-3 font-mono font-bold text-emerald-600 dark:text-emerald-400 truncate max-w-[120px]">
+                                                                {answer ? (
+                                                                    <MathDisplay content={`$${String(answer).replace(/\$/g, '')}$`} />
+                                                                ) : (
+                                                                    <span className="text-[var(--text-muted)]">—</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="py-3 text-center">
+                                                                <div className="flex items-center justify-center gap-1">
+                                                                    {renderData.description && (
+                                                                        <button
+                                                                            onClick={() => toggleSlotElement(slotId, 'showText')}
+                                                                            className={`p-1.5 rounded-lg border text-[10px] transition-all cursor-pointer ${
+                                                                                tileQuestion.showText !== false 
+                                                                                    ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-500' 
+                                                                                    : 'bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-muted)] line-through'
+                                                                            }`}
+                                                                            title={t.hide_show_text}
+                                                                        >
+                                                                            <Type size={12} />
+                                                                        </button>
+                                                                    )}
+                                                                    {renderData.latex && (
+                                                                        <button
+                                                                            onClick={() => toggleSlotElement(slotId, 'showLatex')}
+                                                                            className={`p-1.5 rounded-lg border text-[10px] transition-all cursor-pointer ${
+                                                                                tileQuestion.showLatex !== false 
+                                                                                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400' 
+                                                                                    : 'bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-muted)] line-through'
+                                                                            }`}
+                                                                            title={t.hide_show_formula}
+                                                                        >
+                                                                            <Calculator size={12} />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-3 text-right">
+                                                                <div className="flex items-center justify-end gap-1">
+                                                                    <button
+                                                                        onClick={() => handleRegenerateSlot(slotId)}
+                                                                        className="p-1.5 rounded-lg bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-amber-500 border border-[var(--border-main)] transition-colors cursor-pointer"
+                                                                        title={t.reroll_numbers}
+                                                                    >
+                                                                        <RefreshCcw size={12} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleToggleSlotWordProblem(slotId)}
+                                                                        className={`p-1.5 rounded-lg border text-[10px] transition-all cursor-pointer ${
+                                                                            tileQuestion?.wordProblem 
+                                                                                ? 'bg-amber-500/20 border-amber-500/50 text-amber-500' 
+                                                                                : 'bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                                                        }`}
+                                                                        title={tileQuestion?.wordProblem ? "Gör om till vanligt tal" : "Gör om till textuppgift"}
+                                                                    >
+                                                                        <Type size={12} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleTileClick(slotId)}
+                                                                        className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-600 text-indigo-500 hover:text-white border border-indigo-500/40 text-[10px] font-black uppercase transition-all cursor-pointer"
+                                                                    >
+                                                                        {t.show_btn}
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </React.Fragment>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        /* 2. THE 2D JEOPARDY GAME BOARD & GRID CURATE VIEW */
+                        <motion.div 
+                            key="grid"
+                            initial={{ opacity: 0, scale: 0.98 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.98 }}
+                            className="flex-1 min-w-0 flex items-center justify-center overflow-auto custom-scrollbar"
+                        >
+                            {isLoading ? (
+                                <div className="flex flex-col items-center justify-center gap-3 text-[var(--text-muted)]">
+                                    <RefreshCcw size={28} className="animate-spin text-indigo-500" />
+                                    <span className="text-xs font-black uppercase tracking-widest">
+                                        {t.constructing_board}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div 
+                                    className="grid gap-3 sm:gap-4 w-full max-w-5xl h-full max-h-[82vh]"
+                                    style={{
+                                        gridTemplateColumns: `repeat(${dimensions.columns}, minmax(0, 1fr))`,
+                                        gridTemplateRows: `auto repeat(${dimensions.rows}, minmax(0, 1fr))`
+                                    }}
+                                >
+                                    {categories.slice(0, dimensions.columns).map((cat, colIdx) => {
+                                        const colTiles = Array.from({ length: dimensions.rows }).map((_, r) => pool[`c${colIdx}_r${r}`]);
+                                        const allWordProblems = colTiles.length > 0 && colTiles.every(t => t?.wordProblem || t?.renderData?.isWordProblemApplied);
+                                        const allMathProblems = colTiles.length > 0 && colTiles.every(t => !t?.wordProblem && !t?.renderData?.isWordProblemApplied);
+
+                                        return (
+                                            <div 
+                                                key={cat.id || colIdx}
+                                                className="bg-[var(--bg-card)] border-2 border-[var(--border-strong)] rounded-2xl p-2.5 sm:p-3 flex flex-col items-center justify-center text-center shadow-lg min-h-[50px] relative"
+                                            >
+                                                <div className="flex items-center gap-1.5 mb-0.5">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                                        {t.category_prefix} {colIdx + 1}
+                                                    </span>
+                                                    {allWordProblems ? (
+                                                        <span className="px-1.5 py-0.2 rounded-md bg-amber-500/20 border border-amber-500/40 text-[9px] font-black uppercase tracking-wider text-amber-500 flex items-center gap-0.5">
+                                                            <Type size={9} /> {lang === 'sv' ? "Text" : "Story"}
+                                                        </span>
+                                                    ) : allMathProblems ? (
+                                                        <span className="px-1.5 py-0.2 rounded-md bg-indigo-500/20 border border-indigo-500/40 text-[9px] font-black uppercase tracking-wider text-indigo-500 flex items-center gap-0.5">
+                                                            <Calculator size={9} /> {lang === 'sv' ? "Tal" : "Math"}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-1.5 py-0.2 rounded-md bg-[var(--bg-surface)] border border-[var(--border-main)] text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">
+                                                            {lang === 'sv' ? "Blandat" : "Mixed"}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className="text-xs sm:text-sm font-black text-[var(--text-main)] uppercase tracking-wider line-clamp-1">
+                                                    {cat.name}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+
                                     {Array.from({ length: dimensions.rows }).map((_, rowIdx) => (
                                         <React.Fragment key={rowIdx}>
                                             {Array.from({ length: dimensions.columns }).map((_, colIdx) => {
                                                 const slotId = `c${colIdx}_r${rowIdx}`;
                                                 const tileQuestion = pool[slotId];
                                                 const points = pointScale[rowIdx] || 100;
-                                                const catObj = categories[colIdx];
-                                                const renderData = tileQuestion?.renderData || tileQuestion?.resolvedData?.renderData || {};
-                                                const answer = resolveQuestionAnswer(tileQuestion);
+                                                const isCleared = Boolean(clearedTiles[slotId]);
+                                                const isActiveNow = activeSlotId === slotId;
 
                                                 return (
-                                                    <tr key={slotId} className="hover:bg-slate-800/40 transition-colors">
-                                                        <td className="py-3 font-mono font-bold text-slate-500">{slotId}</td>
-                                                        <td className="py-3 font-black text-indigo-300 truncate max-w-[120px]">{catObj?.name || `${t.category_prefix} ${colIdx + 1}`}</td>
-                                                        <td className="py-3 text-center">
-                                                            <span className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[10px]">
-                                                                {t.level_prefix.charAt(0)}{tileQuestion?.level || (rowIdx + 1)}
-                                                            </span>
-                                                        </td>
-                                                        <td className="py-3 text-center font-black font-mono text-amber-300">{points}p</td>
-                                                        <td className="py-3 pr-4 max-w-md">
-                                                            {tileQuestion ? (
-                                                                <div>
-                                                                    {renderData.description && (
-                                                                        <div className="font-medium text-slate-200 line-clamp-2 leading-relaxed">
-                                                                            <MathDisplay content={renderData.description} />
-                                                                        </div>
-                                                                    )}
-                                                                    {renderData.latex && (
-                                                                        <div className={`font-serif text-[11px] mt-0.5 ${tileQuestion.showLatex === false ? 'line-through text-slate-500' : 'text-emerald-400 [&_*]:!text-emerald-400'}`}>
-                                                                            <MathDisplay content={`$$${renderData.latex}$$`} />
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            ) : (
-                                                                <span className="text-slate-600 italic">{t.loading_question}</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="py-3 font-mono font-bold text-emerald-400 truncate max-w-[120px]">
-                                                            {answer ? (
-                                                                <MathDisplay content={`$${String(answer).replace(/\$/g, '')}$`} className="[&_*]:!text-emerald-400" />
-                                                            ) : (
-                                                                <span className="text-slate-600">—</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="py-3 text-center">
-                                                            <div className="flex items-center justify-center gap-1">
-                                                                {renderData.description && (
-                                                                    <button
-                                                                        onClick={() => toggleSlotElement(slotId, 'showText')}
-                                                                        className={`p-1.5 rounded-lg border text-[10px] transition-all cursor-pointer ${
-                                                                            tileQuestion.showText !== false 
-                                                                                ? 'bg-indigo-600/30 border-indigo-500/50 text-indigo-300' 
-                                                                                : 'bg-slate-800 border-slate-700 text-slate-600 line-through'
-                                                                        }`}
-                                                                        title={t.hide_show_text}
-                                                                    >
-                                                                        <Type size={12} />
-                                                                    </button>
-                                                                )}
-                                                                {renderData.latex && (
-                                                                    <button
-                                                                        onClick={() => toggleSlotElement(slotId, 'showLatex')}
-                                                                        className={`p-1.5 rounded-lg border text-[10px] transition-all cursor-pointer ${
-                                                                            tileQuestion.showLatex !== false 
-                                                                                ? 'bg-emerald-600/30 border-emerald-500/50 text-emerald-300' 
-                                                                                : 'bg-slate-800 border-slate-700 text-slate-600 line-through'
-                                                                        }`}
-                                                                        title={t.hide_show_formula}
-                                                                    >
-                                                                        <Calculator size={12} />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                        <td className="py-3 text-right">
-                                                            <div className="flex items-center justify-end gap-1">
+                                                    <div
+                                                        key={slotId}
+                                                        onClick={() => handleTileClick(slotId)}
+                                                        className={`relative rounded-2xl border-2 flex flex-col items-center justify-center p-2 transition-all cursor-pointer select-none group
+                                                            ${isCleared && (mode === 'play' || isLive)
+                                                                ? 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-muted)] opacity-30 cursor-not-allowed'
+                                                                : isActiveNow
+                                                                ? 'bg-[var(--bg-card)] border-amber-500 ring-4 ring-amber-500/40 text-amber-500 scale-105 shadow-2xl'
+                                                                : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:border-amber-400 hover:scale-[1.02] shadow-xl text-amber-500'
+                                                            }`}
+                                                    >
+                                                        {mode === 'curate' && tileQuestion && (
+                                                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                 <button
-                                                                    onClick={() => handleRegenerateSlot(slotId)}
-                                                                    className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-amber-400 border border-slate-700 transition-colors cursor-pointer"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleToggleSlotWordProblem(slotId);
+                                                                    }}
+                                                                    className={`p-1 rounded-lg border cursor-pointer transition-colors ${
+                                                                        tileQuestion.wordProblem || tileQuestion.renderData?.isWordProblemApplied
+                                                                            ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 hover:bg-amber-500/40' 
+                                                                            : 'bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                                                    }`}
+                                                                    title={tileQuestion.wordProblem ? "Gör om till vanligt tal" : "Gör om till textuppgift"}
+                                                                >
+                                                                    <Type size={11} />
+                                                                </button>
+
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleRegenerateSlot(slotId);
+                                                                    }}
+                                                                    className="p-1 rounded-lg bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-amber-500 border border-[var(--border-main)] cursor-pointer"
                                                                     title={t.reroll_numbers}
                                                                 >
-                                                                    <RefreshCcw size={12} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleToggleSlotWordProblem(slotId)}
-                                                                    className={`p-1.5 rounded-lg border text-[10px] transition-all cursor-pointer ${
-                                                                        tileQuestion?.wordProblem 
-                                                                            ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' 
-                                                                            : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
-                                                                    }`}
-                                                                    title={tileQuestion?.wordProblem ? "Gör om till vanligt tal" : "Gör om till textuppgift"}
-                                                                >
-                                                                    <Type size={12} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleTileClick(slotId)}
-                                                                    className="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-[10px] font-black uppercase transition-all cursor-pointer"
-                                                                >
-                                                                    {t.show_btn}
+                                                                    <RefreshCcw size={11} />
                                                                 </button>
                                                             </div>
-                                                        </td>
-                                                    </tr>
+                                                        )}
+
+                                                        <span className="text-2xl sm:text-4xl font-black font-mono tracking-tight drop-shadow-md">
+                                                            {isCleared && (mode === 'play' || isLive) ? '—' : points}
+                                                        </span>
+
+                                                        {mode === 'curate' && tileQuestion && (
+                                                            <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider mt-1">
+                                                                <span className="text-[var(--text-muted)]">
+                                                                    {t.level_prefix} {tileQuestion.level || (rowIdx + 1)}
+                                                                </span>
+                                                                {(tileQuestion.wordProblem || tileQuestion.renderData?.isWordProblemApplied) && (
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" title="Textuppgift" />
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 );
                                             })}
                                         </React.Fragment>
                                     ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                ) : (
-                    /* 2. THE 2D JEOPARDY GAME BOARD */
-                    <div className="flex-1 min-w-0 flex items-center justify-center overflow-auto custom-scrollbar">
-                        {isLoading ? (
-                            <div className="flex flex-col items-center justify-center gap-3 text-slate-400">
-                                <RefreshCcw size={28} className="animate-spin text-indigo-500" />
-                                <span className="text-xs font-black uppercase tracking-widest">
-                                    {t.constructing_board}
-                                </span>
-                            </div>
-                        ) : (
-                            <div 
-                                className="grid gap-3 sm:gap-4 w-full max-w-5xl h-full max-h-[82vh]"
-                                style={{
-                                    gridTemplateColumns: `repeat(${dimensions.columns}, minmax(0, 1fr))`,
-                                    gridTemplateRows: `auto repeat(${dimensions.rows}, minmax(0, 1fr))`
-                                }}
-                            >
-                                {categories.slice(0, dimensions.columns).map((cat, colIdx) => {
-                                    const colTiles = Array.from({ length: dimensions.rows }).map((_, r) => pool[`c${colIdx}_r${r}`]);
-                                    const allWordProblems = colTiles.length > 0 && colTiles.every(t => t?.wordProblem || t?.renderData?.isWordProblemApplied);
-                                    const allMathProblems = colTiles.length > 0 && colTiles.every(t => !t?.wordProblem && !t?.renderData?.isWordProblemApplied);
-
-                                    return (
-                                        <div 
-                                            key={cat.id || colIdx}
-                                            className="bg-indigo-950/80 border-2 border-indigo-700/60 rounded-2xl p-2.5 sm:p-3 flex flex-col items-center justify-center text-center shadow-lg min-h-[50px] relative"
-                                        >
-                                            <div className="flex items-center gap-1.5 mb-0.5">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
-                                                    {t.category_prefix} {colIdx + 1}
-                                                </span>
-                                                {allWordProblems ? (
-                                                    <span className="px-1.5 py-0.2 rounded-md bg-amber-500/20 border border-amber-500/40 text-[9px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-0.5">
-                                                        <Type size={9} /> {lang === 'sv' ? "Text" : "Story"}
-                                                    </span>
-                                                ) : allMathProblems ? (
-                                                    <span className="px-1.5 py-0.2 rounded-md bg-indigo-500/20 border border-indigo-500/40 text-[9px] font-black uppercase tracking-wider text-indigo-300 flex items-center gap-0.5">
-                                                        <Calculator size={9} /> {lang === 'sv' ? "Tal" : "Math"}
-                                                    </span>
-                                                ) : (
-                                                    <span className="px-1.5 py-0.2 rounded-md bg-slate-800 border border-slate-700 text-[9px] font-black uppercase tracking-wider text-slate-400">
-                                                        {lang === 'sv' ? "Blandat" : "Mixed"}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wider line-clamp-1">
-                                                {cat.name}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-
-                                {Array.from({ length: dimensions.rows }).map((_, rowIdx) => (
-                                    <React.Fragment key={rowIdx}>
-                                        {Array.from({ length: dimensions.columns }).map((_, colIdx) => {
-                                            const slotId = `c${colIdx}_r${rowIdx}`;
-                                            const tileQuestion = pool[slotId];
-                                            const points = pointScale[rowIdx] || 100;
-                                            const isCleared = Boolean(clearedTiles[slotId]);
-                                            const isActiveNow = activeSlotId === slotId;
-
-                                            return (
-                                                <div
-                                                    key={slotId}
-                                                    onClick={() => handleTileClick(slotId)}
-                                                    className={`relative rounded-2xl border-2 flex flex-col items-center justify-center p-2 transition-all cursor-pointer select-none group
-                                                        ${isCleared && (mode === 'play' || isLive)
-                                                            ? 'bg-slate-900/40 border-slate-800/60 text-slate-700 opacity-30 cursor-not-allowed'
-                                                            : isActiveNow
-                                                            ? 'bg-indigo-950 border-amber-400 ring-4 ring-amber-400/40 text-amber-300 scale-105 shadow-2xl'
-                                                            : 'bg-slate-900 border-indigo-500/40 hover:border-amber-400 hover:bg-slate-800/90 hover:scale-[1.02] shadow-xl text-amber-300'
-                                                        }`}
-                                                >
-                                                    {mode === 'curate' && tileQuestion && (
-                                                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleToggleSlotWordProblem(slotId);
-                                                                }}
-                                                                className={`p-1 rounded-lg border cursor-pointer transition-colors ${
-                                                                    tileQuestion.wordProblem || tileQuestion.renderData?.isWordProblemApplied
-                                                                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 hover:bg-amber-500/40' 
-                                                                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
-                                                                }`}
-                                                                title={tileQuestion.wordProblem ? "Gör om till vanligt tal" : "Gör om till textuppgift"}
-                                                            >
-                                                                <Type size={11} />
-                                                            </button>
-
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleRegenerateSlot(slotId);
-                                                                }}
-                                                                className="p-1 rounded-lg bg-slate-800 text-slate-300 hover:text-amber-400 border border-slate-700 cursor-pointer"
-                                                                title={t.reroll_numbers}
-                                                            >
-                                                                <RefreshCcw size={11} />
-                                                            </button>
-                                                        </div>
-                                                    )}
-
-                                                    <span className="text-2xl sm:text-4xl font-black font-mono tracking-tight drop-shadow-md">
-                                                        {isCleared && (mode === 'play' || isLive) ? '—' : points}
-                                                    </span>
-
-                                                    {mode === 'curate' && tileQuestion && (
-                                                        <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider mt-1">
-                                                            <span className="text-slate-500">
-                                                                {t.level_prefix} {tileQuestion.level || (rowIdx + 1)}
-                                                            </span>
-                                                            {(tileQuestion.wordProblem || tileQuestion.renderData?.isWordProblemApplied) && (
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="Textuppgift" />
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </React.Fragment>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* 3. CLASSROOM HUB SIDEBAR */}
                 {isLive && mode === 'play' && (
-                    <div className="w-full lg:w-80 bg-slate-900/95 border border-slate-800 rounded-3xl p-4 flex flex-col shadow-2xl shrink-0 max-h-[82vh] gap-3">
-                        <div className="flex flex-col flex-1 min-h-0 bg-slate-950/70 rounded-2xl border border-slate-800/80 p-3 overflow-hidden">
-                            <div className="flex items-center justify-between pb-2 border-b border-slate-800/80 mb-2 shrink-0">
+                    <div className="w-full lg:w-80 rounded-3xl p-4 flex flex-col shadow-2xl shrink-0 max-h-[82vh] gap-3 bg-[var(--bg-card)] border border-[var(--border-main)]">
+                        <div className="flex flex-col flex-1 min-h-0 rounded-2xl border p-3 overflow-hidden bg-[var(--bg-surface)] border-[var(--border-main)]">
+                            {/* AFTER */}
+                            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-main)] mb-2 shrink-0 gap-2">
                                 <div className="flex items-center gap-2">
-                                    <Trophy size={15} className="text-amber-400" />
-                                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-200">
-                                        {showAllStudents 
-                                            ? (lang === 'sv' ? "Alla elever" : "All Students") 
-                                            : t.top7_heading}
+                                    <Trophy size={15} className="text-amber-500" />
+                                    <h3 className="text-xs font-black uppercase tracking-wider text-[var(--text-main)]">
+                                        {t.top7_heading}
                                     </h3>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowAllStudents(prev => !prev)}
-                                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold font-mono border transition-colors cursor-pointer ${
-                                        showAllStudents
-                                            ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
-                                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
-                                    }`}
-                                    title={lang === 'sv' ? "Växla mellan Topp 7 och alla elever" : "Toggle between Top 7 and all students"}
-                                >
-                                    {activeStudentCount} {t.active_students}
-                                </button>
+
+                                {/* Segmented Pill Toggle Switch */}
+                                <div className="flex items-center p-0.5 rounded-lg border bg-[var(--bg-card)] border-[var(--border-main)] shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAllStudents(false)}
+                                        className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                            !showAllStudents
+                                                ? 'bg-amber-500 text-slate-950 shadow-xs'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                        }`}
+                                    >
+                                        Top 7
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAllStudents(true)}
+                                        className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                            showAllStudents
+                                                ? 'bg-indigo-600 text-white shadow-xs'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                        }`}
+                                    >
+                                        {lang === 'sv' ? "Alla" : "All"} ({activeStudentCount})
+                                    </button>
+                                </div>
                             </div>
 
+                            {/* AFTER */}
                             <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1.5 pr-0.5">
                                 {leaderboard.length === 0 ? (
-                                    <div className="h-full py-8 flex flex-col items-center justify-center text-center text-slate-500 gap-1.5">
+                                    <div className="h-full py-8 flex flex-col items-center justify-center text-center text-[var(--text-muted)] gap-1.5">
                                         <Clock size={20} className="opacity-40 animate-pulse" />
                                         <p className="text-[11px] font-bold uppercase tracking-wider">
                                             {t.waiting_first_answer}
                                         </p>
                                     </div>
                                 ) : (
-                                    leaderboard.map((student, rankIdx) => {
+                                    (showAllStudents ? allStudents : leaderboard).map((student, rankIdx) => {
                                         const isGold = rankIdx === 0;
                                         const isSilver = rankIdx === 1;
                                         const isBronze = rankIdx === 2;
@@ -1430,13 +1433,10 @@ export default function CategoryClashEngine({
                                             <div 
                                                 key={student.displayName}
                                                 className={`px-2.5 py-1.5 rounded-xl border flex items-center justify-between transition-all group ${
-                                                    isGold 
-                                                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-200' 
-                                                        : isSilver
-                                                        ? 'bg-slate-300/10 border-slate-300/30 text-slate-200'
-                                                        : isBronze
-                                                        ? 'bg-orange-500/10 border-orange-500/30 text-orange-200'
-                                                        : 'bg-slate-900 border-slate-800 text-slate-300'
+                                                    isGold ? 'bg-amber-500/15 border-amber-500/40 text-amber-600 dark:text-amber-200' : 
+                                                    isSilver ? 'bg-slate-300/20 border-slate-300/40 text-[var(--text-main)]' : 
+                                                    isBronze ? 'bg-orange-500/15 border-orange-500/40 text-orange-600 dark:text-orange-200' : 
+                                                    'bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-main)]'
                                                 }`}
                                             >
                                                 <div className="flex items-center gap-2 min-w-0 pr-1">
@@ -1444,7 +1444,7 @@ export default function CategoryClashEngine({
                                                         isGold ? 'bg-amber-500 text-slate-950' :
                                                         isSilver ? 'bg-slate-300 text-slate-950' :
                                                         isBronze ? 'bg-orange-600 text-white' :
-                                                        'bg-slate-800 text-slate-400'
+                                                        'bg-[var(--bg-surface)] text-[var(--text-muted)]'
                                                     }`}>
                                                         {rankIdx + 1}
                                                     </span>
@@ -1454,14 +1454,14 @@ export default function CategoryClashEngine({
                                                 </div>
 
                                                 <div className="flex items-center gap-1 shrink-0">
-                                                    <span className="text-xs font-mono font-black text-amber-300">
+                                                    <span className="text-xs font-mono font-black text-amber-500">
                                                         {student.score}p
                                                     </span>
-                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center ml-1 border-l border-slate-700/60 pl-1 gap-0.5">
+                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center ml-1 border-l border-[var(--border-main)] pl-1 gap-0.5">
                                                         <button
                                                             type="button"
                                                             onClick={() => handleAdjustSoloStudent(student.displayName, -50)}
-                                                            className="p-0.5 hover:bg-slate-800 rounded text-slate-400 hover:text-rose-400 cursor-pointer"
+                                                            className="p-0.5 hover:bg-[var(--bg-surface-hover)] rounded text-[var(--text-muted)] hover:text-rose-500 cursor-pointer"
                                                             title="-50p"
                                                         >
                                                             <Minus size={10} />
@@ -1469,7 +1469,7 @@ export default function CategoryClashEngine({
                                                         <button
                                                             type="button"
                                                             onClick={() => handleAdjustSoloStudent(student.displayName, 50)}
-                                                            className="p-0.5 hover:bg-slate-800 rounded text-slate-400 hover:text-emerald-400 cursor-pointer"
+                                                            className="p-0.5 hover:bg-[var(--bg-surface-hover)] rounded text-[var(--text-muted)] hover:text-emerald-500 cursor-pointer"
                                                             title="+50p"
                                                         >
                                                             <Plus size={10} />
@@ -1484,16 +1484,16 @@ export default function CategoryClashEngine({
                         </div>
 
                         {/* STREAK */}
-                        <div className="bg-slate-950/70 rounded-2xl border border-slate-800/80 p-3 shrink-0">
+                        <div className="rounded-2xl border p-3 shrink-0 bg-[var(--bg-surface)] border-[var(--border-main)]">
                             <div className="flex items-center gap-1.5 mb-2">
                                 <Flame size={14} className="text-rose-500 animate-pulse" />
-                                <h4 className="text-[11px] font-black uppercase tracking-wider text-rose-400">
+                                <h4 className="text-[11px] font-black uppercase tracking-wider text-rose-500 dark:text-rose-400">
                                     {t.streak_heading}
                                 </h4>
                             </div>
 
                             {streakList.length === 0 ? (
-                                <p className="text-[10px] text-slate-500 italic py-1">
+                                <p className="text-[10px] text-[var(--text-muted)] italic py-1">
                                     {t.streak_empty}
                                 </p>
                             ) : (
@@ -1501,11 +1501,11 @@ export default function CategoryClashEngine({
                                     {streakList.map(st => (
                                         <div 
                                             key={st.displayName}
-                                            className="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 flex items-center gap-1.5 text-[11px] font-bold"
+                                            className="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-500 flex items-center gap-1.5 text-[11px] font-bold"
                                         >
                                             <Flame size={12} className="text-rose-500 shrink-0" />
                                             <span className="truncate max-w-[100px]">{st.displayName}</span>
-                                            <span className="font-mono font-black text-rose-400 text-[10px]">
+                                            <span className="font-mono font-black text-rose-500 text-[10px]">
                                                 {st.streak} {t.in_a_row}
                                             </span>
                                         </div>
@@ -1515,27 +1515,27 @@ export default function CategoryClashEngine({
                         </div>
 
                         {/* CLASS ENERGY */}
-                        <div className="bg-indigo-950/40 rounded-2xl border border-indigo-900/60 p-3 shrink-0 space-y-1.5">
-                            <div className="flex items-center justify-between text-indigo-300">
+                        <div className="rounded-2xl border p-3 shrink-0 space-y-1.5 bg-[var(--bg-surface)] border-[var(--border-main)]">
+                            <div className="flex items-center justify-between text-[var(--text-main)]">
                                 <div className="flex items-center gap-1.5">
-                                    <Zap size={14} className="text-amber-400" />
+                                    <Zap size={14} className="text-amber-500" />
                                     <span className="text-[11px] font-black uppercase tracking-wider">
                                         {t.class_energy_heading}
                                     </span>
                                 </div>
-                                <span className="text-[10px] font-mono font-bold text-amber-300">
+                                <span className="text-[10px] font-mono font-bold text-amber-500">
                                     {t.level_prefix} {currentLevel}
                                 </span>
                             </div>
 
-                            <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-indigo-900/40">
+                            <div className="w-full rounded-full h-2 overflow-hidden border bg-[var(--bg-card)] border-[var(--border-main)]">
                                 <div 
                                     className="h-full bg-gradient-to-r from-indigo-500 to-amber-400 transition-all duration-500"
                                     style={{ width: `${progressPercent}%` }}
                                 />
                             </div>
 
-                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-400">
+                            <div className="flex items-center justify-between text-[10px] font-bold text-[var(--text-muted)]">
                                 <span>{totalClassScore} {t.collected_points}</span>
                                 <span>{progressInLevel} / {levelTarget} p</span>
                             </div>
@@ -1545,22 +1545,22 @@ export default function CategoryClashEngine({
             </main>
 
             {/* ANPASSA WATERMARK FOOTER */}
-            <footer className="relative z-10 px-6 py-2.5 bg-slate-950/80 border-t border-slate-900 flex items-center justify-between text-[11px] font-medium text-slate-500 shrink-0">
+            <footer className="relative z-10 px-6 py-2.5 border-t flex items-center justify-between text-[11px] font-medium shrink-0 bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-muted)]">
                 <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-md bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center">
-                        <Sparkles size={10} className="text-indigo-400" />
+                    <div className="w-4 h-4 rounded-md bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+                        <Sparkles size={10} className="text-indigo-500" />
                     </div>
-                    <span className="font-bold tracking-wider uppercase text-slate-400">
+                    <span className="font-bold tracking-wider uppercase text-[var(--text-main)]">
                         Anpassa Math Platform
                     </span>
-                    <span className="text-slate-600">•</span>
-                    <span className="text-slate-500 font-mono">{t.game_title}</span>
+                    <span className="text-[var(--text-muted)]">•</span>
+                    <span className="text-[var(--text-muted)] font-mono">{t.game_title}</span>
                 </div>
 
-                <div className="hidden sm:flex items-center gap-3 text-slate-500 text-[10px] uppercase font-bold tracking-widest">
+                <div className="hidden sm:flex items-center gap-3 text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">
                     <span>Activity Mode</span>
                     <span>•</span>
-                    <span className="text-indigo-400/80 font-black">Live Classroom Sync</span>
+                    <span className="text-indigo-500 font-black">Live Classroom Sync</span>
                 </div>
             </footer>
 
@@ -1588,6 +1588,6 @@ export default function CategoryClashEngine({
                 onClose={() => setIsHelpOpen(false)}
                 lang={lang}
             />
-        </div>
+        </motion.div>
     );
 }

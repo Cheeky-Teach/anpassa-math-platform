@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import MathText from '../ui/MathText';
 import VisualRenderer from '../visuals/VisualRenderer';
 import CluePanel from '../practice/CluePanel';
@@ -95,50 +96,57 @@ function PracticeContextHeader({
                                 </button>
 
                                 {/* Dropdown Level Menu */}
-                                {isLevelMenuOpen && (
-                                    <>
-                                        <div className="fixed inset-0 z-20" onClick={() => setIsLevelMenuOpen(false)} />
-                                        <div className="absolute left-0 top-full mt-2 z-30 w-80 bg-[var(--bg-card)] border-2 border-[var(--brand-solid)] rounded-[var(--radius-card)] shadow-2xl max-h-80 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)] animate-in fade-in slide-in-from-top-1 duration-150">
-                                            {availableLevels.map(lvl => {
-                                                const isSelected = uiState.level === lvl;
-                                                const descObj = LEVEL_DESCRIPTIONS[uiState.topic]?.[lvl];
-                                                const dText = typeof descObj === 'object' ? (descObj[lang] || descObj.sv) : descObj;
+                                <AnimatePresence>
+                                    {isLevelMenuOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-20" onClick={() => setIsLevelMenuOpen(false)} />
+                                            <motion.div 
+                                                initial={{ opacity: 0, y: 6 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: 4 }}
+                                                className="absolute left-0 top-full mt-2 z-30 w-80 bg-[var(--bg-card)] border-2 border-[var(--brand-solid)] rounded-[var(--radius-card)] shadow-2xl max-h-80 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)]"
+                                            >
+                                                {availableLevels.map(lvl => {
+                                                    const isSelected = uiState.level === lvl;
+                                                    const descObj = LEVEL_DESCRIPTIONS[uiState.topic]?.[lvl];
+                                                    const dText = typeof descObj === 'object' ? (descObj[lang] || descObj.sv) : descObj;
 
-                                                return (
-                                                    <button
-                                                        key={lvl}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            onLevelSelect(lvl);
-                                                            setIsLevelMenuOpen(false);
-                                                        }}
-                                                        className={`w-full text-left p-3 transition-colors cursor-pointer flex items-center justify-between gap-2 ${
-                                                            isSelected ? 'bg-[var(--brand-bg)]' : 'hover:bg-[var(--bg-surface)]'
-                                                        }`}
-                                                    >
-                                                        <div className="flex items-center gap-2.5 min-w-0">
-                                                            <span className={`px-2 py-0.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider shrink-0 ${
-                                                                isSelected ? 'bg-[var(--brand-solid)] text-white' : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
-                                                            }`}>
-                                                                {lang === 'sv' ? `Nivå ${lvl}` : `Lvl ${lvl}`}
-                                                            </span>
-                                                            <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                                                                {dText}
-                                                            </span>
-                                                        </div>
-                                                        {isSelected && <CheckCircle2 size={14} className="text-[var(--brand-text)] shrink-0" />}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </>
-                                )}
+                                                    return (
+                                                        <button
+                                                            key={lvl}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                onLevelSelect(lvl);
+                                                                setIsLevelMenuOpen(false);
+                                                            }}
+                                                            className={`w-full text-left p-3 transition-colors cursor-pointer flex items-center justify-between gap-2 ${
+                                                                isSelected ? 'bg-[var(--brand-bg)]' : 'hover:bg-[var(--bg-surface)]'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                                <span className={`px-2 py-0.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider shrink-0 ${
+                                                                    isSelected ? 'bg-[var(--brand-solid)] text-white' : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
+                                                                }`}>
+                                                                    {lang === 'sv' ? `Nivå ${lvl}` : `Lvl ${lvl}`}
+                                                                </span>
+                                                                <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                                                                    {dText}
+                                                                </span>
+                                                            </div>
+                                                            {isSelected && <CheckCircle2 size={14} className="text-[var(--brand-text)] shrink-0" />}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </motion.div>
+                                        </>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Right: Goldilocks Buttons ("För svårt / För lätt") OR Curated Unit Roadmap Return */}
+                {/* Right: Goldilocks Buttons OR Curated Unit Roadmap Return */}
                 <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     {activeBucket && activeBucket !== 'FREE_PLAY' ? (
                         <button
@@ -178,16 +186,23 @@ function PracticeContextHeader({
             </div>
 
             {/* Detour Banner */}
-            {isDetourActive && (
-                <div className="bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500 rounded-[var(--radius-card)] px-4 py-3 flex items-center justify-between gap-3 animate-in slide-in-from-top-4 duration-500">
-                    <div className="flex items-center gap-2.5 text-xs font-bold text-amber-950 dark:text-amber-100">
-                        <Zap className="text-amber-600 fill-amber-600 animate-pulse shrink-0" size={18} />
-                        <span>
-                            {lang === 'sv' ? "Uppvärmning (Detour) för att stärka grunderna." : "Warm-up practice to reinforce fundamentals."}
-                        </span>
-                    </div>
-                </div>
-            )}
+            <AnimatePresence>
+                {isDetourActive && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500 rounded-[var(--radius-card)] px-4 py-3 flex items-center justify-between gap-3 shadow-sm"
+                    >
+                        <div className="flex items-center gap-2.5 text-xs font-bold text-amber-950 dark:text-amber-100">
+                            <Zap className="text-amber-600 fill-amber-600 animate-pulse shrink-0" size={18} />
+                            <span>
+                                {lang === 'sv' ? "Uppvärmning (Detour) för att stärka grunderna." : "Warm-up practice to reinforce fundamentals."}
+                            </span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -214,7 +229,7 @@ function PracticeSidebar({
     const getPct = (val) => total > 0 ? (val / total) * 100 : 0;
 
     return (
-        <aside className="layout-sidebar space-y-4">
+        <aside className="practice-sidebar space-y-4">
             
             {/* CARD 1: SUPPORT & TOOLS */}
             <div className="card p-5 space-y-4 border border-[var(--border-main)]">
@@ -387,7 +402,6 @@ const PracticeView = ({
     activeBucket, isDetourActive, onAdvanceUnitStep, onBackToRoadmap
 }) => {
     const inputRef = useRef(null);
-    const scrollContainerRef = useRef(null);
     const [shake, setShake] = useState(false);
     const [isHistoryExpanded, setIsHistoryExpanded] = useState(false); 
     const [showExampleBanner, setShowExampleBanner] = useState(true);
@@ -517,50 +531,59 @@ const PracticeView = ({
         <div className={`theme-${theme.color} layout-wrapper font-sans relative z-10 animate-in fade-in pb-10 !pt-4`}>
             
             {/* Unit Progression Modal */}
-            {activeBucket && activeBucket !== 'FREE_PLAY' && levelUpAvailable ? (
-                <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in select-none">
-                    <div className="bg-[var(--bg-card)] border-2 border-emerald-500 rounded-[var(--radius-card)] p-6 sm:p-8 max-w-md w-full text-center shadow-2xl animate-in zoom-in-95">
-                        <div className="w-16 h-16 bg-emerald-500 text-white rounded-[var(--radius-btn)] flex items-center justify-center mx-auto mb-4 shadow-lg">
-                            <Trophy size={32} />
-                        </div>
-                        
-                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block mb-1">
-                            {activeBucket.name}
-                        </span>
-                        <h3 className="text-2xl font-black uppercase tracking-tight text-[var(--text-main)] mb-2">
-                            {lang === 'sv' ? "Moment klart!" : "Step Complete!"}
-                        </h3>
-                        <p className="text-xs font-bold text-[var(--text-muted)] mb-6 leading-relaxed">
-                            {lang === 'sv' 
-                                ? `Du har klarat Nivå ${uiState.level}. Bra jobbat! Dags för nästa steg i din planering.` 
-                                : `You have cleared Level ${uiState.level}. Great job! Time for the next step in your sequence.`}
-                        </p>
+            <AnimatePresence>
+                {activeBucket && activeBucket !== 'FREE_PLAY' && levelUpAvailable && (
+                    <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 select-none">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-[var(--bg-card)] border-2 border-emerald-500 rounded-[var(--radius-card)] p-6 sm:p-8 max-w-md w-full text-center shadow-2xl"
+                        >
+                            <div className="w-16 h-16 bg-emerald-500 text-white rounded-[var(--radius-btn)] flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                <Trophy size={32} />
+                            </div>
+                            
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block mb-1">
+                                {activeBucket.name}
+                            </span>
+                            <h3 className="text-2xl font-black uppercase tracking-tight text-[var(--text-main)] mb-2">
+                                {lang === 'sv' ? "Moment klart!" : "Step Complete!"}
+                            </h3>
+                            <p className="text-xs font-bold text-[var(--text-muted)] mb-6 leading-relaxed">
+                                {lang === 'sv' 
+                                    ? `Du har klarat Nivå ${uiState.level}. Bra jobbat! Dags för nästa steg i din planering.` 
+                                    : `You have cleared Level ${uiState.level}. Great job! Time for the next step in your sequence.`}
+                            </p>
 
-                        <div className="flex flex-col gap-2.5">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setLevelUpAvailable(false);
-                                    if (onAdvanceUnitStep) onAdvanceUnitStep();
-                                }}
-                                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider rounded-[var(--radius-btn)] transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <span>{lang === 'sv' ? "Tillbaka till planeringen ➡" : "Back to Roadmap ➡"}</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setLevelUpAvailable(false);
-                                    actions.retry(true);
-                                }}
-                                className="w-full py-2.5 bg-transparent text-[var(--text-muted)] hover:text-[var(--text-main)] font-black text-[10px] uppercase tracking-wider transition-colors cursor-pointer"
-                            >
-                                {lang === 'sv' ? "Fortsätt öva denna nivå" : "Keep practicing this level"}
-                            </button>
-                        </div>
+                            <div className="flex flex-col gap-2.5">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setLevelUpAvailable(false);
+                                        if (onAdvanceUnitStep) onAdvanceUnitStep();
+                                    }}
+                                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider rounded-[var(--radius-btn)] transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                    <span>{lang === 'sv' ? "Tillbaka till planeringen ➡" : "Back to Roadmap ➡"}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setLevelUpAvailable(false);
+                                        actions.retry(true);
+                                    }}
+                                    className="w-full py-2.5 bg-transparent text-[var(--text-muted)] hover:text-[var(--text-main)] font-black text-[10px] uppercase tracking-wider transition-colors cursor-pointer"
+                                >
+                                    {lang === 'sv' ? "Fortsätt öva denna nivå" : "Keep practicing this level"}
+                                </button>
+                            </div>
+                        </motion.div>
                     </div>
-                </div>
-            ) : (
+                )}
+            </AnimatePresence>
+
+            {!levelUpAvailable && (
                 <LevelUpModal 
                     visible={levelUpAvailable} 
                     lang={lang} 
@@ -572,19 +595,26 @@ const PracticeView = ({
             )}
 
             {/* Mastery Toast Overlay */}
-            {toast && (
-                <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[70] w-full max-w-md px-4 animate-in slide-in-from-top duration-500">
-                    <div className={`p-4 rounded-[var(--radius-card)] shadow-xl border-2 flex items-center gap-4 bg-[var(--bg-card)] ${toast.type === 'success' ? 'border-emerald-500' : 'border-amber-500'}`}>
-                        <div className={`w-12 h-12 rounded-[var(--radius-btn)] flex items-center justify-center shrink-0 ${toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
-                            {toast.type === 'success' ? <Trophy size={24}/> : <Zap size={24}/>}
+            <AnimatePresence>
+                {toast && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -20, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: -10, x: '-50%' }}
+                        className="fixed top-24 left-1/2 z-[70] w-full max-w-md px-4"
+                    >
+                        <div className={`p-4 rounded-[var(--radius-card)] shadow-xl border-2 flex items-center gap-4 bg-[var(--bg-card)] ${toast.type === 'success' ? 'border-emerald-500' : 'border-amber-500'}`}>
+                            <div className={`w-12 h-12 rounded-[var(--radius-btn)] flex items-center justify-center shrink-0 ${toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
+                                {toast.type === 'success' ? <Trophy size={24}/> : <Zap size={24}/>}
+                            </div>
+                            <div>
+                                <h4 className="font-black uppercase tracking-tight text-[var(--text-main)] leading-none">{toast.title}</h4>
+                                <p className="text-xs font-bold text-[var(--text-muted)] mt-1">{toast.message}</p>
+                            </div>
                         </div>
-                        <div>
-                            <h4 className="font-black uppercase tracking-tight text-[var(--text-main)] leading-none">{toast.title}</h4>
-                            <p className="text-xs font-bold text-[var(--text-muted)] mt-1">{toast.message}</p>
-                        </div>
-                    </div>
-                </div>
-            )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 pt-0">
                 
@@ -599,70 +629,29 @@ const PracticeView = ({
                     LEVEL_DESCRIPTIONS={LEVEL_DESCRIPTIONS}
                 />
 
-                {/* "Would you like to see an example first?" Lifeline Banner */}
-                {showExampleBanner && !loading && !feedback && (
-                    <div className="mb-4 bg-[var(--bg-card)] border-2 border-indigo-500 rounded-[var(--radius-card)] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in slide-in-from-top-3 duration-300 shadow-md">
-                        <div className="flex items-center gap-3.5">
-                            <div className="w-10 h-10 rounded-[var(--radius-btn)] bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                                <HelpCircle size={20} />
-                            </div>
-                            <div>
-                                <h4 className="text-xs sm:text-sm font-black text-[var(--text-main)] uppercase tracking-tight">
-                                    {lang === 'sv' ? "Vill du se ett löst exempel först?" : "Would you like to see a solved example first?"}
-                                </h4>
-                                <p className="text-xs font-bold text-[var(--text-muted)] mt-0.5">
-                                    {lang === 'sv' 
-                                        ? "Starta Coach för en interaktiv genomgång innan du börjar lösa." 
-                                        : "Open Coach for an interactive step-by-step walkthrough before you solve."}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setShowExampleBanner(false);
-                                    onCoachClick();
-                                }}
-                                className="px-4 py-2.5 rounded-[var(--radius-btn)] bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-sm flex items-center gap-1.5 active:scale-95"
-                            >
-                                <Play size={13} fill="currentColor" />
-                                <span>{lang === 'sv' ? "Visa exempel" : "Show Example"}</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setShowExampleBanner(false)}
-                                className="px-3 py-2.5 rounded-[var(--radius-btn)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer border border-[var(--border-strong)]"
-                            >
-                                {lang === 'sv' ? "Nej tack" : "Skip"}
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                <div className="layout-twocol">
-                    <div className="layout-main">
-                        {/* Main Practice Card */}
-                        <main className={`card p-0 ${shake ? 'animate-shake' : ''} flex flex-col`}>
+                {/* BALANCED TWO-COLUMN LAYOUT */}
+                <div className="practice-twocol">
+                    <div className="practice-main">
+                        {/* Main Practice Card - Unified Clean Canvas */}
+                        <main className={`card p-6 sm:p-8 ${shake ? 'animate-shake' : ''} flex flex-col shadow-lg border border-[var(--border-main)]`}>
                             {loading ? (
                                 <div className="py-32 text-center flex flex-col items-center gap-4">
                                     <div className="w-10 h-10 border-4 border-t-transparent text-[var(--brand-text)] rounded-full animate-spin border-current" />
                                     <span className="text-xs font-black uppercase text-[var(--text-muted)] tracking-widest">Laddar...</span>
                                 </div>
                             ) : (
-                                <div className="flex flex-col min-h-[350px]">
+                                <div className="flex flex-col min-h-[380px] justify-between">
                                     
-                                    {/* TOP SECTION: VISUAL & EQUATION */}
-                                    <div className="w-full min-h-[180px] sm:min-h-[240px] p-4 sm:p-6 xl:p-8 whiteboard-protect flex flex-col justify-center items-center border-b border-[var(--border-main)] relative overflow-hidden">
+                                    {/* TOP SECTION: COMPACT VISUAL & EQUATION (Maximized for 768p Laptops) */}
+                                    <div className="w-full whiteboard-protect flex flex-col justify-center items-center py-3 sm:py-4 px-4 border-b border-[var(--border-main)] relative overflow-hidden min-h-[160px] sm:min-h-[200px]">
                                         <WordProblemVisualGuard 
                                             isActive={!!question?.metadata?.isWordProblemApplied || useWordProblems} 
                                             lang={lang}
                                             questionKey={question?.variationKey || question?.metadata?.variation_key || question?.metadata?.variationKey} 
                                             alwaysShow={!!question?.renderData?.graph || question?.renderData?.geometry?.type === 'frequency_table' || !!question?.renderData?.frequencyTable}
                                         >
-                                            <div className="w-full min-h-[120px] flex flex-col justify-center items-center gap-4">
-                                                <div className="w-full max-w-[400px] flex justify-center items-center mx-auto overflow-visible empty:hidden">
+                                            <div className="w-full min-h-[120px] sm:min-h-[150px] flex flex-col justify-center items-center gap-3">
+                                                <div className="w-full max-w-[420px] min-h-[110px] flex justify-center items-center mx-auto overflow-visible empty:hidden">
                                                     <VisualRenderer 
                                                         data={question?.renderData} 
                                                         isWordProblem={!!question?.metadata?.isWordProblemApplied || useWordProblems} 
@@ -670,141 +659,167 @@ const PracticeView = ({
                                                 </div>
 
                                                 {question?.renderData?.latex && !useWordProblems && !question?.metadata?.isWordProblemApplied && (
-                                                    <div className="text-3xl xl:text-4xl font-serif text-[var(--text-main)] flex justify-center items-center text-center px-4">
+                                                    <div className="text-2xl xl:text-3xl font-serif text-[var(--text-main)] flex justify-center items-center text-center px-4">
                                                         <MathText text={`$$${question.renderData.latex}$$`} />
                                                     </div>
                                                 )}
                                             </div>
                                         </WordProblemVisualGuard>
                                         
-                                        <div className="absolute top-6 left-8 flex items-center gap-2">
+                                        <div className="absolute top-2 left-4 flex items-center gap-2">
                                             <div className="w-2 h-2 rounded-full bg-[var(--brand-solid)] animate-pulse" />
                                             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] italic">Du kan det här!</span>
                                         </div>
+
+                                        {/* NON-REFLOWING FLOATING EXAMPLE CHIP (Takes zero vertical document flow) */}
+                                        <AnimatePresence>
+                                            {showExampleBanner && !loading && !feedback && (
+                                                <motion.div 
+                                                    initial={{ opacity: 0, scale: 0.94, y: -4 }}
+                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                    exit={{ opacity: 0, scale: 0.94 }}
+                                                    className="absolute top-2 right-4 z-20 flex items-center gap-2 bg-[var(--bg-card)] border border-indigo-500/50 rounded-full px-3 py-1 shadow-md"
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setShowExampleBanner(false);
+                                                            onCoachClick();
+                                                        }}
+                                                        className="flex items-center gap-1.5 text-[11px] font-black text-indigo-600 dark:text-indigo-400 hover:opacity-85 cursor-pointer"
+                                                    >
+                                                        <Play size={11} fill="currentColor" />
+                                                        <span>{lang === 'sv' ? "Se exempel?" : "See example?"}</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowExampleBanner(false)}
+                                                        className="text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer text-xs font-bold px-1"
+                                                        title="Stäng"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
 
-                                    {/* BOTTOM SECTION: DESCRIPTION, INPUT & ACTIONS */}
-                                    <div className="w-full p-4 sm:p-6 lg:p-8 flex flex-col justify-center bg-[var(--bg-card)] relative">
-                                        <div className="mb-6 text-center max-w-2xl mx-auto">
-                                            <h2 className="text-lg sm:text-xl font-bold text-[var(--text-main)] leading-snug">
-                                                <MathText text={descriptionText} />
-                                            </h2>
-                                        </div>
-                                        
-                                        {/* Action Row Split */}
-                                        <div className="w-full max-w-4xl mx-auto flex flex-col md:flex-row gap-4 lg:gap-6 items-center md:items-stretch justify-center">
-                                            
-                                            {/* INPUT AREA (Left) */}
-                                            <div className="w-full max-w-sm shrink-0 flex flex-col justify-end">
-                                                {question?.renderData?.answerType === 'multiple_choice' ? (
-                                                    <div className="grid grid-cols-1 gap-3">
-                                                        {(question?.renderData?.options || []).map((choiceItem, idx) => {
-                                                            const choiceLabel = typeof choiceItem === 'object' ? choiceItem.label : choiceItem;
-                                                            const choiceValue = typeof choiceItem === 'object' ? choiceItem.value : choiceItem;
-                                                            
-                                                            const isSelected = choiceValue === input;
-                                                            const isCorrect = feedback === 'correct' && isSelected;
-                                                            const isIncorrect = feedback === 'incorrect' && isSelected;
-                                                            
-                                                            return (
-                                                                <button 
-                                                                    key={idx} 
-                                                                    type="button"
-                                                                    onClick={() => handleChoiceClick(choiceValue)} 
-                                                                    className={`btn-3d w-full text-left flex items-center gap-3 cursor-pointer
-                                                                        ${isCorrect ? 'is-correct' : isIncorrect ? 'is-wrong' : ''}
-                                                                        ${isSelected && !isCorrect && !isIncorrect ? 'bg-[var(--brand-bg)] border-[var(--brand-text)]' : ''}`} 
-                                                                    disabled={feedback === 'correct'}
-                                                                >
-                                                                    <span className={`w-7 h-7 rounded-[var(--radius-btn)] flex items-center justify-center text-xs font-black shadow-inner shrink-0
-                                                                        ${(isCorrect || isIncorrect) ? 'bg-white/25 text-white' : 'bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-main)]'}`}>
-                                                                        {String.fromCharCode(65 + idx)}
-                                                                    </span>
-                                                                    <MathText text={choiceLabel} />
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                ) : (
-                                                    <form onSubmit={(e) => { e.preventDefault(); if (feedback !== 'correct') handleSubmit(e, input); else actions.retry(true); }} className="space-y-4 flex flex-col h-full justify-end">
-                                                        <div className="relative group">
-                                                            {question?.renderData?.answerType === 'mixed_fraction' ? (
-                                                                <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
-                                                                    <FractionInput value={input} onChange={setInput} allowMixed={true} autoFocus={true} />
-                                                                </div>
-                                                            ) : question?.renderData?.answerType === 'fraction' ? (
-                                                                <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
-                                                                    <FractionInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} allowMixed={false} autoFocus={false} />
-                                                                </div>
-                                                            ) : question?.renderData?.answerType === 'structured_power' ? (
-                                                                <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
-                                                                    <ExponentInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} autoFocus={true} />
-                                                                </div>
-                                                            ) : question?.renderData?.answerType === 'structured_scientific' ? (
-                                                                <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
-                                                                    <ScientificInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} autoFocus={true} />
-                                                                </div>
-                                                            ) : (
-                                                                <SmartMathInput 
-                                                                    inputRef={inputRef}
-                                                                    value={input}
-                                                                    onChange={setInput}
-                                                                    inputType={question?.renderData?.answerType}
-                                                                    disabled={feedback === 'correct'}
-                                                                    autoFocus={true}
-                                                                    className={
-                                                                        feedback === 'incorrect' ? '!border-rose-500 !bg-rose-50 !text-rose-700' :
-                                                                        feedback === 'correct' ? '!border-emerald-500 !bg-emerald-50 !text-emerald-700' : ''
-                                                                    }
-                                                                />
-                                                            )}
-                                                            
-                                                            {feedback === 'correct' && <div className="absolute -right-3 -top-3 w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-[var(--bg-card)] animate-bounce"><CheckCircle2 size={16}/></div>}
-                                                            {feedback === 'incorrect' && <div className="absolute -right-3 -top-3 w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-[var(--bg-card)]"><XCircle size={16}/></div>}
-                                                        </div>
-
+                                    {/* MIDDLE SECTION: PROBLEM DESCRIPTION & PROMPT */}
+                                    <div className="py-6 text-center max-w-2xl mx-auto">
+                                        <h2 className="text-lg sm:text-xl font-bold text-[var(--text-main)] leading-relaxed">
+                                            <MathText text={descriptionText} />
+                                        </h2>
+                                    </div>
+                                    
+                                    {/* BOTTOM SECTION: INPUT & PRIMARY/SECONDARY ACTIONS UNIFIED */}
+                                    <div className="w-full max-w-2xl mx-auto flex flex-col gap-5 pt-2">
+                                        {question?.renderData?.answerType === 'multiple_choice' ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                {(question?.renderData?.options || []).map((choiceItem, idx) => {
+                                                    const choiceLabel = typeof choiceItem === 'object' ? choiceItem.label : choiceItem;
+                                                    const choiceValue = typeof choiceItem === 'object' ? choiceItem.value : choiceItem;
+                                                    
+                                                    const isSelected = choiceValue === input;
+                                                    const isCorrect = feedback === 'correct' && isSelected;
+                                                    const isIncorrect = feedback === 'incorrect' && isSelected;
+                                                    
+                                                    return (
                                                         <button 
-                                                            type="submit" 
-                                                            className={`btn-3d w-full justify-center text-lg uppercase tracking-wider cursor-pointer
-                                                                ${feedback === 'correct' ? 'is-correct' : 
-                                                                  feedback === 'incorrect' ? 'is-wrong' : 
-                                                                  'bg-[var(--brand-solid)] text-white border-[var(--brand-text)] hover:opacity-90'}`}
+                                                            key={idx} 
+                                                            type="button"
+                                                            onClick={() => handleChoiceClick(choiceValue)} 
+                                                            className={`btn-3d w-full text-left flex items-center gap-3 cursor-pointer
+                                                                ${isCorrect ? 'is-correct' : isIncorrect ? 'is-wrong' : ''}
+                                                                ${isSelected && !isCorrect && !isIncorrect ? 'bg-[var(--brand-bg)] border-[var(--brand-text)]' : ''}`} 
+                                                            disabled={feedback === 'correct'}
                                                         >
-                                                            {getSubmitLabel()}
+                                                            <span className={`w-7 h-7 rounded-[var(--radius-btn)] flex items-center justify-center text-xs font-black shadow-inner shrink-0
+                                                                ${(isCorrect || isIncorrect) ? 'bg-white/25 text-white' : 'bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-main)]'}`}>
+                                                                {String.fromCharCode(65 + idx)}
+                                                            </span>
+                                                            <MathText text={choiceLabel} />
                                                         </button>
-                                                    </form>
-                                                )}
+                                                    );
+                                                })}
                                             </div>
-                                            
-                                            {/* SECONDARY ACTIONS (Right Side) */}
-                                            <div className="w-full md:w-40 flex flex-row md:flex-col gap-3 justify-center shrink-0 mt-2 md:mt-0">
-                                                <button 
-                                                    type="button"
-                                                    onClick={onHintClick} 
-                                                    disabled={!question?.clues || revealedClues.length >= question?.clues.length} 
-                                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] bg-[var(--bg-card)] text-amber-500 border border-amber-200 disabled:opacity-30 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-all shadow-2xs cursor-pointer"
-                                                >
-                                                    <Zap size={16} /> <span className="hidden sm:inline-block">{ui.btnHint}</span>
-                                                </button>
+                                        ) : (
+                                            <form onSubmit={(e) => { e.preventDefault(); if (feedback !== 'correct') handleSubmit(e, input); else actions.retry(true); }} className="space-y-4">
+                                                <div className="relative group">
+                                                    {question?.renderData?.answerType === 'mixed_fraction' ? (
+                                                        <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
+                                                            <FractionInput value={input} onChange={setInput} allowMixed={true} autoFocus={true} />
+                                                        </div>
+                                                    ) : question?.renderData?.answerType === 'fraction' ? (
+                                                        <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
+                                                            <FractionInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} allowMixed={false} autoFocus={false} />
+                                                        </div>
+                                                    ) : question?.renderData?.answerType === 'structured_power' ? (
+                                                        <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
+                                                            <ExponentInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} autoFocus={true} />
+                                                        </div>
+                                                    ) : question?.renderData?.answerType === 'structured_scientific' ? (
+                                                        <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
+                                                            <ScientificInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} autoFocus={true} />
+                                                        </div>
+                                                    ) : (
+                                                        <SmartMathInput 
+                                                            inputRef={inputRef}
+                                                            value={input}
+                                                            onChange={setInput}
+                                                            inputType={question?.renderData?.answerType}
+                                                            disabled={feedback === 'correct'}
+                                                            autoFocus={true}
+                                                            className={
+                                                                feedback === 'incorrect' ? '!border-rose-500 !bg-rose-50 !text-rose-700' :
+                                                                feedback === 'correct' ? '!border-emerald-500 !bg-emerald-50 !text-emerald-700' : ''
+                                                            }
+                                                        />
+                                                    )}
+                                                    
+                                                    {feedback === 'correct' && <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-[var(--bg-card)] animate-bounce"><CheckCircle2 size={16}/></div>}
+                                                    {feedback === 'incorrect' && <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-[var(--bg-card)]"><XCircle size={16}/></div>}
+                                                </div>
 
-                                                <button
-                                                    type="button"
-                                                    onClick={onCoachClick}
-                                                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-[var(--radius-btn)] font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] cursor-pointer shadow-sm border-b-[3px] border-purple-800 active:translate-y-1 active:border-b-0"
-                                                    title={lang === 'sv' ? "Starta tavel-repris och få hjälp" : "Start interactive step guide"}
-                                                >
-                                                    <HelpCircle size={16} />
-                                                    <span className="hidden sm:inline-block">{lang === 'sv' ? "Hjälp!" : "Help!"}</span>
-                                                </button>
-
                                                 <button 
-                                                    type="button"
-                                                    onClick={onSkipClick} 
-                                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] bg-[var(--bg-card)] text-indigo-400 border border-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 hover:text-indigo-600 transition-all shadow-2xs cursor-pointer"
+                                                    type="submit" 
+                                                    className={`btn-3d w-full justify-center text-lg uppercase tracking-wider cursor-pointer
+                                                        ${feedback === 'correct' ? 'is-correct' : 
+                                                          feedback === 'incorrect' ? 'is-wrong' : 
+                                                          'bg-[var(--brand-solid)] text-white border-[var(--brand-text)] hover:opacity-90'}`}
                                                 >
-                                                    <span className="hidden sm:inline-block">{lang === 'sv' ? "Hoppa över!" : "Skip!"}</span> <ChevronRight size={16} />
+                                                    {getSubmitLabel()}
                                                 </button>
-                                            </div>
+                                            </form>
+                                        )}
+
+                                        {/* UNIFIED HORIZONTAL TOOLBAR FOR UTILITY ACTIONS */}
+                                        <div className="flex items-center gap-3 pt-2">
+                                            <button 
+                                                type="button"
+                                                onClick={onHintClick} 
+                                                disabled={!question?.clues || revealedClues.length >= question?.clues.length} 
+                                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] bg-[var(--bg-surface)] text-amber-600 dark:text-amber-400 border border-[var(--border-main)] disabled:opacity-30 hover:bg-[var(--bg-surface-hover)] transition-all shadow-2xs cursor-pointer"
+                                            >
+                                                <Zap size={15} /> <span>{ui.btnHint}</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={onCoachClick}
+                                                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-[var(--radius-btn)] font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] cursor-pointer shadow-sm border-b-[3px] border-purple-800"
+                                                title={lang === 'sv' ? "Starta tavel-repris och få hjälp" : "Start interactive step guide"}
+                                            >
+                                                <HelpCircle size={15} />
+                                                <span>{lang === 'sv' ? "Hjälp!" : "Help!"}</span>
+                                            </button>
+
+                                            <button 
+                                                type="button"
+                                                onClick={onSkipClick} 
+                                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-main)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)] transition-all shadow-2xs cursor-pointer"
+                                            >
+                                                <span>{lang === 'sv' ? "Hoppa över" : "Skip"}</span> <ChevronRight size={15} />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

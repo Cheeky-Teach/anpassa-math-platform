@@ -406,7 +406,7 @@ const Dashboard = ({
     };
 
     const activeCategoryData = CATEGORIES[expandedCategory];
-    const themeColorString = activeCategoryData?.color === 'indigo' ? 'cobalt' : (activeCategoryData?.color || 'emerald');
+    const themeColorString = activeCategoryData?.color || 'emerald';
     const isEducator = ['teacher', 'super_admin'].includes(userRole);
 
     return (
@@ -1265,7 +1265,7 @@ const Dashboard = ({
                                         <div className="flex gap-1.5 overflow-x-auto custom-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
                                             {Object.entries(CATEGORIES).map(([catKey, category]) => {
                                                 const isActive = expandedCategory === catKey;
-                                                const themeColorStr = category.color === 'indigo' ? 'cobalt' : (category.color || 'emerald');
+                                                const themeColorStr = category.color || 'emerald';
                                                 
                                                 return (
                                                     <div key={catKey} className={`theme-${themeColorStr}`}>
@@ -1391,7 +1391,7 @@ const Dashboard = ({
                                                                         </button>
 
                                                                         {availableLevels.map(lvl => {
-                                                                            const { description, mathExample, isSentence } = getLevelMetadata(topic.id, lvl, lang);
+                                                                            const { description, mathExample } = getLevelMetadata(topic.id, lvl, lang);
                                                                             const isRowSelected = isThisTopicSelected && selectedLevel === lvl;
 
                                                                             return (
@@ -1402,35 +1402,30 @@ const Dashboard = ({
                                                                                         onSelect(topic.id, lvl);
                                                                                         setOpenDropdownTopicId(null);
                                                                                     }}
-                                                                                    className={`w-full text-left p-3 transition-colors cursor-pointer flex flex-col gap-1.5 ${
+                                                                                    className={`w-full text-left p-3 transition-colors cursor-pointer flex flex-col gap-1 ${
                                                                                         isRowSelected
                                                                                             ? 'bg-[var(--brand-bg)]'
                                                                                             : 'hover:bg-[var(--bg-surface)]'
                                                                                     }`}
                                                                                 >
-                                                                                    <div className="flex items-center justify-between gap-2 w-full">
-                                                                                        <div className="flex items-center gap-2 min-w-0">
-                                                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono shrink-0 ${
-                                                                                                isRowSelected
-                                                                                                    ? 'bg-[var(--brand-solid)] text-white'
-                                                                                                    : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
-                                                                                            }`}>
-                                                                                                {lang === 'sv' ? `Nivå ${lvl}` : `Lvl ${lvl}`}
-                                                                                            </span>
-                                                                                            <span className="text-xs font-semibold text-[var(--text-main)] truncate">
-                                                                                                {description}
-                                                                                            </span>
-                                                                                        </div>
-
-                                                                                        {mathExample && !isSentence && (
-                                                                                            <span className="shrink-0 px-2 py-0.5 rounded bg-[var(--bg-surface)] border border-[var(--border-main)] text-xs font-bold text-[var(--text-main)]">
-                                                                                                <MathDisplay content={mathExample} />
-                                                                                            </span>
-                                                                                        )}
+                                                                                    {/* TOP ROW: Level Badge + Level Title/Description (Guaranteed visible & unblocked) */}
+                                                                                    <div className="flex items-center gap-2 w-full">
+                                                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono shrink-0 ${
+                                                                                            isRowSelected
+                                                                                                ? 'bg-[var(--brand-solid)] text-white'
+                                                                                                : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
+                                                                                        }`}>
+                                                                                            {lang === 'sv' ? `Nivå ${lvl}` : `Lvl ${lvl}`}
+                                                                                        </span>
+                                                                                        <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                                                                                            {description}
+                                                                                        </span>
                                                                                     </div>
 
-                                                                                    {mathExample && isSentence && (
-                                                                                        <div className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1 pl-1">
+                                                                                    {/* BOTTOM ROW: Example text / math descriptor from CONTENT_MAP moved underneath */}
+                                                                                    {mathExample && (
+                                                                                        <div className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1 pl-1 flex items-center gap-1">
+                                                                                            <span className="opacity-60 text-[10px]">Ex:</span>
                                                                                             <MathDisplay content={mathExample} />
                                                                                         </div>
                                                                                     )}

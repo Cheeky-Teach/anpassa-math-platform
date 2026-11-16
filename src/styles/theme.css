@@ -160,8 +160,8 @@ body, .font-sans {
 
 /* --- LIGHT MODE (DEFAULT) --- */
 .theme-emerald { --brand-bg: #ecfdf5; --brand-border: #a7f3d0; --brand-text: #047857; --brand-solid: #059669; }
-.theme-cobalt,
-.theme-indigo  { --brand-bg: #f0f9ff; --brand-border: #bae6fd; --brand-text: #0369a1; --brand-solid: #0284c7; }
+.theme-cobalt  { --brand-bg: #f0f9ff; --brand-border: #bae6fd; --brand-text: #0369a1; --brand-solid: #0284c7; }
+.theme-indigo  { --brand-bg: #eef2ff; --brand-border: #c7d2fe; --brand-text: #4f46e5; --brand-solid: #6366f1; }
 .theme-pink    { --brand-bg: #fdf2f8; --brand-border: #fbcfe8; --brand-text: #be185d; --brand-solid: #db2777; }
 .theme-amber   { --brand-bg: #fffbeb; --brand-border: #fde68a; --brand-text: #b45309; --brand-solid: #d97706; }
 .theme-rose    { --brand-bg: #fff1f2; --brand-border: #fecdd3; --brand-text: #be123c; --brand-solid: #e11d48; }
@@ -172,8 +172,8 @@ body, .font-sans {
 
 /* --- DARK MODE OVERRIDES --- */
 .dark .theme-emerald, [data-theme="dark"] .theme-emerald { --brand-bg: rgba(16, 185, 129, 0.14); --brand-border: rgba(16, 185, 129, 0.3); --brand-text: #34d399; --brand-solid: #10b981; }
-.dark .theme-cobalt, [data-theme="dark"] .theme-cobalt,
-.dark .theme-indigo, [data-theme="dark"] .theme-indigo   { --brand-bg: rgba(2, 132, 199, 0.16); --brand-border: rgba(56, 189, 248, 0.3); --brand-text: #38bdf8; --brand-solid: #0284c7; }
+.dark .theme-cobalt, [data-theme="dark"] .theme-cobalt   { --brand-bg: rgba(2, 132, 199, 0.16); --brand-border: rgba(56, 189, 248, 0.3); --brand-text: #38bdf8; --brand-solid: #0284c7; }
+.dark .theme-indigo, [data-theme="dark"] .theme-indigo   { --brand-bg: rgba(99, 102, 241, 0.16); --brand-border: rgba(129, 140, 248, 0.3); --brand-text: #818cf8; --brand-solid: #6366f1; }
 .dark .theme-pink, [data-theme="dark"] .theme-pink       { --brand-bg: rgba(236, 72, 153, 0.14); --brand-border: rgba(236, 72, 153, 0.3); --brand-text: #f472b6; --brand-solid: #ec4899; }
 .dark .theme-amber, [data-theme="dark"] .theme-amber     { --brand-bg: rgba(245, 158, 11, 0.14); --brand-border: rgba(245, 158, 11, 0.3); --brand-text: #fbbf24; --brand-solid: #f59e0b; }
 .dark .theme-rose, [data-theme="dark"] .theme-rose       { --brand-bg: rgba(244, 63, 94, 0.14); --brand-border: rgba(244, 63, 94, 0.3); --brand-text: #fb7185; --brand-solid: #f43f5e; }

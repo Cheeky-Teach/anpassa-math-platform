@@ -1042,53 +1042,57 @@ function App() {
                     streak={streak} 
                     ui={ui} 
                 />            
-                {(view === 'dashboard' || view === 'practice' || view === 'times_table'|| view === 'practice_lab') && (
-                <header className="sticky top-2 z-40 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
-                    <div className="max-w-[1400px] mx-auto w-full px-3 sm:px-5 py-0 flex flex-row items-center justify-between relative">
-                        <div className="flex-1 flex justify-start">
-                            {view === 'practice' || view === 'times_table' ? (
-                                <button 
-                                    onClick={() => {
-                                        if (view === 'practice') {
-                                            quitPractice();
-                                        } else {
-                                            goHome(false);
-                                        }
-                                    }} 
-                                    className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-[11px] uppercase tracking-widest transition-all group shrink-0"
-                                >
-                                    <div className="w-7 h-7 rounded-full bg-[var(--bg-card)] flex items-center justify-center shadow-sm border border-[var(--border-main)] group-hover:shadow-md">
-                                        <ChevronLeft size={14}/>
-                                    </div>
-                                    <span className="hidden sm:inline-block">{lang === 'sv' ? "Tillbaka" : "Back"}</span>
-                                </button>
-                            ) : (
-                                <h1 className="text-lg sm:text-xl font-extrabold text-[#10b981] tracking-tighter cursor-pointer uppercase italic shrink-0" onClick={goHome}>
-                                    ANPASSA
-                                </h1> 
-                            )}
-                        </div>
-
-                        {view === 'practice' && (
-                            <div className="absolute left-1/2 -translate-x-1/2 flex items-center pointer-events-none text-center">
-                                <span className="text-emerald-600 dark:text-emerald-400 font-black tracking-[0.25em] uppercase text-xs sm:text-sm select-none drop-shadow-2xs">
-                                    ANPASSA
-                                </span>
+                {/* Only render the header on clean navigation views when no immersive activity or live room is active */}
+                {(view === 'dashboard' || view === 'practice' || view === 'times_table' || view === 'practice_lab') && 
+                !activeActivity && 
+                view !== 'teacher_live' && 
+                view !== 'live_session' && (
+                    <header className="sticky top-2 z-40 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
+                        <div className="max-w-[1400px] mx-auto w-full px-3 sm:px-5 py-0 flex flex-row items-center justify-between relative">
+                            <div className="flex-1 flex justify-start">
+                                {view === 'practice' || view === 'times_table' ? (
+                                    <button 
+                                        onClick={() => {
+                                            if (view === 'practice') {
+                                                quitPractice();
+                                            } else {
+                                                goHome(false);
+                                            }
+                                        }} 
+                                        className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-[11px] uppercase tracking-widest transition-all group shrink-0"
+                                    >
+                                        <div className="w-7 h-7 rounded-full bg-[var(--bg-card)] flex items-center justify-center shadow-sm border border-[var(--border-main)] group-hover:shadow-md">
+                                            <ChevronLeft size={14}/>
+                                        </div>
+                                        <span className="hidden sm:inline-block">{lang === 'sv' ? "Tillbaka" : "Back"}</span>
+                                    </button>
+                                ) : (
+                                    <h1 className="text-lg sm:text-xl font-extrabold text-[#10b981] tracking-tighter cursor-pointer uppercase italic shrink-0" onClick={goHome}>
+                                        ANPASSA
+                                    </h1> 
+                                )}
                             </div>
-                        )}
-                        
-                        <div className="flex-1 flex flex-row items-center gap-2 sm:gap-3 justify-end flex-wrap sm:flex-nowrap">
-                            <PreferencesToggle />
-                            
-                            {session && (
-                                <button onClick={() => supabase.auth.signOut()} className="text-[10px] font-bold text-[var(--text-muted)] uppercase hover:text-[var(--theme-rose-text)] transition-colors ml-1">
-                                    Logga ut
-                                </button>
+
+                            {view === 'practice' && (
+                                <div className="absolute left-1/2 -translate-x-1/2 flex items-center pointer-events-none text-center">
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-black tracking-[0.25em] uppercase text-xs sm:text-sm select-none drop-shadow-2xs">
+                                        ANPASSA
+                                    </span>
+                                </div>
                             )}
+                            
+                            <div className="flex-1 flex flex-row items-center gap-2 sm:gap-3 justify-end flex-wrap sm:flex-nowrap">
+                                <PreferencesToggle />
+                                
+                                {session && (
+                                    <button onClick={() => supabase.auth.signOut()} className="text-[10px] font-bold text-[var(--text-muted)] uppercase hover:text-[var(--theme-rose-text)] transition-colors ml-1">
+                                        Logga ut
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </header>
-            )}
+                    </header>
+                )}
 
             <div className="flex-1 flex flex-col relative overflow-x-hidden">
                 {/* 🟢 TOP PRIORITY: Render Resumed/Active Activity Engine */}

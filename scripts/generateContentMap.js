@@ -251,6 +251,7 @@ async function generateContentMap() {
 
                 let liveExampleLatex = "";
                 let liveExampleDesc = "";
+                let liveRenderData = null; // 👈 Track visual render data
                 let isMultipleChoiceOrConcept = false;
 
                 // Fetch a live example from your local server API to inspect its structure
@@ -267,6 +268,7 @@ async function generateContentMap() {
                         if (answerType === 'multiple_choice' || answerType === 'single_choice' || hasOptions) {
                             isMultipleChoiceOrConcept = true;
                         } else {
+                            liveRenderData = data?.renderData || null; // 👈 Capture structural visual payload
                             liveExampleLatex = data?.renderData?.latex ? `$$${data.renderData.latex}$$` : "";
                             liveExampleDesc = data?.renderData?.description?.sv || data?.renderData?.description || "";
                         }
@@ -281,6 +283,21 @@ async function generateContentMap() {
                 levelMap[lvl] = {
                     lvl: lvl,
                     ex: liveExampleLatex || liveExampleDesc || variation.desc?.sv || variation.name?.sv || "Matematikuppgift",
+                    renderData: liveRenderData, // 👈 Save renderData into the generated map snapshot
+                    desc: variation.name,
+                    student_desc: LEVEL_DESCRIPTIONS[topicId]?.[lvl] || { sv: variation.name, en: variation.name },
+                    teacher_desc: variation.desc,
+                    variations: [{ key: variation.key, name: variation.name, desc: variation.desc }],
+                    _calculationVerified: true
+                };
+
+                // If it turned out to be an MCQ or concept type upon inspection, skip it
+                if (isMultipleChoiceOrConcept) continue;
+
+                levelMap[lvl] = {
+                    lvl: lvl,
+                    ex: liveExampleLatex || liveExampleDesc || variation.desc?.sv || variation.name?.sv || "Matematikuppgift",
+                    renderData: liveRenderData,
                     desc: variation.name,
                     student_desc: LEVEL_DESCRIPTIONS[topicId]?.[lvl] || { sv: variation.name, en: variation.name },
                     teacher_desc: variation.desc,

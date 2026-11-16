@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { CONTENT_MAP } from '../../constants/content_map.generated';
 import { X, BookOpen, Layers, Search, Check, Plus } from 'lucide-react';
 import MathDisplay from '../shared/MathDisplay';
+import VisualRenderer from '../visuals/VisualRenderer';
 
 const ContentModal = ({ 
     visible, 
@@ -54,11 +55,12 @@ const ContentModal = ({
 
     const themeClasses = {
         pink: { bg: "bg-pink-600 text-white", text: "text-pink-950 font-extrabold", border: "border-pink-200" },
-        indigo: { bg: "bg-emerald-600 text-white", text: "text-emerald-950 font-extrabold", border: "border-emerald-200" },
+        indigo: { bg: "bg-indigo-600 text-white", text: "text-indigo-950 font-extrabold", border: "border-indigo-200" },
+        emerald: { bg: "bg-emerald-600 text-white", text: "text-emerald-950 font-extrabold", border: "border-emerald-200" },
+        cyan: { bg: "bg-cyan-600 text-white", text: "text-cyan-950 font-extrabold", border: "border-cyan-200" },
         amber: { bg: "bg-amber-600 text-white", text: "text-amber-950 font-extrabold", border: "border-amber-200" },
         rose: { bg: "bg-rose-600 text-white", text: "text-rose-950 font-extrabold", border: "border-rose-200" }
     };
-
     const isSelected = (topicId, level) => {
         return selectedKeySet.has(`${topicId}_${Number(level)}`);
     };
@@ -208,11 +210,21 @@ const ContentModal = ({
                                                                         {descStr}
                                                                     </div>
                                                                     
-                                                                    {/* Math Example */}
-                                                                    <div className="flex-1 p-2.5 font-serif font-semibold text-slate-700 italic flex items-center overflow-x-auto no-scrollbar pointer-events-none">
-                                                                        {lvl.ex && (
-                                                                            <MathDisplay content={lvl.ex.includes('$') || lvl.ex.includes('\\') ? lvl.ex : `$$${lvl.ex}$$`} className="inline-block pointer-events-none text-slate-900" />
-                                                                        )}
+                                                                    {/* Math Example or Visual Preview */}
+                                                                    <div className="flex-1 p-2.5 font-serif font-semibold text-slate-700 italic flex items-center justify-center min-w-0 overflow-hidden pointer-events-none">
+                                                                        {lvl.renderData && (lvl.renderData.graph || lvl.renderData.geometry || lvl.renderData.pattern || lvl.renderData.marbles) ? (
+                                                                            <div className="max-h-[70px] max-w-[140px] scale-75 origin-center flex items-center justify-center">
+                                                                                <VisualRenderer data={lvl.renderData} isWordProblem={false} />
+                                                                            </div>
+                                                                        ) : lvl.ex ? (
+                                                                            lvl.ex.includes('$') || lvl.ex.includes('\\') ? (
+                                                                                <MathDisplay content={lvl.ex} className="inline-block pointer-events-none text-slate-950 truncate max-w-full text-xs" />
+                                                                            ) : (
+                                                                                <span className="not-italic font-sans text-slate-800 font-medium text-xs truncate max-w-full">
+                                                                                    {lvl.ex}
+                                                                                </span>
+                                                                            )
+                                                                        ) : null}
                                                                     </div>
 
                                                                     {/* Action Indicator */}
