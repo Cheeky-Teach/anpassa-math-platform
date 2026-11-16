@@ -69,7 +69,8 @@ const compileAnchoredStory = (item, lang = 'sv') => {
 
 const TEXT_SIZES = ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 'text-3xl'];
 
-const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onRefreshStory, onFocus, lang, textSizeClass, isFocused = false }) => {    // SECURITY: Updated answer retrieval to handle scrubbed payloads
+const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onRefreshStory, onFocus, lang, textSizeClass, isFocused = false }) => {
+    // SECURITY: Updated answer retrieval to handle scrubbed payloads
     const getFinalAnswer = () => {
         const rd = q?.resolvedData;
         if (!rd) return "---";
@@ -103,9 +104,9 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onR
         
     if (!data) {
         return (
-            <div className="h-full w-full rounded-2xl border border-[var(--border-strong)] bg-[var(--bg-card)] flex flex-col items-center justify-center gap-3 shadow-2xs">
-                <Loader2 className="animate-spin text-emerald-600 dark:text-emerald-400" size={32} />
-                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Laddar...</span>
+            <div className="whiteboard-protect h-full w-full rounded-2xl border border-slate-200 bg-white text-slate-900 flex flex-col items-center justify-center gap-3 shadow-2xs">
+                <Loader2 className="animate-spin text-emerald-600" size={32} />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Laddar...</span>
             </div>
         );
     }
@@ -119,32 +120,34 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onR
     return (
         <div 
             onClick={onFocus}
-            className={`relative rounded-2xl border transition-all flex flex-col overflow-hidden h-full select-none shadow-2xs group
-            ${isFocused ? 'bg-[var(--bg-card)] border-emerald-600 shadow-2xl' : 'bg-[var(--bg-card)] border-[var(--border-strong)] hover:border-emerald-600 cursor-zoom-in'}
-            ${showAnswer && !isFocused ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-500/20' : ''}`}
+            className={`whiteboard-protect relative rounded-2xl border transition-all flex flex-col overflow-hidden h-full select-none shadow-2xs group bg-white text-slate-900
+            ${isFocused ? 'border-emerald-600 shadow-2xl' : 'border-slate-200 hover:border-emerald-600 cursor-zoom-in'}
+            ${showAnswer && !isFocused ? 'border-emerald-500 ring-2 ring-emerald-500/20' : ''}`}
         >
-            <div className={`px-4 py-2 flex justify-between items-center border-b transition-colors ${showAnswer && !isFocused ? 'bg-emerald-100/60 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-800' : 'bg-[var(--bg-surface)] border-[var(--border-main)]'}`}>
-                <span className={`text-xs font-bold uppercase tracking-wider font-mono ${showAnswer && !isFocused ? 'text-emerald-800 dark:text-emerald-200' : 'text-[var(--text-main)]'}`}>
+            {/* Card Header */}
+            <div className={`px-4 py-2 flex justify-between items-center border-b transition-colors ${showAnswer && !isFocused ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
+                <span className={`text-xs font-bold uppercase tracking-wider font-mono ${showAnswer && !isFocused ? 'text-emerald-900' : 'text-slate-900'}`}>
                     {lang === 'sv' ? 'Uppgift' : 'Task'} {index + 1}
                 </span>
                 {visualScale !== 1 && (
-                    <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold font-mono">
+                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-bold font-mono">
                         {Math.round(visualScale * 100)}%
                     </span>
                 )}
                 {q.topicId && (
-                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight bg-[var(--bg-card)] px-2.5 py-0.5 rounded-lg border border-[var(--border-main)] font-mono">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight bg-white px-2.5 py-0.5 rounded-lg border border-slate-200 font-mono">
                         {q.topicId.split('_')[0]}
                     </span>
                 )}
             </div>
 
-            <div className={`flex-1 flex flex-col items-center text-center relative overflow-hidden transition-all duration-300 
+            {/* Protected White Question Body */}
+            <div className={`flex-1 flex flex-col items-center text-center relative overflow-hidden transition-all duration-300 bg-white text-slate-900
                 ${isFocused ? 'p-10' : 'p-4'}`}>
                 
                 {hasVisual && !isWordProblemApplied && (
                     <div 
-                        className="w-full flex justify-center items-center shrink-0 overflow-hidden mb-2 border border-[var(--border-main)] rounded-xl bg-[var(--bg-surface)] shadow-inner"
+                        className="w-full flex justify-center items-center shrink-0 overflow-hidden mb-2 border border-slate-200 rounded-xl bg-white shadow-inner"
                         style={{ height: isFocused ? '440px' : '220px' }}
                     >
                         <div style={{ 
@@ -167,13 +170,13 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onR
                     </div>
                 )}
                 
-                <div className={`font-bold text-[var(--text-main)] leading-relaxed ${textSizeClass} flex-1 flex flex-col justify-center items-center transition-all w-full
+                <div className={`font-bold text-black [&_.katex]:text-black leading-relaxed ${textSizeClass} flex-1 flex flex-col justify-center items-center transition-all w-full
                     ${isFocused ? 'px-8 pb-4' : 'px-1'}`}>
-                    <MathDisplay content={compileAnchoredStory(q, lang)} />
+                    <MathDisplay content={compileAnchoredStory(q, lang)} className="text-black [&_.katex]:text-black" />
 
                     {data?.latex && !isWordProblemApplied && (
-                        <div className={`text-emerald-700 dark:text-emerald-400 font-serif ${isFocused ? 'mt-4 text-5xl' : 'mt-2'}`}>
-                            <MathDisplay content={`$$${data.latex}$$`} />
+                        <div className={`text-black [&_.katex]:text-black font-serif ${isFocused ? 'mt-4 text-5xl' : 'mt-2 text-2xl sm:text-3xl'}`}>
+                            <MathDisplay content={`$$${data.latex}$$`} className="text-black [&_.katex]:text-black" />
                         </div>
                     )}
                 </div>
@@ -183,12 +186,12 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onR
                         {data.options.map((opt, idx) => {
                             const choiceLabel = typeof opt === 'object' ? opt.label : opt;
                             return (
-                                <div key={idx} className={`bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-xl flex items-center gap-2.5 shadow-2xs
-                                    ${isFocused ? 'p-6 text-4xl' : `p-2.5 ${textSizeClass} font-bold text-left text-[var(--text-main)]`}`}>
-                                    <span className="w-6 h-6 shrink-0 bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-main)] rounded-lg flex items-center justify-center text-[10px] font-bold font-mono">
+                                <div key={idx} className={`bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2.5 shadow-2xs text-black [&_.katex]:text-black
+                                    ${isFocused ? 'p-6 text-4xl' : `p-2.5 ${textSizeClass} font-bold text-left`}`}>
+                                    <span className="w-6 h-6 shrink-0 bg-white text-slate-600 border border-slate-200 rounded-lg flex items-center justify-center text-[10px] font-bold font-mono">
                                         {String.fromCharCode(65 + idx)}
                                     </span>
-                                    <MathDisplay className="truncate" content={choiceLabel} />
+                                    <MathDisplay className="truncate text-black [&_.katex]:text-black" content={choiceLabel} />
                                 </div>
                             );
                         })}
@@ -205,7 +208,7 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onR
                         <button 
                             type="button"
                             onClick={(e) => { e.stopPropagation(); onRefreshNumbers(); }}
-                            className="w-8 h-8 rounded-xl flex flex-col items-center justify-center bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-strong)] hover:text-emerald-600 hover:bg-[var(--bg-surface)] shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
+                            className="w-8 h-8 rounded-xl flex flex-col items-center justify-center bg-white text-slate-600 border border-slate-200 hover:text-emerald-600 hover:bg-slate-50 shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
                             title={lang === 'sv' ? "Slumpa tal (Behåll text)" : "Shuffle numbers"}
                         >
                             <Calculator size={13} />
@@ -215,7 +218,7 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onR
                             <button 
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); onRefreshStory(); }}
-                                className="w-8 h-8 rounded-xl flex flex-col items-center justify-center bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-strong)] hover:text-amber-500 hover:bg-[var(--bg-surface)] shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
+                                className="w-8 h-8 rounded-xl flex flex-col items-center justify-center bg-white text-slate-600 border border-slate-200 hover:text-amber-600 hover:bg-slate-50 shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
                                 title={lang === 'sv' ? "Slumpa textberättelse" : "Shuffle story text"}
                             >
                                 <Shuffle size={13} />
@@ -227,7 +230,7 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onR
                 <button 
                     type="button"
                     onClick={(e) => adjustZoom(e, 0.2)}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--bg-card)] text-emerald-600 dark:text-emerald-400 border border-[var(--border-strong)] hover:bg-[var(--bg-surface)] shadow-2xs cursor-pointer"
+                    className="w-8 h-8 rounded-xl flex items-center justify-center bg-white text-emerald-600 border border-slate-200 hover:bg-slate-50 shadow-2xs cursor-pointer"
                     title="Zoom In"
                 >
                     <ZoomIn size={14} />
@@ -235,7 +238,7 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onR
                 <button 
                     type="button"
                     onClick={(e) => adjustZoom(e, -0.2)}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--bg-card)] text-emerald-600 dark:text-emerald-400 border border-[var(--border-strong)] hover:bg-[var(--bg-surface)] shadow-2xs cursor-pointer"
+                    className="w-8 h-8 rounded-xl flex items-center justify-center bg-white text-emerald-600 border border-slate-200 hover:bg-slate-50 shadow-2xs cursor-pointer"
                     title="Zoom Out"
                 >
                     <ZoomOut size={14} />
@@ -256,7 +259,7 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onR
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onToggleAnswer(); }}
                     className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-2xs transition-all cursor-pointer border ${
-                        showAnswer ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-strong)] hover:text-emerald-600'
+                        showAnswer ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-200 hover:text-emerald-600'
                     }`}
                     title={showAnswer ? "Hide Answer" : "Show Answer"}
                 >
@@ -266,9 +269,9 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onR
 
             {showAnswer && (
                 <div className="bg-emerald-600 text-white py-3 text-center shrink-0 animate-in slide-in-from-bottom duration-150 shadow-2xs">
-                    <div className="text-[10px] font-bold uppercase tracking-wider opacity-80 font-mono">FACIT</div>
-                    <div className={`${isFocused ? 'text-6xl' : 'text-3xl'} font-extrabold tracking-tight font-serif`}>
-                        <MathDisplay content={getFinalAnswer()} />
+                    <div className="text-[10px] font-bold uppercase tracking-wider opacity-85 font-mono">FACIT</div>
+                    <div className={`${isFocused ? 'text-6xl' : 'text-3xl'} font-extrabold tracking-tight font-serif text-white [&_.katex]:text-white`}>
+                        <MathDisplay content={getFinalAnswer()} className="text-white [&_.katex]:text-white" />
                         {data?.suffix && <span className="ml-1 text-sm opacity-95">{data.suffix}</span>}
                     </div>
                 </div>
@@ -284,7 +287,7 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang }) {
     const [showAll, setShowAll] = useState(false);
     const [isShuffleDropdownOpen, setIsShuffleDropdownOpen] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [textSizeIndex, setTextSizeIndex] = useState(2);
+    const [textSizeIndex, setTextSizeIndex] = useState(3);
     const [isGlobalRefreshing, setIsGlobalRefreshing] = useState(false);
 
     // --- TIMER STATE ---
@@ -478,7 +481,7 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang }) {
                     className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-xs flex items-center justify-center p-6 md:p-12 animate-in fade-in duration-150 cursor-zoom-out"
                     onClick={() => setFocusedIndex(null)}
                 >
-                    <div className="w-full max-w-6xl h-full max-h-[95vh] shadow-2xl rounded-2xl cursor-default bg-[var(--bg-card)] border border-[var(--border-strong)] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+                    <div className="w-full max-w-6xl h-full max-h-[95vh] shadow-2xl rounded-2xl cursor-default bg-white border border-slate-200 overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
                         <DoNowCard index={focusedIndex} q={gridQuestions[focusedIndex]} showAnswer={!!revealed[focusedIndex]} onToggleAnswer={() => toggleOne(focusedIndex)} onRefreshNumbers={() => handleRefreshNumbers(focusedIndex)} onRefreshStory={() => handleRefreshStory(focusedIndex)} onFocus={() => {}} lang={lang} textSizeClass="text-4xl" isFocused={true} />
                     </div>
                 </div>
