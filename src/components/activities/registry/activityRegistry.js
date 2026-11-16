@@ -3,8 +3,12 @@ import CategoryClashSetupModal from '../wizards/CategoryClashSetupModal';
 import CategoryClashEngine from '../engines/CategoryClashEngine';
 import FourCornersSetupModal from '../wizards/FourCornersSetupModal';
 import FourCornersEngine from '../engines/FourCornersEngine';
+import YouVsClassEngine from '../engines/YouVsClassEngine';
+import YouVsClassSetupModal from '../wizards/YouVsClassSetupModal';
 import StudentActivityView from '../../live/student/views/StudentActivityView';
-import { Grid, Trophy, Swords, SplitSquareVertical, Compass } from 'lucide-react';
+import { Grid, Trophy, Swords, SplitSquareVertical, Compass,
+    Crown
+ } from 'lucide-react';
 
 export const ACTIVITY_REGISTRY = {
     category_clash: {
@@ -64,13 +68,20 @@ export const ACTIVITY_REGISTRY = {
         })
     },
 
-    millionaire: {
-        id: 'millionaire',
-        key: 'millionaire',
-        modePrefix: 'activity_millionaire',
-        title: { sv: "Kvitt eller Dubbelt", en: "Math Ladder" },
-        icon: Trophy,
-        available: false,
+    you_vs_class: {
+        id: 'you_vs_class',
+        key: 'you_vs_class',
+        modePrefix: 'activity_you_vs_class',
+        icon: Crown,
+        available: true,
+        title: { sv: 'Du mot Klassen (1 vs 100)', en: 'You vs. Class (1 vs 100)' },
+        desc: {
+            sv: 'En slumpad utmanare i heta stolen satsar poäng mot resten av klassen längs en förkunskapsstege.',
+            en: 'A random challenger in the hot seat wagers points against the class along a prerequisite ladder.'
+        },
+        SetupModal: YouVsClassSetupModal,
+        TeacherEngine: YouVsClassEngine,
+        StudentView: StudentActivityView 
     }
 };
 

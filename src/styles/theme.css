@@ -79,19 +79,19 @@ body, .font-sans {
 }
 
 :root {
-  /* ☀️ 1. ARCHIVAL PAPER LIGHT THEME (Warm Stone — Zero Blue-Grey) */
-  --bg-canvas: #fafaf9;        /* stone-50: warm archival paper background */
-  --bg-card: #ffffff;          /* pure sheet white cards */
-  --bg-surface: #f5f5f4;       /* stone-100: recessed control wells */
-  --bg-surface-hover: #e7e5e4; /* stone-200 */
+  /* ☀️ 1. ARCHIVAL PAPER LIGHT THEME (High-Contrast Crisp Fix) */
+  --bg-canvas: #f1f1ef;        /* Deeper archival stone-grey so white cards instantly pop */
+  --bg-card: #ffffff;          /* Pure crisp white cards */
+  --bg-surface: #e6e6e2;       /* Noticeably deeper recessed control wells */
+  --bg-surface-hover: #d9d9d3; /* Clear interactive hover state */
 
-  --text-main: #1c1917;        /* stone-900: high-contrast dark ink */
-  --text-muted: #57534e;       /* stone-600: legible secondary ink */
+  --text-main: #11100f;        /* Rich, deep dark ink */
+  --text-muted: #44403c;       /* Stone-700 for rock-solid secondary legibility */
   --text-inverse: #ffffff;
 
-  --border-subtle: #f5f5f4;
-  --border-main: #e7e5e4;      /* stone-200: crisp structural hairline */
-  --border-strong: #d6d3d1;    /* stone-300 */
+  --border-subtle: #e6e6e2;
+  --border-main: #c7c7c0;      /* Crisp structural hairline (Stone-300+ for actual edge definition) */
+  --border-strong: #a8a29e;    /* Stone-400 for bold structural lines */
 
   /* Standardized Proportions */
   --radius-card: 1rem;         /* 16px */
@@ -106,7 +106,7 @@ body, .font-sans {
   --ambient-cobalt: rgba(2, 132, 199, 0.16);
   --ambient-amber: rgba(217, 119, 6, 0.14);
 
-  /* DEFAULT BRAND: EMERALD CHALKBOARD (Zero Indigo) */
+  /* DEFAULT BRAND: EMERALD CHALKBOARD */
   --brand-bg: #ecfdf5;
   --brand-border: #a7f3d0;
   --brand-solid: #059669;      /* emerald-600 */

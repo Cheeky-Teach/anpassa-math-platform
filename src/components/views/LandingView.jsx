@@ -1,4 +1,3 @@
-// src/components/views/LandingView.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Users, Globe, CheckCircle2,
@@ -196,7 +195,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             hero_subtitle: "Generera unika uppgifter, håll interaktiva genomgångar på tavlan och följ elevernas lösningar i realtid. Utvecklat för svensk matematikundervisning.",
             path_live_h: "Live-lektion",
             path_live_p: "Ange klasskod från lärarens skärm",
-            path_practice_h: "Egen träning",
+            path_practice_h: "Anpassa Träning",
             path_practice_p: "Öva med elevkod eller provlänk",
             btn_live: "Anslut",
             btn_practice: "Starta",
@@ -204,7 +203,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
 
             pillars_heading: "Tre arbetsytor i ett verktyg",
             p1_title: "Modulbaserad planering",
-            p1_desc: "Bygg egna arbetsområden som kombinerar genomgångar, adaptiv mängdträning och självrättande delprov i en tydlig elevvy.",
+            p1_desc: "Bygg egnaarbetsområden som kombinerar genomgångar, adaptiv mängdträning och självrättande delprov i en tydlig elevvy.",
             p1_step_1: "1. Genomgång: Ekvationer",
             p1_step_2: "2. Övning: Nivå 1–3",
             p1_step_3: "3. Delprov: Auto-rättning",
@@ -220,7 +219,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             stage_title: "Tavlan som räknar med dig",
             stage_desc: "Växla mellan steg-för-steg-genomgångar med slumpade talvärden och en digital mattetavla med bråkcirklar, algebrabrickor och koordinatsystem.",
             tab_walkthrough: "Steg-för-steg-genomgång",
-            tab_whiteboard: "Interaktiv mattetavla",
+            tab_whiteboard: "Interaktiv matematisk tavla",
             btn_tools: "Öppna bråkverktyg",
 
             live_title: "Fånga missuppfattningar medan lektionen pågår",
@@ -413,7 +412,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                             {t.pillars_heading}
                         </h2>
                         <span className="text-xs font-mono font-bold text-slate-500">
-                            LGR22 • Åk 7–9 & Gy
+                            LGR22 • Åk 7–9
                         </span>
                     </div>
 
