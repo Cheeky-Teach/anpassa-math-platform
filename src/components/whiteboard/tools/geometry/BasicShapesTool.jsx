@@ -64,6 +64,7 @@ export const BasicShapesTool = {
         height: 300,
         polygonSides: 5,
         triangleType: 'right',
+        rectType: 'rectangle',
         showAngles: false,
         angleMode: 'degrees',
         showSideLengths: false,
@@ -79,11 +80,34 @@ export const BasicShapesTool = {
     renderContextMenu: ({ el, setElements, lang = 'sv', t }) => {
         const isPoly = el.type === 'polygon';
         const isTri = el.type === 'triangle';
+        const isRect = el.type === 'rect';
+        const activeRectType = el.rectType || 'rectangle';
         const sides = Number(el.polygonSides) || 5;
 
         const updateSides = (delta) => {
             const next = Math.max(3, Math.min(10, sides + delta));
             setElements(prev => prev.map(o => o.id === el.id ? { ...o, polygonSides: next, sideLabels: {} } : o));
+        };
+
+        const handleSelectRectType = (nextType) => {
+            setElements(prev => prev.map(o => {
+                if (o.id !== el.id) return o;
+                const curW = Number(o.width) || 340;
+                const curH = Number(o.height) || 300;
+                const equalSide = Math.round((curW + curH) / 2);
+
+                // Normalize dimensions when toggling between equilateral & oblong quadrilaterals
+                const nextDims = (nextType === 'square' || nextType === 'rhombus')
+                    ? { width: equalSide, height: equalSide }
+                    : (curW === curH ? { width: Math.round(equalSide * 1.25), height: Math.round(equalSide * 0.85) } : {});
+
+                return {
+                    ...o,
+                    ...nextDims,
+                    rectType: nextType,
+                    sideLabels: {}
+                };
+            }));
         };
 
         const toggleAngles = () => {
@@ -148,6 +172,32 @@ export const BasicShapesTool = {
                                 onClick={() => setElements(p => p.map(o => o.id === el.id ? { ...o, triangleType: m.id, sideLabels: {} } : o))}
                                 className={`px-2.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                                     el.triangleType === m.id
+                                        ? 'bg-indigo-600 text-white shadow-xs'
+                                        : 'bg-white hover:bg-slate-200 text-slate-700'
+                                }`}
+                            >
+                                {m.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {/* 2b. Quadrilateral / Rectangle Presets */}
+                {isRect && (
+                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200">
+                        {[
+                            { id: 'rectangle', label: lang === 'sv' ? 'Rektangel' : 'Rectangle' },
+                            { id: 'square', label: lang === 'sv' ? 'Kvadrat' : 'Square' },
+                            { id: 'parallelogram', label: lang === 'sv' ? 'Parallellogram' : 'Parallelogram' },
+                            { id: 'rhombus', label: lang === 'sv' ? 'Romb' : 'Rhombus' },
+                            { id: 'trapezoid', label: lang === 'sv' ? 'Paralleltrapets' : 'Trapezoid' }
+                        ].map(m => (
+                            <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => handleSelectRectType(m.id)}
+                                className={`px-2.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                    activeRectType === m.id
                                         ? 'bg-indigo-600 text-white shadow-xs'
                                         : 'bg-white hover:bg-slate-200 text-slate-700'
                                 }`}
@@ -266,12 +316,52 @@ export const BasicShapesTool = {
                 ];
             }
         } else if (el.type === 'rect') {
-            vertices = [
-                { x: 16, y: 16 },
-                { x: w - 16, y: 16 },
-                { x: w - 16, y: h - 16 },
-                { x: 16, y: h - 16 }
-            ];
+            const rectType = el.rectType || 'rectangle';
+            const pad = 16;
+
+            if (rectType === 'square') {
+                const side = Math.max(20, Math.min(w, h) - pad * 2);
+                const x0 = (w - side) / 2;
+                const y0 = (h - side) / 2;
+                vertices = [
+                    { x: x0, y: y0 },
+                    { x: x0 + side, y: y0 },
+                    { x: x0 + side, y: y0 + side },
+                    { x: x0, y: y0 + side }
+                ];
+            } else if (rectType === 'parallelogram') {
+                const innerW = Math.max(40, w - pad * 2);
+                const skew = Math.min(innerW * 0.28, 70);
+                vertices = [
+                    { x: pad + skew, y: pad },
+                    { x: w - pad, y: pad },
+                    { x: w - pad - skew, y: h - pad },
+                    { x: pad, y: h - pad }
+                ];
+            } else if (rectType === 'rhombus') {
+                vertices = [
+                    { x: w / 2, y: pad },
+                    { x: w - pad, y: h / 2 },
+                    { x: w / 2, y: h - pad },
+                    { x: pad, y: h / 2 }
+                ];
+            } else if (rectType === 'trapezoid') {
+                const innerW = Math.max(40, w - pad * 2);
+                const inset = Math.min(innerW * 0.24, 65);
+                vertices = [
+                    { x: pad + inset, y: pad },
+                    { x: w - pad - inset, y: pad },
+                    { x: w - pad, y: h - pad },
+                    { x: pad, y: h - pad }
+                ];
+            } else {
+                vertices = [
+                    { x: pad, y: pad },
+                    { x: w - pad, y: pad },
+                    { x: w - pad, y: h - pad },
+                    { x: pad, y: h - pad }
+                ];
+            }
         } else if (el.type === 'polygon') {
             vertices = getRegularPolygonPoints(Number(el.polygonSides) || 5, w, h);
         }
@@ -386,7 +476,7 @@ export const BasicShapesTool = {
                             {isRight ? (
                                 <path 
                                     d={`M ${curr.x + u1.x * arcRadius} ${curr.y + u1.y * arcRadius} 
-                                        L ${curr.x + u1.x * arcRadius + u2.x * arcRadius} ${curr.y + u1.y * arcRadius + u2.x * arcRadius} 
+                                        L ${curr.x + u1.x * arcRadius + u2.x * arcRadius} ${curr.y + u1.y * arcRadius + u2.y * arcRadius} 
                                         L ${curr.x + u2.x * arcRadius} ${curr.y + u2.y * arcRadius}`} 
                                     fill="none" 
                                     stroke="#3b82f6" 
@@ -444,7 +534,6 @@ export const BasicShapesTool = {
                     const dy = p2.y - p1.y;
                     const len = Math.hypot(dx, dy) || 1;
                     const norm = { x: -dy / len, y: dx / len };
-                    const defaultDist = Math.round(len);
 
                     // 🟢 Realistic classroom cm default (e.g. 5 cm, 8 cm, 12 cm)
                     const defaultCm = Math.max(1, Math.round(len / 35));
