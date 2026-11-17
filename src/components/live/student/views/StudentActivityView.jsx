@@ -13,7 +13,7 @@ import DynamicResponseInput from '../components/DynamicResponseInput';
 import StudentQuickPracticeDrawer from '../../../activities/shared/StudentQuickPracticeDrawer';
 import { 
     Send, CheckCircle2, Loader2, Trophy, 
-    Calculator, PenTool, LogOut, Check, Zap, Users, ShieldAlert
+    Calculator, PenTool, LogOut, Check, Zap, Users, ShieldAlert, EyeOff
 } from 'lucide-react';
 
 export default function StudentActivityView({
@@ -23,13 +23,11 @@ export default function StudentActivityView({
     lang = 'sv',
     onBack
 }) {
-    // 1. Dedicated live state for room data so teacher clicks force instant re-render
     const roomId = engine?.session?.id || initialSession?.id;
     const initialActiveData = engine?.session?.active_question_data || initialSession?.active_question_data || {};
     
     const [liveActiveData, setLiveActiveData] = useState(initialActiveData);
 
-    // 2. Direct real-time room listener (Bypasses any parent memoization/prop lag)
     useEffect(() => {
         if (!roomId) return;
 
@@ -63,14 +61,12 @@ export default function StudentActivityView({
         };
     }, [roomId]);
 
-    // Sync if parent engine session does update
     useEffect(() => {
         if (engine?.session?.active_question_data) {
             setLiveActiveData(engine.session.active_question_data);
         }
     }, [engine?.session?.active_question_data]);
 
-    // Mode determination
     const isFourCorners = 
         liveActiveData?.activity_mode === 'activity_four_corners' || 
         liveActiveData?.mode === 'activity_four_corners' ||
@@ -81,7 +77,6 @@ export default function StudentActivityView({
         liveActiveData?.mode === 'activity_you_vs_class' ||
         liveActiveData?.gameKey === 'you_vs_class';
 
-    // Auto-register student presence in You vs Class so teacher can pick a Challenger immediately
     useEffect(() => {
         if (!roomId || !studentAlias || !isYouVsClass) return;
         const cleanAlias = (studentAlias || "Elev").replace(/<[^>]*>?/gm, '').substring(0, 20).trim();
@@ -94,7 +89,6 @@ export default function StudentActivityView({
         }]).then(() => {});
     }, [roomId, studentAlias, isYouVsClass]);
     
-    // YouVsClass variables
     const myMultiplier = useMemo(() => {
         const cleanName = (studentAlias || '').replace(/<[^>]*>?/gm, '').substring(0, 20).trim();
         return liveActiveData?.studentScores?.[cleanName]?.multiplier || 1.0;
@@ -117,20 +111,14 @@ export default function StudentActivityView({
             (match) => `$${match}$`
         );
     };
-    // Extract board & question properties from live data
+
     const dimensions = liveActiveData?.board?.dimensions || liveActiveData?.settings?.dimensions || { columns: 4, rows: 4 };
     const activeTile = liveActiveData?.activeTile;
-
-    // Correctly extract the question object from either activeQuestion or root payload
     const activeQuestion = liveActiveData?.activeQuestion || ((isFourCorners || isYouVsClass) && liveActiveData?.renderData ? liveActiveData : null);
-
     const points = liveActiveData?.points || 100;
     const teams = liveActiveData?.teams || [];
 
-    // Student's Chosen Team State
-    const [selectedTeamId, setSelectedTeamId] = useState(() => {
-        return teams[0]?.id || 'team_0';
-    });
+    const [selectedTeamId, setSelectedTeamId] = useState(() => teams[0]?.id || 'team_0');
 
     useEffect(() => {
         if (teams.length > 0 && !teams.some(t => t.id === selectedTeamId)) {
@@ -139,7 +127,6 @@ export default function StudentActivityView({
     }, [teams, selectedTeamId]);
 
     const myTeam = teams.find(t => t.id === selectedTeamId) || teams[0];
-
     const [localEarnedPoints, setLocalEarnedPoints] = useState(0);
 
     const myPersonalScore = useMemo(() => {
@@ -150,23 +137,20 @@ export default function StudentActivityView({
         return localEarnedPoints;
     }, [liveActiveData, studentAlias, localEarnedPoints, isYouVsClass]);
 
-    // Scratchpad & Canvas controls
     const settings = liveActiveData?.settings || {};
     const allowScratchpad = settings.allowScratchpad !== false;
     const allowCanvas = Boolean(settings.allowCanvas);
     const [activeWorkTab, setActiveWorkTab] = useState(allowCanvas && !allowScratchpad ? 'canvas' : 'scratchpad');
 
-    // Local inputs
     const [localAnswers, setLocalAnswers] = useState({});
     const [localCompleted, setLocalCompleted] = useState({});
     const [localScratchpad, setLocalScratchpad] = useState({});
     const [localCanvas, setLocalCanvas] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Snabbräknaren: Sticky opt-in state across rounds
+    // Sticky opt-in state for Snabbräknaren
     const [autoPracticeEnabled, setAutoPracticeEnabled] = useState(false);
 
-    // Extract active topics from room packet/categories for Snabbräknaren
     const sessionTopics = useMemo(() => {
         if (Array.isArray(liveActiveData?.packet)) {
             return [...new Set(liveActiveData.packet.map(q => q.topicId).filter(Boolean))];
@@ -181,7 +165,6 @@ export default function StudentActivityView({
         return ['basic_arithmetic'];
     }, [liveActiveData, activeQuestion]);
 
-    // Single unified reset effect when round, tile, or regenerated question changes
     useEffect(() => {
         const targetKey = (isFourCorners || isYouVsClass) ? `round_${activeQuestion?.roundIndex ?? 0}` : activeTile;
         
@@ -205,11 +188,9 @@ export default function StudentActivityView({
 
     const currentAnswer = localAnswers[activeTile] || '';
     const isCompleted = Boolean(localCompleted[activeTile]);
-
     const activeTargetKey = (isFourCorners || isYouVsClass) ? `round_${activeQuestion?.roundIndex ?? 0}` : activeTile;
     const hasAnsweredCurrent = Boolean(localCompleted[activeTargetKey]);
 
-    // Render Data extraction
     const rd = activeQuestion?.resolvedData?.renderData || activeQuestion?.renderData || {};
     const options = rd?.options && Array.isArray(rd.options) ? rd.options : null;
     const isMultipleChoice = Boolean(options && options.length > 0);
@@ -230,7 +211,6 @@ export default function StudentActivityView({
     );
     const showVisual = activeQuestion?.showVisual !== false;
 
-    // HANDLER 1: For Four Corners & DynamicResponseInput
     const handleSendAnswer = async (answerVal) => {
         if (isSubmitting || !roomId) return;
         setIsSubmitting(true);
@@ -264,11 +244,9 @@ export default function StudentActivityView({
         }
     };
 
-    // Strict 50% Wager Cap & Action Handler for YouVsClass
     const maxWager = Math.max(0, Math.floor(myPersonalScore * 0.5));
     const [wagerAmount, setWagerAmount] = useState(0);
 
-    // Clamp wagerAmount immediately whenever maxWager or round changes
     useEffect(() => {
         setWagerAmount(prev => {
             const defaultStart = Math.min(100, maxWager);
@@ -284,7 +262,6 @@ export default function StudentActivityView({
             const cleanAlias = (studentAlias || "Elev").replace(/<[^>]*>?/gm, '').substring(0, 20).trim();
             let sanitizedPayload = String(rawPayloadAnswer).trim();
 
-            // Clamp wager tag strictly at 50% before inserting
             if (sanitizedPayload.startsWith('[WAGER:')) {
                 const requested = parseInt(sanitizedPayload.replace('[WAGER:', '').replace(']', ''), 10) || 0;
                 const safeClamped = Math.max(0, Math.min(requested, maxWager));
@@ -296,8 +273,6 @@ export default function StudentActivityView({
             const isAskMobTag = sanitizedPayload === '[ASK_MOB]';
             const isActionTag = isWagerTag || isAskMobTag;
 
-            // Use negative question_index for action tags so they never collide
-            // with the unique (room_id, student_alias, question_index) constraint!
             const targetQuestionIndex = isWagerTag
                 ? -(roundIdx + 100)
                 : isAskMobTag
@@ -342,7 +317,6 @@ export default function StudentActivityView({
         }
     };
 
-    // HANDLER 2: For Category Clash Matrix Tiles
     const handleTileSubmit = async (overrideAnswer = null) => {
         const finalAnswer = overrideAnswer !== null ? overrideAnswer : currentAnswer;
         if (!finalAnswer.trim() || isSubmitting || isCompleted || !activeTile) return;
@@ -404,6 +378,29 @@ export default function StudentActivityView({
     const wagerPct = maxWager > 0 ? Math.round((wagerAmount / myPersonalScore) * 100) : 0;
     const mobProgressCount = liveActiveData?.mobCount || 0;
     const mobProgressTotal = liveActiveData?.totalMobSize || 1;
+
+    // Reusable Snabbräknaren Toggle & Drawer Block for Waiting States
+    const renderQuickPracticeBlock = () => (
+        <div className="w-full max-w-xl mx-auto flex flex-col items-center gap-3 pt-2">
+            {!autoPracticeEnabled ? (
+                <button
+                    type="button"
+                    onClick={() => setAutoPracticeEnabled(true)}
+                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-2xs active:scale-[0.98] transition-all cursor-pointer"
+                >
+                    <Zap size={15} className="fill-current" />
+                    <span>{lang === 'sv' ? "Starta Snabbräknare (Medan du väntar)" : "Start Quick Practice (While waiting)"}</span>
+                </button>
+            ) : (
+                <StudentQuickPracticeDrawer
+                    isOpen={true}
+                    sessionTopics={sessionTopics}
+                    lang={lang}
+                    onClose={() => setAutoPracticeEnabled(false)}
+                />
+            )}
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans select-none">
@@ -489,18 +486,7 @@ export default function StudentActivityView({
                                     : "The teacher is setting up the next round on the board. Get ready!"}
                             </p>
 
-                            {!autoPracticeEnabled ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setAutoPracticeEnabled(true)}
-                                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-2xs active:scale-[0.98] transition-all cursor-pointer"
-                                >
-                                    <Zap size={15} className="fill-current" />
-                                    <span>{lang === 'sv' ? "Starta Snabbräknare (Medan du väntar)" : "Start Quick Practice (While waiting)"}</span>
-                                </button>
-                            ) : null}
-
-                            <div className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-mono font-bold text-xs">
+                            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-mono font-bold text-xs">
                                 <Trophy size={14} className="text-amber-600 dark:text-amber-400" />
                                 <span>{lang === 'sv' ? "Dina poäng:" : "Your score:"} {myPersonalScore}p</span>
                             </div>
@@ -525,14 +511,7 @@ export default function StudentActivityView({
                             )}
                         </div>
 
-                        {autoPracticeEnabled && (
-                            <StudentQuickPracticeDrawer
-                                isOpen={isWaitingForQuestion}
-                                sessionTopics={sessionTopics}
-                                lang={lang}
-                                onClose={() => setAutoPracticeEnabled(false)}
-                            />
-                        )}
+                        {renderQuickPracticeBlock()}
                     </div>
                 ) : isYouVsClass ? (
 
@@ -626,26 +605,30 @@ export default function StudentActivityView({
                                 )}
                             </motion.div>
                         ) : (!challengerState.phase || challengerState.phase === 'idle' || !challengerState.alias) ? (
-                            /* PHASE 0: IDLE */
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-8 text-center space-y-3 max-w-md mx-auto shadow-sm"
-                            >
-                                <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 mx-auto">
-                                    <Users size={28} />
-                                </div>
-                                <h3 className="text-base font-extrabold uppercase tracking-tight">
-                                    {lang === 'sv' ? 'Du är inne i rummet!' : "You're in the room!"}
-                                </h3>
-                                <p className="text-xs font-medium text-[var(--text-muted)] leading-relaxed">
-                                    {lang === 'sv'
-                                        ? 'Gör dig redo! Läraren slumpar snart fram den första utmanaren till heta stolen...'
-                                        : 'Get ready! The teacher is picking the first Challenger for the Hot Seat...'}
-                                </p>
-                            </motion.div>
+                            /* PHASE 0: IDLE (QUESTION MASKED + QUICK PRACTICE) */
+                            <div className="w-full flex flex-col items-center gap-4">
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-8 text-center space-y-3 max-w-md w-full shadow-sm"
+                                >
+                                    <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 mx-auto">
+                                        <Users size={28} />
+                                    </div>
+                                    <h3 className="text-base font-extrabold uppercase tracking-tight">
+                                        {lang === 'sv' ? 'Du är inne i rummet!' : "You're in the room!"}
+                                    </h3>
+                                    <p className="text-xs font-medium text-[var(--text-muted)] leading-relaxed">
+                                        {lang === 'sv'
+                                            ? 'Gör dig redo! Läraren slumpar snart fram den första utmanaren till heta stolen...'
+                                            : 'Get ready! The teacher is picking the first Challenger for the Hot Seat...'}
+                                    </p>
+                                </motion.div>
+
+                                {renderQuickPracticeBlock()}
+                            </div>
                         ) : challengerState.phase === 'wagering' ? (
-                            /* PHASE 1: WAGERING (STRICT 50% CAP) */
+                            /* PHASE 1: WAGERING (QUESTION MASKED — BET ON TOPIC & LEVEL) */
                             isMeChallenger ? (
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.92 }}
@@ -653,13 +636,17 @@ export default function StudentActivityView({
                                     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                                     className="bg-[var(--bg-card)] border-2 border-amber-500 rounded-2xl p-6 sm:p-8 max-w-lg mx-auto w-full text-center space-y-5 shadow-xl"
                                 >
-                                    <div>
-                                        <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
-                                            {lang === 'sv' ? 'MAXINSATS: 50% AV DINA POÄNG' : 'MAX WAGER: 50% OF YOUR SCORE'}
+                                    <div className="space-y-1.5">
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 font-mono text-[10px] font-bold uppercase tracking-wider">
+                                            <EyeOff size={12} />
+                                            <span>{activeQuestion?.name}</span>
                                         </span>
-                                        <h3 className="text-lg font-extrabold uppercase tracking-tight mt-0.5">
+                                        <h3 className="text-lg font-extrabold uppercase tracking-tight pt-1">
                                             {lang === 'sv' ? 'Välj din satsning' : 'Place your wager'}
                                         </h3>
+                                        <p className="text-xs text-[var(--text-muted)]">
+                                            {lang === 'sv' ? 'Maxinsats: 50% av dina poäng' : 'Max wager: 50% of your score'}
+                                        </p>
                                     </div>
 
                                     <motion.div
@@ -722,21 +709,28 @@ export default function StudentActivityView({
                                     </button>
                                 </motion.div>
                             ) : (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-8 text-center space-y-2 max-w-md mx-auto"
-                                >
-                                    <Loader2 className="animate-spin text-amber-500 mx-auto" size={28} />
-                                    <p className="text-sm font-bold">
-                                        {lang === 'sv'
-                                            ? `Väntar på att ${challengerState.alias} ska satsa poäng...`
-                                            : `Waiting for ${challengerState.alias} to place a wager...`}
-                                    </p>
-                                </motion.div>
+                                <div className="w-full flex flex-col items-center gap-4">
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-8 text-center space-y-2 max-w-md w-full"
+                                    >
+                                        <Loader2 className="animate-spin text-amber-500 mx-auto" size={28} />
+                                        <p className="text-sm font-bold">
+                                            {lang === 'sv'
+                                                ? `Väntar på att ${challengerState.alias} ska satsa poäng...`
+                                                : `Waiting for ${challengerState.alias} to place a wager...`}
+                                        </p>
+                                        <span className="inline-block text-[11px] font-mono text-[var(--text-muted)]">
+                                            {activeQuestion?.name}
+                                        </span>
+                                    </motion.div>
+
+                                    {renderQuickPracticeBlock()}
+                                </div>
                             )
                         ) : (
-                            /* PHASES 2–4: QUESTION + ROLE-LOCKED INPUT */
+                            /* PHASES 2–4: QUESTION REVEALED + ROLE-LOCKED INPUT + SNABBRÄKNAREN */
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
                                 {/* Left Question Card */}
                                 <div className="lg:col-span-7 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-6 space-y-4 shadow-sm">
@@ -757,170 +751,179 @@ export default function StudentActivityView({
                                     )}
                                 </div>
 
-                                {/* Right Input / Lifeline / Reveal Card */}
-                                <div className="lg:col-span-5 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-6 space-y-4 shadow-sm">
-                                    {/* Reveal Banner on Student Device */}
-                                    <AnimatePresence>
-                                        {challengerState.phase === 'reveal' && (
-                                            <motion.div
-                                                initial={{ opacity: 0, scale: 0.94 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                className={`p-4 rounded-xl border-2 space-y-1.5 font-extrabold text-xs uppercase tracking-wider ${
-                                                    challengerState.lastRoundWon
-                                                        ? 'bg-emerald-600 border-emerald-400 text-white'
-                                                        : 'bg-rose-600 border-rose-400 text-white'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-2.5">
-                                                    {challengerState.lastRoundWon ? <CheckCircle2 size={18} /> : <ShieldAlert size={18} />}
-                                                    <span>
-                                                        {challengerState.lastRoundWon
-                                                            ? (lang === 'sv' ? 'Utmanaren klarade rundan!' : 'Challenger survived the round!')
-                                                            : (lang === 'sv' ? 'Klassen (Mobben) vann rundan!' : 'The Mob won the round!')}
-                                                    </span>
-                                                </div>
-
-                                                {!challengerState.lastRoundWon && challengerState.bountyPerMobWinner > 0 && !isMeChallenger && (
-                                                    <div className="font-mono text-[11px] px-2.5 py-1 rounded bg-black/25 inline-block">
-                                                        {lang === 'sv'
-                                                            ? `Mob-bounty: +${challengerState.bountyPerMobWinner}p till alla rätta svar!`
-                                                            : `Mob Bounty: +${challengerState.bountyPerMobWinner}p to every correct Mob answer!`}
-                                                    </div>
-                                                )}
-
-                                                {challengerState.lastRoundWon && challengerState.earnedSweepBonus && isMeChallenger && (
-                                                    <div className="font-mono text-[11px] px-2.5 py-1 rounded bg-black/25 inline-block">
-                                                        {lang === 'sv' ? '3-runds Sweep Bonus: +250p!' : '3-Round Sweep Bonus: +250p!'}
-                                                    </div>
-                                                )}
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-
-                                    {/* Challenger waiting during Mob phase -> Can use "Ask the Mob" token */}
-                                    {isMeChallenger && challengerState.phase === 'mob_answering' && (
-                                        <div className="space-y-4 text-center">
-                                            <div className="space-y-1.5">
-                                                <p className="text-xs font-bold text-[var(--text-muted)]">
-                                                    {lang === 'sv'
-                                                        ? 'Klassen svarar just nu! Räkna ut uppgiften under tiden.'
-                                                        : 'The Mob is answering now! Solve the problem while you wait.'}
-                                                </p>
-                                                <div className="text-[11px] font-mono font-bold text-sky-600 dark:text-sky-400">
-                                                    {mobProgressCount} / {mobProgressTotal} {lang === 'sv' ? 'elever klara' : 'students locked in'}
-                                                </div>
-                                            </div>
-
-                                            {challengerState.lifelineAvailable && !challengerState.askMobUsed && (
-                                                <button
-                                                    type="button"
-                                                    disabled={isSubmitting}
-                                                    onClick={() => handleYouVsClassAction('[ASK_MOB]', false)}
-                                                    className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs uppercase tracking-wider cursor-pointer shadow-sm"
+                                {/* Right Input / Lifeline / Waiting / Reveal Card */}
+                                <div className="lg:col-span-5 flex flex-col gap-4">
+                                    <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-6 space-y-4 shadow-sm">
+                                        {/* Reveal Banner on Student Device */}
+                                        <AnimatePresence>
+                                            {challengerState.phase === 'reveal' && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, scale: 0.94 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    className={`p-4 rounded-xl border-2 space-y-1.5 font-extrabold text-xs uppercase tracking-wider ${
+                                                        challengerState.lastRoundWon
+                                                            ? 'bg-emerald-600 border-emerald-400 text-white'
+                                                            : 'bg-rose-600 border-rose-400 text-white'
+                                                    }`}
                                                 >
-                                                    {lang === 'sv' ? 'Fråga Klassen (-50% av satsning)' : 'Ask the Mob (-50% Wager)'}
-                                                </button>
+                                                    <div className="flex items-center gap-2.5">
+                                                        {challengerState.lastRoundWon ? <CheckCircle2 size={18} /> : <ShieldAlert size={18} />}
+                                                        <span>
+                                                            {challengerState.lastRoundWon
+                                                                ? (lang === 'sv' ? 'Utmanaren klarade rundan!' : 'Challenger survived the round!')
+                                                                : (lang === 'sv' ? 'Klassen (Mobben) vann rundan!' : 'The Mob won the round!')}
+                                                        </span>
+                                                    </div>
+
+                                                    {!challengerState.lastRoundWon && challengerState.bountyPerMobWinner > 0 && !isMeChallenger && (
+                                                        <div className="font-mono text-[11px] px-2.5 py-1 rounded bg-black/25 inline-block">
+                                                            {lang === 'sv'
+                                                                ? `Mob-bounty: +${challengerState.bountyPerMobWinner}p till alla rätta svar!`
+                                                                : `Mob Bounty: +${challengerState.bountyPerMobWinner}p to every correct Mob answer!`}
+                                                        </div>
+                                                    )}
+
+                                                    {challengerState.lastRoundWon && challengerState.earnedSweepBonus && isMeChallenger && (
+                                                        <div className="font-mono text-[11px] px-2.5 py-1 rounded bg-black/25 inline-block">
+                                                            {lang === 'sv' ? '3-runds Sweep Bonus: +250p!' : '3-Round Sweep Bonus: +250p!'}
+                                                        </div>
+                                                    )}
+                                                </motion.div>
                                             )}
-                                        </div>
-                                    )}
+                                        </AnimatePresence>
 
-                                    {/* Ask the Mob Spread (Visible to Challenger in both mob_answering & challenger_answering once used) */}
-                                    {isMeChallenger && challengerState.askMobUsed && (
-                                        isMultipleChoice && liveActiveData?.mobDistribution ? (
-                                            <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 space-y-1.5 text-left">
-                                                <span className="text-[10px] font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300 block">
-                                                    {lang === 'sv' ? 'Klassens fördelning:' : 'Mob Vote Spread:'}
-                                                </span>
-                                                <div className="grid grid-cols-4 gap-1.5 font-mono text-xs font-bold text-center">
-                                                    {Object.entries(liveActiveData.mobDistribution).map(([k, v]) => (
-                                                        <div key={k} className="p-1.5 rounded bg-[var(--bg-card)] border border-[var(--border-main)]">
-                                                            {k}: {v}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ) : !isMultipleChoice && Array.isArray(liveActiveData?.topMobAnswers) && liveActiveData.topMobAnswers.length > 0 ? (
-                                            <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 space-y-1.5 text-left">
-                                                <span className="text-[10px] font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300 block">
-                                                    {lang === 'sv' ? 'Klassens vanligaste svar (Topp 4):' : 'Top Anonymous Mob Answers:'}
-                                                </span>
+                                        {/* Challenger waiting during Mob phase */}
+                                        {isMeChallenger && challengerState.phase === 'mob_answering' && (
+                                            <div className="space-y-4 text-center">
                                                 <div className="space-y-1.5">
-                                                    {liveActiveData.topMobAnswers.map((item, idx) => (
-                                                        <div key={idx} className="px-2.5 py-1.5 rounded bg-[var(--bg-card)] border border-[var(--border-main)] flex items-center justify-between text-xs font-bold">
-                                                            <MathDisplay content={item.answer} />
-                                                            <span className="font-mono text-sky-600 dark:text-sky-400">
-                                                                {item.pct}% ({item.count})
-                                                            </span>
-                                                        </div>
-                                                    ))}
+                                                    <p className="text-xs font-bold text-[var(--text-muted)]">
+                                                        {lang === 'sv'
+                                                            ? 'Klassen svarar just nu! Räkna ut uppgiften under tiden.'
+                                                            : 'The Mob is answering now! Solve the problem while you wait.'}
+                                                    </p>
+                                                    <div className="text-[11px] font-mono font-bold text-sky-600 dark:text-sky-400">
+                                                        {mobProgressCount} / {mobProgressTotal} {lang === 'sv' ? 'elever klara' : 'students locked in'}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ) : null
-                                    )}
 
-                                    {/* Mob waiting during Challenger phase */}
-                                    {!isMeChallenger && challengerState.phase === 'challenger_answering' && (
-                                        <div className="p-6 text-center space-y-2">
-                                            <Loader2 className="animate-spin text-amber-500 mx-auto" size={24} />
-                                            <p className="text-xs font-bold">
-                                                {lang === 'sv'
-                                                    ? `Väntar på att ${challengerState.alias} ska låsa in sitt svar...`
-                                                    : `Waiting for ${challengerState.alias} to lock in their answer...`}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {/* Active Input when it's this student's turn */}
-                                    {!hasAnsweredCurrent && (
-                                        (!isMeChallenger && challengerState.phase === 'mob_answering') ||
-                                        (isMeChallenger && challengerState.phase === 'challenger_answering')
-                                    ) && (
-                                        isMultipleChoice ? (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                                {options.map((opt) => (
+                                                {challengerState.lifelineAvailable && !challengerState.askMobUsed && (
                                                     <button
-                                                        key={opt.id}
                                                         type="button"
                                                         disabled={isSubmitting}
-                                                        onClick={() => handleYouVsClassAction(opt.id, true)}
-                                                        className="p-3.5 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-surface)] hover:border-emerald-600 font-bold text-xs flex items-center gap-2.5 cursor-pointer transition-all active:scale-[0.98]"
+                                                        onClick={() => handleYouVsClassAction('[ASK_MOB]', false)}
+                                                        className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs uppercase tracking-wider cursor-pointer shadow-sm"
                                                     >
-                                                        <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white font-mono text-xs flex items-center justify-center shrink-0">
-                                                            {opt.id}
-                                                        </span>
-                                                        <MathDisplay content={String(opt.label)} />
+                                                        {lang === 'sv' ? 'Fråga Klassen (-50% av satsning)' : 'Ask the Mob (-50% Wager)'}
                                                     </button>
-                                                ))}
+                                                )}
                                             </div>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                <SmartMathInput
-                                                    value={localAnswers[activeTargetKey] || ''}
-                                                    onChange={(val) => setLocalAnswers(prev => ({ ...prev, [activeTargetKey]: val }))}
-                                                    onSubmit={() => handleYouVsClassAction(localAnswers[activeTargetKey] || '', true)}
-                                                    disabled={isSubmitting}
-                                                    renderData={rd}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    disabled={isSubmitting || !(localAnswers[activeTargetKey] || '').trim()}
-                                                    onClick={() => handleYouVsClassAction(localAnswers[activeTargetKey] || '', true)}
-                                                    className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider cursor-pointer disabled:opacity-40"
-                                                >
-                                                    {lang === 'sv' ? 'Skicka Svar' : 'Submit Answer'}
-                                                </button>
-                                            </div>
-                                        )
-                                    )}
+                                        )}
 
-                                    {/* Confirmation once submitted */}
-                                    {hasAnsweredCurrent && challengerState.phase !== 'reveal' && (
-                                        <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex items-center gap-2.5 text-emerald-800 dark:text-emerald-200">
-                                            <CheckCircle2 size={18} className="shrink-0" />
-                                            <span className="text-xs font-bold">
-                                                {lang === 'sv' ? 'Svar inskickat! Väntar på facit...' : 'Answer submitted! Waiting for reveal...'}
-                                            </span>
-                                        </div>
+                                        {/* Ask the Mob Spread */}
+                                        {isMeChallenger && challengerState.askMobUsed && (
+                                            isMultipleChoice && liveActiveData?.mobDistribution ? (
+                                                <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 space-y-1.5 text-left">
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300 block">
+                                                        {lang === 'sv' ? 'Klassens fördelning:' : 'Mob Vote Spread:'}
+                                                    </span>
+                                                    <div className="grid grid-cols-4 gap-1.5 font-mono text-xs font-bold text-center">
+                                                        {Object.entries(liveActiveData.mobDistribution).map(([k, v]) => (
+                                                            <div key={k} className="p-1.5 rounded bg-[var(--bg-card)] border border-[var(--border-main)]">
+                                                                {k}: {v}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : !isMultipleChoice && Array.isArray(liveActiveData?.topMobAnswers) && liveActiveData.topMobAnswers.length > 0 ? (
+                                                <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 space-y-1.5 text-left">
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300 block">
+                                                        {lang === 'sv' ? 'Klassens vanligaste svar (Topp 4):' : 'Top Anonymous Mob Answers:'}
+                                                    </span>
+                                                    <div className="space-y-1.5">
+                                                        {liveActiveData.topMobAnswers.map((item, idx) => (
+                                                            <div key={idx} className="px-2.5 py-1.5 rounded bg-[var(--bg-card)] border border-[var(--border-main)] flex items-center justify-between text-xs font-bold">
+                                                                <MathDisplay content={item.answer} />
+                                                                <span className="font-mono text-sky-600 dark:text-sky-400">
+                                                                    {item.pct}% ({item.count})
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : null
+                                        )}
+
+                                        {/* Mob waiting during Challenger phase */}
+                                        {!isMeChallenger && challengerState.phase === 'challenger_answering' && (
+                                            <div className="p-4 text-center space-y-2">
+                                                <Loader2 className="animate-spin text-amber-500 mx-auto" size={24} />
+                                                <p className="text-xs font-bold">
+                                                    {lang === 'sv'
+                                                        ? `Väntar på att ${challengerState.alias} ska låsa in sitt svar...`
+                                                        : `Waiting for ${challengerState.alias} to lock in their answer...`}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Active Input when it's this student's turn */}
+                                        {!hasAnsweredCurrent && (
+                                            (!isMeChallenger && challengerState.phase === 'mob_answering') ||
+                                            (isMeChallenger && challengerState.phase === 'challenger_answering')
+                                        ) && (
+                                            isMultipleChoice ? (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                    {options.map((opt) => (
+                                                        <button
+                                                            key={opt.id}
+                                                            type="button"
+                                                            disabled={isSubmitting}
+                                                            onClick={() => handleYouVsClassAction(opt.id, true)}
+                                                            className="p-3.5 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-surface)] hover:border-emerald-600 font-bold text-xs flex items-center gap-2.5 cursor-pointer transition-all active:scale-[0.98]"
+                                                        >
+                                                            <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white font-mono text-xs flex items-center justify-center shrink-0">
+                                                                {opt.id}
+                                                            </span>
+                                                            <MathDisplay content={String(opt.label)} />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <SmartMathInput
+                                                        value={localAnswers[activeTargetKey] || ''}
+                                                        onChange={(val) => setLocalAnswers(prev => ({ ...prev, [activeTargetKey]: val }))}
+                                                        onSubmit={() => handleYouVsClassAction(localAnswers[activeTargetKey] || '', true)}
+                                                        disabled={isSubmitting}
+                                                        renderData={rd}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        disabled={isSubmitting || !(localAnswers[activeTargetKey] || '').trim()}
+                                                        onClick={() => handleYouVsClassAction(localAnswers[activeTargetKey] || '', true)}
+                                                        className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider cursor-pointer disabled:opacity-40"
+                                                    >
+                                                        {lang === 'sv' ? 'Skicka Svar' : 'Submit Answer'}
+                                                    </button>
+                                                </div>
+                                            )
+                                        )}
+
+                                        {/* Confirmation once submitted */}
+                                        {hasAnsweredCurrent && challengerState.phase !== 'reveal' && (
+                                            <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex items-center gap-2.5 text-emerald-800 dark:text-emerald-200">
+                                                <CheckCircle2 size={18} className="shrink-0" />
+                                                <span className="text-xs font-bold">
+                                                    {lang === 'sv' ? 'Svar inskickat! Väntar på facit...' : 'Answer submitted! Waiting for reveal...'}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Snabbräknaren Drawer whenever the student is waiting */}
+                                    {((!isMeChallenger && (hasAnsweredCurrent || challengerState.phase === 'challenger_answering')) ||
+                                      (isMeChallenger && (challengerState.phase === 'mob_answering' || hasAnsweredCurrent))) &&
+                                      challengerState.phase !== 'reveal' && (
+                                        renderQuickPracticeBlock()
                                     )}
                                 </div>
                             </div>
@@ -931,8 +934,6 @@ export default function StudentActivityView({
                     /* STATE 2A: FOUR CORNERS MATCHED SPLIT-STAGE VIEW */
                     <div className="w-full max-w-7xl h-full flex flex-col min-h-0 animate-in fade-in duration-150">
                         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 min-h-0 items-stretch">
-                            
-                            {/* LEFT STAGE: Prompt, Diagram Visual, Protected LaTeX */}
                             <div className="lg:col-span-7 bg-[var(--bg-card)] border-[var(--border-strong)] text-[var(--text-main)] rounded-2xl p-6 sm:p-7 flex flex-col justify-between shadow-xl border overflow-y-auto custom-scrollbar">
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
@@ -970,7 +971,6 @@ export default function StudentActivityView({
                                 </div>
                             </div>
 
-                            {/* RIGHT STAGE: Either 4 Corners Input OR Snabbräknaren Drawer */}
                             <div className="lg:col-span-5 h-full flex flex-col min-h-[350px]">
                                 {!hasAnsweredCurrent ? (
                                     <DynamicResponseInput
@@ -1021,7 +1021,6 @@ export default function StudentActivityView({
                                     </div>
                                 )}
                             </div>
-                            
                         </div>
                     </div>
 
@@ -1029,8 +1028,6 @@ export default function StudentActivityView({
 
                     /* STATE 2B: CATEGORY CLASH MATRIX TILE VIEW */
                     <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-5 items-start animate-in fade-in duration-150">
-                        
-                        {/* Question Card (Left 7 Cols) */}
                         <div className="lg:col-span-7 bg-[var(--bg-card)] text-[var(--text-main)] rounded-2xl p-6 sm:p-7 shadow-xl border border-[var(--border-strong)] flex flex-col space-y-5">
                             <div className="flex items-center justify-between pb-3.5 border-b border-[var(--border-main)]">
                                 <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-xl">
@@ -1095,7 +1092,6 @@ export default function StudentActivityView({
                             )}
                         </div>
 
-                        {/* Solution & Input Pane (Right 5 Cols) */}
                         <div className="lg:col-span-5 bg-[var(--bg-card)] border-[var(--border-strong)] text-[var(--text-main)] rounded-2xl p-6 shadow-xl border flex flex-col space-y-4">
                             {!hasAnsweredCurrent ? (
                                 <>
@@ -1233,7 +1229,6 @@ export default function StudentActivityView({
                                 </div>
                             )}
                         </div>
-                        
                     </div>
                 )}
             </main>

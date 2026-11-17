@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Play, RefreshCcw, Edit3, Users, Save, ListFilter,
     ChevronRight, X, Loader2, Monitor, Plus, HelpCircle,
-    Timer, Trophy, Crown, Eye, Repeat, Shuffle, Lock, Zap, CheckCircle2, ShieldAlert, Award
+    Timer, Trophy, Crown, Eye, Repeat, Shuffle, Lock, Zap,
+    CheckCircle2, ShieldAlert, Award, FastForward, EyeOff
 } from 'lucide-react';
 import VisualRenderer from '../../visuals/VisualRenderer';
 import PreferencesToggle from '../../ui/PreferencesToggle';
@@ -21,7 +22,6 @@ const formatMixedMathText = (rawText) => {
     if (!str) return '';
     if (str.includes('$')) return str;
 
-    // If the entire string is a pure formula (no multi-letter prose words), wrap it cleanly
     const hasProseWords = /\b[a-zA-ZåäöÅÄÖ]{3,}\b/.test(str.replace(/\\[a-zA-Z]+/g, ''));
     const hasLatexTokens = /\\(frac|sqrt|cdot|times|pi|div|pm|leq|geq|neq)|[\^_]{1}[{0-9a-zA-Z]/.test(str);
 
@@ -29,7 +29,6 @@ const formatMixedMathText = (rawText) => {
         return `$${str}$`;
     }
 
-    // Wrap inline LaTeX commands inside prose sentences without touching surrounding text
     return str.replace(
         /(\\(?:frac|sqrt)\{[^{}]*\}(?:\{[^{}]*\})?|\\(?:cdot|times|pi|div|pm)|[0-9a-zA-Z]+\^\{?[0-9a-zA-Z+-]+\}?)/g,
         (match) => `$${match}$`
@@ -185,15 +184,25 @@ export default function YouVsClassEngine({
             pick_challenger: "Slumpa Utmanare",
             rotate_challenger: "Byt Utmanare",
             picking_roulette: "Slumpar...",
-            phase_idle: "Redo att slumpa utmanare",
-            phase_wagering: "Utmanaren satsar poäng...",
-            phase_mob: "Klassen (Mobben) svarar...",
-            phase_challenger: "Utmanarens tur att svara!",
-            phase_challenger_locked: "Utmanaren har låst sitt svar!",
-            phase_reveal: "Resultat & Facit",
+            step_1_label: "1. Utmanare",
+            step_2_label: "2. Satsning",
+            step_3_label: "3. Klassen",
+            step_4_label: "4. Heta Stolen",
+            step_5_label: "5. Facit",
+            phase_idle_title: "Välj vem som tar plats i Heta Stolen",
+            phase_idle_sub: "Slumpa en utmanare bland de anslutna eleverna för att starta rundan.",
+            phase_wagering_title: "Utmanaren väljer sin insats",
+            phase_wagering_sub: "Uppgiften hålls dold tills satsningen är låst.",
+            force_advance_wager: "Tvinga vidare (0p satsning)",
+            phase_mob_title: "Klassen (Mobben) svarar nu!",
+            phase_mob_sub: "Invänta klassens svar eller starta nedräkningen.",
+            phase_challenger_title: "Utmanarens tur att svara!",
+            phase_challenger_locked_title: "Utmanaren har låst in sitt svar!",
+            phase_reveal_title: "Resultat & Poängutdelning",
             lock_mob_now: "Lås Klassens Svar Nu",
             start_15s: "Starta 15s Nedräkning",
             reveal_result: "Visa Facit & Dela ut Poäng",
+            reveal_anyway: "Visa Facit Ändå",
             next_round: "Nästa Steg",
             finish_game: "Avsluta & Visa Vinnare",
             flash_round: "Flash-runda (Repetera nivå)",
@@ -210,7 +219,7 @@ export default function YouVsClassEngine({
             waiting_students: "Väntar på att elever ska gå med i rummet...",
             connected_lobby: "Anslutna i lobbyn",
             locked_in_badge: "SVAR LÅST",
-            waiting_challenger_input: "Väntar på svar...",
+            waiting_challenger_input: "Tänker...",
             challenger_wins_banner: "UTMANAREN KLARADE RUNDAN!",
             mob_wins_banner: "MOBBEN VANN RUNDAN!",
             bounty_split_label: "Mob-bounty utdelad:",
@@ -223,7 +232,8 @@ export default function YouVsClassEngine({
             finale_title: "SLUTRESULTAT — DU MOT KLASSEN",
             finale_sub: "Grattis till kvällens mästare i 1 vs 100!",
             add_bonus_round: "Lägg till Bonusrunda (+1)",
-            close_session: "Avsluta Aktivitet"
+            close_session: "Avsluta Aktivitet",
+            question_masked_badge: "Uppgift dold under satsning"
         },
         en: {
             title: "You vs. Class",
@@ -239,15 +249,25 @@ export default function YouVsClassEngine({
             pick_challenger: "Pick Challenger",
             rotate_challenger: "Rotate Challenger",
             picking_roulette: "Selecting...",
-            phase_idle: "Ready to pick challenger",
-            phase_wagering: "Challenger is placing wager...",
-            phase_mob: "The Mob is locking in answers...",
-            phase_challenger: "Challenger's turn to answer!",
-            phase_challenger_locked: "Challenger has locked in their answer!",
-            phase_reveal: "Results & Reveal",
+            step_1_label: "1. Challenger",
+            step_2_label: "2. Wager",
+            step_3_label: "3. The Mob",
+            step_4_label: "4. Hot Seat",
+            step_5_label: "5. Reveal",
+            phase_idle_title: "Pick who takes the Hot Seat",
+            phase_idle_sub: "Randomly select a challenger from connected students to begin.",
+            phase_wagering_title: "Challenger is placing a wager",
+            phase_wagering_sub: "The question stays hidden until the wager is locked in.",
+            force_advance_wager: "Force Advance (0p Wager)",
+            phase_mob_title: "The Mob is answering now!",
+            phase_mob_sub: "Wait for class responses or trigger a 15-second countdown.",
+            phase_challenger_title: "Challenger's turn to answer!",
+            phase_challenger_locked_title: "Challenger has locked in their answer!",
+            phase_reveal_title: "Results & Points Awarded",
             lock_mob_now: "Lock Mob Answers Now",
             start_15s: "Start 15s Countdown",
             reveal_result: "Reveal Answer & Award Points",
+            reveal_anyway: "Reveal Answer Anyway",
             next_round: "Next Step",
             finish_game: "Finish & Show Podium",
             flash_round: "Flash Round (Repeat Level)",
@@ -277,7 +297,8 @@ export default function YouVsClassEngine({
             finale_title: "FINAL STANDINGS — YOU VS. CLASS",
             finale_sub: "Congratulations to tonight's 1 vs 100 champions!",
             add_bonus_round: "Add Bonus Round (+1)",
-            close_session: "End Activity"
+            close_session: "End Activity",
+            question_masked_badge: "Question hidden during wager"
         }
     }[lang] || {};
 
@@ -705,6 +726,19 @@ export default function YouVsClassEngine({
         });
     };
 
+    // Teacher Override: Force-advance past wagering with a 0p wager
+    const handleForceAdvanceWager = async () => {
+        if (challengerState.phase !== 'wagering') return;
+        const nextState = {
+            ...challengerState,
+            wager: 0,
+            challengerLockedIn: false,
+            phase: 'mob_answering'
+        };
+        setChallengerState(nextState);
+        await syncRoom(activeRoundIndex, currentRound, nextState);
+    };
+
     const handleLockMobAnswers = async () => {
         setIsCountdownActive(false);
         const nextState = { ...challengerState, phase: 'challenger_answering' };
@@ -873,7 +907,7 @@ export default function YouVsClassEngine({
         }
     };
 
-    // Fetch a fresh question for a specific topicId & level (used by Editor Swap & Add Step)
+    // Fetch a fresh question for a specific topicId & level
     const fetchQuestionForSlot = async (topicId, level, roundIndex) => {
         const url = `/api/question?topic=${topicId}&level=${level}&lang=${lang}&wordProblem=false`;
         const res = await fetch(url);
@@ -924,7 +958,6 @@ export default function YouVsClassEngine({
         };
     };
 
-    // Append an extra step to the ladder (works from Curate view or Finale screen)
     const handleAppendExtraRound = async (advanceImmediately = false) => {
         if (reRollingIdx !== null) return;
         setReRollingIdx(rounds.length);
@@ -955,7 +988,6 @@ export default function YouVsClassEngine({
         }
     };
 
-    // Re-roll numbers for ANY step in the ladder
     const handleRerollIndex = async (targetIdx) => {
         const targetItem = rounds[targetIdx];
         if (!targetItem || reRollingIdx !== null) return;
@@ -1078,10 +1110,20 @@ export default function YouVsClassEngine({
     const activeHotSeatName = isRouletteSpinning ? rouletteDisplayAlias : challengerState.alias;
     const isReadyForManualReveal = challengerState.phase === 'challenger_answering' && challengerState.challengerLockedIn;
     const isFinalRound = activeRoundIndex >= rounds.length - 1;
+    const isQuestionHiddenPhase = challengerState.phase === 'idle' || challengerState.phase === 'wagering';
+
+    // 5-Step Round Timeline Configuration
+    const timelineSteps = [
+        { key: 'idle', label: t.step_1_label },
+        { key: 'wagering', label: t.step_2_label },
+        { key: 'mob_answering', label: t.step_3_label },
+        { key: 'challenger_answering', label: t.step_4_label },
+        { key: 'reveal', label: t.step_5_label }
+    ];
+    const currentStepIndex = Math.max(0, timelineSteps.findIndex(s => s.key === challengerState.phase));
 
     return (
         <div className="fixed inset-0 z-[500] bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col overflow-hidden select-none font-sans">
-            {/* Confetti & Spotlight Overlay */}
             <StudioCelebrationOverlay active={showCelebration} />
 
             {/* Round & Flash Round Announcement Banner */}
@@ -1179,28 +1221,16 @@ export default function YouVsClassEngine({
                         </button>
                     </div>
 
-                    {viewMode === 'play' && challengerState.phase !== 'game_over' && (
-                        <>
-                            <button
-                                type="button"
-                                onClick={() => handleRerollIndex(activeRoundIndex)}
-                                disabled={reRollingIdx !== null}
-                                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:border-emerald-600 border border-[var(--border-strong)] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
-                            >
-                                <RefreshCcw size={13} className={reRollingIdx === activeRoundIndex ? 'animate-spin' : ''} />
-                                <span className="hidden md:inline">{t.reroll_numbers}</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={handleInsertFlashRound}
-                                disabled={reRollingIdx !== null}
-                                className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-800 dark:text-amber-300 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
-                            >
-                                <Repeat size={13} />
-                                <span className="hidden md:inline">{t.flash_round}</span>
-                            </button>
-                        </>
+                    {viewMode === 'play' && challengerState.phase !== 'game_over' && !isQuestionHiddenPhase && (
+                        <button
+                            type="button"
+                            onClick={() => handleRerollIndex(activeRoundIndex)}
+                            disabled={reRollingIdx !== null}
+                            className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:border-emerald-600 border border-[var(--border-strong)] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <RefreshCcw size={13} className={reRollingIdx === activeRoundIndex ? 'animate-spin' : ''} />
+                            <span className="hidden md:inline">{t.reroll_numbers}</span>
+                        </button>
                     )}
                 </div>
 
@@ -1439,7 +1469,6 @@ export default function YouVsClassEngine({
                         })}
                     </div>
 
-                    {/* Full Final Standings Strip */}
                     {leaderboard.length > 3 && (
                         <div className="w-full max-w-2xl bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {leaderboard.slice(3).map((p, idx) => (
@@ -1451,7 +1480,6 @@ export default function YouVsClassEngine({
                         </div>
                     )}
 
-                    {/* Finale Controls */}
                     <div className="flex items-center gap-3 pt-2">
                         <button
                             type="button"
@@ -1480,15 +1508,14 @@ export default function YouVsClassEngine({
                     transition={{ duration: 0.45, ease: 'easeInOut' }}
                     className="flex-1 overflow-hidden p-5 grid grid-cols-1 lg:grid-cols-12 gap-5 max-w-[1800px] w-full mx-auto"
                 >
-                    
-                    {/* LEFT COLUMN (3 Cols): HOT SEAT SPOTLIGHT */}
+                    {/* LEFT COLUMN (3 Cols): CONTESTANT SPOTLIGHT (PURE TELEMETRY) */}
                     <div className={`lg:col-span-3 bg-[var(--bg-card)] border-2 rounded-2xl p-5 flex flex-col justify-between shadow-sm transition-colors duration-300 ${
                         challengerState.phase === 'reveal'
                             ? challengerState.lastRoundWon
                                 ? 'border-emerald-500'
                                 : 'border-rose-500'
                             : challengerState.challengerLockedIn
-                                ? 'border-cyan-500'
+                                ? 'border-sky-500'
                                 : 'border-amber-500'
                     }`}>
                         <div className="space-y-4">
@@ -1496,21 +1523,18 @@ export default function YouVsClassEngine({
                                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                                     <Crown size={14} /> {t.hot_seat}
                                 </span>
-                                <button
-                                    type="button"
-                                    disabled={isRouletteSpinning}
-                                    onClick={() => handleSelectChallenger(false)}
-                                    className="px-2.5 py-1 rounded-lg bg-[var(--bg-surface)] hover:border-amber-500 border border-[var(--border-main)] text-[10px] font-bold uppercase flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                                >
-                                    <Shuffle size={11} className={isRouletteSpinning ? 'animate-spin' : ''} />
-                                    <span>
-                                        {isRouletteSpinning
-                                            ? t.picking_roulette
-                                            : challengerState.alias
-                                                ? t.rotate_challenger
-                                                : t.pick_challenger}
-                                    </span>
-                                </button>
+                                {activeRoster.length > 0 && (
+                                    <button
+                                        type="button"
+                                        disabled={isRouletteSpinning}
+                                        onClick={() => handleSelectChallenger(false)}
+                                        className="px-2.5 py-1 rounded-lg bg-[var(--bg-surface)] hover:border-amber-500 border border-[var(--border-main)] text-[10px] font-bold uppercase flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                        title={t.rotate_challenger}
+                                    >
+                                        <Shuffle size={11} className={isRouletteSpinning ? 'animate-spin' : ''} />
+                                        <span>{challengerState.alias ? t.rotate_challenger : t.pick_challenger}</span>
+                                    </button>
+                                )}
                             </div>
 
                             {activeHotSeatName ? (
@@ -1519,7 +1543,7 @@ export default function YouVsClassEngine({
                                     initial={{ scale: 0.92, opacity: 0.7 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     transition={{ type: 'spring', stiffness: 450, damping: 24 }}
-                                    className={`p-4 rounded-2xl border text-center space-y-2.5 relative overflow-hidden ${
+                                    className={`p-5 rounded-2xl border text-center space-y-3 relative overflow-hidden ${
                                         isRouletteSpinning
                                             ? 'bg-amber-500/20 border-amber-400'
                                             : 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700'
@@ -1528,12 +1552,12 @@ export default function YouVsClassEngine({
                                     <motion.div
                                         animate={isRouletteSpinning ? { scale: [1, 1.12, 1] } : { scale: 1 }}
                                         transition={{ repeat: isRouletteSpinning ? Infinity : 0, duration: 0.25 }}
-                                        className="w-14 h-14 rounded-2xl bg-amber-500 text-white font-mono font-extrabold text-xl flex items-center justify-center mx-auto shadow-sm"
+                                        className="w-16 h-16 rounded-2xl bg-amber-500 text-white font-mono font-extrabold text-2xl flex items-center justify-center mx-auto shadow-sm"
                                     >
                                         {activeHotSeatName.slice(0, 2).toUpperCase()}
                                     </motion.div>
 
-                                    <div className="text-lg font-extrabold truncate">{activeHotSeatName}</div>
+                                    <div className="text-xl font-extrabold truncate">{activeHotSeatName}</div>
 
                                     {!isRouletteSpinning && (
                                         <>
@@ -1544,7 +1568,7 @@ export default function YouVsClassEngine({
                                                         initial={{ scale: 1.45, opacity: 0, rotate: -6 }}
                                                         animate={{ scale: 1, opacity: 1, rotate: 0 }}
                                                         transition={{ type: 'spring', stiffness: 520, damping: 22 }}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-600 text-white font-mono text-[11px] font-black uppercase tracking-wider shadow-sm"
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-sky-600 text-white font-mono text-[11px] font-black uppercase tracking-wider shadow-sm"
                                                     >
                                                         <Lock size={12} />
                                                         <span>{t.locked_in_badge}</span>
@@ -1563,29 +1587,31 @@ export default function YouVsClassEngine({
                                             </AnimatePresence>
 
                                             <div className="flex items-center justify-center gap-2 pt-1">
-                                                <span className="px-2.5 py-0.5 rounded-md bg-[var(--bg-card)] border border-[var(--border-main)] font-mono text-xs font-bold">
+                                                <span className="px-3 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-main)] font-mono text-xs font-bold">
                                                     {studentScoresMap[challengerState.alias]?.score ?? baselinePoints}p
                                                 </span>
-                                                <span className="px-2.5 py-0.5 rounded-md bg-emerald-600 text-white font-mono text-xs font-bold">
+                                                <span className="px-3 py-1 rounded-lg bg-emerald-600 text-white font-mono text-xs font-bold">
                                                     {(studentScoresMap[challengerState.alias]?.multiplier || 1.0).toFixed(1)}x
                                                 </span>
                                             </div>
 
-                                            <div className="pt-2 border-t border-amber-300/50 dark:border-amber-700/50 flex justify-between text-xs font-bold">
-                                                <span className="text-[var(--text-muted)]">{t.wager_label}:</span>
-                                                <motion.span
-                                                    key={challengerState.wager}
-                                                    initial={{ scale: 1.3 }}
-                                                    animate={{ scale: 1 }}
-                                                    className="font-mono text-amber-700 dark:text-amber-300"
-                                                >
-                                                    {challengerState.wager}p
-                                                </motion.span>
-                                            </div>
+                                            <div className="pt-3 border-t border-amber-300/50 dark:border-amber-700/50 space-y-1.5 text-xs font-bold">
+                                                <div className="flex justify-between">
+                                                    <span className="text-[var(--text-muted)]">{t.wager_label}:</span>
+                                                    <motion.span
+                                                        key={challengerState.wager}
+                                                        initial={{ scale: 1.3 }}
+                                                        animate={{ scale: 1 }}
+                                                        className="font-mono text-amber-700 dark:text-amber-300"
+                                                    >
+                                                        {challengerState.wager}p
+                                                    </motion.span>
+                                                </div>
 
-                                            <div className="flex justify-between text-xs font-bold">
-                                                <span className="text-[var(--text-muted)]">{t.streak_in_seat}:</span>
-                                                <span className="font-mono">{challengerState.streakInSeat} / 3</span>
+                                                <div className="flex justify-between">
+                                                    <span className="text-[var(--text-muted)]">{t.streak_in_seat}:</span>
+                                                    <span className="font-mono">{challengerState.streakInSeat} / 3</span>
+                                                </div>
                                             </div>
 
                                             {challengerState.askMobUsed && (
@@ -1617,36 +1643,20 @@ export default function YouVsClassEngine({
                                     )}
                                 </motion.div>
                             ) : (
-                                /* LOBBY ROSTER WITH POP-IN ANIMATIONS */
-                                <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-dashed border-[var(--border-strong)] text-center space-y-3">
+                                <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-dashed border-[var(--border-strong)] text-center space-y-2.5">
                                     <div className="flex items-center justify-center gap-2 text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                                         <Users size={15} />
                                         <span>{t.connected_lobby} ({activeRoster.length})</span>
                                     </div>
-
                                     {activeRoster.length > 0 ? (
-                                        <div className="flex flex-wrap justify-center gap-1.5 max-h-40 overflow-y-auto custom-scrollbar p-1">
+                                        <div className="flex flex-wrap justify-center gap-1.5 max-h-48 overflow-y-auto custom-scrollbar p-1">
                                             <AnimatePresence>
                                                 {activeRoster.map((name) => (
                                                     <motion.span
                                                         key={name}
                                                         layout
                                                         initial={{ opacity: 0, scale: 0.5, y: 10 }}
-                                                        animate={{
-                                                            opacity: 1,
-                                                            scale: 1,
-                                                            y: 0,
-                                                            boxShadow: [
-                                                                '0 0 0 0px rgba(16,185,129,0.55)',
-                                                                '0 0 0 8px rgba(16,185,129,0)'
-                                                            ]
-                                                        }}
-                                                        transition={{
-                                                            type: 'spring',
-                                                            stiffness: 480,
-                                                            damping: 22,
-                                                            boxShadow: { duration: 0.8 }
-                                                        }}
+                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
                                                         className="px-2.5 py-1 rounded-lg bg-[var(--bg-card)] border border-emerald-500/40 text-xs font-bold shadow-2xs"
                                                     >
                                                         {name}
@@ -1659,264 +1669,377 @@ export default function YouVsClassEngine({
                                             {t.waiting_students}
                                         </p>
                                     )}
-
-                                    <button
-                                        type="button"
-                                        disabled={activeRoster.length === 0 || isRouletteSpinning}
-                                        onClick={() => handleSelectChallenger(false)}
-                                        className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-extrabold text-xs uppercase tracking-wider cursor-pointer shadow-sm"
-                                    >
-                                        {t.pick_challenger}
-                                    </button>
                                 </div>
                             )}
                         </div>
 
-                        {/* Phase Control Deck */}
-                        <div className="space-y-2 pt-4 border-t border-[var(--border-main)]">
-                            <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-center text-[var(--text-muted)]">
-                                {challengerState.phase === 'idle' && t.phase_idle}
-                                {challengerState.phase === 'wagering' && t.phase_wagering}
-                                {challengerState.phase === 'mob_answering' && t.phase_mob}
-                                {challengerState.phase === 'challenger_answering' && (
-                                    challengerState.challengerLockedIn ? t.phase_challenger_locked : t.phase_challenger
-                                )}
-                                {challengerState.phase === 'reveal' && t.phase_reveal}
-                            </div>
-
-                            {challengerState.phase === 'mob_answering' && (
-                                <div className="space-y-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setCountdownLeft(15);
-                                            setIsCountdownActive(true);
-                                        }}
-                                        className="w-full py-2 rounded-xl bg-[var(--bg-surface)] hover:border-amber-500 border border-[var(--border-strong)] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
-                                    >
-                                        <Timer size={14} className="text-amber-500" />
-                                        <span>{isCountdownActive ? `${countdownLeft}s...` : t.start_15s}</span>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={handleLockMobAnswers}
-                                        className="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-extrabold uppercase tracking-wider cursor-pointer"
-                                    >
-                                        {t.lock_mob_now}
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* Manual Reveal Button */}
-                            {challengerState.phase === 'challenger_answering' && (
-                                <motion.button
-                                    type="button"
-                                    onClick={handleRevealRound}
-                                    animate={isReadyForManualReveal ? {
-                                        scale: [1, 1.035, 1],
-                                        boxShadow: [
-                                            '0 0 0 0px rgba(16,185,129,0.6)',
-                                            '0 0 0 10px rgba(16,185,129,0)'
-                                        ]
-                                    } : { scale: 1 }}
-                                    transition={{
-                                        repeat: isReadyForManualReveal ? Infinity : 0,
-                                        duration: 1.25,
-                                        ease: 'easeInOut'
-                                    }}
-                                    className={`w-full py-3 rounded-xl text-white text-xs font-extrabold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
-                                        isReadyForManualReveal
-                                            ? 'bg-emerald-500 hover:bg-emerald-600 ring-2 ring-emerald-300'
-                                            : 'bg-emerald-700/80 hover:bg-emerald-700'
-                                    }`}
-                                >
-                                    <Eye size={15} />
-                                    <span>{t.reveal_result}</span>
-                                </motion.button>
-                            )}
-
-                            {challengerState.phase === 'reveal' && (
-                                <button
-                                    type="button"
-                                    onClick={handleNextRound}
-                                    className={`w-full py-2.5 rounded-xl text-white text-xs font-extrabold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer ${
-                                        isFinalRound
-                                            ? 'bg-amber-500 hover:bg-amber-600'
-                                            : 'bg-emerald-600 hover:bg-emerald-700'
-                                    }`}
-                                >
-                                    {isFinalRound ? <Trophy size={14} /> : null}
-                                    <span>{isFinalRound ? t.finish_game : t.next_round}</span>
-                                    <ChevronRight size={14} />
-                                </button>
-                            )}
+                        {/* Connected Roster Pill Summary */}
+                        <div className="pt-3 border-t border-[var(--border-main)] flex items-center justify-between text-xs font-bold text-[var(--text-muted)]">
+                            <span className="flex items-center gap-1.5">
+                                <Users size={13} className="text-emerald-600" />
+                                {t.connected_lobby}
+                            </span>
+                            <span className="font-mono font-extrabold text-[var(--text-main)]">{activeRoster.length}</span>
                         </div>
                     </div>
 
-                    {/* CENTER COLUMN (6 Cols): QUESTION STAGE & MOB TELEMETRY */}
-                    <div className="lg:col-span-6 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-6 flex flex-col justify-between overflow-y-auto custom-scrollbar shadow-sm">
-                        {currentRound && (
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <span className={`px-3 py-1 rounded-xl border font-mono text-xs font-bold flex items-center gap-1.5 ${
-                                        currentRound.isFlashRound
-                                            ? 'bg-amber-500/15 border-amber-500/50 text-amber-700 dark:text-amber-300'
-                                            : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
-                                    }`}>
-                                        {currentRound.isFlashRound && <Zap size={12} />}
-                                        <span>{t.round} {activeRoundIndex + 1} / {rounds.length} • {currentRound.name}</span>
-                                    </span>
-
-                                    <div className="px-3 py-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)] font-mono text-xs font-bold flex items-center gap-1.5">
-                                        <Users size={13} className="text-sky-600" />
-                                        <span>
-                                            {mobResponses.length} / {Math.max(1, totalMobSize)} {t.mob_answers}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Outcome Banner on Reveal */}
-                                <AnimatePresence>
-                                    {challengerState.phase === 'reveal' && (
-                                        <motion.div
-                                            initial={{ opacity: 0, scale: 0.9, y: -8 }}
-                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ type: 'spring', stiffness: 450, damping: 24 }}
-                                            className={`p-3.5 rounded-xl border-2 flex items-center justify-between gap-2.5 font-black text-xs sm:text-sm uppercase tracking-wider shadow-sm ${
-                                                challengerState.lastRoundWon
-                                                    ? 'bg-emerald-600 border-emerald-400 text-white'
-                                                    : 'bg-rose-600 border-rose-400 text-white'
+                    {/* CENTER COLUMN (6 Cols): 5-STEP DIRECTOR CONSOLE + STAGE */}
+                    <div className="lg:col-span-6 flex flex-col gap-4 min-h-0 overflow-hidden">
+                        
+                        {/* 5-STEP ROUND TIMELINE BAR */}
+                        <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-3.5 shadow-2xs shrink-0">
+                            <div className="grid grid-cols-5 gap-1.5">
+                                {timelineSteps.map((step, idx) => {
+                                    const isDone = idx < currentStepIndex;
+                                    const isActive = idx === currentStepIndex;
+                                    return (
+                                        <div
+                                            key={step.key}
+                                            className={`px-2 py-2 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 ${
+                                                isActive
+                                                    ? 'bg-emerald-600 border-emerald-500 text-white shadow-sm scale-[1.02]'
+                                                    : isDone
+                                                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                                                        : 'bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-muted)] opacity-60'
                                             }`}
                                         >
-                                            <div className="flex items-center gap-2">
-                                                {challengerState.lastRoundWon ? <CheckCircle2 size={18} /> : <ShieldAlert size={18} />}
-                                                <span>
-                                                    {challengerState.lastRoundWon ? t.challenger_wins_banner : t.mob_wins_banner}
-                                                </span>
+                                            <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider truncate w-full">
+                                                {step.label}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* MAIN STAGE CARD (MASKED DURING IDLE & WAGERING) */}
+                        <div className="flex-1 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-6 flex flex-col justify-between overflow-y-auto custom-scrollbar shadow-sm">
+                            {currentRound && (
+                                <>
+                                    {/* Top Metadata Header */}
+                                    <div className="flex items-center justify-between pb-3 border-b border-[var(--border-main)]">
+                                        <span className={`px-3 py-1 rounded-xl border font-mono text-xs font-bold flex items-center gap-1.5 ${
+                                            currentRound.isFlashRound
+                                                ? 'bg-amber-500/15 border-amber-500/50 text-amber-700 dark:text-amber-300'
+                                                : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                                        }`}>
+                                            {currentRound.isFlashRound && <Zap size={12} />}
+                                            <span>{t.round} {activeRoundIndex + 1} / {rounds.length} • {currentRound.name}</span>
+                                        </span>
+
+                                        <div className="px-3 py-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)] font-mono text-xs font-bold flex items-center gap-1.5">
+                                            <Users size={13} className="text-sky-600" />
+                                            <span>
+                                                {mobResponses.length} / {Math.max(1, totalMobSize)} {t.mob_answers}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* STAGE CONTENT: HIDDEN PREVIEW VS ACTIVE QUESTION */}
+                                    {isQuestionHiddenPhase ? (
+                                        <div className="my-auto py-8 flex flex-col items-center text-center space-y-4">
+                                            <div className="w-16 h-16 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-strong)] flex items-center justify-center text-amber-500 shadow-inner">
+                                                <EyeOff size={30} />
                                             </div>
-                                            {!challengerState.lastRoundWon && challengerState.bountyPerMobWinner > 0 && (
-                                                <span className="font-mono text-xs px-2.5 py-1 rounded-lg bg-black/25">
-                                                    {t.bounty_split_label} +{challengerState.bountyPerMobWinner}p
+                                            <div className="space-y-1 max-w-md">
+                                                <span className="inline-block px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-mono text-[11px] font-bold uppercase tracking-wider">
+                                                    {t.question_masked_badge}
                                                 </span>
-                                            )}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-
-                                {rd.description && (
-                                    <div className="text-lg sm:text-xl font-bold leading-relaxed">
-                                        <MathDisplay content={rd.description} />
-                                    </div>
-                                )}
-
-                                {hasVisual && (
-                                    <div className="whiteboard-protect w-full flex justify-center py-4 bg-white border border-slate-200 rounded-xl overflow-hidden">
-                                        <VisualRenderer data={rd} isWordProblem={false} />
-                                    </div>
-                                )}
-
-                                {rd.latex && (
-                                    <div className="whiteboard-protect w-full bg-white border border-slate-200 rounded-xl p-5 text-center text-3xl font-serif font-bold text-black [&_.katex]:text-black">
-                                        <MathDisplay content={`$$${rd.latex}$$`} className="text-black [&_.katex]:text-black" />
-                                    </div>
-                                )}
-
-                                {inputMode === 'multiple_choice' && Array.isArray(rd.options) ? (
-                                    <div className="grid grid-cols-2 gap-3 pt-2">
-                                        {rd.options.map((opt, idx) => {
-                                            const showSpread = challengerState.askMobUsed || challengerState.phase === 'reveal';
-                                            const count = mobDistribution[opt.id] || 0;
-                                            const pct = mobResponses.length > 0 ? Math.round((count / mobResponses.length) * 100) : 0;
-                                            const isWinner = challengerState.phase === 'reveal' && (opt.isCorrect || checkRoundAnswer(opt.id, currentRound));
-
-                                            return (
-                                                <motion.div
-                                                    key={opt.id}
-                                                    initial={{ opacity: 0, y: 8 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ delay: idx * 0.05 }}
-                                                    className={`relative overflow-hidden p-4 rounded-xl border-2 flex flex-col justify-between transition-colors ${
-                                                        isWinner
-                                                            ? 'bg-emerald-600 border-emerald-400 text-white shadow-md'
-                                                            : 'bg-[var(--bg-surface)] border-[var(--border-main)]'
-                                                    }`}
-                                                >
-                                                    {showSpread && (
-                                                        <motion.div
-                                                            initial={{ width: '0%' }}
-                                                            animate={{ width: `${pct}%` }}
-                                                            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-                                                            className={`absolute inset-y-0 left-0 pointer-events-none ${
-                                                                isWinner ? 'bg-white/15' : 'bg-sky-500/15'
-                                                            }`}
-                                                        />
-                                                    )}
-
-                                                    <div className="relative z-10 flex items-center justify-between mb-2">
-                                                        <span className={`w-7 h-7 rounded-lg font-mono font-extrabold text-xs flex items-center justify-center ${
-                                                            isWinner ? 'bg-white text-emerald-700' : 'bg-[var(--bg-card)] border border-[var(--border-main)]'
-                                                        }`}>
-                                                            {opt.id}
-                                                        </span>
-                                                        {showSpread && (
-                                                            <motion.span
-                                                                initial={{ opacity: 0 }}
-                                                                animate={{ opacity: 1 }}
-                                                                transition={{ delay: 0.2 }}
-                                                                className="font-mono text-xs font-extrabold"
-                                                            >
-                                                                {pct}% ({count})
-                                                            </motion.span>
-                                                        )}
-                                                    </div>
-                                                    <div className="relative z-10 text-lg font-bold text-center py-1">
-                                                        <MathDisplay content={String(opt.label)} />
-                                                    </div>
-                                                </motion.div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3 pt-1">
-                                        {/* Top 4 Anonymous Mob Answers when Ask the Mob is triggered or on Reveal */}
-                                        {(challengerState.askMobUsed || challengerState.phase === 'reveal') && topMobAnswers.length > 0 && (
-                                            <div className="p-4 rounded-xl bg-sky-500/10 border border-sky-500/30 space-y-2">
-                                                <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-700 dark:text-sky-300 block">
-                                                    {t.top_mob_answers_title}
-                                                </span>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {topMobAnswers.map((item, i) => (
-                                                        <div key={i} className="p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-main)] flex items-center justify-between text-xs font-bold">
-                                                            <MathDisplay content={item.answer} />
-                                                            <span className="font-mono text-sky-600 dark:text-sky-400">
-                                                                {item.pct}% ({item.count})
+                                                <h3 className="text-2xl sm:text-3xl font-black tracking-tight pt-2">
+                                                    {currentRound.name}
+                                                </h3>
+                                                <p className="text-xs sm:text-sm font-medium text-[var(--text-muted)]">
+                                                    {challengerState.phase === 'idle' ? t.phase_idle_sub : t.phase_wagering_sub}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4 my-auto py-2">
+                                            {/* Outcome Banner on Reveal */}
+                                            <AnimatePresence>
+                                                {challengerState.phase === 'reveal' && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, scale: 0.9, y: -8 }}
+                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={{ type: 'spring', stiffness: 450, damping: 24 }}
+                                                        className={`p-3.5 rounded-xl border-2 flex items-center justify-between gap-2.5 font-black text-xs sm:text-sm uppercase tracking-wider shadow-sm ${
+                                                            challengerState.lastRoundWon
+                                                                ? 'bg-emerald-600 border-emerald-400 text-white'
+                                                                : 'bg-rose-600 border-rose-400 text-white'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            {challengerState.lastRoundWon ? <CheckCircle2 size={18} /> : <ShieldAlert size={18} />}
+                                                            <span>
+                                                                {challengerState.lastRoundWon ? t.challenger_wins_banner : t.mob_wins_banner}
                                                             </span>
                                                         </div>
-                                                    ))}
+                                                        {!challengerState.lastRoundWon && challengerState.bountyPerMobWinner > 0 && (
+                                                            <span className="font-mono text-xs px-2.5 py-1 rounded-lg bg-black/25">
+                                                                {t.bounty_split_label} +{challengerState.bountyPerMobWinner}p
+                                                            </span>
+                                                        )}
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+
+                                            {rd.description && (
+                                                <div className="text-lg sm:text-xl font-bold leading-relaxed">
+                                                    <MathDisplay content={rd.description} />
                                                 </div>
+                                            )}
+
+                                            {hasVisual && (
+                                                <div className="whiteboard-protect w-full flex justify-center py-4 bg-white border border-slate-200 rounded-xl overflow-hidden">
+                                                    <VisualRenderer data={rd} isWordProblem={false} />
+                                                </div>
+                                            )}
+
+                                            {rd.latex && (
+                                                <div className="whiteboard-protect w-full bg-white border border-slate-200 rounded-xl p-5 text-center text-3xl font-serif font-bold text-black [&_.katex]:text-black">
+                                                    <MathDisplay content={`$$${rd.latex}$$`} className="text-black [&_.katex]:text-black" />
+                                                </div>
+                                            )}
+
+                                            {inputMode === 'multiple_choice' && Array.isArray(rd.options) ? (
+                                                <div className="grid grid-cols-2 gap-3 pt-2">
+                                                    {rd.options.map((opt, idx) => {
+                                                        const showSpread = challengerState.askMobUsed || challengerState.phase === 'reveal';
+                                                        const count = mobDistribution[opt.id] || 0;
+                                                        const pct = mobResponses.length > 0 ? Math.round((count / mobResponses.length) * 100) : 0;
+                                                        const isWinner = challengerState.phase === 'reveal' && (opt.isCorrect || checkRoundAnswer(opt.id, currentRound));
+
+                                                        return (
+                                                            <motion.div
+                                                                key={opt.id}
+                                                                initial={{ opacity: 0, y: 8 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                transition={{ delay: idx * 0.05 }}
+                                                                className={`relative overflow-hidden p-4 rounded-xl border-2 flex flex-col justify-between transition-colors ${
+                                                                    isWinner
+                                                                        ? 'bg-emerald-600 border-emerald-400 text-white shadow-md'
+                                                                        : 'bg-[var(--bg-surface)] border-[var(--border-main)]'
+                                                                }`}
+                                                            >
+                                                                {showSpread && (
+                                                                    <motion.div
+                                                                        initial={{ width: '0%' }}
+                                                                        animate={{ width: `${pct}%` }}
+                                                                        transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+                                                                        className={`absolute inset-y-0 left-0 pointer-events-none ${
+                                                                            isWinner ? 'bg-white/15' : 'bg-sky-500/15'
+                                                                        }`}
+                                                                    />
+                                                                )}
+
+                                                                <div className="relative z-10 flex items-center justify-between mb-2">
+                                                                    <span className={`w-7 h-7 rounded-lg font-mono font-extrabold text-xs flex items-center justify-center ${
+                                                                        isWinner ? 'bg-white text-emerald-700' : 'bg-[var(--bg-card)] border border-[var(--border-main)]'
+                                                                    }`}>
+                                                                        {opt.id}
+                                                                    </span>
+                                                                    {showSpread && (
+                                                                        <span className="font-mono text-xs font-extrabold">
+                                                                            {pct}% ({count})
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="relative z-10 text-lg font-bold text-center py-1">
+                                                                    <MathDisplay content={String(opt.label)} />
+                                                                </div>
+                                                            </motion.div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3 pt-1">
+                                                    {(challengerState.askMobUsed || challengerState.phase === 'reveal') && topMobAnswers.length > 0 && (
+                                                        <div className="p-4 rounded-xl bg-sky-500/10 border border-sky-500/30 space-y-2">
+                                                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-700 dark:text-sky-300 block">
+                                                                {t.top_mob_answers_title}
+                                                            </span>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                {topMobAnswers.map((item, i) => (
+                                                                    <div key={i} className="p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-main)] flex items-center justify-between text-xs font-bold">
+                                                                        <MathDisplay content={item.answer} />
+                                                                        <span className="font-mono text-sky-600 dark:text-sky-400">
+                                                                            {item.pct}% ({item.count})
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {challengerState.phase === 'reveal' && (
+                                                        <motion.div
+                                                            initial={{ scale: 0.92, opacity: 0 }}
+                                                            animate={{ scale: 1, opacity: 1 }}
+                                                            className="p-5 rounded-2xl bg-emerald-600 text-white text-center shadow-sm"
+                                                        >
+                                                            <span className="text-[10px] font-mono font-bold uppercase tracking-widest opacity-80 block">
+                                                                FACIT
+                                                            </span>
+                                                            <div className="text-3xl font-extrabold font-serif mt-1">
+                                                                <MathDisplay content={String(rd.rawAnswerValue || rd.answer)} />
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* HERO CENTER DIRECTOR ACTION DOCK */}
+                                    <div className="pt-4 border-t border-[var(--border-main)] space-y-3">
+                                        {challengerState.phase === 'idle' && (
+                                            <div className="flex flex-col items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    disabled={activeRoster.length === 0 || isRouletteSpinning}
+                                                    onClick={() => handleSelectChallenger(false)}
+                                                    className="w-full py-4 px-6 rounded-2xl bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-black text-base uppercase tracking-wider flex items-center justify-center gap-3 shadow-lg cursor-pointer transition-all active:scale-[0.98]"
+                                                >
+                                                    <Shuffle size={20} className={isRouletteSpinning ? 'animate-spin' : ''} />
+                                                    <span>{isRouletteSpinning ? t.picking_roulette : t.pick_challenger}</span>
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {challengerState.phase === 'wagering' && (
+                                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40">
+                                                <div className="flex items-center gap-3">
+                                                    <Loader2 size={20} className="animate-spin text-amber-500 shrink-0" />
+                                                    <div>
+                                                        <div className="text-sm font-extrabold text-[var(--text-main)]">
+                                                            {t.phase_wagering_title} ({challengerState.alias})
+                                                        </div>
+                                                        <div className="text-xs text-[var(--text-muted)]">
+                                                            {t.phase_wagering_sub}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={handleForceAdvanceWager}
+                                                    className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] hover:border-amber-500 border border-[var(--border-strong)] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs"
+                                                >
+                                                    <FastForward size={14} className="text-amber-500" />
+                                                    <span>{t.force_advance_wager}</span>
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {challengerState.phase === 'mob_answering' && (
+                                            <div className="space-y-3">
+                                                {/* Mob Progress Bar */}
+                                                <div className="space-y-1">
+                                                    <div className="flex justify-between text-xs font-bold">
+                                                        <span className="text-sky-600 dark:text-sky-400 uppercase tracking-wider">{t.phase_mob_title}</span>
+                                                        <span className="font-mono">{mobResponses.length} / {Math.max(1, totalMobSize)}</span>
+                                                    </div>
+                                                    <div className="w-full h-2.5 rounded-full bg-[var(--bg-surface)] overflow-hidden border border-[var(--border-main)]">
+                                                        <motion.div
+                                                            className="h-full bg-sky-600"
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${Math.min(100, Math.round((mobResponses.length / Math.max(1, totalMobSize)) * 100))}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setCountdownLeft(15);
+                                                            setIsCountdownActive(true);
+                                                        }}
+                                                        className="py-3.5 px-4 rounded-2xl bg-[var(--bg-surface)] hover:border-amber-500 border-2 border-[var(--border-strong)] text-xs sm:text-sm font-extrabold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                                                    >
+                                                        <Timer size={18} className="text-amber-500" />
+                                                        <span>{isCountdownActive ? `${countdownLeft}s...` : t.start_15s}</span>
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleLockMobAnswers}
+                                                        className="py-3.5 px-4 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white text-xs sm:text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-[0.98]"
+                                                    >
+                                                        <Lock size={18} />
+                                                        <span>{t.lock_mob_now}</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {challengerState.phase === 'challenger_answering' && (
+                                            <div className="space-y-2.5">
+                                                <div className="text-center text-xs font-extrabold uppercase tracking-wider text-sky-600 dark:text-sky-400">
+                                                    {challengerState.challengerLockedIn
+                                                        ? t.phase_challenger_locked_title
+                                                        : `${t.phase_challenger_title} (${challengerState.alias})`}
+                                                </div>
+
+                                                <motion.button
+                                                    type="button"
+                                                    onClick={handleRevealRound}
+                                                    animate={isReadyForManualReveal ? {
+                                                        scale: [1, 1.02, 1],
+                                                        boxShadow: [
+                                                            '0 0 0 0px rgba(16,185,129,0.6)',
+                                                            '0 0 0 12px rgba(16,185,129,0)'
+                                                        ]
+                                                    } : { scale: 1 }}
+                                                    transition={{
+                                                        repeat: isReadyForManualReveal ? Infinity : 0,
+                                                        duration: 1.25,
+                                                        ease: 'easeInOut'
+                                                    }}
+                                                    className={`w-full py-4 px-6 rounded-2xl text-white text-sm sm:text-base font-black uppercase tracking-wider flex items-center justify-center gap-2.5 cursor-pointer shadow-lg transition-colors ${
+                                                        isReadyForManualReveal
+                                                            ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300'
+                                                            : 'bg-emerald-700/80 hover:bg-emerald-700'
+                                                    }`}
+                                                >
+                                                    <Eye size={20} />
+                                                    <span>{isReadyForManualReveal ? t.reveal_result : t.reveal_anyway}</span>
+                                                </motion.button>
                                             </div>
                                         )}
 
                                         {challengerState.phase === 'reveal' && (
-                                            <motion.div
-                                                initial={{ scale: 0.92, opacity: 0 }}
-                                                animate={{ scale: 1, opacity: 1 }}
-                                                className="p-5 rounded-2xl bg-emerald-600 text-white text-center shadow-sm"
-                                            >
-                                                <span className="text-[10px] font-mono font-bold uppercase tracking-widest opacity-80 block">
-                                                    FACIT
-                                                </span>
-                                                <div className="text-3xl font-extrabold font-serif mt-1">
-                                                    <MathDisplay content={String(rd.rawAnswerValue || rd.answer)} />
-                                                </div>
-                                            </motion.div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleInsertFlashRound}
+                                                    disabled={reRollingIdx !== null}
+                                                    className="sm:col-span-5 py-3.5 px-4 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 border-2 border-amber-500/40 text-amber-800 dark:text-amber-300 text-xs font-extrabold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                                                >
+                                                    <Repeat size={16} />
+                                                    <span>{t.flash_round}</span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={handleNextRound}
+                                                    className={`sm:col-span-7 py-3.5 px-6 rounded-2xl text-white text-sm sm:text-base font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg cursor-pointer active:scale-[0.98] ${
+                                                        isFinalRound
+                                                            ? 'bg-amber-500 hover:bg-amber-600'
+                                                            : 'bg-emerald-600 hover:bg-emerald-700'
+                                                    }`}
+                                                >
+                                                    {isFinalRound ? <Trophy size={18} /> : null}
+                                                    <span>{isFinalRound ? t.finish_game : t.next_round}</span>
+                                                    <ChevronRight size={18} />
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
-                                )}
-                            </div>
-                        )}
+                                </>
+                            )}
+                        </div>
                     </div>
 
                     {/* RIGHT COLUMN (3 Cols): LIVE LEADERBOARD & MULTIPLIERS */}
@@ -1978,7 +2101,6 @@ export default function YouVsClassEngine({
                             </button>
                         </div>
 
-                        {/* Dynamic Topic & Level Swap Bar */}
                         <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)] space-y-2">
                             <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
                                 {lang === 'sv' ? 'Byt område eller nivå för detta steg' : 'Swap Topic or Level for this step'}
@@ -2168,6 +2290,7 @@ export default function YouVsClassEngine({
                     </div>
                 </div>
             )}
+
             <YouVsClassHelpModal
                 isOpen={showHelpModal}
                 onClose={() => setShowHelpModal(false)}
