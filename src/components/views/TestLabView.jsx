@@ -4,7 +4,7 @@ import {
     Loader2, ChevronLeft, Beaker, Play, Check, 
     ChevronDown, Settings2, Zap, ArrowRight, 
     RefreshCcw, Eye, Clock, Lock, Send, ListChecks, 
-    LayoutGrid, XCircle, LogOut,
+    LayoutGrid, XCircle, LogOut, ChevronRight,
     CheckCircle2, Award, Info, HelpCircle, X, Bookmark
 } from 'lucide-react';
 import { decodeConfig, encodeConfig, BUNDLE_PRESETS } from '../../core/utils/labCodeUtils';

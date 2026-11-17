@@ -132,18 +132,20 @@ export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0
         // 🟢 PRECISE DIAGONAL DETECTION:
         // Triggers for PythagorasGen (which supplies lab.hyp, lab.diagonal, or subtype),
         // but remains FALSE for geometryGenerator area/perimeter (which only supplies w, h, b, s, or d/c without hyp/diagonal subtype).
-        const isDiagonalMode = Boolean(
-            activeSubtype === 'diagonal' || 
-            activeSubtype === 'rect_diagonal' || 
-            activeSubtype === 'square_diagonal' ||
-            activeSubtype === 'pythagoras' ||
-            safeDims.showDiagonal ||
-            safeDims.isDiagonal ||
-            lab.diagonal !== undefined ||
-            lab.diag !== undefined ||
-            lab.hyp !== undefined ||
-            lab.hypotenuse !== undefined
-        );
+        const isDiagonalMode = safeDims.showDiagonal === false || safeDims.hideDiagonal === true
+            ? false
+            : Boolean(
+                activeSubtype === 'diagonal' || 
+                activeSubtype === 'rect_diagonal' || 
+                activeSubtype === 'square_diagonal' ||
+                activeSubtype === 'pythagoras' ||
+                safeDims.showDiagonal ||
+                safeDims.isDiagonal ||
+                lab.diagonal !== undefined ||
+                lab.diag !== undefined ||
+                lab.hyp !== undefined ||
+                lab.hypotenuse !== undefined
+            );
 
         // Resolve the diagonal label safely
         const diagLabel = isDiagonalMode 

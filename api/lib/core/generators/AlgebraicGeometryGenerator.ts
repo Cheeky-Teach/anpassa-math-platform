@@ -38,14 +38,24 @@ export class AlgebraicGeometryGenerator {
         return Buffer.from(str, 'utf-8').toString('base64');
     }
 
-    private getLabels(w: string, h: string, s: string = '') {
+    private getLabels(w: string, h: string, s?: string) {
+        const hasSlantOrHyp = Boolean(s && s.trim().length > 0);
         return { 
-            w, h, s, 
+            w, 
+            h,
             b: w, base: w, width: w, bottom: w, top: w,
-            height: h, left: h, right: h, 
-            hyp: s, c: s, diagonal: s, slant: s,
-            s1: s, s2: s,
-            arc1: w, arc2: h
+            height: h, left: h, right: h,
+            ...(hasSlantOrHyp ? {
+                s,
+                hyp: s,
+                c: s,
+                diagonal: s,
+                slant: s,
+                s1: s,
+                s2: s
+            } : {}),
+            arc1: w, 
+            arc2: h
         };
     }
 
@@ -98,7 +108,7 @@ export class AlgebraicGeometryGenerator {
             ];
         } else if (shapeChoice === 2) { // Square
             const s = this.genLinearTerm(2, 8, 1, 12);
-            geom = { type: "rectangle", subtype: "square", width: 150, height: 150, labels: this.getLabels(s.text, s.text, s.text) };
+            geom = { type: "rectangle", subtype: "square", width: 150, height: 150, labels: this.getLabels(s.text, s.text) };
             ans = this.formatTerm(4 * s.a, 4 * s.b);
             clues = [
                 { text: lang === 'sv' ? "En kvadrat har fyra sidor som är lika långa." : "A square has four sides of equal length.", latex: `\\text{Omkrets} = 4 \\cdot \\text{sidan}` },
@@ -161,7 +171,7 @@ export class AlgebraicGeometryGenerator {
         } else if (shapeChoice === 2) { // Square
             const s = this.genLinearTerm(2, 8, 1, 15, false);
             totalP = 4 * (s.a * targetX + s.b);
-            geom = { type: "rectangle", subtype: "square", width: 150, height: 150, labels: this.getLabels(s.text, s.text, s.text) };
+           geom = { type: "rectangle", subtype: "square", width: 150, height: 150, labels: this.getLabels(s.text, s.text) };
             desc = lang === 'sv' ? `Kvadratens omkrets är ${totalP} cm. Beräkna x.` : `The square's perimeter is ${totalP} cm. Calculate x.`;
             
             const totalB = 4 * s.b;
