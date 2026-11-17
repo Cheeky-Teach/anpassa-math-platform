@@ -11,6 +11,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "generate:map": "node scripts/generateContentMap.js",
+    "gen:variations": "npx tsx scripts/generateVariationMap.ts",
     "test:matrix": "node --test scripts/liveRoomMatrix.test.js",
     "test": "vitest",
     "test:run": "vitest run"

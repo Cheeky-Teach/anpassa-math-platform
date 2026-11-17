@@ -8,6 +8,7 @@ import {
   Image as ImageIcon, FileText as TextIcon, Monitor, ChevronDown, HelpCircle, Gamepad2
 } from 'lucide-react';
 import { SKILL_BUCKETS, isTopicWordProblemReady } from '../../constants/skillBuckets.js';
+import { VARIATION_MAP } from '../../constants/variationMap.js';
 import VisualRenderer from '../visuals/VisualRenderer.jsx';
 import PresentationView from '../views/PresentationView.jsx';
 import { syncBatchProgress } from '../../lib/progressSync';
@@ -1060,6 +1061,7 @@ export default function QuestionStudio({
                             const cat = getVariationCategory(v.key);
                             const styles = getCategoryStyles(cat);
                             const isPreviewed = activePreviewKey === v.key;
+                            const sample = VARIATION_MAP[`${selectedTopicId}__${v.key}`]?.[lang] || VARIATION_MAP[`${selectedTopicId}__${v.key}`]?.sv;
                             
                             return (
                                 <div 
@@ -1072,7 +1074,7 @@ export default function QuestionStudio({
                                     }`}
                                 >
                                     <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.stripe}`} />
-                                    <div className="flex justify-between items-start gap-2 mb-1 pl-1">
+                                    <div className="flex justify-between items-start gap-2 mb-1.5 pl-1">
                                         <h4 className="font-bold text-xs text-[var(--text-main)] leading-snug">
                                             {v.name[lang] || v.name.en || v.name.sv}
                                         </h4>
@@ -1081,9 +1083,34 @@ export default function QuestionStudio({
                                         </span>
                                     </div>
                                     
-                                    <p className="text-xs font-medium text-[var(--text-muted)] line-clamp-1 mb-2.5 pl-1">
-                                        {v.desc[lang] || v.desc.en || v.desc.sv}
-                                    </p>
+                                    {sample ? (
+                                        <div className="mt-1 mb-2.5 ml-1 px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs flex items-center justify-between gap-2">
+                                            <div className="min-w-0 flex-1 overflow-hidden">
+                                                {sample.latex ? (
+                                                    <div className="font-serif font-bold text-[var(--text-main)] truncate">
+                                                        <MathDisplay content={`$${sample.latex}$`} />
+                                                    </div>
+                                                ) : sample.description ? (
+                                                    <div className="text-[11px] font-semibold text-[var(--text-main)] line-clamp-2 leading-snug">
+                                                        <MathDisplay content={sample.description} />
+                                                    </div>
+                                                ) : null}
+                                            </div>
+
+                                            {sample.hasVisual && (
+                                                <span
+                                                    className="shrink-0 px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-700 dark:text-sky-300 text-[9px] font-mono font-bold flex items-center gap-1"
+                                                    title={t.type_visual}
+                                                >
+                                                    <ImageIcon size={10} />
+                                                </span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs font-medium text-[var(--text-muted)] line-clamp-1 mb-2.5 pl-1">
+                                            {v.desc[lang] || v.desc.en || v.desc.sv}
+                                        </p>
+                                    )}
                                     
                                     <div className="flex items-center gap-1.5 pl-1">
                                         <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-lg p-0.5">

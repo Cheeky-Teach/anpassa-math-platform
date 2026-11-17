@@ -5,8 +5,10 @@ import {
     Play, RefreshCcw, Edit3, Users, Save, ListFilter,
     ChevronRight, X, Loader2, Monitor, Plus, HelpCircle,
     Timer, Trophy, Crown, Eye, Repeat, Shuffle, Lock, Zap,
-    CheckCircle2, ShieldAlert, Award, FastForward, EyeOff
+    CheckCircle2, ShieldAlert, Award, FastForward, EyeOff,
+    ArrowUp, ArrowDown, Trash2, Sparkles
 } from 'lucide-react';
+import QuestionSummoner from '../../views/QuestionSummoner';
 import VisualRenderer from '../../visuals/VisualRenderer';
 import PreferencesToggle from '../../ui/PreferencesToggle';
 import { SKILL_BUCKETS } from '../../../constants/skillBuckets';
@@ -233,7 +235,11 @@ export default function YouVsClassEngine({
             finale_sub: "Grattis till kvällens mästare i 1 vs 100!",
             add_bonus_round: "Lägg till Bonusrunda (+1)",
             close_session: "Avsluta Aktivitet",
-            question_masked_badge: "Uppgift dold under satsning"
+            question_masked_badge: "Uppgift dold under satsning",
+            summon_questions: "Hämta Frågor",
+            move_up: "Flytta upp",
+            move_down: "Flytta ner",
+            delete_step: "Ta bort steg",
         },
         en: {
             title: "You vs. Class",
@@ -298,11 +304,17 @@ export default function YouVsClassEngine({
             finale_sub: "Congratulations to tonight's 1 vs 100 champions!",
             add_bonus_round: "Add Bonus Round (+1)",
             close_session: "End Activity",
-            question_masked_badge: "Question hidden during wager"
+            question_masked_badge: "Question hidden during wager",
+            summon_questions: "Summon Questions",
+            move_up: "Move up",
+            move_down: "Move down",
+            delete_step: "Delete step",
         }
     }[lang] || {};
 
     const [showHelpModal, setShowHelpModal] = useState(false);
+    const [isSummonerOpen, setIsSummonerOpen] = useState(false);
+    const [recentlyMovedId, setRecentlyMovedId] = useState(null);
 
     const baselinePoints = initialConfig?.settings?.baselinePoints || session?.active_question_data?.settings?.baselinePoints || 500;
     const inputMode = initialConfig?.settings?.inputMode || session?.active_question_data?.settings?.inputMode || 'multiple_choice';
@@ -342,6 +354,118 @@ export default function YouVsClassEngine({
     const [reRollingIdx, setReRollingIdx] = useState(null);
     const [editingRound, setEditingRound] = useState(null);
     const [isGeneratingSwap, setIsGeneratingSwap] = useState(false);
+
+    // Normalize summoned items from QuestionSummoner into YouVsClass round schema
+    const formatSummonedToRound = (raw, roundIndex) => {
+        const rd = raw.renderData || raw.resolvedData?.renderData || {};
+        const resolved = raw.resolvedData || raw;
+        const rawAnswer = extractDecodedAnswer(resolved) || extractDecodedAnswer(rd) || raw.answer || rd.answer || '';
+        const topicId = raw.topicId || resolved.topicId || 'custom';
+        const level = Number(resolved.level || rd.level || raw.level || 1);
+
+        let options = [];
+        let expectedAnswer = rawAnswer;
+
+        if (inputMode === 'multiple_choice') {
+            const existingOpts = rd.options || resolved.options;
+            if (Array.isArray(existingOpts) && existingOpts.length === 4) {
+                options = existingOpts;
+            } else {
+                options = generateDistractors({
+                    correctAnswer: rawAnswer,
+                    topicId,
+                    renderData: { ...rd, options: null },
+                    resolvedData: resolved,
+                    raw
+                });
+            }
+            const correctOpt = options.find(o => o.isCorrect || String(o.label) === String(rawAnswer));
+            expectedAnswer = correctOpt ? correctOpt.id : 'A';
+        }
+
+        return {
+            id: raw.id || crypto.randomUUID(),
+            roundIndex,
+            topicId,
+            level,
+            variationKey: raw.variationKey || resolved.variationKey || null,
+            name: raw.name || `${topicId} (${lang === 'sv' ? 'Nivå' : 'Lvl'} ${level})`,
+            wordProblem: Boolean(raw.wordProblem || rd.isWordProblemApplied),
+            inputMode,
+            showText: raw.showText !== false,
+            showLatex: raw.showLatex !== undefined ? raw.showLatex : !raw.wordProblem,
+            showVisual: raw.showVisual !== false,
+            renderData: {
+                ...rd,
+                options: inputMode === 'multiple_choice' ? options : null,
+                answer: expectedAnswer,
+                rawAnswerValue: rawAnswer
+            },
+            responseSpec: {
+                type: inputMode === 'multiple_choice' ? 'single_choice' : 'standard',
+                answer: expectedAnswer,
+                options: inputMode === 'multiple_choice' ? options : null
+            },
+            regenVersion: Date.now()
+        };
+    };
+
+    const handleSummonQuestions = async (summonedQueue) => {
+        if (!Array.isArray(summonedQueue) || summonedQueue.length === 0) return;
+        const newRounds = summonedQueue.map((item, i) =>
+            formatSummonedToRound(item, rounds.length + i)
+        );
+        const updatedRounds = [...rounds, ...newRounds];
+        setRounds(updatedRounds);
+        setIsSummonerOpen(false);
+
+        if (isLive) {
+            await syncRoom(activeRoundIndex, updatedRounds[activeRoundIndex], challengerState, updatedRounds);
+        }
+    };
+
+    const handleMoveRound = async (idx, direction) => {
+        const targetIdx = idx + direction;
+        if (targetIdx < 0 || targetIdx >= rounds.length) return;
+
+        const reordered = [...rounds];
+        const [movedItem] = reordered.splice(idx, 1);
+        const stableId = movedItem.id || `round_stable_${idx}`;
+        const itemWithId = { ...movedItem, id: stableId };
+        reordered.splice(targetIdx, 0, itemWithId);
+
+        const normalized = reordered.map((r, i) => ({
+            ...r,
+            id: r.id || `round_stable_${i}`,
+            roundIndex: i
+        }));
+
+        setRecentlyMovedId(stableId);
+        setRounds(normalized);
+
+        setTimeout(() => {
+            setRecentlyMovedId(prev => (prev === stableId ? null : prev));
+        }, 650);
+
+        if (isLive) {
+            await syncRoom(activeRoundIndex, normalized[activeRoundIndex], challengerState, normalized);
+        }
+    };
+
+    const handleDeleteRound = async (idx) => {
+        if (rounds.length <= 1) return;
+        const filtered = rounds
+            .filter((_, i) => i !== idx)
+            .map((r, i) => ({ ...r, roundIndex: i }));
+
+        const safeActiveIdx = Math.min(activeRoundIndex, filtered.length - 1);
+        setRounds(filtered);
+        setActiveRoundIndex(safeActiveIdx);
+
+        if (isLive) {
+            await syncRoom(safeActiveIdx, filtered[safeActiveIdx], challengerState, filtered);
+        }
+    };
 
     // Game-Show Hot Seat State
     const [challengerState, setChallengerState] = useState({
@@ -425,16 +549,19 @@ export default function YouVsClassEngine({
         return Array.from(names);
     }, [liveResponses, session?.joined_students, playerLedger]);
 
-    const computeScoresFromLedger = (ledgerState) => {
+    const computeScoresFromLedger = (ledgerState, currentPhase = challengerState.phase) => {
         const map = {};
         const historyByStudent = {};
+        const isCurrentRoundRevealed = currentPhase === 'reveal' || currentPhase === 'game_over';
 
         activeRoster.forEach(alias => {
             const ledger = ledgerState[alias] || { multiplier: 1.0, wagerDelta: 0, bountyEarned: 0, sweepBonus: 0, beatMobCount: 0 };
             map[alias] = {
                 alias,
                 score: baselinePoints + (ledger.wagerDelta || 0) + (ledger.bountyEarned || 0) + (ledger.sweepBonus || 0),
+                permanentMultiplier: ledger.multiplier || 1.0,
                 multiplier: ledger.multiplier || 1.0,
+                mobStreakBonus: 0,
                 beatMobCount: ledger.beatMobCount || 0,
                 streak: 0
             };
@@ -444,12 +571,19 @@ export default function YouVsClassEngine({
         liveResponses.forEach(res => {
             const alias = (res.student_alias || '').trim();
             if (!alias) return;
+
+            // Prevent live score spoilers: do not tally the active round until Reveal
+            if (res.question_index === activeRoundIndex && !isCurrentRoundRevealed) return;
+            if (res.question_index > activeRoundIndex) return;
+
             if (!map[alias]) {
                 const ledger = ledgerState[alias] || { multiplier: 1.0, wagerDelta: 0, bountyEarned: 0, sweepBonus: 0, beatMobCount: 0 };
                 map[alias] = {
                     alias,
                     score: baselinePoints + (ledger.wagerDelta || 0) + (ledger.bountyEarned || 0) + (ledger.sweepBonus || 0),
+                    permanentMultiplier: ledger.multiplier || 1.0,
                     multiplier: ledger.multiplier || 1.0,
+                    mobStreakBonus: 0,
                     beatMobCount: ledger.beatMobCount || 0,
                     streak: 0
                 };
@@ -461,7 +595,7 @@ export default function YouVsClassEngine({
         Object.entries(historyByStudent).forEach(([alias, history]) => {
             let streak = 0;
             let earned = 0;
-            const mult = map[alias].multiplier || 1.0;
+            const baseMult = map[alias].permanentMultiplier || 1.0;
 
             history.forEach(ans => {
                 const strAns = String(ans.answer || '');
@@ -472,15 +606,22 @@ export default function YouVsClassEngine({
 
                 if (isRight) {
                     streak += 1;
-                    const streakBonus = streak >= 5 ? 100 : streak >= 3 ? 50 : streak === 2 ? 25 : 0;
-                    earned += Math.round(100 * mult) + streakBonus;
+                    // Modest Mob streak multiplier (+0.1x per streak step from 2, capped at +0.5x)
+                    const mobStreakBonus = streak >= 5 ? 0.5 : streak >= 2 ? Number(((streak - 1) * 0.1).toFixed(1)) : 0;
+                    const effectiveMult = Number((baseMult + mobStreakBonus).toFixed(1));
+                    const streakBonusPts = streak >= 5 ? 100 : streak >= 3 ? 50 : streak === 2 ? 25 : 0;
+
+                    earned += Math.round(100 * effectiveMult) + streakBonusPts;
                 } else {
                     streak = 0;
                 }
             });
 
+            const currentMobBonus = streak >= 5 ? 0.5 : streak >= 2 ? Number(((streak - 1) * 0.1).toFixed(1)) : 0;
             map[alias].score = Math.max(0, map[alias].score + earned);
             map[alias].streak = streak;
+            map[alias].mobStreakBonus = currentMobBonus;
+            map[alias].multiplier = Number((baseMult + currentMobBonus).toFixed(1));
         });
 
         const sorted = Object.values(map).sort((a, b) => b.score - a.score);
@@ -1291,6 +1432,15 @@ export default function YouVsClassEngine({
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
+                                onClick={() => setIsSummonerOpen(true)}
+                                className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] hover:border-emerald-600 border border-[var(--border-strong)] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+                            >
+                                <Sparkles size={14} className="text-emerald-600" />
+                                <span>{t.summon_questions}</span>
+                            </button>
+                            
+                            <button
+                                type="button"
                                 disabled={reRollingIdx !== null}
                                 onClick={() => handleAppendExtraRound(false)}
                                 className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)] hover:border-emerald-600 border border-[var(--border-strong)] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
@@ -1314,90 +1464,149 @@ export default function YouVsClassEngine({
                     </div>
 
                     <div className="space-y-3">
-                        {rounds.map((item, idx) => {
-                            const itemRd = item.renderData || {};
-                            const itemHasVisual = Boolean(itemRd.geometry || itemRd.graph || itemRd.pattern || itemRd.marbles || itemRd.diagram);
-                            const ansText = itemRd.rawAnswerValue || itemRd.answer || '—';
+                        <AnimatePresence initial={false}>
+                            {rounds.map((item, idx) => {
+                                const itemRd = item.renderData || {};
+                                const itemHasVisual = Boolean(itemRd.geometry || itemRd.graph || itemRd.pattern || itemRd.marbles || itemRd.diagram);
+                                const ansText = itemRd.rawAnswerValue || itemRd.answer || '—';
+                                const cardKey = item.id || `step_${idx}`;
+                                const isJustMoved = recentlyMovedId === cardKey;
 
-                            return (
-                                <div
-                                    key={item.id || idx}
-                                    className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-5 flex flex-col gap-3 shadow-2xs"
-                                >
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div className="flex items-center gap-2.5">
-                                            <span className="w-7 h-7 rounded-lg bg-emerald-600 text-white font-mono text-xs font-bold flex items-center justify-center">
-                                                {idx + 1}
-                                            </span>
-                                            <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                                                {item.name}
-                                            </span>
-                                        </div>
+                                return (
+                                    <motion.div
+                                        key={cardKey}
+                                        layout="position"
+                                        initial={{ opacity: 0, y: 14, scale: 0.98 }}
+                                        animate={{
+                                            opacity: 1,
+                                            y: 0,
+                                            scale: isJustMoved ? 1.012 : 1
+                                        }}
+                                        exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.16 } }}
+                                        transition={{
+                                            layout: { type: 'spring', stiffness: 460, damping: 32 },
+                                            scale: { type: 'spring', stiffness: 500, damping: 28 },
+                                            opacity: { duration: 0.2 }
+                                        }}
+                                        className={`bg-[var(--bg-card)] border-2 rounded-2xl p-5 flex flex-col gap-3 shadow-2xs transition-colors ${
+                                            isJustMoved
+                                                ? 'border-emerald-500 ring-2 ring-emerald-500/25 shadow-md z-10 relative'
+                                                : 'border-[var(--border-strong)]'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-2.5">
+                                                <motion.span
+                                                    key={idx}
+                                                    initial={{ scale: 1.25 }}
+                                                    animate={{ scale: 1 }}
+                                                    transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                                                    className="w-7 h-7 rounded-lg bg-emerald-600 text-white font-mono text-xs font-bold flex items-center justify-center"
+                                                >
+                                                    {idx + 1}
+                                                </motion.span>
+                                                <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                                                    {item.name}
+                                                </span>
+                                            </div>
 
-                                        <div className="flex items-center gap-1.5">
-                                            <button
-                                                type="button"
-                                                disabled={reRollingIdx !== null}
-                                                onClick={() => handleRerollIndex(idx)}
-                                                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:border-amber-500 border border-[var(--border-main)] text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                                            >
-                                                <RefreshCcw size={13} className={reRollingIdx === idx ? 'animate-spin text-amber-500' : ''} />
-                                                <span>{t.reroll_numbers}</span>
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => setEditingRound({ idx, data: JSON.parse(JSON.stringify(item)) })}
-                                                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:border-emerald-600 border border-[var(--border-main)] text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                                            >
-                                                <Edit3 size={13} />
-                                                <span>{t.edit_question}</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {itemRd.description && (
-                                        <div className="text-sm font-bold leading-relaxed">
-                                            <MathDisplay content={itemRd.description} />
-                                        </div>
-                                    )}
-
-                                    {itemHasVisual && (
-                                        <div className="whiteboard-protect w-full flex justify-center py-3 bg-white border border-slate-200 rounded-xl overflow-hidden">
-                                            <VisualRenderer data={itemRd} isWordProblem={false} />
-                                        </div>
-                                    )}
-
-                                    {itemRd.latex && (
-                                        <div className="whiteboard-protect bg-white border border-slate-200 rounded-xl p-3 text-center text-xl font-serif font-bold text-black [&_.katex]:text-black">
-                                            <MathDisplay content={`$$${itemRd.latex}$$`} className="text-black [&_.katex]:text-black" />
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center justify-between pt-2 border-t border-[var(--border-main)] text-xs">
-                                        <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                                            Facit: {ansText}
-                                        </span>
-                                        {Array.isArray(itemRd.options) && (
-                                            <div className="flex gap-2">
-                                                {itemRd.options.map(o => (
-                                                    <span
-                                                        key={o.id}
-                                                        className={`px-2 py-0.5 rounded font-mono text-[11px] font-bold border ${
-                                                            o.isCorrect
-                                                                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-700 dark:text-emerald-300'
-                                                                : 'bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-muted)]'
-                                                        }`}
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-xl p-0.5 mr-1">
+                                                    <button
+                                                        type="button"
+                                                        disabled={idx === 0}
+                                                        onClick={() => handleMoveRound(idx, -1)}
+                                                        className="p-1.5 rounded-lg hover:bg-[var(--bg-card)] disabled:opacity-30 cursor-pointer active:scale-90 transition-transform"
+                                                        title={t.move_up}
                                                     >
-                                                        {o.id}: {o.label}
-                                                    </span>
-                                                ))}
+                                                        <ArrowUp size={13} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        disabled={idx === rounds.length - 1}
+                                                        onClick={() => handleMoveRound(idx, 1)}
+                                                        className="p-1.5 rounded-lg hover:bg-[var(--bg-card)] disabled:opacity-30 cursor-pointer active:scale-90 transition-transform"
+                                                        title={t.move_down}
+                                                    >
+                                                        <ArrowDown size={13} />
+                                                    </button>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    disabled={reRollingIdx !== null}
+                                                    onClick={() => handleRerollIndex(idx)}
+                                                    className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:border-amber-500 border border-[var(--border-main)] text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                                                >
+                                                    <RefreshCcw size={13} className={reRollingIdx === idx ? 'animate-spin text-amber-500' : ''} />
+                                                    <span>{t.reroll_numbers}</span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEditingRound({ idx, data: JSON.parse(JSON.stringify(item)) })}
+                                                    className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:border-emerald-600 border border-[var(--border-main)] text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                                                >
+                                                    <Edit3 size={13} />
+                                                    <span>{t.edit_question}</span>
+                                                </button>
+
+                                                {rounds.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteRound(idx)}
+                                                        className="p-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-rose-500 hover:text-white border border-[var(--border-main)] text-[var(--text-muted)] transition-colors cursor-pointer"
+                                                        title={t.delete_step}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {itemRd.description && (
+                                            <div className="text-sm font-bold leading-relaxed">
+                                                <MathDisplay content={itemRd.description} />
                                             </div>
                                         )}
-                                    </div>
-                                </div>
-                            );
-                        })}
+
+                                        {itemHasVisual && (
+                                            <div className="whiteboard-protect w-full flex justify-center py-3 bg-white border border-slate-200 rounded-xl overflow-hidden">
+                                                <VisualRenderer data={itemRd} isWordProblem={false} />
+                                            </div>
+                                        )}
+
+                                        {itemRd.latex && (
+                                            <div className="whiteboard-protect bg-white border border-slate-200 rounded-xl p-3 text-center text-xl font-serif font-bold text-black [&_.katex]:text-black">
+                                                <MathDisplay content={`$$${itemRd.latex}$$`} className="text-black [&_.katex]:text-black" />
+                                            </div>
+                                        )}
+
+                                        <div className="flex items-center justify-between pt-2 border-t border-[var(--border-main)] text-xs">
+                                            <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                                Facit: {ansText}
+                                            </span>
+                                            {Array.isArray(itemRd.options) && (
+                                                <div className="flex gap-2">
+                                                    {itemRd.options.map(o => (
+                                                        <span
+                                                            key={o.id}
+                                                            className={`px-2 py-0.5 rounded font-mono text-[11px] font-bold border ${
+                                                                o.isCorrect
+                                                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-700 dark:text-emerald-300'
+                                                                    : 'bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-muted)]'
+                                                            }`}
+                                                        >
+                                                            {o.id}: {o.label}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </AnimatePresence>
                     </div>
                 </main>
             ) : challengerState.phase === 'game_over' ? (
@@ -2073,6 +2282,11 @@ export default function YouVsClassEngine({
                                         </div>
 
                                         <div className="flex items-center gap-1.5 shrink-0">
+                                            {player.streak >= 2 && (
+                                                <span className="px-1.5 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-500 font-mono text-[10px] font-bold">
+                                                    🔥{player.streak}
+                                                </span>
+                                            )}
                                             {player.multiplier > 1 && (
                                                 <span className="px-1.5 py-0.5 rounded bg-emerald-600 text-white font-mono text-[10px] font-bold">
                                                     {player.multiplier.toFixed(1)}x
@@ -2296,6 +2510,15 @@ export default function YouVsClassEngine({
                 onClose={() => setShowHelpModal(false)}
                 lang={lang}
             />
+
+            {isSummonerOpen && (
+                <QuestionSummoner
+                    lang={lang}
+                    targetMode="activity_you_vs_class"
+                    onClose={() => setIsSummonerOpen(false)}
+                    onSummon={handleSummonQuestions}
+                />
+            )}
         </div>
     );
 }

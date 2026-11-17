@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { SKILL_BUCKETS, isTopicWordProblemReady } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer';
+import { CONTENT_MAP } from '../../constants/content_map.js';
+import { VARIATION_MAP } from '../../constants/variationMap.js';
 
 // Lightweight Math Renderer for the Preview
 const MathDisplay = ({ content, className = "" }) => {
@@ -112,6 +114,14 @@ export default function QuestionSummoner({
     }, [lang]);
 
     const currentTopic = allTopics.find(t => t.id === selectedTopicId) || allTopics[0];
+
+    const contentMapTopic = useMemo(() => {
+        for (const cat of CONTENT_MAP) {
+            const found = cat.topics.find(tp => tp.id === selectedTopicId);
+            if (found) return found;
+        }
+        return null;
+    }, [selectedTopicId]);
 
     const getVariationCategory = (key) => {
         const k = key.toLowerCase();
@@ -360,50 +370,83 @@ export default function QuestionSummoner({
                                     {t.no_wp_for_topic}
                                 </div>
                             ) : (
-                                groupedVariations.map(([lvl, variations]) => (
-                                    <div key={lvl} className="space-y-2">
-                                        <div className="sticky top-0 bg-[var(--bg-canvas)]/95 backdrop-blur-xs py-1 flex items-center z-10 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-mono">
-                                            <span>{t.level} {lvl}</span>
-                                            <div className="flex-1 h-px bg-[var(--border-main)] ml-2 rounded-full" />
-                                        </div>
+                                groupedVariations.map(([lvl, variations]) => {
+                                    const levelMeta = contentMapTopic?.levels?.find(l => Number(l.lvl) === Number(lvl));
+                                    const levelSubtitle = levelMeta?.student_desc?.[lang] || levelMeta?.student_desc?.sv || '';
 
-                                        <div className="space-y-2">
-                                            {variations.map(v => {
-                                                const isSelected = selectedVariation?.key === v.key;
-                                                const cat = getVariationCategory(v.key);
-                                                const styles = getCategoryStyles(cat);
+                                    return (
+                                        <div key={lvl} className="space-y-2">
+                                            <div className="sticky top-0 bg-[var(--bg-canvas)]/95 backdrop-blur-xs py-1 flex items-center gap-2 z-10">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-mono shrink-0">
+                                                    {t.level} {lvl}
+                                                </span>
+                                                {levelSubtitle && (
+                                                    <span className="text-[10px] font-medium text-[var(--text-muted)] truncate">
+                                                        • {typeof levelSubtitle === 'object' ? (levelSubtitle[lang] || levelSubtitle.sv) : levelSubtitle}
+                                                    </span>
+                                                )}
+                                                <div className="flex-1 h-px bg-[var(--border-main)] rounded-full" />
+                                            </div>
 
-                                                return (
-                                                    <div 
-                                                        key={v.key} 
-                                                        onClick={() => setSelectedVariation(v)}
-                                                        className={`p-3 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${
-                                                            isSelected 
-                                                                ? 'bg-[var(--bg-card)] border-emerald-600 shadow-2xs ring-1 ring-emerald-600' 
-                                                                : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:border-[var(--border-strong)] shadow-2xs'
-                                                        }`}
-                                                    >
-                                                        <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.bg}`} />
-                                                        <div className="flex justify-between items-start mb-1">
-                                                            <h4 className="font-bold text-xs uppercase tracking-tight text-[var(--text-main)] leading-tight pr-2">
-                                                                {v.name[lang] || v.name.sv}
-                                                            </h4>
-                                                            <span className={`shrink-0 px-1.5 py-0.5 rounded border ${styles.border} ${styles.bg} ${styles.text} text-[8px] font-bold uppercase flex items-center gap-0.5 font-mono`}>
-                                                                {styles.icon} {styles.label}
-                                                            </span>
+                                            <div className="space-y-2">
+                                                {variations.map(v => {
+                                                    const isSelected = selectedVariation?.key === v.key;
+                                                    const cat = getVariationCategory(v.key);
+                                                    const styles = getCategoryStyles(cat);
+                                                    
+                                                    const sample = VARIATION_MAP[`${selectedTopicId}__${v.key}`]?.[lang] || VARIATION_MAP[`${selectedTopicId}__${v.key}`]?.sv;
+
+                                                    return (
+                                                        <div 
+                                                            key={v.key} 
+                                                            onClick={() => setSelectedVariation(v)}
+                                                            className={`p-3 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${
+                                                                isSelected 
+                                                                    ? 'bg-[var(--bg-card)] border-emerald-600 shadow-2xs ring-1 ring-emerald-600' 
+                                                                    : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:border-[var(--border-strong)] shadow-2xs'
+                                                            }`}
+                                                        >
+                                                            <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.bg}`} />
+                                                            <div className="flex justify-between items-start mb-1.5">
+                                                                <h4 className="font-bold text-xs uppercase tracking-tight text-[var(--text-main)] leading-tight pr-2">
+                                                                    {v.name[lang] || v.name.sv}
+                                                                </h4>
+                                                                <span className={`shrink-0 px-1.5 py-0.5 rounded border ${styles.border} ${styles.bg} ${styles.text} text-[8px] font-bold uppercase flex items-center gap-0.5 font-mono`}>
+                                                                    {styles.icon} {styles.label}
+                                                                </span>
+                                                            </div>
+                                                            
+                                                            {sample && (
+                                                                <div className="mt-1.5 px-2.5 py-2 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs flex items-center justify-between gap-2">
+                                                                    <div className="min-w-0 flex-1 overflow-hidden">
+                                                                        {sample.latex ? (
+                                                                            <div className="font-serif font-bold text-[var(--text-main)] truncate">
+                                                                                <MathDisplay content={`$${sample.latex}$`} />
+                                                                            </div>
+                                                                        ) : sample.description ? (
+                                                                            <div className="text-[11px] font-semibold text-[var(--text-main)] line-clamp-2 leading-snug">
+                                                                                <MathDisplay content={sample.description} />
+                                                                            </div>
+                                                                        ) : null}
+                                                                    </div>
+
+                                                                    {sample.hasVisual && (
+                                                                        <span
+                                                                            className="shrink-0 px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-700 dark:text-sky-300 text-[9px] font-mono font-bold flex items-center gap-1"
+                                                                            title={t.type_visual}
+                                                                        >
+                                                                            <ImageIcon size={10} />
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        
-                                                        {v.desc && (
-                                                            <p className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1 italic leading-tight">
-                                                                {v.desc[lang] || v.desc.sv}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </div>
