@@ -11,6 +11,7 @@ import MathDisplay from '../../../shared/MathDisplay';
 import { syncProgress } from '../../../../lib/progressSync';
 import { supabase } from '../../../../lib/supabaseClient';
 import { CATEGORY_DEFINITIONS } from '../../../whiteboard/tools/registry';
+import QuestionResponseBox from '../../../shared/QuestionResponseBox';
 
 export default function StudentPresentationView({
     engine,
@@ -92,72 +93,6 @@ export default function StudentPresentationView({
         }
 
         setCompletedSlide(prev => ({ ...prev, [activeSlideIndex]: true }));
-    };
-
-    const renderTaskInput = (localIdx) => {
-        const item = localPacket[localIdx];
-        if (!item) return null;
-
-        const isDone = !!completed[localIdx];
-        const isFreeText = item.answerType === 'free_text';
-        const rd = item.resolvedData?.renderData;
-
-        // 1. Multiple Choice Options
-        if (rd?.answerType === 'multiple_choice' || (rd?.options && Array.isArray(rd.options))) {
-            const currentSelected = answers[localIdx];
-            return (
-                <div className="grid grid-cols-1 gap-2 w-full">
-                    {(rd.options || []).map((opt, i) => {
-                        const choiceLabel = typeof opt === 'object' ? opt.label : opt;
-                        const choiceValue = typeof opt === 'object' ? opt.value : opt;
-                        const isSelected = currentSelected === choiceValue;
-
-                        return (
-                            <button
-                                key={i}
-                                type="button"
-                                disabled={isDone || isSubmitting}
-                                onClick={() => {
-                                    if (isDone) return;
-                                    setAnswers(prev => ({ ...prev, [localIdx]: choiceValue }));
-                                }}
-                                className={`w-full p-3 border rounded-xl text-xs font-bold transition-all text-center cursor-pointer shadow-2xs ${
-                                    isSelected 
-                                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-[var(--text-main)] ring-1 ring-emerald-600' 
-                                        : 'border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-main)] hover:border-emerald-600'
-                                } ${isDone ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                                <MathDisplay content={String(choiceLabel)} />
-                            </button>
-                        );
-                    })}
-                </div>
-            );
-        }
-
-        // 2. Free Text Question
-        if (isFreeText) {
-            return (
-                <textarea
-                    value={answers[localIdx] || ''}
-                    onChange={(e) => setAnswers(prev => ({ ...prev, [localIdx]: e.target.value }))}
-                    disabled={isDone || isSubmitting}
-                    rows={3}
-                    placeholder={lang === 'sv' ? "Skriv ditt svar / reflektion här..." : "Write your thoughts here..."}
-                    className="w-full p-3 border border-[var(--border-strong)] rounded-xl text-xs font-medium bg-[var(--bg-surface)] text-[var(--text-main)] placeholder-[var(--text-muted)] outline-none focus:border-emerald-600 resize-none transition-colors shadow-inner"
-                />
-            );
-        }
-
-        // 3. Standard Smart Math Input
-        return (
-            <SmartMathInput
-                value={answers[localIdx] || ''}
-                onChange={(val) => setAnswers(prev => ({ ...prev, [localIdx]: val }))}
-                onSubmit={() => submitAnswer(localIdx)}
-                disabled={isDone || isSubmitting}
-            />
-        );
     };
 
     return (
@@ -322,7 +257,18 @@ export default function StudentPresentationView({
                                 )}
 
                                 <div className="mb-1">
-                                    {renderTaskInput(localIdx)}
+                                    <QuestionResponseBox
+                                        question={localPacket[localIdx]}
+                                        value={answers[localIdx] || ''}
+                                        onChange={(val) => setAnswers(prev => ({ ...prev, [localIdx]: val }))}
+                                        onSubmit={() => submitAnswer(localIdx)}
+                                        disabled={isDone || isSubmitting}
+                                        isSubmitting={isSubmitting}
+                                        lang={lang}
+                                        autoFocus={false}
+                                        submitOnChoice={false}
+                                        hideSubmitButton={true}
+                                    />
                                 </div>
                             </div>
                         );

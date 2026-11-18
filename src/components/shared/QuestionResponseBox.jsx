@@ -19,6 +19,8 @@ export default function QuestionResponseBox({
     lang = 'sv',
     isMobile = false,
     autoFocus = true,
+    submitOnChoice = true,
+    hideSubmitButton = false,
     submitLabel = null,
     submittedMessage = null,
     className = ''
@@ -69,7 +71,7 @@ export default function QuestionResponseBox({
     const handleChoiceSelect = (choiceValue) => {
         if (isLocked) return;
         if (typeof onChange === 'function') onChange(choiceValue);
-        if (typeof onSubmit === 'function') onSubmit(choiceValue);
+        if (submitOnChoice && typeof onSubmit === 'function') onSubmit(choiceValue);
     };
 
     const resolvedSubmitLabel = useMemo(() => {
@@ -150,14 +152,16 @@ export default function QuestionResponseBox({
                     placeholder={lang === 'sv' ? 'Skriv ditt svar / resonemang här...' : 'Write your answer / explanation here...'}
                     className="w-full p-3.5 text-sm font-medium border border-[var(--border-strong)] rounded-xl outline-none focus:border-emerald-600 transition-all text-[var(--text-main)] bg-[var(--bg-surface)] resize-none shadow-inner"
                 />
-                <button
-                    type="submit"
-                    disabled={isSubmitting || (!String(value).trim() && feedback !== 'correct')}
-                    className="btn-3d w-full justify-center text-sm uppercase tracking-wider cursor-pointer bg-[var(--brand-solid)] text-white border-[var(--brand-text)] hover:opacity-90 disabled:opacity-35 flex items-center gap-2"
-                >
-                    {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Send size={15} />}
-                    <span>{resolvedSubmitLabel}</span>
-                </button>
+                {!hideSubmitButton && (
+                    <button
+                        type="submit"
+                        disabled={isSubmitting || (!String(value).trim() && feedback !== 'correct')}
+                        className="btn-3d w-full justify-center text-sm uppercase tracking-wider cursor-pointer bg-[var(--brand-solid)] text-white border-[var(--brand-text)] hover:opacity-90 disabled:opacity-35 flex items-center gap-2"
+                    >
+                        {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Send size={15} />}
+                        <span>{resolvedSubmitLabel}</span>
+                    </button>
+                )}
             </form>
         );
     }
@@ -233,20 +237,22 @@ export default function QuestionResponseBox({
                 )}
             </div>
 
-            <button
-                type="submit"
-                disabled={isSubmitting || (!String(value).trim() && feedback !== 'correct')}
-                className={`btn-3d w-full justify-center text-base sm:text-lg uppercase tracking-wider cursor-pointer disabled:opacity-35 flex items-center gap-2 ${
-                    feedback === 'correct'
-                        ? 'is-correct'
-                        : feedback === 'incorrect'
-                            ? 'is-wrong'
-                            : 'bg-[var(--brand-solid)] text-white border-[var(--brand-text)] hover:opacity-90'
-                }`}
-            >
-                {isSubmitting && <Loader2 className="animate-spin" size={18} />}
-                <span>{resolvedSubmitLabel}</span>
-            </button>
+            {!hideSubmitButton && (
+                <button
+                    type="submit"
+                    disabled={isSubmitting || (!String(value).trim() && feedback !== 'correct')}
+                    className={`btn-3d w-full justify-center text-base sm:text-lg uppercase tracking-wider cursor-pointer disabled:opacity-35 flex items-center gap-2 ${
+                        feedback === 'correct'
+                            ? 'is-correct'
+                            : feedback === 'incorrect'
+                                ? 'is-wrong'
+                                : 'bg-[var(--brand-solid)] text-white border-[var(--brand-text)] hover:opacity-90'
+                    }`}
+                >
+                    {isSubmitting && <Loader2 className="animate-spin" size={18} />}
+                    <span>{resolvedSubmitLabel}</span>
+                </button>
+            )}
         </form>
     );
 }

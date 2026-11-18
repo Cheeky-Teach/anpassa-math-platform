@@ -1,12 +1,10 @@
 // src/components/live/student/views/StudentWorksheetView.jsx
 import React, { useState, useEffect } from 'react';
 import PreferencesToggle from '../../../ui/PreferencesToggle';
-import SmartMathInput from '../../../ui/SmartMathInput';
 import MathScratchpad from '../../../ui/MathScratchpad';
-import VisualRenderer from '../../../visuals/VisualRenderer';
-import WordProblemVisualGuard from '../../../ui/WordProblemVisualGuard';
-import MathDisplay from '../../../shared/MathDisplay';
 import InteractiveCanvas from '../../../whiteboard/InteractiveCanvas';
+import QuestionPromptCard from '../../../shared/QuestionPromptCard';
+import QuestionResponseBox from '../../../shared/QuestionResponseBox';
 import { 
     Send, CheckCircle2, ChevronLeft, ChevronRight, LogOut, 
     Loader2, PenTool, Calculator, Maximize2, Minimize2 
@@ -79,12 +77,6 @@ export default function StudentWorksheetView({
     const pacingMode = sessionSettings?.pacing || 'open';
     const isFreeText = currentItem?.answerType === 'free_text';
     const rd = currentItem?.resolvedData?.renderData || currentItem?.resolvedData;
-    const answerType = currentItem?.answerType || rd?.answerType || 'standard';
-    
-    // Detect custom input modes
-    const isFractionInput = answerType === 'fraction' || rd?.inputMode === 'fraction' || currentItem?.topicId?.includes('brak');
-    const isScientificInput = answerType === 'scientific' || rd?.inputMode === 'scientific' || currentItem?.topicId?.includes('grundpotensform') || currentItem?.topicId?.includes('potens');
-    const isMultipleChoice = rd?.answerType === 'multiple_choice' || (rd?.options && Array.isArray(rd.options));
 
     const showScratchpad = Boolean(allowScratchpad && !isFreeText && responseStyle !== 'answer_only' && responseStyle !== 'canvas_only');
     const showCanvas = Boolean(allowCanvas && responseStyle !== 'answer_only' && responseStyle !== 'scratchpad_only');
@@ -95,14 +87,6 @@ export default function StudentWorksheetView({
         currentItem?.isWordProblem ||
         currentItem?.resolvedData?.isWordProblem ||
         currentItem?.type === 'word_problem'
-    );
-
-    const shouldShowLatexBox = Boolean(
-        rd?.latex &&
-        !isWordProblem &&
-        !rd?.hideLatex &&
-        !currentItem?.hideLatex &&
-        !rd?.geometry
     );
 
     return (
@@ -182,10 +166,8 @@ export default function StudentWorksheetView({
             <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 overflow-hidden flex flex-col">
                 <div className={`flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-y-auto lg:overflow-hidden transition-all duration-300 ${isCompleted ? 'opacity-50 scale-[0.99] pointer-events-none' : ''}`}>
                     
-                    {/* Left Card */}
+                    {/* Left Card — Shared QuestionPromptCard */}
                     <div className="flex-[3] whiteboard-protect rounded-2xl shadow-xl flex flex-col overflow-hidden relative min-h-[300px] bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-strong)]">
-                        
-                        {/* 1. Header Bar */}
                         <div className="px-6 py-3.5 lg:px-8 lg:py-4 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-surface)] shrink-0">
                             <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
                                 {lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} av {localPacket.length}
@@ -200,38 +182,17 @@ export default function StudentWorksheetView({
                             )}
                         </div>
 
-                        {/* 2. Inner Body */}
-                        <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-6 lg:p-8 space-y-5">
-                            
-                            {/* Question Text */}
-                            <div className="text-lg lg:text-xl font-bold text-[var(--text-main)] leading-relaxed">
-                                <MathDisplay content={rd?.description || currentItem?.text || currentItem?.prompt || (lang === 'sv' ? "Diskussionsuppgift" : "Discussion Question")} />
-                            </div>
-
-                            {/* LaTeX Box */}
-                            {shouldShowLatexBox && (
-                                <div className="w-full bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-xl p-4 lg:p-6 overflow-x-auto custom-scrollbar shadow-inner text-center">
-                                    <div className="min-w-max flex justify-center text-xl lg:text-3xl text-[var(--text-main)] font-serif">
-                                        <MathDisplay content={`$$${rd.latex}$$`} />
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Visual underneath */}
-                            {rd && (rd.graph || rd.geometry || rd.pattern) && (
-                                <div className="w-full flex items-center justify-center py-4 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-main)] overflow-x-auto no-scrollbar shadow-2xs">
-                                    <WordProblemVisualGuard isActive={Boolean(rd?.isWordProblemApplied)} lang={lang} questionKey={currentItem?.id || currentIndex} allowReveal={false}>
-                                        <div className="max-w-full flex items-center justify-center drop-shadow-2xs">
-                                            <VisualRenderer data={rd} isWordProblem={Boolean(rd?.isWordProblemApplied)} />
-                                        </div>
-                                    </WordProblemVisualGuard>
-                                </div>
-                            )}
-
+                        <div className="flex-1 flex flex-col justify-center overflow-y-auto custom-scrollbar p-4 lg:p-6">
+                            <QuestionPromptCard
+                                question={currentItem}
+                                lang={lang}
+                                isWordProblem={isWordProblem}
+                                allowVisualReveal={false}
+                            />
                         </div>
                     </div>
 
-                    {/* Right Card */}
+                    {/* Right Card — Work Area + Shared QuestionResponseBox */}
                     <div className="flex-[2] lg:max-w-[480px] whiteboard-protect rounded-2xl shadow-xl flex flex-col overflow-hidden shrink-0 bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-strong)]">
                         <div className="px-5 py-3 border-b border-[var(--border-main)] flex items-center justify-between bg-[var(--bg-surface)] shrink-0">
                             {showScratchpad && showCanvas ? (
@@ -286,69 +247,18 @@ export default function StudentWorksheetView({
                                         />
                                     )}
 
-                                    {isMultipleChoice ? (
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
-                                                {lang === 'sv' ? 'Välj ett alternativ:' : 'Select an option:'}
-                                            </label>
-                                            <div className="grid grid-cols-1 gap-2.5 w-full">
-                                                {(rd.options || []).map((opt, i) => {
-                                                    const choiceLabel = typeof opt === 'object' ? opt.label : opt;
-                                                    const choiceValue = typeof opt === 'object' ? opt.value : opt;
-                                                    const isSelected = answers[currentIndex] === choiceValue;
-                                                    return (
-                                                        <button
-                                                            key={i}
-                                                            type="button"
-                                                            disabled={isSubmitting}
-                                                            onClick={() => setAnswers(prev => ({ ...prev, [currentIndex]: choiceValue }))}
-                                                            className={`w-full p-3.5 border rounded-xl text-xs font-bold transition-all text-center cursor-pointer active:scale-[0.98] shadow-2xs ${
-                                                                isSelected ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-[var(--text-main)] ring-1 ring-emerald-600' : 'border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-main)] hover:border-emerald-600'
-                                                            }`}
-                                                        >
-                                                            <MathDisplay content={String(choiceLabel)} />
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    ) : isFreeText ? (
-                                        <div className="space-y-1.5">
-                                            <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] block">
-                                                {lang === 'sv' ? 'Ditt svar / motivering:' : 'Your answer / explanation:'}
-                                            </label>
-                                            <textarea
-                                                value={answers[currentIndex] || ''}
-                                                onChange={(e) => setAnswers(prev => ({ ...prev, [currentIndex]: e.target.value }))}
-                                                placeholder={lang === 'sv' ? "Skriv ditt svar här..." : "Write your answer here..."}
-                                                rows={4}
-                                                disabled={isSubmitting}
-                                                className="w-full p-3 text-xs font-medium border border-[var(--border-strong)] rounded-xl outline-none focus:border-emerald-600 transition-all text-[var(--text-main)] bg-[var(--bg-surface)] resize-none shadow-inner"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-1.5">
-                                            <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] block">
-                                                {lang === 'sv' ? 'Slutsvar:' : 'Final Answer:'}
-                                            </label>
-                                            <SmartMathInput 
-                                                value={answers[currentIndex] || ''}
-                                                onChange={(val) => setAnswers(prev => ({ ...prev, [currentIndex]: val }))}
-                                                onSubmit={() => submitAnswer()}
-                                                disabled={isSubmitting}
-                                                isMobile={isMobile}
-                                                inputType={
-                                                    currentItem?.inputType || 
-                                                    currentItem?.answerType || 
-                                                    rd?.inputType || 
-                                                    rd?.answerType || 
-                                                    rd?.inputMode
-                                                }
-                                                renderData={rd}
-                                                autoFocus={true}
-                                            />
-                                        </div>
-                                    )}
+                                    <QuestionResponseBox
+                                        question={currentItem}
+                                        value={answers[currentIndex] || ''}
+                                        onChange={(val) => setAnswers(prev => ({ ...prev, [currentIndex]: val }))}
+                                        onSubmit={() => submitAnswer()}
+                                        disabled={isSubmitting}
+                                        isSubmitting={isSubmitting}
+                                        isMobile={isMobile}
+                                        lang={lang}
+                                        submitOnChoice={false}
+                                        hideSubmitButton={true}
+                                    />
 
                                     <button 
                                         type="button"

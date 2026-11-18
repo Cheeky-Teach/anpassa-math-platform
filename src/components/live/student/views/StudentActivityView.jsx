@@ -2,18 +2,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MathDisplay from '../../../shared/MathDisplay';
-import SmartMathInput from '../../../ui/SmartMathInput';
 import MathScratchpad from '../../../ui/MathScratchpad';
 import InteractiveCanvas from '../../../whiteboard/InteractiveCanvas';
 import PreferencesToggle from '../../../ui/PreferencesToggle';
-import VisualRenderer from '../../../visuals/VisualRenderer';
 import { supabase } from '../../../../lib/supabaseClient';
 import { evaluateAnswer } from '../../core/liveAnswerUtils';
 import DynamicResponseInput from '../components/DynamicResponseInput';
 import StudentQuickPracticeDrawer from '../../../activities/shared/StudentQuickPracticeDrawer';
+import QuestionPromptCard from '../../../shared/QuestionPromptCard';
+import QuestionResponseBox from '../../../shared/QuestionResponseBox';
 import { 
     Send, CheckCircle2, Loader2, Trophy, 
-    Calculator, PenTool, LogOut, Check, Zap, Users, ShieldAlert, EyeOff
+    Calculator, PenTool, LogOut, Zap, Users, ShieldAlert, EyeOff
 } from 'lucide-react';
 
 export default function StudentActivityView({
@@ -99,18 +99,6 @@ export default function StudentActivityView({
         challengerState.alias &&
         challengerState.alias.trim().toLowerCase() === (studentAlias || '').trim().toLowerCase()
     );
-    
-    const formatInlineMathDescription = (rawText) => {
-        const str = String(rawText || '').trim();
-        if (!str || str.includes('$')) return str;
-        const hasProseWords = /\b[a-zA-ZåäöÅÄÖ]{3,}\b/.test(str.replace(/\\[a-zA-Z]+/g, ''));
-        const hasLatexTokens = /\\(frac|sqrt|cdot|times|pi|div|pm|leq|geq|neq)|[\^_]{1}[{0-9a-zA-Z]/.test(str);
-        if (!hasProseWords && hasLatexTokens) return `$${str}$`;
-        return str.replace(
-            /(\\(?:frac|sqrt)\{[^{}]*\}(?:\{[^{}]*\})?|\\(?:cdot|times|pi|div|pm)|[0-9a-zA-Z]+\^\{?[0-9a-zA-Z+-]+\}?)/g,
-            (match) => `$${match}$`
-        );
-    };
 
     const dimensions = liveActiveData?.board?.dimensions || liveActiveData?.settings?.dimensions || { columns: 4, rows: 4 };
     const activeTile = liveActiveData?.activeTile;
@@ -733,22 +721,13 @@ export default function StudentActivityView({
                             /* PHASES 2–4: QUESTION REVEALED + ROLE-LOCKED INPUT + SNABBRÄKNAREN */
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
                                 {/* Left Question Card */}
-                                <div className="lg:col-span-7 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-6 space-y-4 shadow-sm">
-                                    {rd.description && (
-                                        <div className="text-lg sm:text-xl font-bold leading-relaxed">
-                                            <MathDisplay content={formatInlineMathDescription(rd.description)} />
-                                        </div>
-                                    )}
-                                    {hasVisualElement && (
-                                        <div className="whiteboard-protect w-full flex justify-center py-3 bg-white border border-slate-200 rounded-xl overflow-hidden">
-                                            <VisualRenderer data={rd} isWordProblem={false} />
-                                        </div>
-                                    )}
-                                    {rd.latex && (
-                                        <div className="whiteboard-protect w-full bg-white border border-slate-200 rounded-xl p-5 text-center text-2xl sm:text-3xl font-serif font-bold text-black [&_.katex]:text-black">
-                                            <MathDisplay content={`$$${rd.latex}$$`} className="text-black [&_.katex]:text-black" />
-                                        </div>
-                                    )}
+                                <div className="lg:col-span-7 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-6 shadow-sm">
+                                    <QuestionPromptCard
+                                        question={activeQuestion}
+                                        lang={lang}
+                                        isWordProblem={false}
+                                        allowVisualReveal={false}
+                                    />
                                 </div>
 
                                 {/* Right Input / Lifeline / Waiting / Reveal Card */}
@@ -870,42 +849,17 @@ export default function StudentActivityView({
                                             (!isMeChallenger && challengerState.phase === 'mob_answering') ||
                                             (isMeChallenger && challengerState.phase === 'challenger_answering')
                                         ) && (
-                                            isMultipleChoice ? (
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                                    {options.map((opt) => (
-                                                        <button
-                                                            key={opt.id}
-                                                            type="button"
-                                                            disabled={isSubmitting}
-                                                            onClick={() => handleYouVsClassAction(opt.id, true)}
-                                                            className="p-3.5 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-surface)] hover:border-emerald-600 font-bold text-xs flex items-center gap-2.5 cursor-pointer transition-all active:scale-[0.98]"
-                                                        >
-                                                            <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white font-mono text-xs flex items-center justify-center shrink-0">
-                                                                {opt.id}
-                                                            </span>
-                                                            <MathDisplay content={String(opt.label)} />
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-3">
-                                                    <SmartMathInput
-                                                        value={localAnswers[activeTargetKey] || ''}
-                                                        onChange={(val) => setLocalAnswers(prev => ({ ...prev, [activeTargetKey]: val }))}
-                                                        onSubmit={() => handleYouVsClassAction(localAnswers[activeTargetKey] || '', true)}
-                                                        disabled={isSubmitting}
-                                                        renderData={rd}
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        disabled={isSubmitting || !(localAnswers[activeTargetKey] || '').trim()}
-                                                        onClick={() => handleYouVsClassAction(localAnswers[activeTargetKey] || '', true)}
-                                                        className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider cursor-pointer disabled:opacity-40"
-                                                    >
-                                                        {lang === 'sv' ? 'Skicka Svar' : 'Submit Answer'}
-                                                    </button>
-                                                </div>
-                                            )
+                                            <QuestionResponseBox
+                                                question={activeQuestion}
+                                                value={localAnswers[activeTargetKey] || ''}
+                                                onChange={(val) => setLocalAnswers(prev => ({ ...prev, [activeTargetKey]: val }))}
+                                                onSubmit={(val) => handleYouVsClassAction(val, true)}
+                                                disabled={isSubmitting}
+                                                isSubmitting={isSubmitting}
+                                                lang={lang}
+                                                submitOnChoice={true}
+                                                submitLabel={lang === 'sv' ? 'Skicka Svar' : 'Submit Answer'}
+                                            />
                                         )}
 
                                         {/* Confirmation once submitted */}
@@ -1040,56 +994,15 @@ export default function StudentActivityView({
                                     </div>
                                 )}
                             </div>
-                            
-                            {effectiveShowText && rd.description && (
-                                <div className="text-lg sm:text-xl font-bold text-[var(--text-main)] leading-relaxed">
-                                    <MathDisplay content={rd.description} />
-                                </div>
-                            )}
-
-                            {showVisual && hasVisualElement && (
-                                <div className="whiteboard-protect w-full flex justify-center py-2 border border-[var(--border-main)] rounded-xl overflow-hidden shadow-2xs bg-[var(--bg-surface)]">
-                                    <VisualRenderer 
-                                        data={rd} 
-                                        isWordProblem={isWordProblem} 
-                                    />
-                                </div>
-                            )}
-
-                            {(effectiveShowLatex || (!rd.description && !hasVisualElement)) && rd.latex && (
-                                <div className="w-full bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-xl p-5 text-center text-2xl sm:text-3xl text-[var(--text-main)] font-serif font-bold shadow-inner">
-                                    <MathDisplay content={`$$${rd.latex}$$`} />
-                                </div>
-                            )}
-
-                            {isMultipleChoice && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                                    {options.map((opt, i) => {
-                                        const choiceLabel = typeof opt === 'object' ? opt.label : opt;
-                                        const choiceVal = String(typeof opt === 'object' ? opt.value : opt);
-                                        const isSelected = currentAnswer === choiceVal;
-
-                                        return (
-                                            <button
-                                                key={i}
-                                                type="button"
-                                                disabled={isSubmitting || isCompleted}
-                                                onClick={() => {
-                                                    setLocalAnswers(prev => ({ ...prev, [activeTile]: choiceVal }));
-                                                }}
-                                                className={`p-3.5 rounded-xl border text-left font-bold text-xs transition-all flex items-center justify-between cursor-pointer active:scale-[0.98] ${
-                                                    isSelected 
-                                                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-[var(--text-main)] shadow-2xs' 
-                                                        : 'border-[var(--border-strong)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)]'
-                                                } ${isCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            >
-                                                <MathDisplay content={String(choiceLabel)} />
-                                                {isSelected && <Check size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0 ml-2" />}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                            <QuestionPromptCard
+                                question={activeQuestion}
+                                lang={lang}
+                                isWordProblem={isWordProblem}
+                                showText={effectiveShowText}
+                                showLatex={effectiveShowLatex}
+                                showVisual={showVisual}
+                                allowVisualReveal={false}
+                            />
                         </div>
 
                         <div className="lg:col-span-5 bg-[var(--bg-card)] border-[var(--border-strong)] text-[var(--text-main)] rounded-2xl p-6 shadow-xl border flex flex-col space-y-4">
@@ -1148,21 +1061,17 @@ export default function StudentActivityView({
                                         />
                                     )}
 
-                                    {!isMultipleChoice && (
-                                        <div className="space-y-1.5 pt-1">
-                                            <label className="text-xs font-bold text-[var(--text-muted)]">
-                                                {lang === 'sv' ? "Ditt svar:" : "Your answer:"}
-                                            </label>
-                                            <SmartMathInput
-                                                value={currentAnswer}
-                                                onChange={(val) => setLocalAnswers(prev => ({ ...prev, [activeTile]: val }))}
-                                                onSubmit={() => handleTileSubmit()}
-                                                disabled={isSubmitting || isCompleted}
-                                                inputType={activeQuestion?.inputType || activeQuestion?.answerType || rd?.answerType}
-                                                renderData={rd}
-                                            />
-                                        </div>
-                                    )}
+                                    <QuestionResponseBox
+                                        question={activeQuestion}
+                                        value={currentAnswer}
+                                        onChange={(val) => setLocalAnswers(prev => ({ ...prev, [activeTile]: val }))}
+                                        onSubmit={() => handleTileSubmit()}
+                                        disabled={isSubmitting || isCompleted}
+                                        isSubmitting={isSubmitting}
+                                        lang={lang}
+                                        submitOnChoice={false}
+                                        hideSubmitButton={true}
+                                    />
 
                                     <button
                                         type="button"

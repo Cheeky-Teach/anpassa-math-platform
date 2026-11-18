@@ -20,8 +20,8 @@ import { CONTENT_MAP } from '../../constants/content_map.generated';
 // --- SHARED UI COMPONENTS ---
 import MathText from '../ui/MathText';
 import VisualRenderer from '../visuals/VisualRenderer';
-import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
-import SmartMathInput from '../ui/SmartMathInput.jsx';
+import QuestionPromptCard from '../shared/QuestionPromptCard';
+import QuestionResponseBox from '../shared/QuestionResponseBox';
 import TestLabTutorialModal from '../modals/TestLabTutorialModal.jsx';
 
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
@@ -355,42 +355,6 @@ export default function TestLabView({
         let weakest = null; let minScore = 101;
         Object.entries(stats).forEach(([id, data]) => { if (data.total > 0) { const score = (data.correct / data.total) * 100; if (score < minScore) { minScore = score; weakest = id; } } });
         return { stats, weakest };
-    };
-
-    const renderInput = () => {
-        const item = packet[currentIndex];
-        const rd = item?.resolvedData?.renderData;
-
-        if (rd?.answerType === 'multiple_choice' || (rd?.options && Array.isArray(rd.options))) {
-            return (
-                <div className="grid grid-cols-1 gap-3 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-2 duration-150">
-                    {(rd.options || []).map((opt, i) => {
-                        const choiceLabel = typeof opt === 'object' ? opt.label : opt;
-                        const choiceValue = typeof opt === 'object' ? opt.value : opt;
-                        return (
-                            <button type="button" key={i} onClick={() => handleLabSubmit(choiceValue)} className="btn-3d w-full flex items-center gap-3 cursor-pointer">
-                                <span className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold shadow-2xs shrink-0 bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-main)] font-mono">
-                                    {String.fromCharCode(65 + i)}
-                                </span>
-                                <MathDisplay content={String(choiceLabel)} />
-                            </button>
-                        );
-                    })}
-                </div>
-            );
-        }
-
-        const type = rd?.answerType || rd?.inputType || item?.resolvedData?.inputType || 'text';
-
-        return (
-            <SmartMathInput 
-                value={inputValue}
-                onChange={setInputValue}
-                onSubmit={() => handleLabSubmit()}
-                inputType={type}
-                isMobile={isMobile}
-            />
-        );
     };
 
     useEffect(() => {
@@ -877,6 +841,11 @@ export default function TestLabView({
                 </div>
             );
         }
+
+        const currentResponse = responses[currentIndex];
+        const responseFeedback = currentResponse
+            ? (meta.mode === 'exam' ? 'submitted' : (currentResponse.isCorrect ? 'correct' : 'incorrect'))
+            : null;
         
         return (
             <div className="layout-wrapper font-sans flex flex-col overflow-hidden relative">
@@ -985,85 +954,38 @@ export default function TestLabView({
                             </div>
                         </div>
 
-                        {/* SPLIT RESPONSIVE GRID */}
-                        <div className="lg:flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-[var(--border-main)]">
-                            
-                            {/* TEXT & INPUT SECTION */}
-                            <div className="flex flex-col order-1 lg:h-full lg:overflow-hidden border-b lg:border-b-0 border-[var(--border-main)]">
-                                <div className="p-6 lg:p-10 flex-1 flex flex-col justify-center space-y-5 overflow-y-auto">
-                                    <div className="text-base sm:text-lg lg:text-xl font-bold text-[var(--text-main)] leading-relaxed text-center lg:text-left max-w-4xl">
-                                        <MathDisplay content={q?.resolvedData?.renderData?.description} />
-                                    </div>
-                                    {q?.resolvedData?.renderData?.latex && !q?.resolvedData?.renderData?.isWordProblemApplied && !q?.resolvedData?.renderData?.geometry && (
-                                        <div className="mt-2 border-t border-[var(--border-main)] pt-4 animate-in fade-in duration-150 flex justify-center lg:justify-start w-full">
-                                            <div className="whiteboard-protect px-5 py-3.5 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-surface)] shadow-2xs w-full max-w-full text-center lg:text-left overflow-x-auto no-scrollbar">
-                                                <MathDisplay 
-                                                    content={`$$${q.resolvedData.renderData.latex}$$`} 
-                                                    className="text-xl sm:text-2xl font-serif leading-relaxed text-[var(--text-main)] inline-block max-w-full"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                        {/* UNIFIED QUESTION & RESPONSE STAGE */}
+                        <div className="flex-1 flex flex-col justify-between p-6 lg:p-10 overflow-y-auto custom-scrollbar max-w-4xl mx-auto w-full space-y-6">
+                            <QuestionPromptCard
+                                question={q}
+                                lang={lang}
+                                isWordProblem={Boolean(useWordProblems || q?.resolvedData?.renderData?.isWordProblemApplied)}
+                                allowVisualReveal={false}
+                            />
 
-                                {/* FEEDBACK SECTION */}
-                                <div className="p-6 lg:p-8 bg-[var(--bg-surface)] border-t border-[var(--border-main)] shrink-0">
-                                    {!responses[currentIndex] ? (
-                                        <div className="max-w-md mx-auto space-y-3.5">
-                                            {renderInput()}
-                                            {!(packet[currentIndex]?.resolvedData?.renderData?.options) && (
-                                                <button type="button" onClick={() => handleLabSubmit()} disabled={!inputValue} className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-2xs active:scale-[0.98] disabled:opacity-30 flex items-center justify-center gap-2 cursor-pointer">
-                                                    <Send size={16} /> {lang === 'sv' ? "Svara" : "Submit"}
-                                                </button>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="max-w-md mx-auto animate-in zoom-in-95 duration-150">
-                                            {meta.mode === 'practice' ? (
-                                                <div className={`p-5 rounded-xl border flex flex-col items-center gap-3 shadow-2xs
-                                                    ${responses[currentIndex].isCorrect ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-900 dark:text-emerald-100' : 'bg-rose-50 dark:bg-rose-950/40 border-rose-500 text-rose-900 dark:text-rose-100'}`}>
-                                                    
-                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white
-                                                        ${responses[currentIndex].isCorrect ? 'bg-emerald-600 animate-bounce' : 'bg-rose-600 animate-shake'}`}>
-                                                        {responses[currentIndex].isCorrect ? <Check size={24} strokeWidth={3} /> : <XCircle size={24} strokeWidth={3} />}
-                                                    </div>
-                                                    
-                                                    <div className="text-center">
-                                                        <p className="text-base font-extrabold uppercase tracking-tight">
-                                                            {responses[currentIndex].isCorrect ? (lang === 'sv' ? "Snyggt jobbat!" : "Great job!") : (lang === 'sv' ? "Inte riktigt rätt" : "Not quite right")}
-                                                        </p>
-                                                        <p className="text-xs font-semibold text-[var(--text-muted)] mt-0.5">
-                                                            {t.nextArr}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="py-6 text-center bg-[var(--bg-card)] rounded-xl border border-[var(--border-main)] shadow-2xs">
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <CheckCircle2 size={24} className="text-emerald-600 dark:text-emerald-400" />
-                                                        <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] animate-pulse">
-                                                            {t.answerReceived} — {t.nextArr}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
+                            <div className="w-full max-w-xl mx-auto space-y-3 pt-2">
+                                <QuestionResponseBox
+                                    question={q}
+                                    value={inputValue}
+                                    onChange={setInputValue}
+                                    onSubmit={(val) => handleLabSubmit(val)}
+                                    feedback={responseFeedback}
+                                    disabled={Boolean(currentResponse)}
+                                    isMobile={isMobile}
+                                    lang={lang}
+                                    submitOnChoice={true}
+                                    submitLabel={lang === 'sv' ? 'Svara' : 'Submit'}
+                                    submittedMessage={`${t.answerReceived} — ${t.nextArr}`}
+                                />
+
+                                {currentResponse && meta.mode === 'practice' && (
+                                    <p className="text-center text-xs font-bold text-[var(--text-muted)]">
+                                        {currentResponse.isCorrect
+                                            ? (lang === 'sv' ? `Snyggt jobbat! ${t.nextArr}` : `Great job! ${t.nextArr}`)
+                                            : (lang === 'sv' ? `Inte riktigt rätt — ${t.nextArr}` : `Not quite right — ${t.nextArr}`)}
+                                    </p>
+                                )}
                             </div>
-
-                            {/* VISUAL SIDE */}
-                            {q?.resolvedData?.renderData && (q.resolvedData.renderData.graph || q.resolvedData.renderData.geometry || q.resolvedData.renderData.pattern) ? (
-                                <div className="p-6 lg:p-10 flex items-center justify-center whiteboard-protect order-2 min-h-[350px] lg:h-full border-t lg:border-t-0 border-[var(--border-main)] relative overflow-hidden bg-[var(--bg-card)]">
-                                    <div className="absolute inset-0 flex items-center justify-center p-6">
-                                        <div className="flex justify-center scale-90 origin-top mt-2">
-                                            <VisualRenderer data={q?.resolvedData?.renderData || q?.renderData} isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} />
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="hidden lg:block order-2 bg-[var(--bg-surface)]" />
-                            )}
                         </div>
 
                         {/* MILESTONE REVIEW MODAL */}
