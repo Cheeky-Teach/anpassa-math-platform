@@ -1108,9 +1108,19 @@ function App() {
                             <div className="flex-1 flex flex-row items-center gap-2 sm:gap-3 justify-end flex-wrap sm:flex-nowrap">
                                 <PreferencesToggle />
                                 
-                                {session && (
-                                    <button onClick={() => supabase.auth.signOut()} className="text-[10px] font-bold text-[var(--text-muted)] uppercase hover:text-[var(--theme-rose-text)] transition-colors ml-1">
-                                        Logga ut
+                                {(session || profile?.role === 'student') && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (session) {
+                                                supabase.auth.signOut();
+                                            } else {
+                                                handleStudentExitLive();
+                                            }
+                                        }}
+                                        className="px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-[var(--border-main)] hover:border-rose-300 text-[10px] font-bold text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 uppercase tracking-wider transition-colors cursor-pointer"
+                                    >
+                                        {lang === 'sv' ? 'Logga ut' : 'Log out'}
                                     </button>
                                 )}
                             </div>

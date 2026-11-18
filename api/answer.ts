@@ -44,8 +44,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // --- SECURITY UPDATES: INPUT VALIDATION & LENGTH SHIELD ---
         
-        // 1. Validate Answer: Must be string and max 20 chars
-        if (typeof answer !== 'string' || answer.length > 20) {
+        // 1. Validate Answer: Must be string and max 100 chars
+        if (typeof answer !== 'string' || answer.length > 100) {
             return res.status(400).json({ 
                 error: "Ogiltigt svar-format eller för långt svar (max 20 tecken)." 
             });
