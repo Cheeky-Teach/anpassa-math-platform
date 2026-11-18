@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     ChevronLeft, ChevronRight, BookOpen, Eye, RefreshCw,
-    RotateCcw, Sparkles, CheckCircle2, ChevronDown, ChevronUp 
+    RotateCcw, Sparkles
 } from 'lucide-react';
 import MathDisplay from './MathDisplay';
 import VisualRenderer from '../visuals/VisualRenderer';
@@ -51,14 +51,14 @@ export default function InstructionSlideCard({
     question, 
     lang = 'sv', 
     readOnly = false,
+    compactMode = false,
     theme = null,
     onRegenerate = null
 }) {
     const [revealedIndex, setRevealedIndex] = useState(-1);
     const [isCycling, setIsCycling] = useState(false);
 
-    const [activeLayoutVariant, setActiveLayoutVariant] = useState('concept1_ribbon');
-    const [walkthroughScale, setWalkthroughScale] = useState('large');
+    const [walkthroughScale, setWalkthroughScale] = useState(compactMode ? 'normal' : 'large');
     const currentScale = SCALE_PRESETS[walkthroughScale] || SCALE_PRESETS.normal;
 
     const currentTheme = (typeof theme === 'string' ? PRESENTATION_THEMES[theme] : theme) 
@@ -71,11 +71,12 @@ export default function InstructionSlideCard({
     if (!question) {
         return (
             <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="w-full h-full flex flex-col items-center justify-center text-[var(--text-muted)] p-8 text-center select-none font-sans"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                className="whiteboard-protect w-full h-full flex flex-col items-center justify-center p-8 text-center select-none font-sans bg-[var(--bg-card)] text-[var(--text-muted)]"
             >
-                <BookOpen size={40} className="text-[var(--text-muted)] opacity-50 mb-2.5" />
+                <BookOpen size={40} className="opacity-50 mb-2.5" />
                 <p className="text-xs font-bold uppercase tracking-wider">
                     {lang === 'sv' ? "Ingen uppgift bunden till denna genomgång" : "No question bound to this instruction slide"}
                 </p>
@@ -132,7 +133,9 @@ export default function InstructionSlideCard({
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: 'spring', stiffness: 450, damping: 30 }}
-            className="whiteboard-protect w-full h-full p-4 sm:p-5 pb-6 sm:pb-7 flex flex-col justify-start select-none overflow-hidden font-sans bg-[var(--bg-card)] text-[var(--text-main)]"
+            className={`whiteboard-protect w-full flex flex-col justify-between select-none overflow-hidden font-sans bg-[var(--bg-card)] text-[var(--text-main)] ${
+                compactMode ? 'h-[470px] p-3.5 sm:p-4' : 'h-full p-4 sm:p-5 pb-6 sm:pb-7'
+            }`}
         >
             
             {/* 1. TOP TOOLBAR STRIP */}
@@ -244,60 +247,66 @@ export default function InstructionSlideCard({
             <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 items-stretch overflow-hidden">
                 
                 {/* COLUMN 1: THE ANCHOR (40% Width - cols 1-5) */}
-                <div className="col-span-5 h-full flex flex-col justify-between overflow-y-auto custom-scrollbar pr-1">
-                    <div className="rounded-xl p-4 border border-[var(--border-strong)] bg-[var(--bg-surface)] shadow-2xs flex flex-col transition-all duration-150">
-                        <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                                {lang === 'sv' ? "Uppgift" : "Problem"}
-                            </span>
-                            {hasVisual && (
-                                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-main)] text-emerald-700 dark:text-emerald-300 font-mono">
-                                    {lang === 'sv' ? "Figur" : "Figure"}
+                <div className="col-span-12 md:col-span-5 h-full min-h-0 flex flex-col justify-between gap-2">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-0">
+                        <div className="rounded-xl p-4 border border-[var(--border-strong)] bg-[var(--bg-surface)] shadow-2xs flex flex-col transition-all duration-150">
+                            <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                                    {lang === 'sv' ? "Uppgift" : "Problem"}
                                 </span>
+                                {hasVisual && (
+                                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-main)] text-emerald-700 dark:text-emerald-300 font-mono">
+                                        {lang === 'sv' ? "Figur" : "Figure"}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Problem Text with zoom scaling */}
+                            <div className={`${currentScale.promptText} font-bold leading-relaxed mb-2 text-[var(--text-main)]`}>
+                                <MathDisplay content={compileAnchoredStory(question, lang) || rd?.description || question.text} />
+                            </div>
+
+                            {/* Multiple Choice Options if applicable */}
+                            {rd?.options && rd.options.length > 0 && (
+                                <div className="mt-1 mb-2 grid grid-cols-2 gap-1.5 w-full">
+                                    {rd.options.map((opt, oIdx) => {
+                                        const choiceLabel = typeof opt === 'object' ? opt.label : opt;
+                                        return (
+                                            <div key={oIdx} className="flex items-center gap-2 p-1.5 rounded-xl border border-[var(--border-main)] bg-[var(--bg-card)]">
+                                                <span className="w-5 h-5 rounded-lg text-[12px] font-bold font-mono flex items-center justify-center shrink-0 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                                                    {['A','B','C','D','E','F'][oIdx]}
+                                                </span>
+                                                <MathDisplay content={String(choiceLabel)} className="font-semibold text-xs text-[var(--text-main)]" />
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* Primary Math Expression */}
+                            {rd?.latex && !rd?.geometry && (
+                                <div className="my-2 py-2 px-3 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-main)] text-center font-serif text-2xl shadow-inner">
+                                    <MathDisplay content={`$$${rd.latex}$$`} />
+                                </div>
+                            )}
+
+                            {/* Geometry Visual Container */}
+                            {hasVisual && (
+                                <div className={`mt-2 w-full flex items-center justify-center bg-[var(--bg-card)] rounded-xl border border-[var(--border-main)] p-2.5 overflow-hidden shadow-2xs ${
+                                    compactMode ? 'min-h-[130px] max-h-[190px]' : 'flex-1 min-h-[160px] max-h-[260px]'
+                                }`}>
+                                    <div className="w-full h-full flex items-center justify-center origin-center scale-95">
+                                        <VisualRenderer data={rd} isWordProblem={false} />
+                                    </div>
+                                </div>
                             )}
                         </div>
-
-                        {/* Problem Text with zoom scaling */}
-                        <div className={`${currentScale.promptText} font-bold leading-relaxed mb-2 text-[var(--text-main)]`}>
-                            <MathDisplay content={compileAnchoredStory(question, lang) || rd?.description || question.text} />
-                        </div>
-
-                        {/* Multiple Choice Options if applicable */}
-                        {rd?.options && rd.options.length > 0 && (
-                            <div className="mt-1 mb-2 grid grid-cols-2 gap-1.5 w-full">
-                                {rd.options.map((opt, oIdx) => {
-                                    const choiceLabel = typeof opt === 'object' ? opt.label : opt;
-                                    return (
-                                        <div key={oIdx} className="flex items-center gap-2 p-1.5 rounded-xl border border-[var(--border-main)] bg-[var(--bg-card)]">
-                                            <span className="w-5 h-5 rounded-lg text-[12px] font-bold font-mono flex items-center justify-center shrink-0 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                                                {['A','B','C','D','E','F'][oIdx]}
-                                            </span>
-                                            <MathDisplay content={String(choiceLabel)} className="font-semibold text-xs text-[var(--text-main)]" />
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        {/* Primary Math Expression */}
-                        {rd?.latex && !rd?.geometry && (
-                            <div className="my-2 py-2 px-3 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-main)] text-center font-serif text-2xl shadow-inner">
-                                <MathDisplay content={`$$${rd.latex}$$`} />
-                            </div>
-                        )}
-
-                        {/* Geometry Visual Container */}
-                        {hasVisual && (
-                            <div className="mt-2 w-full flex-1 flex items-center justify-center bg-[var(--bg-card)] rounded-xl border border-[var(--border-main)] p-3 overflow-hidden min-h-[160px] max-h-[260px] shadow-2xs">
-                                <div className="w-full h-full flex items-center justify-center origin-center scale-95">
-                                    <VisualRenderer data={rd} isWordProblem={false} />
-                                </div>
-                            </div>
-                        )}
                     </div>
 
-                    {/* STEP NAVIGATION FOOTBAR */}
-                    <div className="pt-3 pb-12 sm:pb-14 shrink-0 flex items-center justify-between gap-2 relative z-30 pointer-events-auto">
+                    {/* ANCHORED STEP NAVIGATION FOOTBAR */}
+                    <div className={`pt-2 shrink-0 flex items-center justify-between gap-2 border-t border-[var(--border-main)] bg-[var(--bg-card)] relative z-30 pointer-events-auto ${
+                        compactMode ? 'pb-0.5' : 'pb-12 sm:pb-14'
+                    }`}>
                         {!isStarted ? (
                             <motion.button
                                 whileHover={{ scale: 1.01 }}
@@ -307,7 +316,7 @@ export default function InstructionSlideCard({
                                     e.stopPropagation();
                                     handleNext();
                                 }}
-                                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-2xs transition-colors cursor-pointer flex items-center justify-center gap-2 pointer-events-auto relative z-30"
+                                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-2xs transition-colors cursor-pointer flex items-center justify-center gap-2"
                             >
                                 <Eye size={15} />
                                 <span>{lang === 'sv' ? "Starta genomgång" : "Start Walkthrough"}</span>
@@ -317,9 +326,9 @@ export default function InstructionSlideCard({
                                 <button
                                     type="button"
                                     onClick={handlePrev}
-                                    className="px-3.5 py-2.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-strong)] transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold active:scale-[0.98] shadow-2xs"
+                                    className="px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-strong)] transition-all cursor-pointer flex items-center gap-1 text-xs font-bold active:scale-[0.98] shadow-2xs"
                                 >
-                                    <ChevronLeft size={16} />
+                                    <ChevronLeft size={15} />
                                     <span>{lang === 'sv' ? "Föregående" : "Prev"}</span>
                                 </button>
 
@@ -334,10 +343,10 @@ export default function InstructionSlideCard({
                                         type="button"
                                         onClick={handleRegenClick}
                                         disabled={isCycling}
-                                        className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider shadow-2xs disabled:opacity-40"
+                                        className="py-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider shadow-2xs disabled:opacity-40"
                                     >
-                                        <RefreshCw size={14} className={isCycling ? "animate-spin" : ""} />
-                                        <span>{lang === 'sv' ? "Nytt" : "New"}</span>
+                                        <RefreshCw size={13} className={isCycling ? "animate-spin" : ""} />
+                                        <span>{lang === 'sv' ? "Nytt exempel" : "New example"}</span>
                                     </motion.button>
                                 ) : (
                                     <motion.button
@@ -346,10 +355,10 @@ export default function InstructionSlideCard({
                                         type="button"
                                         onClick={handleNext}
                                         disabled={revealedIndex >= totalSteps - 1}
-                                        className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold shadow-2xs"
+                                        className="py-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer flex items-center gap-1 text-xs font-bold shadow-2xs"
                                     >
                                         <span>{lang === 'sv' ? "Nästa" : "Next"}</span>
-                                        <ChevronRight size={16} />
+                                        <ChevronRight size={15} />
                                     </motion.button>
                                 )}
                             </>
@@ -358,7 +367,9 @@ export default function InstructionSlideCard({
                 </div>
 
                 {/* COLUMN 2: DYNAMIC STAGE (60% Width - cols 6-12) */}
-                <div className="col-span-7 h-full flex flex-col justify-start overflow-hidden pb-12 sm:pb-14">
+                <div className={`col-span-12 md:col-span-7 h-full min-h-0 flex flex-col justify-start overflow-hidden ${
+                    compactMode ? 'pb-0.5' : 'pb-12 sm:pb-14'
+                }`}>
                     {!isStarted ? (
                         <div className="h-full border border-dashed border-[var(--border-strong)] rounded-xl flex flex-col items-center justify-center p-8 text-center bg-[var(--bg-surface)] text-[var(--text-muted)]">
                             <Eye size={32} className="mb-2 opacity-50" />

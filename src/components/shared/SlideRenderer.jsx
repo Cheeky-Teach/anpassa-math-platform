@@ -19,12 +19,15 @@ export default function SlideRenderer({
     onRegenerate,
     setIsSaving,
     authorMode = true,
+    compactMode = false,
     globalZoom = 1.0
 }) {
     const [openAlignMenuId, setOpenAlignMenuId] = useState(null);
 
     return (
-        <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden font-sans">
+        <div className={`w-full h-full relative flex items-start select-none px-8 pointer-events-auto ${
+            compactMode || !authorMode ? 'pt-[40px] pb-[36px]' : 'pt-[100px] pb-[90px]'
+        }`}>
             <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet" className="absolute inset-0 w-full h-full pointer-events-none">
                 <foreignObject x="0" y="0" width="1920" height="1080" className="pointer-events-none">
                     {/* 🟢 Refined padding to prevent overlapping with top/bottom floating nav docks */}

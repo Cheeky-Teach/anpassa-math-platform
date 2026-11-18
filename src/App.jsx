@@ -1153,70 +1153,94 @@ function App() {
                     );
                 })() : view === 'dashboard' ? (
                     <ResponsiveWrapper>
-                        {profile?.role === 'student' && !activeBucket ? (
-                            <GhostRadioGatekeeper 
-                                classCode={activeClass?.class_code} 
-                                lang={lang}
-                                onDisconnect={handleStudentExitLive}
-                            >
-                                {loadingBuckets ? (
-                                    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-                                        <div className="animate-spin h-10 w-10 border-4 border-indigo-600 border-t-transparent rounded-full" />
-                                    </div>
-                                ) : (
-                                    <StudentGateway 
-                                        classCode={activeClass?.class_code}
-                                        buckets={studentBuckets}
-                                        onSelectFreePlay={() => {
-                                            setActiveBucket('FREE_PLAY');
-                                        }}
-                                        onSelectBucket={(bucket) => {
-                                            setActiveBucket(bucket);
-                                        }}
-                                        onLeave={handleStudentExitLive}
+                        {(() => {
+                            const isStudent = profile?.role === 'student';
+                            const now = new Date();
+                            const activeStudentBuckets = isStudent
+                                ? (studentBuckets || []).filter(
+                                      b => b.is_visible && (!b.expires_at || new Date(b.expires_at) > now)
+                                  )
+                                : [];
+
+                            const showGateway = isStudent && !activeBucket && (loadingBuckets || activeStudentBuckets.length > 0);
+
+                            if (showGateway) {
+                                return (
+                                    <GhostRadioGatekeeper 
+                                        classCode={activeClass?.class_code} 
                                         lang={lang}
-                                    />
-                                )}
-                            </GhostRadioGatekeeper>
-                        ) : (
-                            <Dashboard 
-                                profile={profile} 
-                                lang={lang} 
-                                selectedTopic={topic} 
-                                selectedLevel={level} 
-                                userRole={profile?.role || 'student'} 
-                                activeBucket={activeBucket} 
-                                onBackToGateway={() => setActiveBucket(null)} 
-                                onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
-                                onStartUnitStep={handleLaunchUnitStep}
-                                onStart={startPractice}
-                                onStartCheckpoint={handleLaunchUnitStep}
-                                ui={ui} 
-                                onStudioOpen={() => setView('question_studio')} 
-                                onLabOpen={() => setView('practice_lab')}
-                                onProfileOpen={() => setView('profile')} 
-                                onTimesTableOpen={() => setView('times_table')}
-                                onFractionLabOpen={() => {
-                                    setSandboxLab('fractions');
-                                    setView('sandbox');
-                                }}
-                                onWhiteboardOpen={() => {
-                                    setSavedPacket([]); 
-                                    setSheetTitle(lang === 'sv' ? 'Presentationstavla' : 'Presentation Board');
-                                    setView('presentation');
-                                }}
-                                onRelaunch={handleRelaunchSession} 
-                                onViewReport={handleViewArchiveReport} 
-                                onEdit={handleEditArchivedPacket}
-                                onStatsOpen={() => setStatsOpen(true)}
-                                onLgrOpen={() => setLgrOpen(true)}
-                                onAboutOpen={() => setAboutOpen(true)}
-                                onContentOpen={() => setContentOpen(true)}
-                                timerSettings={timerSettings} 
-                                toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} 
-                                resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} 
-                            />
-                        )}
+                                        onDisconnect={handleStudentExitLive}
+                                    >
+                                        {loadingBuckets ? (
+                                            <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)]">
+                                                <div className="animate-spin h-10 w-10 border-4 border-emerald-600 border-t-transparent rounded-full" />
+                                            </div>
+                                        ) : (
+                                            <StudentGateway 
+                                                classCode={activeClass?.class_code}
+                                                folderOrder={activeClass?.folder_order || []}
+                                                profile={profile}
+                                                buckets={activeStudentBuckets}
+                                                onSelectFreePlay={() => {
+                                                    setActiveBucket('FREE_PLAY');
+                                                }}
+                                                onSelectBucket={(bucket) => {
+                                                    setActiveBucket(bucket);
+                                                }}
+                                                onResumeUnitStep={(bucket, step) => {
+                                                    setActiveBucket(bucket);
+                                                    handleLaunchUnitStep(step);
+                                                }}
+                                                onLeave={handleStudentExitLive}
+                                                lang={lang}
+                                            />
+                                        )}
+                                    </GhostRadioGatekeeper>
+                                );
+                            }
+
+                            const effectiveBucket = isStudent && !activeBucket ? 'FREE_PLAY' : activeBucket;
+
+                            return (
+                                <Dashboard 
+                                    profile={profile} 
+                                    lang={lang} 
+                                    selectedTopic={topic} 
+                                    selectedLevel={level} 
+                                    userRole={profile?.role || 'student'} 
+                                    activeBucket={effectiveBucket} 
+                                    onBackToGateway={activeStudentBuckets.length > 0 ? () => setActiveBucket(null) : null} 
+                                    onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
+                                    onStartUnitStep={handleLaunchUnitStep}
+                                    onStart={startPractice}
+                                    onStartCheckpoint={handleLaunchUnitStep}
+                                    ui={ui} 
+                                    onStudioOpen={() => setView('question_studio')} 
+                                    onLabOpen={() => setView('practice_lab')}
+                                    onProfileOpen={() => setView('profile')} 
+                                    onTimesTableOpen={() => setView('times_table')}
+                                    onFractionLabOpen={() => {
+                                        setSandboxLab('fractions');
+                                        setView('sandbox');
+                                    }}
+                                    onWhiteboardOpen={() => {
+                                        setSavedPacket([]); 
+                                        setSheetTitle(lang === 'sv' ? 'Presentationstavla' : 'Presentation Board');
+                                        setView('presentation');
+                                    }}
+                                    onRelaunch={handleRelaunchSession} 
+                                    onViewReport={handleViewArchiveReport} 
+                                    onEdit={handleEditArchivedPacket}
+                                    onStatsOpen={() => setStatsOpen(true)}
+                                    onLgrOpen={() => setLgrOpen(true)}
+                                    onAboutOpen={() => setAboutOpen(true)}
+                                    onContentOpen={() => setContentOpen(true)}
+                                    timerSettings={timerSettings} 
+                                    toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} 
+                                    resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} 
+                                />
+                            );
+                        })()}
                     </ResponsiveWrapper>
                 ) : view === 'profile' ? (
                     <ProfileView profile={profile} onBack={() => { fetchProfile(session.user.id); setView('dashboard'); }} lang={lang} />

@@ -8,10 +8,10 @@ import UnitRoadmapRail from '../practice/UnitRoadmapRail';
 import InlineCheckpointRunner from '../practice/InlineCheckpointRunner';
 import QuestionPromptCard from '../shared/QuestionPromptCard';
 import QuestionResponseBox from '../shared/QuestionResponseBox';
-import InstructionSlideModal from '../modals/InstructionSlideModal';
 import { useMyCoach } from '../../hooks/useMyCoach';
 import MyCoachModal from '../modals/MyCoachModal';
 import LevelUpModal from '../modals/LevelUpModal';
+import SlideViewerCore from '../shared/SlideViewerCore';
 import { LEVEL_DESCRIPTIONS, CATEGORIES } from '../../constants/localization';
 import {
     ChevronLeft, Trophy, Zap, Clock, CheckCircle2, XCircle,
@@ -162,7 +162,7 @@ function PracticeContextHeader({
                             className="px-4 py-2 rounded-[var(--radius-btn)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-strong)] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
                         >
                             <ChevronLeft size={15} />
-                            <span>{lang === 'sv' ? 'Enhetsöversikt' : 'Unit Overview'}</span>
+                            <span>{lang === 'sv' ? 'Områdesöversikt' : 'Unit Overview'}</span>
                         </button>
                     ) : (
                         <div className="flex items-center gap-2">
@@ -410,7 +410,8 @@ const PracticeView = ({
     const [shake, setShake] = useState(false);
     const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
     const [showExampleBanner, setShowExampleBanner] = useState(true);
-    const [activeInstructionModal, setActiveInstructionModal] = useState(null);
+    const [activeInstructionStep, setActiveInstructionStep] = useState(null);
+    const [activeInstructionSlideIdx, setActiveInstructionSlideIdx] = useState(0);
     const retryRef = useRef(actions.retry);
 
     const { isOpen: isCoachOpen, openCoach, closeCoach, coachProps } = useMyCoach(question, lang);
@@ -458,8 +459,9 @@ const PracticeView = ({
 
     const activeCheckpointStep = activeUnitStep?.type === 'test' ? activeUnitStep : null;
 
-    // Open walkthrough slides directly from the rail without leaving PracticeView
+    // Open walkthrough slides inline in the center stage without leaving PracticeView
     const handleOpenWalkthrough = async (step) => {
+        setActiveInstructionSlideIdx(step.slideIndex || 0);
         if (step.sheetId) {
             try {
                 const teacherCode =
@@ -476,14 +478,47 @@ const PracticeView = ({
                 if (sheetPacket) {
                     const slides = sheetPacket.slides || (step.slideData ? [step.slideData] : []);
                     const livePacket = sheetPacket.livePacket || sheetPacket.items || [];
-                    setActiveInstructionModal({ ...step, slides, livePacket, slideIndex: step.slideIndex || 0 });
+                    setActiveInstructionStep({ ...step, slides, livePacket, slideIndex: step.slideIndex || 0 });
                     return;
                 }
             } catch (err) {
                 console.error('Failed to load walkthrough presentation:', err.message);
             }
         }
-        setActiveInstructionModal(step);
+        setActiveInstructionStep(step);
+    };
+
+    const handleRegenerateWalkthroughQuestion = async (questionId) => {
+        if (!activeInstructionStep?.livePacket) return;
+        const targetQ = activeInstructionStep.livePacket.find(q => q.id === questionId);
+        if (!targetQ) return;
+
+        try {
+            const topicId = targetQ.topic || targetQ.topicId;
+            const lvl = Number(targetQ.level || 1);
+            const res = await fetch(`/api/question?topic=${encodeURIComponent(topicId)}&level=${lvl}&lang=${lang}`);
+            if (!res.ok) throw new Error('Failed to fetch new example');
+            const fresh = await res.json();
+
+            setActiveInstructionStep(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    livePacket: (prev.livePacket || []).map(item =>
+                        item.id === questionId
+                            ? {
+                                  ...item,
+                                  resolvedData: fresh.resolvedData || fresh,
+                                  clues: fresh.clues || fresh.resolvedData?.clues || item.clues,
+                                  regenVersion: (item.regenVersion || 0) + 1
+                              }
+                            : item
+                    )
+                };
+            });
+        } catch (err) {
+            console.error('Failed to regenerate walkthrough example:', err);
+        }
     };
 
     const handleSelectUnitStepFromRail = (step, part) => {
@@ -494,12 +529,15 @@ const PracticeView = ({
         }
         if (stepType === 'instruction') {
             handleOpenWalkthrough(step);
+        } else {
+            setActiveInstructionStep(null);
         }
     };
 
     const handleAdvanceToNextUnitStep = (fromStepId = activeUnitStep?.id) => {
         const nextStep = getNextUnitStep(allUnitSteps, fromStepId);
         if (!nextStep) {
+            setActiveInstructionStep(null);
             if (onAdvanceUnitStep) onAdvanceUnitStep();
             return;
         }
@@ -507,10 +545,12 @@ const PracticeView = ({
         handleSelectUnitStepFromRail(nextStep, ownerPart);
     };
 
-    // Auto-open walkthrough modal if landing directly on an instruction step
+    // Load walkthrough inline if landing directly on an instruction step
     useEffect(() => {
         if (activeUnitStep && (activeUnitStep.type === 'instruction' || activeUnitStep.sheetId)) {
             handleOpenWalkthrough(activeUnitStep);
+        } else {
+            setActiveInstructionStep(null);
         }
     }, [activeUnitStep?.id]);
 
@@ -735,7 +775,7 @@ const PracticeView = ({
 
                     {/* CENTER & RIGHT PRACTICE WORKSPACE */}
                     <div className="flex-1 min-w-0 w-full">
-                        {!activeCheckpointStep && (
+                        {!activeCheckpointStep && !activeInstructionStep && (
                             <PracticeContextHeader
                                 lang={lang}
                                 uiState={uiState}
@@ -746,8 +786,128 @@ const PracticeView = ({
                                 LEVEL_DESCRIPTIONS={LEVEL_DESCRIPTIONS}
                             />
                         )}
+                        {activeInstructionStep ? (
+                            (() => {
+                                const walkthroughSlides = activeInstructionStep.slides || (activeInstructionStep.slideData ? [activeInstructionStep.slideData] : []);
+                                const totalWalkthroughSlides = walkthroughSlides.length;
+                                const canGoPrevSlide = activeInstructionSlideIdx > 0;
+                                const canGoNextSlide = activeInstructionSlideIdx < totalWalkthroughSlides - 1;
 
-                        {activeCheckpointStep ? (
+                                return (
+                                    <div className="w-full max-w-5xl mx-auto flex flex-col gap-3 animate-in fade-in duration-150">
+                                        {/* Clean Inline Walkthrough Header Bar */}
+                                        <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                <span className="px-2.5 py-1 rounded-lg bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 text-[10px] font-bold uppercase tracking-wider shrink-0">
+                                                    {lang === 'sv' ? 'Genomgång' : 'Walkthrough'}
+                                                </span>
+                                                <h2 className="text-sm sm:text-base font-extrabold text-[var(--text-main)] truncate">
+                                                    {activeInstructionStep.sheetTitle}
+                                                </h2>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleAdvanceToNextUnitStep(activeInstructionStep.id)}
+                                                    className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-main)] text-xs font-bold transition-colors cursor-pointer"
+                                                >
+                                                    {lang === 'sv' ? 'Hoppa över' : 'Skip'}
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        markStepCompleteLocal(activeInstructionStep.id);
+                                                        handleAdvanceToNextUnitStep(activeInstructionStep.id);
+                                                    }}
+                                                    className={`px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                                        canGoNextSlide
+                                                            ? 'bg-[var(--bg-surface)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                                                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                                                    }`}
+                                                >
+                                                    <span>{lang === 'sv' ? 'Klar & gå vidare →' : 'Done & Continue →'}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Compact Inline Slide Stage */}
+                                        <div className="w-full h-[470px]">
+                                            <SlideViewerCore
+                                                slide={walkthroughSlides[activeInstructionSlideIdx]}
+                                                livePacket={activeInstructionStep.livePacket || []}
+                                                lang={lang}
+                                                authorMode={false}
+                                                compactMode={true}
+                                                slideRendererProps={{
+                                                    onRegenerate: handleRegenerateWalkthroughQuestion
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Prominent Bottom Slide Pagination Bar (Multi-slide walkthroughs) */}
+                                        {totalWalkthroughSlides > 1 && (
+                                            <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3 shadow-xs">
+                                                <button
+                                                    type="button"
+                                                    disabled={!canGoPrevSlide}
+                                                    onClick={() => setActiveInstructionSlideIdx(i => Math.max(0, i - 1))}
+                                                    className="px-4 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-strong)] disabled:opacity-35 disabled:pointer-events-none text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                                                >
+                                                    <ChevronLeft size={16} />
+                                                    <span>{lang === 'sv' ? 'Föregående sida' : 'Previous slide'}</span>
+                                                </button>
+
+                                                <div className="flex items-center gap-2">
+                                                    <div className="hidden sm:flex items-center gap-1.5">
+                                                        {walkthroughSlides.map((_, sIdx) => (
+                                                            <button
+                                                                key={sIdx}
+                                                                type="button"
+                                                                onClick={() => setActiveInstructionSlideIdx(sIdx)}
+                                                                className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                                                                    sIdx === activeInstructionSlideIdx
+                                                                        ? 'w-7 bg-sky-600'
+                                                                        : 'w-2.5 bg-[var(--border-strong)] hover:opacity-80'
+                                                                }`}
+                                                                title={`${lang === 'sv' ? 'Sida' : 'Slide'} ${sIdx + 1}`}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    <span className="text-xs font-mono font-bold text-[var(--text-muted)] px-1.5">
+                                                        {lang === 'sv' ? 'Sida' : 'Slide'} {activeInstructionSlideIdx + 1} / {totalWalkthroughSlides}
+                                                    </span>
+                                                </div>
+
+                                                {canGoNextSlide ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setActiveInstructionSlideIdx(i => Math.min(totalWalkthroughSlides - 1, i + 1))}
+                                                        className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                                                    >
+                                                        <span>{lang === 'sv' ? 'Nästa sida' : 'Next slide'}</span>
+                                                        <ChevronRight size={16} />
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            markStepCompleteLocal(activeInstructionStep.id);
+                                                            handleAdvanceToNextUnitStep(activeInstructionStep.id);
+                                                        }}
+                                                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                                                    >
+                                                        <span>{lang === 'sv' ? 'Klar & gå vidare' : 'Done & Continue'}</span>
+                                                        <ChevronRight size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()
+                        ) : activeCheckpointStep ? (
                             <InlineCheckpointRunner
                                 key={activeCheckpointStep.id}
                                 step={activeCheckpointStep}
@@ -892,22 +1052,6 @@ const PracticeView = ({
                     {...coachProps}
                 />
             )}
-
-            <InstructionSlideModal
-                isOpen={!!activeInstructionModal}
-                onClose={() => setActiveInstructionModal(null)}
-                sheetTitle={activeInstructionModal?.sheetTitle}
-                slides={activeInstructionModal?.slides || (activeInstructionModal?.slideData ? [activeInstructionModal.slideData] : [])}
-                livePacket={activeInstructionModal?.livePacket || []}
-                initialSlideIndex={activeInstructionModal?.slideIndex || 0}
-                lang={lang}
-                onCompleteAndAdvance={() => {
-                    const completedId = activeInstructionModal?.id;
-                    if (completedId) markStepCompleteLocal(completedId);
-                    setActiveInstructionModal(null);
-                    handleAdvanceToNextUnitStep(completedId);
-                }}
-            />
         </div>
     );
 };

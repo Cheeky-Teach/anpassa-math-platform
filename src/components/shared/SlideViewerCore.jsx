@@ -12,6 +12,7 @@ export default function SlideViewerCore({
     bgType = 'blank',
     globalZoom = 1.0,
     authorMode = false,
+    compactMode = false,
     theme = DEFAULT_THEME,
     interactiveCanvasProps = {},
     slideRendererProps = {},
@@ -28,14 +29,16 @@ export default function SlideViewerCore({
     const boundQuestion = livePacket.find(p => p.id === boundQuestionId) || null;
 
     const currentTheme = PRESENTATION_THEMES[slide?.theme || theme] || PRESENTATION_THEMES[DEFAULT_THEME];
-
-    // Strip `key` out of interactiveCanvasProps so it cannot be spread into JSX
     const { key: canvasKey, ...safeCanvasProps } = interactiveCanvasProps || {};
 
     return (
         <div 
-            className={`relative w-full flex flex-col items-center shadow-2xl rounded-2xl border border-[var(--border-strong)] transition-colors duration-300 overflow-hidden select-none font-sans ${currentTheme.wrapperClass.replace(/slide-honeycomb-bg/g, '')}`}
-            style={{
+            className={`relative w-full flex flex-col items-center rounded-2xl border border-[var(--border-strong)] transition-colors duration-300 overflow-hidden select-none font-sans ${
+                compactMode ? 'shadow-sm min-h-[420px] h-full' : 'shadow-2xl'
+            } ${currentTheme.wrapperClass.replace(/slide-honeycomb-bg/g, '')}`}
+            style={compactMode ? {
+                backgroundImage: 'none'
+            } : {
                 aspectRatio: '16/9',
                 height: '100%',
                 maxHeight: '100%',
@@ -43,13 +46,14 @@ export default function SlideViewerCore({
             }}
         >
             {/* --- BASE CONTENT LAYER (z-10) --- */}
-            <div className="absolute inset-0 z-10 w-full h-full pointer-events-auto">
+            <div className={`${compactMode && isInstruction ? 'relative flex-1' : 'absolute inset-0'} z-10 w-full h-full pointer-events-auto`}>
                 {isInstruction ? (
                     <InstructionSlideCard 
                         key={`instruction_${slide?.id}_${boundQuestionId}_${boundQuestion?.regenVersion || 0}`}
                         question={boundQuestion}
                         lang={lang}
                         readOnly={false}
+                        compactMode={compactMode}
                         theme={currentTheme}
                         onRegenerate={slideRendererProps?.onRegenerate}
                     />
@@ -60,6 +64,7 @@ export default function SlideViewerCore({
                         lang={lang}
                         sizeClasses={sizeClasses}
                         authorMode={authorMode}
+                        compactMode={compactMode}
                         globalZoom={globalZoom}
                         theme={currentTheme}
                         {...slideRendererProps}
@@ -83,11 +88,13 @@ export default function SlideViewerCore({
                 </div>
             )}
 
-            {/* --- PERMANENT WATERMARK --- */}
-            <div className={`absolute bottom-3 right-5 pointer-events-none select-none z-20 flex items-center gap-1.5 font-sans font-bold text-[10px] uppercase tracking-wider ${currentTheme.watermarkColor}`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
-                <span>Anpassa Math Platform :: Anpassa.app</span>
-            </div>
+            {/* --- PERMANENT WATERMARK (Hidden in compact student mode to save footer space) --- */}
+            {!compactMode && (
+                <div className={`absolute bottom-3 right-5 pointer-events-none select-none z-20 flex items-center gap-1.5 font-sans font-bold text-[10px] uppercase tracking-wider ${currentTheme.watermarkColor}`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+                    <span>Anpassa Math Platform :: Anpassa.app</span>
+                </div>
+            )}
         </div>
     );
 }

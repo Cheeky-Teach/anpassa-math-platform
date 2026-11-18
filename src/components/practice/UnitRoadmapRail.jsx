@@ -78,7 +78,7 @@ export default function UnitRoadmapRail({
                         type="button"
                         onClick={onBackToDashboard}
                         className="w-10 h-10 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-main)] text-[var(--text-muted)] hover:text-[var(--text-main)] flex items-center justify-center cursor-pointer transition-colors"
-                        title={lang === 'sv' ? 'Byt enhet' : 'Change Unit'}
+                        title={lang === 'sv' ? 'Byt område' : 'Change Unit'}
                     >
                         <ArrowLeft size={16} />
                     </button>
@@ -271,7 +271,7 @@ export default function UnitRoadmapRail({
                         className="w-full py-2 px-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-xs font-bold text-[var(--text-main)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                     >
                         <ArrowLeft size={14} />
-                        <span>{lang === 'sv' ? 'Byt enhet / översikt' : 'Unit Overview'}</span>
+                        <span>{lang === 'sv' ? 'Översikt' : 'Unit Overview'}</span>
                     </button>
                 </div>
             )}
