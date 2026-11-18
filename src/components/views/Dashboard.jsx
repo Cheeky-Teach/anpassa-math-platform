@@ -18,26 +18,16 @@ import DashboardTutorialModal from '../modals/DashboardTutorialModal';
 import CapacityModal from '../modals/CapacityModal';
 import InstructionSlideModal from '../modals/InstructionSlideModal';
 import ConceptMapDashboard from './ConceptMapDashboard';
-
-// Helper to look up topic name safely
-const getTopicName = (topicId, lang = 'sv') => {
-    if (!topicId) return "";
-    for (const catKey in CATEGORIES) {
-        const found = CATEGORIES[catKey]?.topics?.find(t => t.id === topicId);
-        if (found) return found.label[lang] || found.label.sv || topicId;
-    }
-    return topicId.replace(/_/g, ' ');
-};
-
-// Helper for dynamic localized "Del / Part" title
-const getPartDisplayTitle = (part, partIndex, lang = 'sv') => {
-    if (part.customTitle && part.customTitle.trim()) {
-        return part.customTitle;
-    }
-    const prefix = lang === 'sv' ? 'Del' : 'Part';
-    const topicLabel = getTopicName(part.topicId, lang);
-    return topicLabel ? `${prefix} ${partIndex + 1}: ${topicLabel}` : `${prefix} ${partIndex + 1}`;
-};
+import {
+    getTopicDisplayName as getTopicName,
+    getPartDisplayTitle,
+    normalizePartsPayload,
+    checkIsStepCompleted,
+    getUnitProgressStorageKey,
+    readCompletedStepIds,
+    persistStepComplete,
+    getNextUnitStep
+} from '../../core/utils/unitProgressUtils';
 
 // Helper to retrieve level description, math example, and layout format
 const getLevelMetadata = (topicId, level, lang = 'sv') => {
@@ -77,53 +67,12 @@ const getLevelMetadata = (topicId, level, lang = 'sv') => {
     return { description, mathExample, isSentence };
 };
 
-// Normalizer: Handles both legacy flat arrays and structured parts
-const normalizePartsPayload = (rawPayload = [], lang = 'sv') => {
-    if (!Array.isArray(rawPayload) || rawPayload.length === 0) return [];
-
-    if (rawPayload[0]?.type === 'part' || rawPayload[0]?.type === 'section') {
-        return rawPayload.map((part, pIdx) => ({
-            ...part,
-            type: 'part',
-            id: part.id || `part_${pIdx}_${Date.now()}`,
-            steps: Array.isArray(part.steps) ? part.steps.map((s, sIdx) => ({
-                ...s,
-                id: s.id || (s.type === 'test' ? `step_test_${sIdx}_${Date.now()}` : (s.sheetId ? `step_inst_${s.sheetId}` : `step_prac_${s.topic || part.topicId}_${s.level || sIdx}`))
-            })) : []
-        }));
-    }
-
-    const grouped = {};
-    const parts = [];
-
-    rawPayload.forEach((item, idx) => {
-        const topic = item.topic || item.topicId || 'generic';
-        if (!grouped[topic]) {
-            const newPart = {
-                id: `part_${topic}_${Date.now()}_${idx}`,
-                type: 'part',
-                topicId: topic,
-                customTitle: null,
-                steps: []
-            };
-            grouped[topic] = newPart;
-            parts.push(newPart);
-        }
-        grouped[topic].steps.push({
-            ...item,
-            id: item.id || (item.sheetId ? `step_inst_${item.sheetId}` : `step_prac_${topic}_${item.level}`),
-            type: item.type || (item.sheetId ? 'instruction' : 'practice'),
-        });
-    });
-
-    return parts;
-};
-
 const Dashboard = ({ 
     profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
     timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen, onStartCheckpoint,
     onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, onLabOpen, onFractionLabOpen,
     onTimesTableOpen, onRelaunch, onViewReport, onEdit, activeBucket, onBackToGateway,
+    onStartUnitStep,
     userRole = 'teacher'
 }) => {
     const [expandedCategory, setExpandedCategory] = useState('arithmetic');
@@ -211,58 +160,26 @@ const Dashboard = ({
     const storageKey = `has_seen_dashboard_guide_${userRole}`;
     const [showDashboardTutorial, setShowDashboardTutorial] = useState(() => !localStorage.getItem(storageKey));
 
-    const storageKeyProgress = useMemo(() => {
-        const studentId = profile?.id || 'guest_student';
-        const bucketId = activeBucket?.id || 'default_bucket';
-        return `progress_${studentId}_${bucketId}`;
-    }, [profile?.id, activeBucket?.id]);
+    const storageKeyProgress = useMemo(
+        () => getUnitProgressStorageKey(profile, activeBucket),
+        [profile, activeBucket]
+    );
 
-    const [completedStepIds, setCompletedStepIds] = useState(() => {
-        try {
-            const raw = localStorage.getItem(storageKeyProgress);
-            return raw ? JSON.parse(raw) : [];
-        } catch {
-            return [];
-        }
-    });
+    const [completedStepIds, setCompletedStepIds] = useState(() =>
+        readCompletedStepIds(storageKeyProgress)
+    );
+
+    useEffect(() => {
+        setCompletedStepIds(readCompletedStepIds(storageKeyProgress));
+    }, [storageKeyProgress]);
 
     const markStepComplete = (stepId) => {
-        if (!stepId) return;
-        setCompletedStepIds(prev => {
-            if (prev.includes(stepId)) return prev;
-            const updated = [...prev, stepId];
-            try {
-                localStorage.setItem(storageKeyProgress, JSON.stringify(updated));
-            } catch (err) {
-                console.error("Failed to save progress:", err);
-            }
-            return updated;
-        });
-    };
-
-    const checkIsStepCompleted = (step, completedIds = []) => {
-        if (!step) return false;
-        if (step.id && completedIds.includes(step.id)) return true;
-
-        if (step.type === 'practice') {
-            const stepTopic = step.topic || step.topicId;
-            const stepLevel = Number(step.level);
-            return completedIds.some(id => {
-                if (id === step.id) return true;
-                if (typeof id === 'string') {
-                    if (id === `${stepTopic}_${stepLevel}`) return true;
-                    if (id === `step_prac_${stepTopic}_${stepLevel}`) return true;
-                    if (id.includes(`_${stepTopic}_`) && id.endsWith(`_${stepLevel}`)) return true;
-                }
-                return false;
-            });
-        }
-        return false;
+        setCompletedStepIds(prev => persistStepComplete(storageKeyProgress, stepId, prev));
     };
 
     const curatedParts = useMemo(() => {
         if (!activeBucket || activeBucket === 'FREE_PLAY') return [];
-        return normalizePartsPayload(activeBucket.payload, lang);
+        return normalizePartsPayload(activeBucket.payload);
     }, [activeBucket, lang]);
 
     const allUnitSteps = useMemo(() => curatedParts.flatMap(part => part.steps || []), [curatedParts]);
@@ -272,14 +189,6 @@ const Dashboard = ({
     const nextUnfinishedStep = useMemo(() => {
         return allUnitSteps.find(step => !checkIsStepCompleted(step, completedStepIds)) || null;
     }, [allUnitSteps, completedStepIds]);
-
-    const getNextStep = (currentStepId) => {
-        const currentIndex = allUnitSteps.findIndex(s => s.id === currentStepId);
-        if (currentIndex !== -1 && currentIndex + 1 < allUnitSteps.length) {
-            return allUnitSteps[currentIndex + 1];
-        }
-        return null;
-    };
 
     const handleCloseDashboardTutorial = () => {
         localStorage.setItem(storageKey, 'true');
@@ -1095,7 +1004,7 @@ const Dashboard = ({
 
                                                                                 <button
                                                                                     type="button"
-                                                                                    onClick={() => handleOpenInstruction(inspectedStep)}
+                                                                                    onClick={() => onStartUnitStep ? onStartUnitStep(inspectedStep, part) : handleOpenInstruction(inspectedStep)}
                                                                                     className="w-full py-3 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                                                                                 >
                                                                                     <Play size={14} fill="currentColor" />
@@ -1142,11 +1051,7 @@ const Dashboard = ({
 
                                                                                 <button
                                                                                     type="button"
-                                                                                    onClick={() => {
-                                                                                        if (onStartCheckpoint) {
-                                                                                            onStartCheckpoint(inspectedStep.configCode, inspectedStep.id);
-                                                                                        }
-                                                                                    }}
+                                                                                    onClick={() => onStartUnitStep ? onStartUnitStep(inspectedStep, part) : onStartCheckpoint?.(inspectedStep.configCode, inspectedStep.id)}
                                                                                     className="w-full py-3 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                                                                                 >
                                                                                     <Play size={14} fill="currentColor" />
@@ -1235,8 +1140,12 @@ const Dashboard = ({
                                                                                 <button
                                                                                     type="button"
                                                                                     onClick={() => {
-                                                                                        onSelect(inspTopicId, inspectedStep.level);
-                                                                                        if (onStart) onStart();
+                                                                                        if (onStartUnitStep) {
+                                                                                            onStartUnitStep(inspectedStep, part);
+                                                                                        } else {
+                                                                                            onSelect(inspTopicId, inspectedStep.level);
+                                                                                            if (onStart) onStart();
+                                                                                        }
                                                                                     }}
                                                                                     className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                                                                                 >
@@ -1557,38 +1466,42 @@ const Dashboard = ({
                             : 'translate-y-16 opacity-0'
                     }`}>
                         {activeBucket && activeBucket !== 'FREE_PLAY' && nextUnfinishedStep && !hasUserManuallySelected ? (
-                            nextUnfinishedStep.type === 'test' ? (
-                                <button 
-                                    type="button"
-                                    onClick={() => {
-                                        if (onStartCheckpoint) {
-                                            onStartCheckpoint(nextUnfinishedStep.configCode, nextUnfinishedStep.id);
-                                        }
-                                    }} 
-                                    className="px-6 py-3.5 rounded-xl font-bold text-sm pointer-events-auto flex items-center gap-2.5 hover:bg-amber-700 active:scale-[0.98] transition-all bg-amber-600 text-white shadow-lg cursor-pointer"
-                                >
-                                    <span>{lang === 'sv' ? "Starta nästa delprov" : "Start next test"}</span>
+                            <button 
+                                type="button"
+                                onClick={() => {
+                                    if (onStartUnitStep) {
+                                        onStartUnitStep(nextUnfinishedStep);
+                                    } else if (nextUnfinishedStep.type === 'test' && onStartCheckpoint) {
+                                        onStartCheckpoint(nextUnfinishedStep.configCode, nextUnfinishedStep.id);
+                                    } else if (nextUnfinishedStep.type === 'instruction') {
+                                        handleOpenInstruction(nextUnfinishedStep);
+                                    } else if (onStart) {
+                                        onStart();
+                                    }
+                                }} 
+                                className={`px-6 py-3.5 rounded-xl font-bold text-sm pointer-events-auto flex items-center gap-2.5 active:scale-[0.98] transition-all text-white shadow-lg cursor-pointer ${
+                                    nextUnfinishedStep.type === 'test'
+                                        ? 'bg-amber-600 hover:bg-amber-700'
+                                        : nextUnfinishedStep.type === 'instruction'
+                                            ? 'bg-sky-600 hover:bg-sky-700'
+                                            : 'bg-emerald-600 hover:bg-emerald-700'
+                                }`}
+                            >
+                                <span>
+                                    {nextUnfinishedStep.type === 'test'
+                                        ? (lang === 'sv' ? "Starta nästa delprov" : "Start next test")
+                                        : nextUnfinishedStep.type === 'instruction'
+                                            ? (lang === 'sv' ? "Titta på genomgång" : "Watch walkthrough")
+                                            : t.start_btn}
+                                </span>
+                                {nextUnfinishedStep.type === 'test' ? (
                                     <Beaker size={18} />
-                                </button>
-                            ) : nextUnfinishedStep.type === 'instruction' ? (
-                                <button 
-                                    type="button"
-                                    onClick={() => handleOpenInstruction(nextUnfinishedStep)} 
-                                    className="px-6 py-3.5 rounded-xl font-bold text-sm pointer-events-auto flex items-center gap-2.5 hover:bg-sky-700 active:scale-[0.98] transition-all bg-sky-600 text-white shadow-lg cursor-pointer"
-                                >
-                                    <span>{lang === 'sv' ? "Titta på genomgång" : "Watch walkthrough"}</span>
+                                ) : nextUnfinishedStep.type === 'instruction' ? (
                                     <BookOpen size={18} />
-                                </button>
-                            ) : (
-                                <button 
-                                    type="button"
-                                    onClick={onStart} 
-                                    className="px-6 py-3.5 rounded-xl font-bold text-sm pointer-events-auto flex items-center gap-2.5 hover:bg-emerald-700 active:scale-[0.98] transition-all bg-emerald-600 text-white shadow-lg cursor-pointer"
-                                >
-                                    <span>{t.start_btn}</span>
+                                ) : (
                                     <Play fill="currentColor" size={16} />
-                                </button>
-                            )
+                                )}
+                            </button>
                         ) : (
                             <button 
                                 type="button"
@@ -1675,13 +1588,17 @@ const Dashboard = ({
                     const currentStepId = activeInstructionModal.id;
                     markStepComplete(currentStepId);
 
-                    const nextStep = getNextStep(currentStepId);
+                    const nextStep = getNextUnitStep(allUnitSteps, currentStepId);
                     setActiveInstructionModal(null);
 
-                    if (nextStep && nextStep.type === 'practice') {
-                        onSelect(nextStep.topic, nextStep.level);
-                    } else if (nextStep && nextStep.type === 'instruction') {
-                        handleOpenInstruction(nextStep);
+                    if (nextStep) {
+                        if (onStartUnitStep) {
+                            onStartUnitStep(nextStep);
+                        } else if (nextStep.type === 'practice') {
+                            onSelect(nextStep.topic, nextStep.level);
+                        } else if (nextStep.type === 'instruction') {
+                            handleOpenInstruction(nextStep);
+                        }
                     }
                 }}
             />

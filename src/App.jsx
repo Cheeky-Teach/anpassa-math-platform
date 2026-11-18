@@ -635,6 +635,30 @@ function App() {
         }
     };
 
+    const handleLaunchUnitStep = (step, part = null) => {
+        if (!step) return;
+        const stepType = step.type || (step.sheetId ? 'instruction' : 'practice');
+        setActiveUnitStepId(step.id || null);
+
+        if (stepType === 'practice') {
+            const targetTopic = step.topic || step.topicId || part?.topicId;
+            const targetLevel = Number(step.level) || 1;
+            if (targetTopic) {
+                setTopic(targetTopic);
+                setLevel(targetLevel);
+                setStreak(0);
+                setView('practice');
+                if (timerSettings.duration > 0) {
+                    setTimerSettings(prev => ({ ...prev, isActive: true, remaining: timerSettings.duration }));
+                }
+                fetchQuestion(targetTopic, targetLevel, lang, true);
+            }
+        } else {
+            // 'instruction' or 'test' steps render inline / via modal directly inside PracticeView
+            setView('practice');
+        }
+    };
+
     const handleSubmit = async (e, directInput) => {
         if (e) e.preventDefault();
         if (feedback === 'correct') return;
@@ -1154,8 +1178,9 @@ function App() {
                                 activeBucket={activeBucket} 
                                 onBackToGateway={() => setActiveBucket(null)} 
                                 onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
+                                onStartUnitStep={handleLaunchUnitStep}
                                 onStart={startPractice}
-                                onStartCheckpoint={handleStartUnitCheckpoint}
+                                onStartCheckpoint={handleLaunchUnitStep}
                                 ui={ui} 
                                 onStudioOpen={() => setView('question_studio')} 
                                 onLabOpen={() => setView('practice_lab')}
@@ -1219,7 +1244,11 @@ function App() {
                             setLevelUpAvailable={setLevelUpAvailable}
                             activeBucket={activeBucket}
                             isDetourActive={isDetourActive}
-                            onAdvanceUnitStep={quitPractice}
+                            profile={profile}
+                            activeClass={activeClass}
+                            activeUnitStepId={activeUnitStepId}
+                            onSelectUnitStep={handleLaunchUnitStep}
+                            onBackToRoadmap={quitPractice}
                         />
                     </ResponsiveWrapper>
                 ) : view === 'question_studio' ? (
