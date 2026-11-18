@@ -29,11 +29,10 @@ export class PlaceValueGen {
     private generateUniqueDigits(length: number): number[] {
         let available = [1, 2, 3, 4, 5, 6, 7, 8, 9];
         const digits = [];
-        // First digit shouldn't be 0
         const first = MathUtils.randomChoice(available);
         digits.push(first);
         available = available.filter(d => d !== first);
-        available.push(0); // Add 0 for remaining digits
+        available.push(0);
 
         for (let i = 1; i < length; i++) {
             const next = MathUtils.randomChoice(available);
@@ -49,15 +48,134 @@ export class PlaceValueGen {
 
     private getPlaces() {
         return [
-            { val: 10000, sv: 'tiotusental', svPlural: 'tiotusental', en: 'ten thousands' },
-            { val: 1000, sv: 'tusental', svPlural: 'tusental', en: 'thousands' },
-            { val: 100, sv: 'hundratal', svPlural: 'hundratal', en: 'hundreds' },
-            { val: 10, sv: 'tiotal', svPlural: 'tiotal', en: 'tens' },
-            { val: 1, sv: 'ental', svPlural: 'ental', en: 'ones' },
-            { val: 0.1, sv: 'tiondel', svPlural: 'tiondelar', en: 'tenths' },
-            { val: 0.01, sv: 'hundradel', svPlural: 'hundradelar', en: 'hundredths' },
-            { val: 0.001, sv: 'tusendel', svPlural: 'tusendelar', en: 'thousandths' }
+            { val: 10000, shortSv: 'TT', shortEn: 'TTh', sv: 'tiotusental', svPlural: 'tiotusental', en: 'ten thousands' },
+            { val: 1000,  shortSv: 'T',  shortEn: 'Th',  sv: 'tusental',    svPlural: 'tusental',    en: 'thousands' },
+            { val: 100,   shortSv: 'H',  shortEn: 'H',   sv: 'hundratal',   svPlural: 'hundratal',   en: 'hundreds' },
+            { val: 10,    shortSv: 'Ti', shortEn: 'T',   sv: 'tiotal',      svPlural: 'tiotal',      en: 'tens' },
+            { val: 1,     shortSv: 'E',  shortEn: 'O',   sv: 'ental',       svPlural: 'ental',       en: 'ones' },
+            { val: 0.1,   shortSv: 'td', shortEn: 't',   sv: 'tiondel',     svPlural: 'tiondelar',   en: 'tenths' },
+            { val: 0.01,  shortSv: 'hd', shortEn: 'h',   sv: 'hundradel',   svPlural: 'hundradelar', en: 'hundredths' },
+            { val: 0.001, shortSv: 'tsd',shortEn: 'th',  sv: 'tusendel',    svPlural: 'tusendelar',  en: 'thousandths' }
         ];
+    }
+
+    /**
+     * Builds a LaTeX \begin{array} place-value grid with column headers (TT, T, H, Ti, E | td, hd, tsd).
+     * Supports highlighting a specific place value (targetPlaceVal) and optionally hiding the digit as '?'
+     * or showing a pointer row underneath.
+     */
+    private buildPlaceGridLatex(
+        numDisplay: string,
+        lang: string,
+        targetPlaceVal: number,
+        options: { maskTargetAsQuestion?: boolean; showZeroMask?: boolean } = {}
+    ): string {
+        const sep = lang === 'sv' ? ',' : '.';
+        const [wholePart, decPart = ''] = numDisplay.split(sep);
+
+        const wholeHeadersSv = ['TT', 'T', 'H', 'Ti', 'E'];
+        const wholeHeadersEn = ['TTh', 'Th', 'H', 'T', 'O'];
+        const decHeadersSv = ['td', 'hd', 'tsd'];
+        const decHeadersEn = ['t', 'h', 'th'];
+
+        const wHeaders = (lang === 'sv' ? wholeHeadersSv : wholeHeadersEn).slice(5 - wholePart.length);
+        const dHeaders = (lang === 'sv' ? decHeadersSv : decHeadersEn).slice(0, decPart.length);
+
+        const cols: { header: string; char: string; placeVal: number | null; isTarget: boolean }[] = [];
+
+        wholePart.split('').forEach((ch, idx) => {
+            const pVal = Math.pow(10, wholePart.length - 1 - idx);
+            cols.push({
+                header: wHeaders[idx] || '',
+                char: ch,
+                placeVal: pVal,
+                isTarget: Math.abs(pVal - targetPlaceVal) < 0.0001
+            });
+        });
+
+        if (decPart.length > 0) {
+            cols.push({ header: '', char: sep, placeVal: null, isTarget: false });
+            decPart.split('').forEach((ch, idx) => {
+                const pVal = Math.round(Math.pow(10, -(idx + 1)) * 1000) / 1000;
+                cols.push({
+                    header: dHeaders[idx] || '',
+                    char: ch,
+                    placeVal: pVal,
+                    isTarget: Math.abs(pVal - targetPlaceVal) < 0.0001
+                });
+            });
+        }
+
+        const colSpec = cols.map(c => (c.placeVal === null ? 'c' : 'c')).join(' ');
+        const headerRow = cols
+            .map(c => (c.header ? `\\scriptstyle\\text{${c.header}}` : ''))
+            .join(' & ');
+
+        const digitRow = cols
+            .map(c => {
+                if (c.placeVal === null) return `\\mathbf{${c.char}}`;
+                if (c.isTarget) {
+                    const shown = options.maskTargetAsQuestion ? '?' : c.char;
+                    return `\\underline{\\mathbf{${shown}}}`;
+                }
+                return options.showZeroMask ? `\\color{gray}{0}` : c.char;
+            })
+            .join(' & ');
+
+        const pointerRow = cols
+            .map(c => (c.isTarget ? '\\uparrow' : ''))
+            .join(' & ');
+
+        return `\\begin{array}{${colSpec}} ${headerRow} \\\\ \\hline ${digitRow} \\\\ ${pointerRow} \\end{array}`;
+    }
+
+    /**
+     * Builds a clean positional slot template + column-aligned addition for "build the number" tasks.
+     */
+    private buildSlotTemplateLatex(
+        selectedPlaces: { val: number; count: number }[],
+        hasDecimals: boolean,
+        lang: string
+    ): { slotGrid: string; columnAddition: string } {
+        const sep = lang === 'sv' ? ',' : '.';
+        const maxWhole = Math.max(1, ...selectedPlaces.filter(p => p.val >= 1).map(p => p.val));
+        const minDec = hasDecimals
+            ? Math.min(...selectedPlaces.filter(p => p.val < 1).map(p => p.val))
+            : 1;
+
+        const allOrdered = this.getPlaces().filter(p => {
+            if (p.val >= 1) return p.val <= maxWhole;
+            return hasDecimals && p.val >= minDec - 0.0001;
+        });
+
+        const cols: { header: string; cell: string }[] = [];
+        allOrdered.forEach(p => {
+            if (p.val === 0.1) {
+                cols.push({ header: '', cell: sep });
+            }
+            const match = selectedPlaces.find(sp => Math.abs(sp.val - p.val) < 0.0001);
+            cols.push({
+                header: lang === 'sv' ? p.shortSv : p.shortEn,
+                cell: match ? `\\mathbf{${match.count}}` : `\\mathbf{0}`
+            });
+        });
+
+        const colSpec = cols.map(() => 'c').join(' ');
+        const headerRow = cols.map(c => (c.header ? `\\scriptstyle\\text{${c.header}}` : '')).join(' & ');
+        const valueRow = cols.map(c => c.cell).join(' & ');
+        const slotGrid = `\\begin{array}{${colSpec}} ${headerRow} \\\\ \\hline ${valueRow} \\end{array}`;
+
+        const rows = selectedPlaces.map((sp, idx) => {
+            const partVal = Math.round(sp.count * sp.val * 1000) / 1000;
+            const formatted = this.formatNumber(partVal, lang);
+            return idx === 0 ? `& ${formatted}` : `+ & ${formatted}`;
+        });
+
+        const totalRaw = Math.round(selectedPlaces.reduce((s, p) => s + p.count * p.val, 0) * 1000) / 1000;
+        const totalFormatted = this.formatNumber(totalRaw, lang);
+        const columnAddition = `\\begin{array}{rl} ${rows.join(' \\\\ ')} \\\\ \\hline = & \\mathbf{${totalFormatted}} \\end{array}`;
+
+        return { slotGrid, columnAddition };
     }
 
     // --- LEVEL 1: WHOLE NUMBERS ---
@@ -73,44 +191,42 @@ export class PlaceValueGen {
         if (v === 'pv_whole_build') {
             const numPlacesToUse = MathUtils.randomInt(2, 4);
             const shuffledPlaces = MathUtils.shuffle([...places]).slice(0, numPlacesToUse);
-            // Sort by descending value to make the pedagogical breakdown sequential
-            shuffledPlaces.sort((a, b) => b.val - a.val); 
-            
+            shuffledPlaces.sort((a, b) => b.val - a.val);
+
             let totalValue = 0;
-            const descriptions = [];
-            const latexSteps = [];
+            const descriptions: string[] = [];
+            const selectedParts: { val: number; count: number }[] = [];
 
             shuffledPlaces.forEach(p => {
                 const count = MathUtils.randomInt(1, 9);
-                const partValue = count * p.val;
-                totalValue += partValue;
+                totalValue += count * p.val;
                 descriptions.push(lang === 'sv' ? `${count} ${p.svPlural}` : `${count} ${p.en}`);
-                latexSteps.push(`${count} \\cdot ${p.val} = ${partValue}`);
+                selectedParts.push({ val: p.val, count });
             });
 
-            // Scramble the text description so the user still has to figure out the order
             const descString = MathUtils.shuffle([...descriptions]).join(', ');
-            const additionLatex = latexSteps.join(' \\\\ ');
+            const { slotGrid, columnAddition } = this.buildSlotTemplateLatex(selectedParts, false, lang);
 
             return {
-                renderData: { 
+                renderData: {
                     description: lang === 'sv' ? `Skriv talet som beskrivs: ${descString}` : `Write the number described: ${descString}`,
-                    answerType: 'numeric' 
+                    answerType: 'numeric'
                 },
-                token: this.toBase64(totalValue.toString()), variationKey: v, type: 'calculate',
+                token: this.toBase64(totalValue.toString()),
+                variationKey: v,
+                type: 'calculate',
                 clues: [
-                    { 
-                        // 🟢 TWEAK: Original description injected directly into the first clue
-                        text: lang === 'sv' ? `Uppgift: ${descString}. Steg 1: Skriv ut vad varje enskild del faktiskt är värd som ett tal.` : `Task: ${descString}. Step 1: Write out what each individual part is actually worth as a number.`, 
-                        latex: `\\begin{aligned} ${additionLatex} \\end{aligned}` 
+                    {
+                        text: lang === 'sv'
+                            ? 'Placera siffrorna i rätt kolumn och fyll tomma positioner med 0.'
+                            : 'Place each digit in its column and fill any unmentioned positions with 0.',
+                        latex: slotGrid
                     },
-                    { 
-                        text: lang === 'sv' ? "Steg 2: Addera (plussa ihop) alla dessa värden för att bygga det slutgiltiga talet." : "Step 2: Add all these individual values together to build the final number.", 
-                        latex: `\\text{Totalt} = \\mathbf{${totalValue}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? "Tips: Om en position (som tiotal eller ental) saknas i texten, betyder det att den platsen ska vara en nolla!" : "Tip: If a place value (like tens or ones) is missing from the text, it means that spot gets a zero!", 
-                        latex: `` 
+                    {
+                        text: lang === 'sv'
+                            ? 'Summera delvärdena kolumnvis.'
+                            : 'Sum the place values column by column.',
+                        latex: columnAddition
                     }
                 ]
             };
@@ -119,66 +235,71 @@ export class PlaceValueGen {
         const numLength = MathUtils.randomInt(3, 5);
         const digits = this.generateUniqueDigits(numLength);
         const numStr = digits.join('');
-        const numValue = parseInt(numStr);
-        
-        // Pick a random digit to ask about
+        const numValue = parseInt(numStr, 10);
+
         let targetIndex = MathUtils.randomInt(0, numLength - 2);
-        
-        // Prevent 0 from being the target digit when asking for its value
         while (v === 'pv_whole_value' && digits[targetIndex] === 0) {
             targetIndex = MathUtils.randomInt(0, numLength - 2);
         }
-        
+
         const targetDigit = digits[targetIndex];
         const placeValueFactor = Math.pow(10, numLength - 1 - targetIndex);
         const actualValue = targetDigit * placeValueFactor;
         const placeWord = places.find(p => p.val === placeValueFactor);
 
         if (v === 'pv_whole_value') {
+            const gridLatex = this.buildPlaceGridLatex(numStr, lang, placeValueFactor);
+            const maskedLatex = this.buildPlaceGridLatex(numStr, lang, placeValueFactor, { showZeroMask: true });
+
             return {
-                renderData: { 
+                renderData: {
                     description: lang === 'sv' ? `Vilket värde har siffran ${targetDigit} i talet ${numValue}?` : `What value does the digit ${targetDigit} have in the number ${numValue}?`,
-                    answerType: 'numeric' 
+                    answerType: 'numeric'
                 },
-                token: this.toBase64(actualValue.toString()), variationKey: v, type: 'calculate',
+                token: this.toBase64(actualValue.toString()),
+                variationKey: v,
+                type: 'calculate',
                 clues: [
-                    { 
-                        // 🟢 TWEAK: Original number injected directly into the first clue
-                        text: lang === 'sv' ? `Vi utgår från talet ${numValue}. Steg 1: Lokalisera siffran ${targetDigit} i talet och identifiera vilken position den står på.` : `We start with the number ${numValue}. Step 1: Locate the digit ${targetDigit} in the number and identify its position.`, 
-                        latex: `\\text{Tal: } ${numValue} \\quad \\rightarrow \\quad \\text{Siffran } ${targetDigit} \\text{ står på } \\mathbf{${placeWord?.sv}}\\text{s plats.}` 
+                    {
+                        text: lang === 'sv'
+                            ? `Siffran ${targetDigit} står på ${placeWord?.sv}s plats.`
+                            : `The digit ${targetDigit} is in the ${placeWord?.en} place.`,
+                        latex: gridLatex
                     },
-                    { 
-                        text: lang === 'sv' ? `Steg 2: Eftersom platsen är värd ${placeValueFactor}, multiplicerar vi siffran med detta värde.` : `Step 2: Since the place is worth ${placeValueFactor}, we multiply the digit by this value.`, 
-                        latex: `${targetDigit} \\cdot ${placeValueFactor} = \\mathbf{${actualValue}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Svar: ${actualValue}` : `Answer: ${actualValue}`, 
-                        latex: `${actualValue}` 
+                    {
+                        text: lang === 'sv'
+                            ? `Nollställ övriga siffror och multiplicera med ${placeValueFactor}.`
+                            : `Zero out the other digits and multiply by ${placeValueFactor}.`,
+                        latex: `${maskedLatex} \\quad \\Rightarrow \\quad ${targetDigit} \\cdot ${placeValueFactor} = \\mathbf{${actualValue}}`
                     }
                 ]
             };
         }
 
         // pv_whole_digit
+        const hiddenGrid = this.buildPlaceGridLatex(numStr, lang, placeValueFactor, { maskTargetAsQuestion: true });
+        const revealedGrid = this.buildPlaceGridLatex(numStr, lang, placeValueFactor);
+
         return {
-            renderData: { 
+            renderData: {
                 description: lang === 'sv' ? `Vilken siffra står på ${placeWord?.sv}ets plats i talet ${numValue}?` : `Which digit is in the ${placeWord?.en} place in the number ${numValue}?`,
-                answerType: 'numeric' 
+                answerType: 'numeric'
             },
-            token: this.toBase64(targetDigit.toString()), variationKey: v, type: 'calculate',
+            token: this.toBase64(targetDigit.toString()),
+            variationKey: v,
+            type: 'calculate',
             clues: [
-                { 
-                    // 🟢 TWEAK: Original number injected directly into the first clue
-                    text: lang === 'sv' ? `Vi tittar på talet ${numValue}. Steg 1: Kom ihåg att platsen för ${placeWord?.sv} har värdet ${placeValueFactor}.` : `We look at the number ${numValue}. Step 1: Remember that the ${placeWord?.en} place has a value of ${placeValueFactor}.`, 
-                    latex: `\\text{Tal: } ${numValue} \\quad \\rightarrow \\quad \\text{Sökt värde: } ${placeValueFactor}` 
+                {
+                    text: lang === 'sv'
+                        ? `Hitta kolumnen för ${placeWord?.sv} (${placeValueFactor}).`
+                        : `Locate the ${placeWord?.en} (${placeValueFactor}) column.`,
+                    latex: hiddenGrid
                 },
-                { 
-                    text: lang === 'sv' ? `Steg 2: Räkna från höger till vänster (ental, tiotal, hundratal...) tills du når rätt plats.` : `Step 2: Count from right to left (ones, tens, hundreds...) until you reach the correct spot.`, 
-                    latex: `\\text{Rätt siffra är } \\mathbf{${targetDigit}}` 
-                },
-                { 
-                    text: lang === 'sv' ? `Svar: ${targetDigit}` : `Answer: ${targetDigit}`, 
-                    latex: `${targetDigit}` 
+                {
+                    text: lang === 'sv'
+                        ? `Läs av siffran i den markerade kolumnen.`
+                        : `Read the digit in the highlighted column.`,
+                    latex: `${revealedGrid} \\quad \\Rightarrow \\quad \\mathbf{${targetDigit}}`
                 }
             ]
         };
@@ -193,51 +314,55 @@ export class PlaceValueGen {
         ];
         const v = variationKey || this.getVariation(pool, options);
         const allPlaces = this.getPlaces();
-        
+
         if (v === 'pv_dec_build') {
             const decimalPlaces = allPlaces.filter(p => p.val < 1);
             const wholePlaces = allPlaces.filter(p => p.val >= 1 && p.val <= 100);
-            
+
             const numPlacesToUse = MathUtils.randomInt(3, 5);
             const shuffledPlaces = MathUtils.shuffle([...wholePlaces, ...decimalPlaces]).slice(0, numPlacesToUse);
-            shuffledPlaces.sort((a, b) => b.val - a.val); 
-            
+            if (!shuffledPlaces.some(p => p.val < 1)) {
+                shuffledPlaces[shuffledPlaces.length - 1] = MathUtils.randomChoice(decimalPlaces);
+            }
+            shuffledPlaces.sort((a, b) => b.val - a.val);
+
             let totalValue = 0;
-            const descriptions = [];
-            const latexSteps = [];
+            const descriptions: string[] = [];
+            const selectedParts: { val: number; count: number }[] = [];
 
             shuffledPlaces.forEach(p => {
                 const count = MathUtils.randomInt(1, 9);
                 const partValue = Math.round(count * p.val * 1000) / 1000;
                 totalValue += partValue;
                 descriptions.push(lang === 'sv' ? `${count} ${p.svPlural}` : `${count} ${p.en}`);
-                latexSteps.push(`${count} \\cdot ${this.formatNumber(p.val, lang)} = ${this.formatNumber(partValue, lang)}`);
+                selectedParts.push({ val: p.val, count });
             });
 
             totalValue = Math.round(totalValue * 1000) / 1000;
             const descString = MathUtils.shuffle([...descriptions]).join(', ');
             const ansStr = this.formatNumber(totalValue, lang);
-            const additionLatex = latexSteps.join(' \\\\ ');
+            const { slotGrid, columnAddition } = this.buildSlotTemplateLatex(selectedParts, true, lang);
 
             return {
-                renderData: { 
+                renderData: {
                     description: lang === 'sv' ? `Skriv decimaltalet som beskrivs: ${descString}` : `Write the decimal number described: ${descString}`,
-                    answerType: 'numeric' 
+                    answerType: 'numeric'
                 },
-                token: this.toBase64(ansStr), variationKey: v, type: 'calculate',
+                token: this.toBase64(ansStr),
+                variationKey: v,
+                type: 'calculate',
                 clues: [
-                    { 
-                        // 🟢 TWEAK: Original description injected directly into the first clue
-                        text: lang === 'sv' ? `Uppgift: ${descString}. Steg 1: Börja med att översätta varje del i texten till dess siffervärde.` : `Task: ${descString}. Step 1: Start by translating each part of the text into its number value.`, 
-                        latex: `\\begin{aligned} ${additionLatex} \\end{aligned}` 
+                    {
+                        text: lang === 'sv'
+                            ? 'Placera varje siffra på rätt sida om kommat och fyll luckor med 0.'
+                            : 'Place each digit around the decimal point and fill missing slots with 0.',
+                        latex: slotGrid
                     },
-                    { 
-                        text: lang === 'sv' ? "Steg 2: Addera (plussa ihop) alla dessa värden. Glöm inte var decimalkommat ska sitta!" : "Step 2: Add all these values together. Don't forget where the decimal point belongs!", 
-                        latex: `\\text{Totalt} = \\mathbf{${ansStr}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? "Tips: Saknas till exempel tiondelar men du har hundradelar? Då måste du sätta en nolla på tiondelens plats!" : "Tip: Missing tenths but you have hundredths? You must put a zero in the tenths place!", 
-                        latex: `` 
+                    {
+                        text: lang === 'sv'
+                            ? 'Addera delvärdena med kommatecknen rakt under varandra.'
+                            : 'Add the place values with decimal points aligned.',
+                        latex: columnAddition
                     }
                 ]
             };
@@ -247,28 +372,30 @@ export class PlaceValueGen {
         const decLength = MathUtils.randomInt(2, 3);
         const totalLength = wholeLength + decLength;
         const digits = this.generateUniqueDigits(totalLength);
-        
+
         let numValue = 0;
         let placeMultiplier = Math.pow(10, wholeLength - 1);
         const digitObjects = [];
 
         for (let i = 0; i < totalLength; i++) {
             numValue += digits[i] * placeMultiplier;
-            digitObjects.push({ digit: digits[i], place: placeMultiplier });
+            digitObjects.push({ digit: digits[i], place: Math.round(placeMultiplier * 1000) / 1000 });
             placeMultiplier /= 10;
         }
 
-        numValue = Math.round(numValue * 1000) / 1000; // floating point fix
-        const displayNum = this.formatNumber(numValue, lang);
+        numValue = Math.round(numValue * 1000) / 1000;
+        // Preserve trailing decimal digits so the grid always shows all generated decimal places
+        const wholeStr = digits.slice(0, wholeLength).join('');
+        const decStr = digits.slice(wholeLength).join('');
+        const sep = lang === 'sv' ? ',' : '.';
+        const displayNum = `${wholeStr}${sep}${decStr}`;
 
-        // Pick a random DECIMAL digit to focus on
         let targetDecimals = digitObjects.filter(d => d.place < 1);
-        
         if (v === 'pv_dec_value') {
             const nonZeroDecimals = targetDecimals.filter(d => d.digit !== 0);
             if (nonZeroDecimals.length > 0) targetDecimals = nonZeroDecimals;
         }
-        
+
         const targetObj = MathUtils.randomChoice(targetDecimals);
         const placeWord = allPlaces.find(p => Math.abs(p.val - targetObj.place) < 0.0001);
         const actualValueRaw = Math.round(targetObj.digit * targetObj.place * 1000) / 1000;
@@ -276,50 +403,58 @@ export class PlaceValueGen {
         const placeValueDisplay = this.formatNumber(targetObj.place, lang);
 
         if (v === 'pv_dec_value') {
+            const gridLatex = this.buildPlaceGridLatex(displayNum, lang, targetObj.place);
+            const maskedLatex = this.buildPlaceGridLatex(displayNum, lang, targetObj.place, { showZeroMask: true });
+
             return {
-                renderData: { 
+                renderData: {
                     description: lang === 'sv' ? `Vilket värde har siffran ${targetObj.digit} i talet ${displayNum}? Svara i decimalform.` : `What value does the digit ${targetObj.digit} have in the number ${displayNum}? Answer in decimal form.`,
-                    answerType: 'numeric' 
+                    answerType: 'numeric'
                 },
-                token: this.toBase64(actualValueDisplay), variationKey: v, type: 'calculate',
+                token: this.toBase64(actualValueDisplay),
+                variationKey: v,
+                type: 'calculate',
                 clues: [
-                    { 
-                        // 🟢 TWEAK: Original number injected directly into the first clue
-                        text: lang === 'sv' ? `Vi utgår från talet ${displayNum}. Steg 1: Lokalisera siffran ${targetObj.digit}. Eftersom den står till höger om kommatecknet, är det en decimal.` : `We start with the number ${displayNum}. Step 1: Locate the digit ${targetObj.digit}. Since it is to the right of the decimal point, it is a decimal fraction.`, 
-                        latex: `\\text{Tal: } ${displayNum} \\quad \\rightarrow \\quad \\text{Siffran står på } \\mathbf{${placeWord?.sv}}\\text{s plats.}` 
+                    {
+                        text: lang === 'sv'
+                            ? `Siffran ${targetObj.digit} står på ${placeWord?.sv}s plats (${placeValueDisplay}).`
+                            : `The digit ${targetObj.digit} is in the ${placeWord?.en} place (${placeValueDisplay}).`,
+                        latex: gridLatex
                     },
-                    { 
-                        text: lang === 'sv' ? `Steg 2: Platsen är värd ${placeValueDisplay}. Multiplicera siffran med platsens värde.` : `Step 2: The place is worth ${placeValueDisplay}. Multiply the digit by the place's value.`, 
-                        latex: `${targetObj.digit} \\cdot ${placeValueDisplay} = \\mathbf{${actualValueDisplay}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Svar: ${actualValueDisplay}` : `Answer: ${actualValueDisplay}`, 
-                        latex: `${actualValueDisplay}` 
+                    {
+                        text: lang === 'sv'
+                            ? `Nollställ övriga positioner för att avläsa decimalvärdet.`
+                            : `Zero out all other positions to read the decimal value.`,
+                        latex: `${maskedLatex} \\quad \\Rightarrow \\quad ${targetObj.digit} \\cdot ${placeValueDisplay} = \\mathbf{${actualValueDisplay}}`
                     }
                 ]
             };
         }
 
         // pv_dec_digit
+        const hiddenGrid = this.buildPlaceGridLatex(displayNum, lang, targetObj.place, { maskTargetAsQuestion: true });
+        const revealedGrid = this.buildPlaceGridLatex(displayNum, lang, targetObj.place);
+
         return {
-            renderData: { 
+            renderData: {
                 description: lang === 'sv' ? `Vilken siffra står på ${placeWord?.sv}ets plats i talet ${displayNum}?` : `Which digit is in the ${placeWord?.en} place in the number ${displayNum}?`,
-                answerType: 'numeric' 
+                answerType: 'numeric'
             },
-            token: this.toBase64(targetObj.digit.toString()), variationKey: v, type: 'calculate',
+            token: this.toBase64(targetObj.digit.toString()),
+            variationKey: v,
+            type: 'calculate',
             clues: [
-                { 
-                    // 🟢 TWEAK: Original number injected directly into the first clue
-                    text: lang === 'sv' ? `Vi tittar på talet ${displayNum}. Steg 1: Leta upp kommatecknet. Det fungerar som väggen mellan hela tal och decimaler.` : `We look at the number ${displayNum}. Step 1: Locate the decimal point. It acts as the wall between whole numbers and decimals.`, 
-                    latex: `\\text{Tal: } ${displayNum} \\quad \\rightarrow \\quad \\text{Sökt plats: } ${placeWord?.sv} (${placeValueDisplay})` 
+                {
+                    text: lang === 'sv'
+                        ? `Räkna stegen till höger om kommat till ${placeWord?.sv} (${placeValueDisplay}).`
+                        : `Count right from the decimal point to the ${placeWord?.en} (${placeValueDisplay}) column.`,
+                    latex: hiddenGrid
                 },
-                { 
-                    text: lang === 'sv' ? `Steg 2: Räkna stegen åt höger från kommatecknet (tiondel, hundradel, tusendel) tills du hittar rätt position.` : `Step 2: Count steps to the right from the decimal point (tenths, hundredths, thousandths) until you find the right position.`, 
-                    latex: `\\text{Rätt siffra är } \\mathbf{${targetObj.digit}}` 
-                },
-                { 
-                    text: lang === 'sv' ? `Svar: ${targetObj.digit}` : `Answer: ${targetObj.digit}`, 
-                    latex: `${targetObj.digit}` 
+                {
+                    text: lang === 'sv'
+                        ? `Läs av siffran i den markerade kolumnen.`
+                        : `Read the digit in the highlighted column.`,
+                    latex: `${revealedGrid} \\quad \\Rightarrow \\quad \\mathbf{${targetObj.digit}}`
                 }
             ]
         };
@@ -350,20 +485,17 @@ export class PlaceValueGen {
             placeWord = allPlaces.find(p => Math.abs(p.val - placeToRound) < 0.0001);
         }
 
-        // Calculate Rounded Answer safely avoiding floating point weirdness
         const factor = 1 / placeToRound;
         const roundedRaw = Math.round(numberToRound * factor) / factor;
         const displayOrig = this.formatNumber(numberToRound, lang);
         let ansDisplay = this.formatNumber(roundedRaw, lang);
 
-        // Robust mathematical extraction of the specific digits for the clue
         const numInt = Math.round(numberToRound * 10000);
         const placeInt = Math.round(placeToRound * 10000);
         const targetDigit = Math.floor(numInt / placeInt) % 10;
         const checkDigit = Math.floor(numInt / (placeInt / 10)) % 10;
         const isRoundingUp = checkDigit >= 5;
 
-        // Dynamic formatting instructions
         let formatInstruction = "";
         if (v === 'pv_round_whole') {
             formatInstruction = lang === 'sv' ? " (Svara som ett heltal utan kommatecken)" : " (Answer as a whole number without decimals)";
@@ -379,31 +511,81 @@ export class PlaceValueGen {
             }
         }
 
+        // Build annotated rounding LaTeX showing underlined target digit and downward arrow on the decider digit
+        const sep = lang === 'sv' ? ',' : '.';
+        const [wPart, dPart = ''] = displayOrig.split(sep);
+        const annotatedChars: string[] = [];
+
+        wPart.split('').forEach((ch, idx) => {
+            const pVal = Math.pow(10, wPart.length - 1 - idx);
+            if (Math.abs(pVal - placeToRound) < 0.0001) {
+                annotatedChars.push(`\\underline{\\mathbf{${ch}}}`);
+            } else if (Math.abs(pVal - placeToRound / 10) < 0.0001) {
+                annotatedChars.push(`\\overset{\\downarrow}{\\mathbf{${ch}}}`);
+            } else {
+                annotatedChars.push(ch);
+            }
+        });
+
+        if (dPart.length > 0) {
+            annotatedChars.push(sep);
+            dPart.split('').forEach((ch, idx) => {
+                const pVal = Math.round(Math.pow(10, -(idx + 1)) * 1000) / 1000;
+                if (Math.abs(pVal - placeToRound) < 0.0001) {
+                    annotatedChars.push(`\\underline{\\mathbf{${ch}}}`);
+                } else if (Math.abs(pVal - placeToRound / 10) < 0.0001) {
+                    annotatedChars.push(`\\overset{\\downarrow}{\\mathbf{${ch}}}`);
+                } else {
+                    annotatedChars.push(ch);
+                }
+            });
+        }
+
+        const annotatedNumberLatex = annotatedChars.join('');
+
+        const step3Text =
+            placeToRound >= 10
+                ? (lang === 'sv'
+                    ? 'Ersätt siffror efter avrundningsplatsen med nollor och ta bort decimaler.'
+                    : 'Replace digits after the rounding place with zeros and drop decimals.')
+                : placeToRound === 1
+                    ? (lang === 'sv'
+                        ? 'Ta bort alla decimaler efter entalssiffran.'
+                        : 'Drop all decimal digits after the ones place.')
+                    : (lang === 'sv'
+                        ? 'Klipp bort alla siffror till höger om den avrundade decimalen.'
+                        : 'Drop all digits to the right of the rounded decimal place.');
+
         return {
-            renderData: { 
+            renderData: {
                 description: lang === 'sv' ? `Avrunda talet ${displayOrig} till närmaste ${placeWord.sv}.${formatInstruction}` : `Round the number ${displayOrig} to the nearest ${placeWord.en}.${formatInstruction}`,
-                answerType: 'numeric' 
+                answerType: 'numeric'
             },
-            token: this.toBase64(ansDisplay), variationKey: v, type: 'calculate',
+            token: this.toBase64(ansDisplay),
+            variationKey: v,
+            type: 'calculate',
             clues: [
-                { 
-                    // 🟢 TWEAK: Original number injected directly into the first clue
-                    text: lang === 'sv' ? `Vi ska avrunda talet ${displayOrig}. Steg 1: Identifiera "målsiffran". Vi ska avrunda till ${placeWord.sv}, vilket betyder att siffran ${targetDigit} är vår målsiffra.` : `We will round the number ${displayOrig}. Step 1: Identify the "target digit". We are rounding to the nearest ${placeWord.en}, meaning the digit ${targetDigit} is our target.`, 
-                    latex: `\\text{Tal: } ${displayOrig} \\quad \\rightarrow \\quad \\text{Målsiffra: } \\mathbf{${targetDigit}}` 
+                {
+                    text: lang === 'sv'
+                        ? `Markera ${placeWord.sv}ssiffran (streck under) och grannen till höger (pil).`
+                        : `Underline the ${placeWord.en} digit and mark the neighbor to its right (arrow).`,
+                    latex: annotatedNumberLatex
                 },
-                { 
-                    text: lang === 'sv' ? `Steg 2: Titta på "grannen" precis till höger om målsiffran. Det är den som bestämmer vad som ska hända.` : `Step 2: Look at the "neighbor" directly to the right of the target digit. This digit decides what happens.`, 
-                    latex: `\\text{Siffran till höger: } \\mathbf{${checkDigit}}` 
+                {
+                    text: lang === 'sv'
+                        ? (isRoundingUp
+                            ? `Grannen är ${checkDigit} (5 eller mer) → höj målsiffran ${targetDigit} med 1.`
+                            : `Grannen är ${checkDigit} (mindre än 5) → behåll målsiffran ${targetDigit}.`)
+                        : (isRoundingUp
+                            ? `Neighbor is ${checkDigit} (5 or more) → round target digit ${targetDigit} up by 1.`
+                            : `Neighbor is ${checkDigit} (less than 5) → keep target digit ${targetDigit}.`),
+                    latex: isRoundingUp
+                        ? `${checkDigit} \\ge 5 \\quad \\Rightarrow \\quad ${targetDigit} + 1`
+                        : `${checkDigit} < 5 \\quad \\Rightarrow \\quad ${targetDigit} + 0`
                 },
-                { 
-                    text: lang === 'sv' ? `Steg 3: Följ avrundningsregeln. Är grannen 5 eller mer avrundar vi uppåt (+1). Är den 4 eller mindre stannar målsiffran kvar.` : `Step 3: Follow the rounding rule. If the neighbor is 5 or more, round up (+1). If it's 4 or less, the target digit stays the same.`, 
-                    latex: isRoundingUp 
-                        ? `${checkDigit} \\ge 5 \\rightarrow \\mathbf{\\text{Avrunda uppåt}}` 
-                        : `${checkDigit} \\le 4 \\rightarrow \\mathbf{\\text{Behåll siffran}}` 
-                },
-                { 
-                    text: lang === 'sv' ? `Steg 4: Applicera regeln på talet. ${v === 'pv_round_whole' ? 'Nollställ' : 'Ta bort'} alla siffror efter målsiffran.` : `Step 4: Apply the rule to the number. ${v === 'pv_round_whole' ? 'Turn all digits after the target to zero' : 'Remove all digits after the target'}.`, 
-                    latex: `\\text{Svar: } \\mathbf{${ansDisplay}}` 
+                {
+                    text: step3Text,
+                    latex: `${annotatedNumberLatex} \\quad \\rightarrow \\quad \\mathbf{${ansDisplay}}`
                 }
             ]
         };

@@ -1,6 +1,6 @@
 /**
  * AUTO-GENERATED CONTENT MAP (Static Snapshot with Live Examples)
- * Generated on: 2026-11-16T20:53:27.287Z
+ * Generated on: 2026-11-18T17:37:39.691Z
  */
 export const CONTENT_MAP = [
     {
@@ -25,11 +25,11 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$5x = 35$$",
+                        "ex": "$$3x = 27$$",
                         "renderData": {
-                            "latex": "5x = 35",
+                            "latex": "3x = 27",
                             "description": "Lös ekvationen.",
-                            "interceptorToken": "multiply ; 5 ; 35",
+                            "interceptorToken": "multiply ; 3 ; 27",
                             "answerType": "text",
                             "isWordProblemApplied": false
                         },
@@ -61,11 +61,11 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$2x + 1 = 23$$",
+                        "ex": "$$\\frac{x}{4} + 1 = 9$$",
                         "renderData": {
-                            "latex": "2x + 1 = 23",
+                            "latex": "\\frac{x}{4} + 1 = 9",
                             "description": "Lös ekvationen.",
-                            "interceptorToken": "multiply ; 2 ; + ; 1 ; 23",
+                            "interceptorToken": "divide ; 4 ; + ; 1 ; 9",
                             "answerType": "text",
                             "isWordProblemApplied": false
                         },
@@ -97,9 +97,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$2(x + 2) = 8$$",
+                        "ex": "$$5(x + 2) = 15$$",
                         "renderData": {
-                            "latex": "2(x + 2) = 8",
+                            "latex": "5(x + 2) = 15",
                             "description": "Lös ekvationen.",
                             "answerType": "text",
                             "isWordProblemApplied": false
@@ -132,9 +132,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$9x + 4 = 4x + 44$$",
+                        "ex": "$$9x + 12 = 2x + 40$$",
                         "renderData": {
-                            "latex": "9x + 4 = 4x + 44",
+                            "latex": "9x + 12 = 2x + 40",
                             "description": "Samla x på ena sidan och siffror på den andra.",
                             "answerType": "text",
                             "isWordProblemApplied": false
@@ -180,12 +180,12 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$14x+59=199$$",
+                        "ex": "$$17x+19=444$$",
                         "renderData": {
-                            "description": "Du köper x kg äpplen för 14 kr/kg och en bärkasse för 59 kr. Totalt betalar du 199 kr. Skriv en ekvation som beskriver denna uppgift.",
+                            "description": "En hyrbil kostar 19 kr i fast avgift plus 17 kr per mil. Den totala kostnaden blev 444 kr för x körda mil. Skriv en ekvation som beskriver denna uppgift.",
                             "answerType": "text",
-                            "latex": "14x+59=199",
-                            "interceptorToken": "multiply ; 14 ; + ; 59 ; 199",
+                            "latex": "17x+19=444",
+                            "interceptorToken": "multiply ; 17 ; + ; 19 ; 444",
                             "isWordProblemApplied": false
                         },
                         "desc": {
@@ -235,9 +235,9 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$19x + 15 - 6x + 3$$",
+                        "ex": "$$16x + 19 + 7x - 7$$",
                         "renderData": {
-                            "latex": "19x + 15 - 6x + 3",
+                            "latex": "16x + 19 + 7x - 7",
                             "description": "Förenkla uttrycket genom att sortera och slå ihop sorterna för sig.",
                             "answerType": "text",
                             "isWordProblemApplied": false
@@ -270,9 +270,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$2 \\cdot 6x + 8x + 4$$",
+                        "ex": "$$3 \\cdot 5x + 7x - 3$$",
                         "renderData": {
-                            "latex": "2 \\cdot 6x + 8x + 4",
+                            "latex": "3 \\cdot 5x + 7x - 3",
                             "description": "Förenkla uttrycket.",
                             "answerType": "text",
                             "isWordProblemApplied": false
@@ -305,9 +305,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$10x + (2x + 2)$$",
+                        "ex": "$$19x + (2x + 6)$$",
                         "renderData": {
-                            "latex": "10x + (2x + 2)",
+                            "latex": "19x + (2x + 6)",
                             "description": "Ta bort parentesen och förenkla uttrycket.",
                             "answerType": "text",
                             "isWordProblemApplied": false
@@ -340,9 +340,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$3(x + 3) + 3(x + 3)$$",
+                        "ex": "$$3(x + 3) + 3(x + 1)$$",
                         "renderData": {
-                            "latex": "3(x + 3) + 3(x + 3)",
+                            "latex": "3(x + 3) + 3(x + 1)",
                             "description": "Öppna upp båda parenteserna och förenkla uttrycket.",
                             "answerType": "text",
                             "isWordProblemApplied": false
@@ -375,9 +375,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$16x - (6x + 10)$$",
+                        "ex": "$$10x - (6x + 8)$$",
                         "renderData": {
-                            "latex": "16x - (6x + 10)",
+                            "latex": "10x - (6x + 8)",
                             "description": "Ta bort parentesen och förenkla uttrycket.",
                             "answerType": "text",
                             "isWordProblemApplied": false
@@ -426,34 +426,28 @@ export const CONTENT_MAP = [
                         "ex": "Teckna ett förenklat uttryck för figurens omkrets.",
                         "renderData": {
                             "geometry": {
-                                "type": "rectangle",
-                                "width": 200,
-                                "height": 120,
+                                "type": "triangle",
+                                "subtype": "equilateral",
+                                "width": 160,
+                                "height": 140,
                                 "labels": {
-                                    "w": "4x+4",
-                                    "h": "5x",
-                                    "s": "",
-                                    "b": "4x+4",
-                                    "base": "4x+4",
-                                    "width": "4x+4",
-                                    "bottom": "4x+4",
-                                    "top": "4x+4",
-                                    "height": "5x",
-                                    "left": "5x",
-                                    "right": "5x",
-                                    "hyp": "",
-                                    "c": "",
-                                    "diagonal": "",
-                                    "slant": "",
-                                    "s1": "",
-                                    "s2": "",
-                                    "arc1": "4x+4",
-                                    "arc2": "5x"
+                                    "w": "4x",
+                                    "h": "",
+                                    "b": "4x",
+                                    "base": "4x",
+                                    "width": "4x",
+                                    "bottom": "4x",
+                                    "top": "4x",
+                                    "height": "",
+                                    "left": "",
+                                    "right": "",
+                                    "arc1": "4x",
+                                    "arc2": ""
                                 }
                             },
                             "description": "Teckna ett förenklat uttryck för figurens omkrets.",
                             "answerType": "text",
-                            "answer": "18x+8",
+                            "answer": "12x",
                             "isWordProblemApplied": false
                         },
                         "desc": {
@@ -484,7 +478,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "En liksidig triangels omkrets är 48 cm. Beräkna x.",
+                        "ex": "En liksidig triangels omkrets är 237 cm. Beräkna x.",
                         "renderData": {
                             "geometry": {
                                 "type": "triangle",
@@ -492,30 +486,23 @@ export const CONTENT_MAP = [
                                 "width": 160,
                                 "height": 140,
                                 "labels": {
-                                    "w": "8x",
+                                    "w": "8x + 15",
                                     "h": "",
-                                    "s": "",
-                                    "b": "8x",
-                                    "base": "8x",
-                                    "width": "8x",
-                                    "bottom": "8x",
-                                    "top": "8x",
+                                    "b": "8x + 15",
+                                    "base": "8x + 15",
+                                    "width": "8x + 15",
+                                    "bottom": "8x + 15",
+                                    "top": "8x + 15",
                                     "height": "",
                                     "left": "",
                                     "right": "",
-                                    "hyp": "",
-                                    "c": "",
-                                    "diagonal": "",
-                                    "slant": "",
-                                    "s1": "",
-                                    "s2": "",
-                                    "arc1": "8x",
+                                    "arc1": "8x + 15",
                                     "arc2": ""
                                 }
                             },
-                            "description": "En liksidig triangels omkrets är 48 cm. Beräkna x.",
+                            "description": "En liksidig triangels omkrets är 237 cm. Beräkna x.",
                             "answerType": "numeric",
-                            "answer": 2,
+                            "answer": 8,
                             "isWordProblemApplied": false
                         },
                         "desc": {
@@ -549,35 +536,27 @@ export const CONTENT_MAP = [
                         "ex": "Teckna ett förenklat uttryck för figurens area.",
                         "renderData": {
                             "geometry": {
-                                "type": "triangle",
-                                "subtype": "right",
-                                "width": 180,
-                                "height": 140,
+                                "type": "rectangle",
+                                "width": 200,
+                                "height": 120,
                                 "labels": {
-                                    "w": "5x-8",
-                                    "h": "8",
-                                    "s": "",
-                                    "b": "5x-8",
-                                    "base": "5x-8",
-                                    "width": "5x-8",
-                                    "bottom": "5x-8",
-                                    "top": "5x-8",
-                                    "height": "8",
-                                    "left": "8",
-                                    "right": "8",
-                                    "hyp": "",
-                                    "c": "",
-                                    "diagonal": "",
-                                    "slant": "",
-                                    "s1": "",
-                                    "s2": "",
-                                    "arc1": "5x-8",
-                                    "arc2": "8"
+                                    "w": "3x",
+                                    "h": "12",
+                                    "b": "3x",
+                                    "base": "3x",
+                                    "width": "3x",
+                                    "bottom": "3x",
+                                    "top": "3x",
+                                    "height": "12",
+                                    "left": "12",
+                                    "right": "12",
+                                    "arc1": "3x",
+                                    "arc2": "12"
                                 }
                             },
                             "description": "Teckna ett förenklat uttryck för figurens area.",
                             "answerType": "text",
-                            "answer": "20x-32",
+                            "answer": "36x",
                             "isWordProblemApplied": false
                         },
                         "desc": {
@@ -608,37 +587,31 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "Rektangelns area är 320 cm². Beräkna x.",
+                        "ex": "Triangelns area är 176 cm². Beräkna x.",
                         "renderData": {
                             "geometry": {
-                                "type": "rectangle",
-                                "width": 200,
-                                "height": 120,
+                                "type": "triangle",
+                                "subtype": "right",
+                                "width": 180,
+                                "height": 140,
                                 "labels": {
-                                    "w": "8x",
-                                    "h": "5",
-                                    "s": "",
-                                    "b": "8x",
-                                    "base": "8x",
-                                    "width": "8x",
-                                    "bottom": "8x",
-                                    "top": "8x",
-                                    "height": "5",
-                                    "left": "5",
-                                    "right": "5",
-                                    "hyp": "",
-                                    "c": "",
-                                    "diagonal": "",
-                                    "slant": "",
-                                    "s1": "",
-                                    "s2": "",
-                                    "arc1": "8x",
-                                    "arc2": "5"
+                                    "w": "5x + 14",
+                                    "h": "8",
+                                    "b": "5x + 14",
+                                    "base": "5x + 14",
+                                    "width": "5x + 14",
+                                    "bottom": "5x + 14",
+                                    "top": "5x + 14",
+                                    "height": "8",
+                                    "left": "8",
+                                    "right": "8",
+                                    "arc1": "5x + 14",
+                                    "arc2": "8"
                                 }
                             },
-                            "description": "Rektangelns area är 320 cm². Beräkna x.",
+                            "description": "Triangelns area är 176 cm². Beräkna x.",
                             "answerType": "numeric",
-                            "answer": 8,
+                            "answer": 6,
                             "isWordProblemApplied": false
                         },
                         "desc": {
@@ -674,7 +647,7 @@ export const CONTENT_MAP = [
                             "geometry": {
                                 "type": "angle",
                                 "subtype": "adjacent",
-                                "angle": 140,
+                                "angle": 130,
                                 "lines": [
                                     {
                                         "x1": 150,
@@ -685,14 +658,14 @@ export const CONTENT_MAP = [
                                     {
                                         "x1": 150,
                                         "y1": 180,
-                                        "x2": 230,
-                                        "y2": 120
+                                        "x2": 204,
+                                        "y2": 96
                                     },
                                     {
                                         "x1": 150,
                                         "y1": 180,
-                                        "x2": 73,
-                                        "y2": 116
+                                        "x2": 86,
+                                        "y2": 103
                                     }
                                 ],
                                 "arcs": [
@@ -702,9 +675,9 @@ export const CONTENT_MAP = [
                                             "y": 180
                                         },
                                         "startAngle": 0,
-                                        "endAngle": 37,
+                                        "endAngle": 57,
                                         "radius": 45,
-                                        "label": "6x+6°",
+                                        "label": "4x + 5°",
                                         "color": "rgba(16, 185, 129, 0.15)",
                                         "stroke": "#10b981"
                                     },
@@ -713,10 +686,10 @@ export const CONTENT_MAP = [
                                             "x": 150,
                                             "y": 180
                                         },
-                                        "startAngle": 37,
-                                        "endAngle": 140,
+                                        "startAngle": 57,
+                                        "endAngle": 130,
                                         "radius": 45,
-                                        "label": "4x-12°",
+                                        "label": "2x°",
                                         "color": "rgba(59, 130, 246, 0.15)",
                                         "stroke": "#3b82f6"
                                     }
@@ -725,7 +698,7 @@ export const CONTENT_MAP = [
                             },
                             "description": "Teckna ett förenklat uttryck för de två vinklarnas sammanlagda summa.",
                             "answerType": "text",
-                            "answer": "10x-6",
+                            "answer": "6x+5",
                             "isWordProblemApplied": false
                         },
                         "desc": {
@@ -756,24 +729,30 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "Vinklarna bildar tillsammans 180°. Beräkna x.",
+                        "ex": "Vinklarna bildar tillsammans 90°. Beräkna x.",
                         "renderData": {
                             "geometry": {
                                 "type": "angle",
-                                "subtype": "supplementary",
-                                "angle": 180,
+                                "subtype": "adjacent",
+                                "angle": 90,
                                 "lines": [
                                     {
-                                        "x1": 40,
+                                        "x1": 150,
                                         "y1": 180,
-                                        "x2": 260,
+                                        "x2": 250,
                                         "y2": 180
                                     },
                                     {
                                         "x1": 150,
                                         "y1": 180,
-                                        "x2": 86,
-                                        "y2": 103
+                                        "x2": 213,
+                                        "y2": 102
+                                    },
+                                    {
+                                        "x1": 150,
+                                        "y1": 180,
+                                        "x2": 150,
+                                        "y2": 80
                                     }
                                 ],
                                 "arcs": [
@@ -783,9 +762,9 @@ export const CONTENT_MAP = [
                                             "y": 180
                                         },
                                         "startAngle": 0,
-                                        "endAngle": 130,
+                                        "endAngle": 51,
                                         "radius": 40,
-                                        "label": "130°",
+                                        "label": "3x + 12°",
                                         "color": "rgba(16, 185, 129, 0.15)",
                                         "stroke": "#10b981"
                                     },
@@ -794,19 +773,19 @@ export const CONTENT_MAP = [
                                             "x": 150,
                                             "y": 180
                                         },
-                                        "startAngle": 130,
-                                        "endAngle": 180,
+                                        "startAngle": 51,
+                                        "endAngle": 90,
                                         "radius": 40,
-                                        "label": "5x°",
+                                        "label": "39°",
                                         "color": "rgba(59, 130, 246, 0.15)",
                                         "stroke": "#3b82f6"
                                     }
                                 ],
                                 "labels": []
                             },
-                            "description": "Vinklarna bildar tillsammans 180°. Beräkna x.",
+                            "description": "Vinklarna bildar tillsammans 90°. Beräkna x.",
                             "answerType": "numeric",
-                            "answer": 10,
+                            "answer": 13,
                             "isWordProblemApplied": false
                         },
                         "desc": {
@@ -858,10 +837,10 @@ export const CONTENT_MAP = [
                                 "type": "pattern",
                                 "subtype": "sequence",
                                 "sequence": [
-                                    10,
-                                    15,
-                                    20,
-                                    25,
+                                    8,
+                                    11,
+                                    14,
+                                    17,
                                     "?"
                                 ]
                             },
@@ -895,17 +874,17 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Vilket värde har tal nummer 50 i mönstret: 10, 16, 22... ?",
+                        "ex": "Vilket värde har tal nummer 50 i mönstret: 8, 15, 22... ?",
                         "renderData": {
-                            "description": "Vilket värde har tal nummer 50 i mönstret: 10, 16, 22... ?",
-                            "interceptorToken": "10 ; 6 ; 50",
+                            "description": "Vilket värde har tal nummer 50 i mönstret: 8, 15, 22... ?",
+                            "interceptorToken": "8 ; 7 ; 50",
                             "answerType": "numeric",
                             "geometry": {
                                 "type": "pattern",
                                 "subtype": "sequence",
                                 "sequence": [
-                                    10,
-                                    16,
+                                    8,
+                                    15,
                                     22,
                                     "..."
                                 ]
@@ -954,45 +933,99 @@ export const CONTENT_MAP = [
                                         "sticks": [
                                             {
                                                 "x1": 10,
-                                                "y1": 80,
-                                                "x2": 50,
-                                                "y2": 80
-                                            },
-                                            {
-                                                "x1": 30,
-                                                "y1": 40,
-                                                "x2": 50,
-                                                "y2": 80
+                                                "y1": 50,
+                                                "x2": 10,
+                                                "y2": 90
                                             },
                                             {
                                                 "x1": 10,
-                                                "y1": 80,
-                                                "x2": 30,
-                                                "y2": 40
+                                                "y1": 90,
+                                                "x2": 50,
+                                                "y2": 90
                                             },
                                             {
                                                 "x1": 50,
-                                                "y1": 80,
-                                                "x2": 90,
-                                                "y2": 80
+                                                "y1": 50,
+                                                "x2": 50,
+                                                "y2": 90
                                             },
                                             {
-                                                "x1": 70,
-                                                "y1": 40,
+                                                "x1": 10,
+                                                "y1": 50,
+                                                "x2": 30,
+                                                "y2": 20
+                                            },
+                                            {
+                                                "x1": 30,
+                                                "y1": 20,
+                                                "x2": 50,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 10,
+                                                "y1": 50,
+                                                "x2": 50,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 50,
+                                                "y1": 90,
                                                 "x2": 90,
-                                                "y2": 80
+                                                "y2": 90
                                             },
                                             {
                                                 "x1": 90,
-                                                "y1": 80,
+                                                "y1": 50,
+                                                "x2": 90,
+                                                "y2": 90
+                                            },
+                                            {
+                                                "x1": 50,
+                                                "y1": 50,
+                                                "x2": 70,
+                                                "y2": 20
+                                            },
+                                            {
+                                                "x1": 70,
+                                                "y1": 20,
+                                                "x2": 90,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 50,
+                                                "y1": 50,
+                                                "x2": 90,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 90,
+                                                "y1": 90,
                                                 "x2": 130,
-                                                "y2": 80
+                                                "y2": 90
+                                            },
+                                            {
+                                                "x1": 130,
+                                                "y1": 50,
+                                                "x2": 130,
+                                                "y2": 90
+                                            },
+                                            {
+                                                "x1": 90,
+                                                "y1": 50,
+                                                "x2": 110,
+                                                "y2": 20
                                             },
                                             {
                                                 "x1": 110,
-                                                "y1": 40,
+                                                "y1": 20,
                                                 "x2": 130,
-                                                "y2": 80
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 90,
+                                                "y1": 50,
+                                                "x2": 130,
+                                                "y2": 50
                                             }
                                         ]
                                     },
@@ -1002,57 +1035,129 @@ export const CONTENT_MAP = [
                                         "sticks": [
                                             {
                                                 "x1": 10,
-                                                "y1": 80,
-                                                "x2": 50,
-                                                "y2": 80
-                                            },
-                                            {
-                                                "x1": 30,
-                                                "y1": 40,
-                                                "x2": 50,
-                                                "y2": 80
+                                                "y1": 50,
+                                                "x2": 10,
+                                                "y2": 90
                                             },
                                             {
                                                 "x1": 10,
-                                                "y1": 80,
-                                                "x2": 30,
-                                                "y2": 40
+                                                "y1": 90,
+                                                "x2": 50,
+                                                "y2": 90
                                             },
                                             {
                                                 "x1": 50,
-                                                "y1": 80,
-                                                "x2": 90,
-                                                "y2": 80
+                                                "y1": 50,
+                                                "x2": 50,
+                                                "y2": 90
                                             },
                                             {
-                                                "x1": 70,
-                                                "y1": 40,
+                                                "x1": 10,
+                                                "y1": 50,
+                                                "x2": 30,
+                                                "y2": 20
+                                            },
+                                            {
+                                                "x1": 30,
+                                                "y1": 20,
+                                                "x2": 50,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 10,
+                                                "y1": 50,
+                                                "x2": 50,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 50,
+                                                "y1": 90,
                                                 "x2": 90,
-                                                "y2": 80
+                                                "y2": 90
                                             },
                                             {
                                                 "x1": 90,
-                                                "y1": 80,
-                                                "x2": 130,
-                                                "y2": 80
+                                                "y1": 50,
+                                                "x2": 90,
+                                                "y2": 90
                                             },
                                             {
-                                                "x1": 110,
-                                                "y1": 40,
+                                                "x1": 50,
+                                                "y1": 50,
+                                                "x2": 70,
+                                                "y2": 20
+                                            },
+                                            {
+                                                "x1": 70,
+                                                "y1": 20,
+                                                "x2": 90,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 50,
+                                                "y1": 50,
+                                                "x2": 90,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 90,
+                                                "y1": 90,
                                                 "x2": 130,
-                                                "y2": 80
+                                                "y2": 90
                                             },
                                             {
                                                 "x1": 130,
-                                                "y1": 80,
+                                                "y1": 50,
+                                                "x2": 130,
+                                                "y2": 90
+                                            },
+                                            {
+                                                "x1": 90,
+                                                "y1": 50,
+                                                "x2": 110,
+                                                "y2": 20
+                                            },
+                                            {
+                                                "x1": 110,
+                                                "y1": 20,
+                                                "x2": 130,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 90,
+                                                "y1": 50,
+                                                "x2": 130,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 130,
+                                                "y1": 90,
                                                 "x2": 170,
-                                                "y2": 80
+                                                "y2": 90
+                                            },
+                                            {
+                                                "x1": 170,
+                                                "y1": 50,
+                                                "x2": 170,
+                                                "y2": 90
+                                            },
+                                            {
+                                                "x1": 130,
+                                                "y1": 50,
+                                                "x2": 150,
+                                                "y2": 20
                                             },
                                             {
                                                 "x1": 150,
-                                                "y1": 40,
+                                                "y1": 20,
                                                 "x2": 170,
-                                                "y2": 80
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 130,
+                                                "y1": 50,
+                                                "x2": 170,
+                                                "y2": 50
                                             }
                                         ]
                                     },
@@ -1062,69 +1167,159 @@ export const CONTENT_MAP = [
                                         "sticks": [
                                             {
                                                 "x1": 10,
-                                                "y1": 80,
-                                                "x2": 50,
-                                                "y2": 80
-                                            },
-                                            {
-                                                "x1": 30,
-                                                "y1": 40,
-                                                "x2": 50,
-                                                "y2": 80
+                                                "y1": 50,
+                                                "x2": 10,
+                                                "y2": 90
                                             },
                                             {
                                                 "x1": 10,
-                                                "y1": 80,
-                                                "x2": 30,
-                                                "y2": 40
+                                                "y1": 90,
+                                                "x2": 50,
+                                                "y2": 90
                                             },
                                             {
                                                 "x1": 50,
-                                                "y1": 80,
-                                                "x2": 90,
-                                                "y2": 80
+                                                "y1": 50,
+                                                "x2": 50,
+                                                "y2": 90
                                             },
                                             {
-                                                "x1": 70,
-                                                "y1": 40,
+                                                "x1": 10,
+                                                "y1": 50,
+                                                "x2": 30,
+                                                "y2": 20
+                                            },
+                                            {
+                                                "x1": 30,
+                                                "y1": 20,
+                                                "x2": 50,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 10,
+                                                "y1": 50,
+                                                "x2": 50,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 50,
+                                                "y1": 90,
                                                 "x2": 90,
-                                                "y2": 80
+                                                "y2": 90
                                             },
                                             {
                                                 "x1": 90,
-                                                "y1": 80,
-                                                "x2": 130,
-                                                "y2": 80
+                                                "y1": 50,
+                                                "x2": 90,
+                                                "y2": 90
                                             },
                                             {
-                                                "x1": 110,
-                                                "y1": 40,
+                                                "x1": 50,
+                                                "y1": 50,
+                                                "x2": 70,
+                                                "y2": 20
+                                            },
+                                            {
+                                                "x1": 70,
+                                                "y1": 20,
+                                                "x2": 90,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 50,
+                                                "y1": 50,
+                                                "x2": 90,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 90,
+                                                "y1": 90,
                                                 "x2": 130,
-                                                "y2": 80
+                                                "y2": 90
                                             },
                                             {
                                                 "x1": 130,
-                                                "y1": 80,
-                                                "x2": 170,
-                                                "y2": 80
+                                                "y1": 50,
+                                                "x2": 130,
+                                                "y2": 90
                                             },
                                             {
-                                                "x1": 150,
-                                                "y1": 40,
+                                                "x1": 90,
+                                                "y1": 50,
+                                                "x2": 110,
+                                                "y2": 20
+                                            },
+                                            {
+                                                "x1": 110,
+                                                "y1": 20,
+                                                "x2": 130,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 90,
+                                                "y1": 50,
+                                                "x2": 130,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 130,
+                                                "y1": 90,
                                                 "x2": 170,
-                                                "y2": 80
+                                                "y2": 90
                                             },
                                             {
                                                 "x1": 170,
-                                                "y1": 80,
+                                                "y1": 50,
+                                                "x2": 170,
+                                                "y2": 90
+                                            },
+                                            {
+                                                "x1": 130,
+                                                "y1": 50,
+                                                "x2": 150,
+                                                "y2": 20
+                                            },
+                                            {
+                                                "x1": 150,
+                                                "y1": 20,
+                                                "x2": 170,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 130,
+                                                "y1": 50,
+                                                "x2": 170,
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 170,
+                                                "y1": 90,
                                                 "x2": 210,
-                                                "y2": 80
+                                                "y2": 90
+                                            },
+                                            {
+                                                "x1": 210,
+                                                "y1": 50,
+                                                "x2": 210,
+                                                "y2": 90
+                                            },
+                                            {
+                                                "x1": 170,
+                                                "y1": 50,
+                                                "x2": 190,
+                                                "y2": 20
                                             },
                                             {
                                                 "x1": 190,
-                                                "y1": 40,
+                                                "y1": 20,
                                                 "x2": 210,
-                                                "y2": 80
+                                                "y2": 50
+                                            },
+                                            {
+                                                "x1": 170,
+                                                "y1": 50,
+                                                "x2": 210,
+                                                "y2": 50
                                             }
                                         ]
                                     }
@@ -1173,19 +1368,19 @@ export const CONTENT_MAP = [
                                 "rows": [
                                     [
                                         1,
-                                        13
+                                        6
                                     ],
                                     [
                                         2,
-                                        19
+                                        10
                                     ],
                                     [
                                         3,
-                                        25
+                                        14
                                     ],
                                     [
                                         4,
-                                        31
+                                        18
                                     ]
                                 ]
                             },
@@ -1219,10 +1414,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "I ett mönster med formeln $V = 6n + 2$, vilket figurnummer (n) har värdet 80?",
+                        "ex": "I ett mönster med formeln $V = 8n + 10$, vilket figurnummer (n) har värdet 90?",
                         "renderData": {
-                            "description": "I ett mönster med formeln $V = 6n + 2$, vilket figurnummer (n) har värdet 80?",
-                            "interceptorToken": "6n + 2 = 80",
+                            "description": "I ett mönster med formeln $V = 8n + 10$, vilket figurnummer (n) har värdet 90?",
+                            "interceptorToken": "8n + 10 = 90",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1273,14 +1468,14 @@ export const CONTENT_MAP = [
                                 "range": 10,
                                 "lines": [
                                     {
-                                        "slope": -1,
-                                        "intercept": -3,
+                                        "slope": 2,
+                                        "intercept": 0,
                                         "color": "#2563eb"
                                     }
                                 ]
                             },
                             "description": "Var skär linjen den stående y-axeln? Bestäm linjens m-värde (starttal).",
-                            "interceptorToken": "-3 ; -1",
+                            "interceptorToken": "0 ; 2",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1318,14 +1513,14 @@ export const CONTENT_MAP = [
                                 "range": 10,
                                 "lines": [
                                     {
-                                        "slope": 1,
+                                        "slope": 2,
                                         "intercept": 0,
                                         "color": "#16a34a"
                                     }
                                 ]
                             },
                             "description": "Bestäm linjens lutning (k-värde).",
-                            "interceptorToken": "1 ; 1 ; 1",
+                            "interceptorToken": "2 ; 1 ; 2",
                             "answerType": "text",
                             "isWordProblemApplied": false
                         },
@@ -1362,31 +1557,31 @@ export const CONTENT_MAP = [
                             "description": "Vilken formel $y = kx + m$ beskriver sambandet i tabellen?",
                             "geometry": {
                                 "type": "frequency_table",
-                                "orientation": "horizontal",
+                                "orientation": "vertical",
                                 "headers": [
                                     "x",
                                     "y"
                                 ],
                                 "rows": [
                                     [
+                                        0,
+                                        1
+                                    ],
+                                    [
                                         1,
-                                        0
+                                        -2
                                     ],
                                     [
                                         2,
-                                        4
+                                        -5
                                     ],
                                     [
                                         3,
-                                        8
-                                    ],
-                                    [
-                                        4,
-                                        12
+                                        -8
                                     ]
                                 ]
                             },
-                            "interceptorToken": "4 ; -4 ; y=4x-4",
+                            "interceptorToken": "-3 ; 1 ; y=-3x+1",
                             "answerType": "text",
                             "isWordProblemApplied": false
                         },
@@ -1425,13 +1620,13 @@ export const CONTENT_MAP = [
                                 "lines": [
                                     {
                                         "slope": 1,
-                                        "intercept": 2,
+                                        "intercept": -4,
                                         "color": "#7c3aed"
                                     }
                                 ]
                             },
                             "description": "Bestäm linjens ekvation på formen y = kx + m.",
-                            "interceptorToken": "1 ; 2 ; y=x+2",
+                            "interceptorToken": "1 ; -4 ; y=x-4",
                             "answerType": "text",
                             "isWordProblemApplied": false
                         },
@@ -1467,25 +1662,25 @@ export const CONTENT_MAP = [
                         "renderData": {
                             "graph": {
                                 "xMin": 0,
-                                "xMax": 8,
+                                "xMax": 10,
                                 "xGridStep": 1,
                                 "xLabelStep": 2,
-                                "xLabel": "Tid i timmar (x)",
+                                "xLabel": "Data i GB (x)",
                                 "yMin": 0,
-                                "yMax": 1400,
-                                "yGridStep": 100,
-                                "yLabelStep": 200,
-                                "yLabel": "Lön i kr (y)",
+                                "yMax": 500,
+                                "yGridStep": 50,
+                                "yLabelStep": 100,
+                                "yLabel": "Pris i kr (y)",
                                 "lines": [
                                     {
-                                        "slope": 120,
-                                        "intercept": 300,
-                                        "color": "#2563eb"
+                                        "slope": 30,
+                                        "intercept": 149,
+                                        "color": "#7c3aed"
                                     }
                                 ]
                             },
                             "description": "Läs av grafen. Vilket är startvärdet (m-värdet) där linjen skär den stående axeln?",
-                            "interceptorToken": "300 ; 120",
+                            "interceptorToken": "149 ; 30",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1541,11 +1736,11 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$\\begin{array}{rr} & 65 \\\\ + & 11 \\\\ \\hline \\end{array}$$",
+                        "ex": "$$\\begin{array}{rr} & 95 \\\\ + & 17 \\\\ \\hline \\end{array}$$",
                         "renderData": {
                             "description": "Beräkna summan.",
-                            "latex": "\\begin{array}{rr} & 65 \\\\ + & 11 \\\\ \\hline \\end{array}",
-                            "interceptorToken": "65 + 11",
+                            "latex": "\\begin{array}{rr} & 95 \\\\ + & 17 \\\\ \\hline \\end{array}",
+                            "interceptorToken": "95 + 17",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1577,11 +1772,11 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$\\begin{array}{rr} & 176 \\\\ - & 22 \\\\ \\hline \\end{array}$$",
+                        "ex": "$$\\begin{array}{rr} & 102 \\\\ - & 11 \\\\ \\hline \\end{array}$$",
                         "renderData": {
                             "description": "Beräkna differensen.",
-                            "latex": "\\begin{array}{rr} & 176 \\\\ - & 22 \\\\ \\hline \\end{array}",
-                            "interceptorToken": "176 - 22",
+                            "latex": "\\begin{array}{rr} & 102 \\\\ - & 11 \\\\ \\hline \\end{array}",
+                            "interceptorToken": "102 - 11",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1613,10 +1808,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$32,5 + 2,08$$",
+                        "ex": "$$7,1 + 3,55$$",
                         "renderData": {
                             "description": "Ställ upp och beräkna.",
-                            "latex": "32,5 + 2,08",
+                            "latex": "7,1 + 3,55",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1648,11 +1843,11 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$6 \\cdot 7$$",
+                        "ex": "$$8 \\cdot 8$$",
                         "renderData": {
                             "description": "Beräkna produkten.",
-                            "latex": "6 \\cdot 7",
-                            "interceptorToken": "6 · 7",
+                            "latex": "8 \\cdot 8",
+                            "interceptorToken": "8 · 8",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1684,10 +1879,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$\\begin{array}{rr} & 21 \\\\ \\times & 7 \\\\ \\hline \\end{array}$$",
+                        "ex": "$$\\begin{array}{rr} & 34 \\\\ \\times & 7 \\\\ \\hline \\end{array}$$",
                         "renderData": {
                             "description": "Beräkna.",
-                            "latex": "\\begin{array}{rr} & 21 \\\\ \\times & 7 \\\\ \\hline \\end{array}",
+                            "latex": "\\begin{array}{rr} & 34 \\\\ \\times & 7 \\\\ \\hline \\end{array}",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1719,10 +1914,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$0,9 \\cdot 7$$",
+                        "ex": "$$0,7 \\cdot 10$$",
                         "renderData": {
                             "description": "Beräkna produkten.",
-                            "latex": "0,9 \\cdot 7",
+                            "latex": "0,7 \\cdot 10",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1754,11 +1949,11 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 7,
-                        "ex": "$$\\frac{24}{6}$$",
+                        "ex": "$$\\frac{70}{7}$$",
                         "renderData": {
                             "description": "Beräkna kvoten.",
-                            "latex": "\\frac{24}{6}",
-                            "interceptorToken": "24 / 6",
+                            "latex": "\\frac{70}{7}",
+                            "interceptorToken": "70 / 7",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1790,10 +1985,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 8,
-                        "ex": "$$64\\_$$",
+                        "ex": "$$34\\_$$",
                         "renderData": {
-                            "description": "Vilken är den största möjliga siffran som kan ersätta strecket för att talet 64_ ska vara delbart med 10?",
-                            "latex": "64\\_",
+                            "description": "Vilken är den största möjliga siffran som kan ersätta strecket för att talet 34_ ska vara delbart med 5?",
+                            "latex": "34\\_",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1825,11 +2020,11 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 9,
-                        "ex": "$$\\frac{1,4}{7}$$",
+                        "ex": "$$\\frac{4,5}{5}$$",
                         "renderData": {
                             "description": "Beräkna kvoten.",
-                            "latex": "\\frac{1,4}{7}",
-                            "interceptorToken": "1.4 / 7",
+                            "latex": "\\frac{4,5}{5}",
+                            "interceptorToken": "4.5 / 5",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1874,9 +2069,9 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Vilket värde har siffran 4 i talet 475?",
+                        "ex": "Vilket värde har siffran 8 i talet 8091?",
                         "renderData": {
-                            "description": "Vilket värde har siffran 4 i talet 475?",
+                            "description": "Vilket värde har siffran 8 i talet 8091?",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1908,9 +2103,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Vilket värde har siffran 2 i talet 847,23? Svara i decimalform.",
+                        "ex": "Vilket värde har siffran 6 i talet 508,16? Svara i decimalform.",
                         "renderData": {
-                            "description": "Vilket värde har siffran 2 i talet 847,23? Svara i decimalform.",
+                            "description": "Vilket värde har siffran 6 i talet 508,16? Svara i decimalform.",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1942,9 +2137,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "Avrunda talet 7761,55 till närmaste ental. (Svara som ett heltal utan kommatecken)",
+                        "ex": "Avrunda talet 2333,29 till närmaste hundratal. (Svara som ett heltal utan kommatecken)",
                         "renderData": {
-                            "description": "Avrunda talet 7761,55 till närmaste ental. (Svara som ett heltal utan kommatecken)",
+                            "description": "Avrunda talet 2333,29 till närmaste hundratal. (Svara som ett heltal utan kommatecken)",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -1989,9 +2184,9 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$6 · 2 - 8$$",
+                        "ex": "$$4 · 4 - 3$$",
                         "renderData": {
-                            "latex": "6 · 2 - 8",
+                            "latex": "4 · 4 - 3",
                             "description": "Räkna ut värdet i rätt ordning.",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
@@ -2024,9 +2219,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$(6 + 8) \\cdot 3 - 10$$",
+                        "ex": "$$10 + 3 \\cdot (6 - 3)$$",
                         "renderData": {
-                            "latex": "(6 + 8) \\cdot 3 - 10",
+                            "latex": "10 + 3 \\cdot (6 - 3)",
                             "description": "Beräkna uttrycket i rätt ordning.",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
@@ -2059,9 +2254,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$2 · 5 + 37 - (5 + 6) · 2$$",
+                        "ex": "$$4 · 4 + \\frac{40 + 5}{9} + 34$$",
                         "renderData": {
-                            "latex": "2 · 5 + 37 - (5 + 6) · 2",
+                            "latex": "4 · 4 + \\frac{40 + 5}{9} + 34",
                             "description": "Lös. Följ prioriteringsreglerna.",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
@@ -2094,9 +2289,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$20 + 2^{2} + 8 · 5$$",
+                        "ex": "$$8 · 4 + 5^{2} + 22$$",
                         "renderData": {
-                            "latex": "20 + 2^{2} + 8 · 5",
+                            "latex": "8 · 4 + 5^{2} + 22",
                             "description": "Beräkna värdet med rätt ordning på stegen.",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
@@ -2142,9 +2337,9 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 2,
-                        "ex": "$$1 + 1 - 0 + 2$$",
+                        "ex": "$$(-2) + 3 - (-4) + (-2)$$",
                         "renderData": {
-                            "latex": "1 + 1 - 0 + 2",
+                            "latex": "(-2) + 3 - (-4) + (-2)",
                             "description": "Beräkna värdet.",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
@@ -2177,11 +2372,11 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$(-4) \\cdot (-6)$$",
+                        "ex": "$$(-6) \\cdot (-7)$$",
                         "renderData": {
                             "description": "Beräkna produkten.",
-                            "latex": "(-4) \\cdot (-6)",
-                            "interceptorToken": "4 * 6",
+                            "latex": "(-6) \\cdot (-7)",
+                            "interceptorToken": "6 * 7",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -2213,9 +2408,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\frac{-16}{-8}$$",
+                        "ex": "$$\\frac{10}{5}$$",
                         "renderData": {
-                            "latex": "\\frac{-16}{-8}",
+                            "latex": "\\frac{10}{5}",
                             "description": "Räkna ut kvoten.",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
@@ -2248,9 +2443,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$\\frac{-32  +  (-4)  \\cdot  (-5)}{-6}$$",
+                        "ex": "$$\\frac{-12  +  (-3)  \\cdot  (-2)}{-3}$$",
                         "renderData": {
-                            "latex": "\\frac{-32  +  (-4)  \\cdot  (-5)}{-6}",
+                            "latex": "\\frac{-12  +  (-3)  \\cdot  (-2)}{-3}",
                             "description": "Beräkna uttrycket.",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
@@ -2296,9 +2491,9 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Du har 24 kulor. Hur många kulor motsvarar 1/8?",
+                        "ex": "Du har 9 kulor. Hur många kulor motsvarar 1/3?",
                         "renderData": {
-                            "description": "Du har 24 kulor. Hur många kulor motsvarar 1/8?",
+                            "description": "Du har 9 kulor. Hur många kulor motsvarar 1/3?",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -2330,9 +2525,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Om en 1/10 av ett okänt tal är 24, vad är då hela talet totalt?",
+                        "ex": "Om en 1/10 av ett okänt tal är 23, vad är då hela talet totalt?",
                         "renderData": {
-                            "description": "Om en 1/10 av ett okänt tal är 24, vad är då hela talet totalt?",
+                            "description": "Om en 1/10 av ett okänt tal är 23, vad är då hela talet totalt?",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -2364,10 +2559,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$\\frac{8}{3}$$",
+                        "ex": "$$\\frac{16}{3}$$",
                         "renderData": {
                             "description": "Skriv om från bråkform till blandad form.",
-                            "latex": "\\frac{8}{3}",
+                            "latex": "\\frac{16}{3}",
                             "answerType": "mixed_fraction",
                             "isWordProblemApplied": false
                         },
@@ -2399,10 +2594,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\frac{7}{10} = \\frac{?}{60}$$",
+                        "ex": "$$\\frac{1}{4} = \\frac{?}{20}$$",
                         "renderData": {
                             "description": "Vilket tal saknas?.",
-                            "latex": "\\frac{7}{10} = \\frac{?}{60}",
+                            "latex": "\\frac{1}{4} = \\frac{?}{20}",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -2434,10 +2629,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$\\frac{7}{10}$$",
+                        "ex": "$$\\frac{4}{5}$$",
                         "renderData": {
                             "description": "Skriv om bråket som ett decimaltal.",
-                            "latex": "\\frac{7}{10}",
+                            "latex": "\\frac{4}{5}",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -2482,10 +2677,10 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$\\frac{2}{5} + \\frac{x}{5} = \\frac{3}{5}$$",
+                        "ex": "$$\\frac{3}{10} + \\frac{x}{10} = \\frac{9}{10}$$",
                         "renderData": {
                             "description": "Vilket tal är x?",
-                            "latex": "\\frac{2}{5} + \\frac{x}{5} = \\frac{3}{5}",
+                            "latex": "\\frac{3}{10} + \\frac{x}{10} = \\frac{9}{10}",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -2517,10 +2712,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$\\frac{3}{2} + \\frac{1}{7}$$",
+                        "ex": "$$\\frac{1}{4} + \\frac{2}{7}$$",
                         "renderData": {
                             "description": "Beräkna summan. Svara i bråkform och i enklaste form.",
-                            "latex": "\\frac{3}{2} + \\frac{1}{7}",
+                            "latex": "\\frac{1}{4} + \\frac{2}{7}",
                             "answerType": "fraction",
                             "isWordProblemApplied": false
                         },
@@ -2552,10 +2747,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$3\\frac{1}{2} + 1\\frac{1}{3}$$",
+                        "ex": "$$5\\frac{1}{3} + 2\\frac{1}{4}$$",
                         "renderData": {
                             "description": "Beräkna och svara i blandad form och enklaste form.",
-                            "latex": "3\\frac{1}{2} + 1\\frac{1}{3}",
+                            "latex": "5\\frac{1}{3} + 2\\frac{1}{4}",
                             "answerType": "mixed_fraction",
                             "isWordProblemApplied": false
                         },
@@ -2587,10 +2782,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\frac{8}{8} \\cdot \\frac{7}{3}$$",
+                        "ex": "$$\\frac{8}{5} \\cdot \\frac{7}{6}$$",
                         "renderData": {
                             "description": "Multiplicera bråken. Svara i bråkform OCH i enklaste form.",
-                            "latex": "\\frac{8}{8} \\cdot \\frac{7}{3}",
+                            "latex": "\\frac{8}{5} \\cdot \\frac{7}{6}",
                             "answerType": "fraction",
                             "isWordProblemApplied": false
                         },
@@ -2622,10 +2817,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$\\frac{5}{8} \\div \\frac{2}{7}$$",
+                        "ex": "$$\\frac{4}{12} \\div \\frac{4}{12}$$",
                         "renderData": {
                             "description": "Beräkna kvoten. Svara i bråkform.",
-                            "latex": "\\frac{5}{8} \\div \\frac{2}{7}",
+                            "latex": "\\frac{4}{12} \\div \\frac{4}{12}",
                             "answerType": "fraction",
                             "isWordProblemApplied": false
                         },
@@ -2657,9 +2852,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$-\\frac{2}{5} - \\left(-\\frac{1}{2}\\right)$$",
+                        "ex": "$$-\\frac{1}{4} - \\frac{3}{5}$$",
                         "renderData": {
-                            "latex": "-\\frac{2}{5} - \\left(-\\frac{1}{2}\\right)",
+                            "latex": "-\\frac{1}{4} - \\frac{3}{5}",
                             "description": "Beräkna och svara i enklaste form.",
                             "answerType": "fraction",
                             "isWordProblemApplied": false
@@ -2692,9 +2887,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 7,
-                        "ex": "$$\\frac{1}{2} \\cdot \\frac{1}{5} + \\frac{1}{2}$$",
+                        "ex": "$$\\frac{1}{10} + \\frac{1}{2} \\cdot \\frac{3}{5}$$",
                         "renderData": {
-                            "latex": "\\frac{1}{2} \\cdot \\frac{1}{5} + \\frac{1}{2}",
+                            "latex": "\\frac{1}{10} + \\frac{1}{2} \\cdot \\frac{3}{5}",
                             "description": "Beräkna med rätt prioriteringsordning.",
                             "answerType": "fraction",
                             "isWordProblemApplied": false
@@ -2727,9 +2922,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 8,
-                        "ex": "$$\\left(-\\frac{1}{2}\\right)^{3} + \\frac{1}{4}$$",
+                        "ex": "$$\\left(-\\frac{1}{2}\\right)^{3} - \\frac{2}{8}$$",
                         "renderData": {
-                            "latex": "\\left(-\\frac{1}{2}\\right)^{3} + \\frac{1}{4}",
+                            "latex": "\\left(-\\frac{1}{2}\\right)^{3} - \\frac{2}{8}",
                             "description": "Förenkla och beräkna.",
                             "answerType": "fraction",
                             "isWordProblemApplied": false
@@ -2783,7 +2978,7 @@ export const CONTENT_MAP = [
                             "geometry": {
                                 "type": "percent_grid",
                                 "total": 100,
-                                "colored": 95
+                                "colored": 7
                             },
                             "isWordProblemApplied": false
                         },
@@ -2815,11 +3010,11 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$25\\% \\cdot 11600$$",
+                        "ex": "$$50\\% \\cdot 400$$",
                         "renderData": {
-                            "description": "Beräkna 25% av 11600.",
-                            "latex": "25\\% \\cdot 11600",
-                            "interceptorToken": "25% av 11600",
+                            "description": "Beräkna 50% av 400.",
+                            "latex": "50\\% \\cdot 400",
+                            "interceptorToken": "50% av 400",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -2851,11 +3046,11 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$\\frac{112}{160}$$",
+                        "ex": "$$\\frac{140}{250}$$",
                         "renderData": {
-                            "description": "Hur många procent är 112 av 160?",
-                            "latex": "\\frac{112}{160}",
-                            "interceptorToken": "112 ; 160",
+                            "description": "Hur många procent är 140 av 250?",
+                            "latex": "\\frac{140}{250}",
+                            "interceptorToken": "140 ; 250",
                             "answerType": "numeric",
                             "suffix": "%",
                             "isWordProblemApplied": false
@@ -2888,11 +3083,11 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$40\\% \\cdot 610$$",
+                        "ex": "$$60\\% \\cdot 260$$",
                         "renderData": {
-                            "description": "Beräkna 40% av 610.",
-                            "latex": "40\\% \\cdot 610",
-                            "interceptorToken": "40% av 610",
+                            "description": "Beräkna 60% av 260.",
+                            "latex": "60\\% \\cdot 260",
+                            "interceptorToken": "60% av 260",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -2924,11 +3119,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$\\frac{250}{2500}$$",
+                        "ex": "Ett värde ändrades från 40 till 8. Vad var förändringen i procent?",
                         "renderData": {
-                            "description": "Ett värde ändrades från 2500 till 2750. Vad var förändringen i procent?",
-                            "latex": "\\frac{250}{2500}",
-                            "interceptorToken": "250 ; 2500",
+                            "description": "Ett värde ändrades från 40 till 8. Vad var förändringen i procent?",
+                            "interceptorToken": "32 ; 40",
                             "answerType": "numeric",
                             "suffix": "%",
                             "isWordProblemApplied": false
@@ -2961,11 +3155,11 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$4\\% = 19$$",
+                        "ex": "$$12\\% = 192$$",
                         "renderData": {
-                            "description": "4% av ett belopp är 19 kr. Vad är hela beloppet (100%)?",
-                            "latex": "4\\% = 19",
-                            "interceptorToken": "19 ; 4",
+                            "description": "12% av ett belopp är 192 kr. Vad är hela beloppet (100%)?",
+                            "latex": "12\\% = 192",
+                            "interceptorToken": "192 ; 12",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3010,9 +3204,9 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Ett värde ökar med 41%. Vilken förändringsfaktor motsvarar denna ökning?",
+                        "ex": "Ett värde ökar med 2,5%. Vilken förändringsfaktor motsvarar denna ökning?",
                         "renderData": {
-                            "description": "Ett värde ökar med 41%. Vilken förändringsfaktor motsvarar denna ökning?",
+                            "description": "Ett värde ökar med 2,5%. Vilken förändringsfaktor motsvarar denna ökning?",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3044,10 +3238,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Ett värde på 2700 kr ska höjas med 13%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
+                        "ex": "Ett värde på 350 kr ska höjas med 36%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
                         "renderData": {
-                            "description": "Ett värde på 2700 kr ska höjas med 13%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
-                            "interceptorToken": "2700 · 1.13 ; 13",
+                            "description": "Ett värde på 350 kr ska höjas med 36%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
+                            "interceptorToken": "350 · 1.36 ; 36",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3079,10 +3273,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "Efter en höjning med 25% är det nya priset 1350 kr. Vad var priset från början?",
+                        "ex": "Efter en höjning med 45% är det nya priset 696 kr. Vad var priset från början?",
                         "renderData": {
-                            "description": "Efter en höjning med 25% är det nya priset 1350 kr. Vad var priset från början?",
-                            "interceptorToken": "\\frac{1350}{1.25} ; 25",
+                            "description": "Efter en höjning med 45% är det nya priset 696 kr. Vad var priset från början?",
+                            "interceptorToken": "\\frac{696}{1.45} ; 45",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3114,10 +3308,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "Ett pris ändras i två steg: först en minskning med 30%, därefter en minskning med 8%. Beräkna den totala förändringsfaktorn.",
+                        "ex": "Ett pris ändras i två steg: först en ökning med 10%, därefter en ökning med 25%. Beräkna den totala förändringsfaktorn.",
                         "renderData": {
-                            "description": "Ett pris ändras i två steg: först en minskning med 30%, därefter en minskning med 8%. Beräkna den totala förändringsfaktorn.",
-                            "interceptorToken": "0.70 · 0.92",
+                            "description": "Ett pris ändras i två steg: först en ökning med 10%, därefter en ökning med 25%. Beräkna den totala förändringsfaktorn.",
+                            "interceptorToken": "1.10 · 1.25",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3149,10 +3343,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "Ett pris sänks först med 40% och sänks därefter med 5%. Med hur många procent har priset förändrats totalt?",
+                        "ex": "Ett pris höjs först med 20% och sänks därefter med 25%. Med hur många procent har priset förändrats totalt? (Svara med minustecken vid minskning, t.ex. -12)",
                         "renderData": {
-                            "description": "Ett pris sänks först med 40% och sänks därefter med 5%. Med hur många procent har priset förändrats totalt?",
-                            "interceptorToken": "0.60 · 0.95",
+                            "description": "Ett pris höjs först med 20% och sänks därefter med 25%. Med hur många procent har priset förändrats totalt? (Svara med minustecken vid minskning, t.ex. -12)",
+                            "interceptorToken": "1.20 · 0.75",
                             "answerType": "numeric",
                             "suffix": "%",
                             "isWordProblemApplied": false
@@ -3198,10 +3392,10 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$8^{0}$$",
+                        "ex": "$$310^{0}$$",
                         "renderData": {
                             "description": "Beräkna värdet av uttrycket.",
-                            "latex": "8^{0}",
+                            "latex": "310^{0}",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3233,11 +3427,11 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$10^{1}$$",
+                        "ex": "$$10^{4}$$",
                         "renderData": {
                             "description": "Skriv tiopotensen som ett heltal.",
-                            "latex": "10^{1}",
-                            "interceptorToken": "1",
+                            "latex": "10^{4}",
+                            "interceptorToken": "4",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3269,10 +3463,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "Skriv talet 6 400 i grundpotensform.",
+                        "ex": "Skriv talet 2 000 i grundpotensform.",
                         "renderData": {
-                            "description": "Skriv talet 6 400 i grundpotensform.",
-                            "interceptorToken": "6400 ; 6.4 ; 3",
+                            "description": "Skriv talet 2 000 i grundpotensform.",
+                            "interceptorToken": "2000 ; 2 ; 3",
                             "answerType": "structured_scientific",
                             "isWordProblemApplied": false
                         },
@@ -3304,11 +3498,11 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\sqrt{144}$$",
+                        "ex": "$$\\sqrt{64}$$",
                         "renderData": {
                             "description": "Beräkna kvadratroten.",
-                            "latex": "\\sqrt{144}",
-                            "interceptorToken": "144 ; 12",
+                            "latex": "\\sqrt{64}",
+                            "interceptorToken": "64 ; 8",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3340,10 +3534,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$x^{9} \\cdot x^{4}$$",
+                        "ex": "$$x^{2} \\cdot x^{9}$$",
                         "renderData": {
                             "description": "Förenkla till en enda potens.",
-                            "latex": "x^{9} \\cdot x^{4}",
+                            "latex": "x^{2} \\cdot x^{9}",
                             "answerType": "structured_power",
                             "isWordProblemApplied": false
                         },
@@ -3375,10 +3569,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$(x^{4})^{4}$$",
+                        "ex": "$$(x^{4})^{2}$$",
                         "renderData": {
                             "description": "Förenkla uttrycket.",
-                            "latex": "(x^{4})^{4}",
+                            "latex": "(x^{4})^{2}",
                             "answerType": "structured_power",
                             "isWordProblemApplied": false
                         },
@@ -3410,10 +3604,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 7,
-                        "ex": "$$2 \\cdot 10^{-4} \\cdot 6 \\cdot 10^{-1}$$",
+                        "ex": "$$9 \\cdot 10^{0} \\cdot 5 \\cdot 10^{-7}$$",
                         "renderData": {
                             "description": "Beräkna och svara i grundpotensform.",
-                            "latex": "2 \\cdot 10^{-4} \\cdot 6 \\cdot 10^{-1}",
+                            "latex": "9 \\cdot 10^{0} \\cdot 5 \\cdot 10^{-7}",
                             "answerType": "structured_scientific",
                             "isWordProblemApplied": false
                         },
@@ -3458,9 +3652,9 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$1,9 \\cdot 100$$",
+                        "ex": "$$39 \\cdot 10$$",
                         "renderData": {
-                            "latex": "1,9 \\cdot 100",
+                            "latex": "39 \\cdot 10",
                             "description": "Räkna ut värdet genom att flytta kommatecknet.",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
@@ -3493,9 +3687,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$0,53 \\cdot 0,01$$",
+                        "ex": "$$0,98 \\cdot 0,001$$",
                         "renderData": {
-                            "latex": "0,53 \\cdot 0,01",
+                            "latex": "0,98 \\cdot 0,001",
                             "description": "Räkna ut värdet genom att flytta kommatecknet.",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
@@ -3552,15 +3746,15 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$95,7 \\text{ km} = \\text{\\_\\_\\_} \\text{ m}$$",
+                        "ex": "$$130 \\text{ dm} = \\text{\\_\\_\\_} \\text{ cm}$$",
                         "renderData": {
-                            "description": "Omvandla från kilometer till meter.",
-                            "latex": "95,7 \\text{ km} = \\text{\\_\\_\\_} \\text{ m}",
-                            "interceptorToken": "95.7 ; km ; m ; 95700",
-                            "fromUnit": "km",
-                            "toUnit": "m",
-                            "val": 95.7,
-                            "ans": 95700,
+                            "description": "Omvandla från decimeter till centimeter.",
+                            "latex": "130 \\text{ dm} = \\text{\\_\\_\\_} \\text{ cm}",
+                            "interceptorToken": "130 ; dm ; cm ; 1300",
+                            "fromUnit": "dm",
+                            "toUnit": "cm",
+                            "val": 130,
+                            "ans": 1300,
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3592,15 +3786,15 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$178 \\text{ ton} = \\text{\\_\\_\\_} \\text{ kg}$$",
+                        "ex": "$$477 \\text{ kg} = \\text{\\_\\_\\_} \\text{ g}$$",
                         "renderData": {
-                            "description": "Omvandla från ton till kilogram.",
-                            "latex": "178 \\text{ ton} = \\text{\\_\\_\\_} \\text{ kg}",
-                            "interceptorToken": "178 ; ton ; kg ; 178000",
-                            "fromUnit": "ton",
-                            "toUnit": "kg",
-                            "val": 178,
-                            "ans": 178000,
+                            "description": "Omvandla från kilogram till gram.",
+                            "latex": "477 \\text{ kg} = \\text{\\_\\_\\_} \\text{ g}",
+                            "interceptorToken": "477 ; kg ; g ; 477000",
+                            "fromUnit": "kg",
+                            "toUnit": "g",
+                            "val": 477,
+                            "ans": 477000,
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3632,15 +3826,15 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$196 \\text{ l} = \\text{\\_\\_\\_} \\text{ ml}$$",
+                        "ex": "$$85,5 \\text{ dl} = \\text{\\_\\_\\_} \\text{ l}$$",
                         "renderData": {
-                            "description": "Omvandla från liter till milliliter.",
-                            "latex": "196 \\text{ l} = \\text{\\_\\_\\_} \\text{ ml}",
-                            "interceptorToken": "196 ; l ; ml ; 196000",
-                            "fromUnit": "l",
-                            "toUnit": "ml",
-                            "val": 196,
-                            "ans": 196000,
+                            "description": "Omvandla från deciliter till liter.",
+                            "latex": "85,5 \\text{ dl} = \\text{\\_\\_\\_} \\text{ l}",
+                            "interceptorToken": "85.5 ; dl ; l ; 8.55",
+                            "fromUnit": "dl",
+                            "toUnit": "l",
+                            "val": 85.5,
+                            "ans": 8.55,
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3689,15 +3883,15 @@ export const CONTENT_MAP = [
                         "renderData": {
                             "geometry": {
                                 "type": "square",
-                                "width": 12,
-                                "height": 12,
+                                "width": 7,
+                                "height": 7,
                                 "labels": {
-                                    "b": 12,
-                                    "h": 12
+                                    "b": 7,
+                                    "h": 7
                                 }
                             },
                             "description": "Beräkna kvadratens omkrets.",
-                            "interceptorToken": "12",
+                            "interceptorToken": "7",
                             "latex": "",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
@@ -3734,15 +3928,15 @@ export const CONTENT_MAP = [
                         "renderData": {
                             "geometry": {
                                 "type": "rectangle",
-                                "width": 12,
-                                "height": 7,
+                                "width": 5,
+                                "height": 8,
                                 "labels": {
-                                    "b": 12,
-                                    "h": 7
+                                    "b": 5,
+                                    "h": 8
                                 }
                             },
                             "description": "Beräkna figurens area.",
-                            "interceptorToken": "12 ; 7",
+                            "interceptorToken": "5 ; 8",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3778,15 +3972,15 @@ export const CONTENT_MAP = [
                         "renderData": {
                             "geometry": {
                                 "type": "triangle",
-                                "width": 11,
+                                "width": 6,
                                 "height": 5,
                                 "labels": {
-                                    "b": 11,
+                                    "b": 6,
                                     "h": 5
                                 }
                             },
                             "description": "Beräkna triangelns area.",
-                            "interceptorToken": "11 ; 5",
+                            "interceptorToken": "6 ; 5",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3823,35 +4017,35 @@ export const CONTENT_MAP = [
                             "geometry": {
                                 "type": "composite",
                                 "subtype": "rect_right_tri",
-                                "width": 8,
+                                "width": 9,
                                 "height": 8,
                                 "dims": {
                                     "subtype": "rect_right_tri",
-                                    "width": 8,
+                                    "width": 9,
                                     "height": 8
                                 },
                                 "labels": {
-                                    "w": 8,
+                                    "w": 9,
                                     "h": 8,
-                                    "tri_b": 5
+                                    "tri_b": 3
                                 }
                             },
                             "type": "composite",
                             "subtype": "rect_right_tri",
-                            "width": 8,
+                            "width": 9,
                             "height": 8,
                             "dims": {
                                 "subtype": "rect_right_tri",
-                                "width": 8,
+                                "width": 9,
                                 "height": 8
                             },
                             "labels": {
-                                "w": 8,
+                                "w": 9,
                                 "h": 8,
-                                "tri_b": 5
+                                "tri_b": 3
                             },
                             "description": "Figuren består av en rektangel och en triangel. Vad är totalarean?",
-                            "interceptorToken": "8 ; 8 ; 5",
+                            "interceptorToken": "9 ; 8 ; 3",
                             "answerType": "numeric",
                             "suffix": "cm²",
                             "isWordProblemApplied": false
@@ -3888,14 +4082,14 @@ export const CONTENT_MAP = [
                         "renderData": {
                             "geometry": {
                                 "type": "circle",
-                                "radius": 7,
+                                "radius": 12,
                                 "labels": {
-                                    "diameter": 14
+                                    "r": 12
                                 },
-                                "show": "diameter"
+                                "show": "radius"
                             },
                             "description": "Beräkna cirkelns area (använd pi = 3,14). Avrunda svaret till två decimaler.",
-                            "interceptorToken": "7",
+                            "interceptorToken": "12",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -3940,8 +4134,8 @@ export const CONTENT_MAP = [
                                     "height": 10
                                 },
                                 "labels": {
-                                    "w": 8,
-                                    "h": 6,
+                                    "w": 7,
+                                    "h": 7,
                                     "s": 6
                                 }
                             },
@@ -3955,12 +4149,12 @@ export const CONTENT_MAP = [
                                 "height": 10
                             },
                             "labels": {
-                                "w": 8,
-                                "h": 6,
+                                "w": 7,
+                                "h": 7,
                                 "s": 6
                             },
                             "description": "Beräkna husets omkrets.",
-                            "interceptorToken": "8 ; 6 ; 6",
+                            "interceptorToken": "7 ; 7 ; 6",
                             "answerType": "numeric",
                             "suffix": "cm²",
                             "isWordProblemApplied": false
@@ -4028,8 +4222,8 @@ export const CONTENT_MAP = [
                                     {
                                         "x1": 150,
                                         "y1": 180,
-                                        "x2": 228,
-                                        "y2": 102
+                                        "x2": 205,
+                                        "y2": 85
                                     }
                                 ],
                                 "arcs": [
@@ -4039,16 +4233,16 @@ export const CONTENT_MAP = [
                                             "y": 180
                                         },
                                         "startAngle": 0,
-                                        "endAngle": 45,
+                                        "endAngle": 60,
                                         "radius": 40,
-                                        "label": "45°"
+                                        "label": "60°"
                                     },
                                     {
                                         "center": {
                                             "x": 150,
                                             "y": 180
                                         },
-                                        "startAngle": 45,
+                                        "startAngle": 60,
                                         "endAngle": 90,
                                         "radius": 50,
                                         "label": "x"
@@ -4099,10 +4293,10 @@ export const CONTENT_MAP = [
                                         "y2": 125
                                     },
                                     {
-                                        "x1": 196,
-                                        "y1": 225,
-                                        "x2": 104,
-                                        "y2": 25
+                                        "x1": 245,
+                                        "y1": 180,
+                                        "x2": 55,
+                                        "y2": 70
                                     }
                                 ],
                                 "arcs": [
@@ -4112,17 +4306,17 @@ export const CONTENT_MAP = [
                                             "y": 125
                                         },
                                         "startAngle": 0,
-                                        "endAngle": 115,
+                                        "endAngle": 150,
                                         "radius": 35,
-                                        "label": "115°"
+                                        "label": "150°"
                                     },
                                     {
                                         "center": {
                                             "x": 150,
                                             "y": 125
                                         },
-                                        "startAngle": 180,
-                                        "endAngle": 295,
+                                        "startAngle": 150,
+                                        "endAngle": 180,
                                         "radius": 45,
                                         "label": "x"
                                     }
@@ -4166,23 +4360,23 @@ export const CONTENT_MAP = [
                                 "type": "angle",
                                 "polygons": [
                                     {
-                                        "points": "70,200 230,200 161,121"
+                                        "points": "107.18344426057999,200 192.81655573941998,200 153,60"
                                     }
                                 ],
                                 "labels": [
                                     {
-                                        "x": 94,
-                                        "y": 192,
-                                        "text": "41°"
+                                        "x": 124,
+                                        "y": 182,
+                                        "text": "72°"
                                     },
                                     {
-                                        "x": 206,
-                                        "y": 192,
-                                        "text": "49°"
+                                        "x": 176,
+                                        "y": 181,
+                                        "text": "74°"
                                     },
                                     {
-                                        "x": 158,
-                                        "y": 146,
+                                        "x": 152,
+                                        "y": 85,
                                         "text": "x"
                                     }
                                 ]
@@ -4225,28 +4419,28 @@ export const CONTENT_MAP = [
                                 "type": "angle",
                                 "polygons": [
                                     {
-                                        "points": "80,200 200,200 211,121 70,116"
+                                        "points": "80,200 200,200 215,121 75,59"
                                     }
                                 ],
                                 "labels": [
                                     {
-                                        "x": 97,
-                                        "y": 189,
-                                        "text": "97°"
+                                        "x": 95,
+                                        "y": 187,
+                                        "text": "92°"
                                     },
                                     {
-                                        "x": 183,
-                                        "y": 189,
-                                        "text": "98°"
+                                        "x": 186,
+                                        "y": 186,
+                                        "text": "101°"
                                     },
                                     {
-                                        "x": 193,
-                                        "y": 131,
-                                        "text": "84°"
+                                        "x": 196,
+                                        "y": 127,
+                                        "text": "103°"
                                     },
                                     {
                                         "x": 87,
-                                        "y": 126,
+                                        "y": 75,
                                         "text": "x"
                                     }
                                 ]
@@ -4301,22 +4495,22 @@ export const CONTENT_MAP = [
                                         "y2": 175
                                     },
                                     {
-                                        "x1": 208,
+                                        "x1": 186,
                                         "y1": 25,
-                                        "x2": 92,
+                                        "x2": 114,
                                         "y2": 225
                                     }
                                 ],
                                 "labels": [
                                     {
-                                        "x": 210,
-                                        "y": 57,
-                                        "text": "60°"
+                                        "x": 183,
+                                        "y": 96,
+                                        "text": "x"
                                     },
                                     {
-                                        "x": 152,
+                                        "x": 158,
                                         "y": 157,
-                                        "text": "x"
+                                        "text": "70°"
                                     }
                                 ]
                             },
@@ -4371,8 +4565,8 @@ export const CONTENT_MAP = [
                                 "type": "pythagoras_proof",
                                 "labels": {
                                     "areaA": "?",
-                                    "areaB": "16",
-                                    "areaC": "25"
+                                    "areaB": "144",
+                                    "areaC": "169"
                                 }
                             },
                             "isWordProblemApplied": false
@@ -4408,18 +4602,18 @@ export const CONTENT_MAP = [
                         "ex": "Beräkna hypotenusans längd c.",
                         "renderData": {
                             "description": "Beräkna hypotenusans längd c.",
-                            "interceptorToken": "10;24;26",
+                            "interceptorToken": "7;24;25",
                             "answerType": "numeric",
                             "geometry": {
                                 "type": "triangle",
                                 "subtype": "right",
                                 "dims": {
                                     "w": 240,
-                                    "h": 100
+                                    "h": 70
                                 },
                                 "labels": {
                                     "b": "24",
-                                    "h": "10",
+                                    "h": "7",
                                     "hyp": "c"
                                 }
                             },
@@ -4453,22 +4647,22 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "Hypotenusan är 25 och den ena kateten är 24. Beräkna kateten a.",
+                        "ex": "Hypotenusan är 13 och den ena kateten är 12. Beräkna kateten a.",
                         "renderData": {
-                            "description": "Hypotenusan är 25 och den ena kateten är 24. Beräkna kateten a.",
-                            "interceptorToken": "7;24;25",
+                            "description": "Hypotenusan är 13 och den ena kateten är 12. Beräkna kateten a.",
+                            "interceptorToken": "5;12;13",
                             "answerType": "numeric",
                             "geometry": {
                                 "type": "triangle",
                                 "subtype": "right",
                                 "dims": {
-                                    "w": 240,
-                                    "h": 70
+                                    "w": 120,
+                                    "h": 50
                                 },
                                 "labels": {
-                                    "b": "24",
+                                    "b": "12",
                                     "h": "a",
-                                    "hyp": "25"
+                                    "hyp": "13"
                                 }
                             },
                             "isWordProblemApplied": false
@@ -4535,10 +4729,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "Bestäm avståndet d mellan punkterna A(1, -2) och B(4, 2).",
+                        "ex": "Bestäm avståndet d mellan punkterna A(-1, 0) och B(2, 4).",
                         "renderData": {
-                            "description": "Bestäm avståndet d mellan punkterna A(1, -2) och B(4, 2).",
-                            "interceptorToken": "(1,-2);(4,2);5",
+                            "description": "Bestäm avståndet d mellan punkterna A(-1, 0) och B(2, 4).",
+                            "interceptorToken": "(-1,0);(2,4);5",
                             "answerType": "numeric",
                             "graph": {
                                 "xMin": -2,
@@ -4549,27 +4743,27 @@ export const CONTENT_MAP = [
                                 "labelStep": 2,
                                 "segments": [
                                     {
-                                        "x1": 1,
-                                        "y1": -2,
-                                        "x2": 4,
-                                        "y2": 2,
+                                        "x1": -1,
+                                        "y1": 0,
+                                        "x2": 2,
+                                        "y2": 4,
                                         "color": "#4f46e5",
                                         "width": 2.5
                                     },
                                     {
-                                        "x1": 1,
-                                        "y1": -2,
-                                        "x2": 4,
-                                        "y2": -2,
+                                        "x1": -1,
+                                        "y1": 0,
+                                        "x2": 2,
+                                        "y2": 0,
                                         "color": "#94a3b8",
                                         "width": 1.5,
                                         "dashed": true
                                     },
                                     {
-                                        "x1": 4,
-                                        "y1": -2,
-                                        "x2": 4,
-                                        "y2": 2,
+                                        "x1": 2,
+                                        "y1": 0,
+                                        "x2": 2,
+                                        "y2": 4,
                                         "color": "#94a3b8",
                                         "width": 1.5,
                                         "dashed": true
@@ -4577,16 +4771,16 @@ export const CONTENT_MAP = [
                                 ],
                                 "points": [
                                     {
-                                        "x": 1,
-                                        "y": -2,
-                                        "label": "A(1, -2)",
+                                        "x": -1,
+                                        "y": 0,
+                                        "label": "A(-1, 0)",
                                         "color": "#0f172a",
                                         "yOffset": -12
                                     },
                                     {
-                                        "x": 4,
-                                        "y": 2,
-                                        "label": "B(4, 2)",
+                                        "x": 2,
+                                        "y": 4,
+                                        "label": "B(2, 4)",
                                         "color": "#0f172a",
                                         "yOffset": -12
                                     }
@@ -4622,22 +4816,22 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "En likbent triangel har basen 12 cm och två sidor på 10 cm vardera. Beräkna triangelns area.",
+                        "ex": "En likbent triangel har basen 6 cm och två sidor på 5 cm vardera. Beräkna triangelns area.",
                         "renderData": {
-                            "description": "En likbent triangel har basen 12 cm och två sidor på 10 cm vardera. Beräkna triangelns area.",
-                            "interceptorToken": "12;10;8;48",
+                            "description": "En likbent triangel har basen 6 cm och två sidor på 5 cm vardera. Beräkna triangelns area.",
+                            "interceptorToken": "6;5;4;12",
                             "answerType": "numeric",
                             "geometry": {
                                 "type": "triangle",
                                 "subtype": "isosceles",
                                 "dims": {
-                                    "w": 96,
-                                    "h": 64
+                                    "w": 48,
+                                    "h": 32
                                 },
                                 "labels": {
-                                    "b": "12",
-                                    "s1": "10",
-                                    "s2": "10",
+                                    "b": "6",
+                                    "s1": "5",
+                                    "s2": "5",
                                     "h": "h"
                                 }
                             },
@@ -4691,19 +4885,19 @@ export const CONTENT_MAP = [
                                 "shapeType": "parallelogram",
                                 "left": {
                                     "labels": {
-                                        "b": 8,
+                                        "b": 10,
                                         "h": 5
                                     }
                                 },
                                 "right": {
                                     "labels": {
                                         "b": "x",
-                                        "h": 10
+                                        "h": 25
                                     }
                                 }
                             },
                             "description": "Beräkna den saknade sidan x i de likformiga figurerna.",
-                            "interceptorToken": "8 ; 5 ; 2",
+                            "interceptorToken": "10 ; 5 ; 5",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -4740,14 +4934,14 @@ export const CONTENT_MAP = [
                             "geometry": {
                                 "type": "transversal",
                                 "labels": {
-                                    "left_top": 9,
-                                    "left_tot": 19,
-                                    "base_top": 9,
+                                    "left_top": 7,
+                                    "left_tot": 11,
+                                    "base_top": 8,
                                     "base_bot": "x"
                                 }
                             },
                             "description": "Beräkna längden på basen x med hjälp av likformighet.",
-                            "interceptorToken": "9 ; 10 ; 9 ; 19 ; 19 ; 2.111111111111111",
+                            "interceptorToken": "7 ; 4 ; 8 ; 11 ; 12.571428571428571 ; 1.5714285714285714",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -4835,15 +5029,15 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "En ritning har skalan 1:25. En sträcka på ritningen är 7 cm. Hur lång är sträckan i verkligheten? Svara i centimeter.",
+                        "ex": "En ritning har skalan 1:20. En sträcka på ritningen är 2.5 cm. Hur lång är sträckan i verkligheten? Svara i centimeter.",
                         "renderData": {
-                            "description": "En ritning har skalan 1:25. En sträcka på ritningen är 7 cm. Hur lång är sträckan i verkligheten? Svara i centimeter.",
+                            "description": "En ritning har skalan 1:20. En sträcka på ritningen är 2.5 cm. Hur lång är sträckan i verkligheten? Svara i centimeter.",
                             "latex": "",
                             "answerType": "numeric",
                             "scale": {
                                 "type": "scale_compare",
-                                "ratio": "1:25",
-                                "pictureLength": "7 cm",
+                                "ratio": "1:20",
+                                "pictureLength": "2.5 cm",
                                 "realLength": "x",
                                 "mode": "reduction",
                                 "shape": "circle"
@@ -4878,16 +5072,16 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "Ett litet föremål är 2.5 mm i verkligheten. Hur långt blir föremålet på en bild i skala 6:1? Svara i millimeter.",
+                        "ex": "Ett litet föremål är 3 mm i verkligheten. Hur långt blir föremålet på en bild i skala 12:1? Svara i millimeter.",
                         "renderData": {
-                            "description": "Ett litet föremål är 2.5 mm i verkligheten. Hur långt blir föremålet på en bild i skala 6:1? Svara i millimeter.",
+                            "description": "Ett litet föremål är 3 mm i verkligheten. Hur långt blir föremålet på en bild i skala 12:1? Svara i millimeter.",
                             "latex": "",
                             "answerType": "numeric",
                             "scale": {
                                 "type": "scale_compare",
-                                "ratio": "6:1",
+                                "ratio": "12:1",
                                 "pictureLength": "x",
-                                "realLength": "2.5 mm",
+                                "realLength": "3 mm",
                                 "mode": "enlargement"
                             },
                             "isWordProblemApplied": false
@@ -4920,15 +5114,15 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "En sträcka är 3 m i verkligheten och 4 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
+                        "ex": "En sträcka är 3 m i verkligheten och 3 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
                         "renderData": {
-                            "description": "En sträcka är 3 m i verkligheten och 4 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
+                            "description": "En sträcka är 3 m i verkligheten och 3 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
                             "latex": "",
                             "answerType": "scale",
                             "scale": {
                                 "type": "scale_compare",
                                 "ratio": "?",
-                                "pictureLength": "4 cm",
+                                "pictureLength": "3 cm",
                                 "realLength": "3 m",
                                 "mode": "reduction"
                             },
@@ -4969,23 +5163,23 @@ export const CONTENT_MAP = [
                             "answerType": "numeric",
                             "similarity": {
                                 "type": "similarity_compare",
-                                "shapeType": "parallelogram",
-                                "subtype": "standard",
+                                "shapeType": "triangle",
+                                "subtype": "right",
                                 "leftDims": {
-                                    "w": 12,
-                                    "h": 3
+                                    "w": 6,
+                                    "h": 10
                                 },
                                 "leftLabels": {
-                                    "b": "12",
-                                    "h": "3"
+                                    "b": "6",
+                                    "h": "10"
                                 },
                                 "rightDims": {
-                                    "w": 36,
-                                    "h": 9
+                                    "w": 18,
+                                    "h": 30
                                 },
                                 "rightLabels": {
                                     "b": "x",
-                                    "h": "9"
+                                    "h": "30"
                                 }
                             },
                             "isWordProblemApplied": false
@@ -5027,10 +5221,10 @@ export const CONTENT_MAP = [
                                 "type": "similarity_compare",
                                 "variant": "nested",
                                 "nested": {
-                                    "topBase": "6",
+                                    "topBase": "2",
                                     "fullBase": "x",
-                                    "topSide": "2",
-                                    "fullSide": "4"
+                                    "topSide": "3",
+                                    "fullSide": "6"
                                 }
                             },
                             "isWordProblemApplied": false
@@ -5121,16 +5315,16 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 8,
-                        "ex": "Två likformiga cylindrar har längdskalan 1:4. Den mindre rymmer 3 liter. Hur många liter rymmer den större cylindern?",
+                        "ex": "Två likformiga cylindrar har längdskalan 1:4. Den mindre rymmer 10 liter. Hur många liter rymmer den större cylindern?",
                         "renderData": {
-                            "description": "Två likformiga cylindrar har längdskalan 1:4. Den mindre rymmer 3 liter. Hur många liter rymmer den större cylindern?",
+                            "description": "Två likformiga cylindrar har längdskalan 1:4. Den mindre rymmer 10 liter. Hur många liter rymmer den större cylindern?",
                             "latex": "",
                             "answerType": "numeric",
                             "compareVolume": {
                                 "type": "compare_volume",
-                                "shapeType": "cuboid",
+                                "shapeType": "cylinder",
                                 "k": 4,
-                                "leftVol": "3 l",
+                                "leftVol": "10 l",
                                 "rightVol": "x",
                                 "leftLabels": {
                                     "r": "r",
@@ -5189,13 +5383,13 @@ export const CONTENT_MAP = [
                             "geometry": {
                                 "type": "cuboid",
                                 "labels": {
-                                    "w": 3,
-                                    "d": 4,
-                                    "h": 4
+                                    "w": 6,
+                                    "d": 7,
+                                    "h": 10
                                 }
                             },
                             "description": "Beräkna rätblockets volym.",
-                            "interceptorToken": "3 ; 4 ; 4",
+                            "interceptorToken": "6 ; 7 ; 10",
                             "answerType": "numeric",
                             "suffix": "cm³",
                             "isWordProblemApplied": false
@@ -5233,13 +5427,13 @@ export const CONTENT_MAP = [
                             "geometry": {
                                 "type": "triangular_prism",
                                 "labels": {
-                                    "b": 9,
+                                    "b": 8,
                                     "h": 9,
                                     "l": 10
                                 }
                             },
                             "description": "Beräkna volymen for det triangulära prismat.",
-                            "interceptorToken": "9 ; 9 ; 10",
+                            "interceptorToken": "8 ; 9 ; 10",
                             "answerType": "numeric",
                             "suffix": "cm³",
                             "isWordProblemApplied": false
@@ -5278,12 +5472,12 @@ export const CONTENT_MAP = [
                                 "type": "cylinder",
                                 "show": "radius",
                                 "labels": {
-                                    "r": 3,
-                                    "h": 14
+                                    "r": 10,
+                                    "h": 16
                                 }
                             },
                             "description": "Beräkna cylinderns volym ($\\pi \\approx 3,14$).",
-                            "interceptorToken": "3 ; 14",
+                            "interceptorToken": "10 ; 16",
                             "answerType": "numeric",
                             "suffix": "cm³",
                             "isWordProblemApplied": false
@@ -5321,12 +5515,12 @@ export const CONTENT_MAP = [
                             "geometry": {
                                 "type": "pyramid",
                                 "labels": {
-                                    "s": 4,
-                                    "h": 19
+                                    "s": 8,
+                                    "h": 16
                                 }
                             },
                             "description": "Pyramiden har en kvadratisk basyta. Beräkna pyramidens volym.",
-                            "interceptorToken": "4 ; 19",
+                            "interceptorToken": "8 ; 16",
                             "answerType": "numeric",
                             "suffix": "cm³",
                             "isWordProblemApplied": false
@@ -5359,16 +5553,16 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "Beräkna klotets volym med radien 6 cm.",
+                        "ex": "Beräkna klotets volym med radien 3 cm.",
                         "renderData": {
                             "geometry": {
                                 "type": "sphere",
                                 "labels": {
-                                    "r": 6
+                                    "r": 3
                                 }
                             },
-                            "description": "Beräkna klotets volym med radien 6 cm.",
-                            "interceptorToken": "6",
+                            "description": "Beräkna klotets volym med radien 3 cm.",
+                            "interceptorToken": "3",
                             "answerType": "numeric",
                             "suffix": "cm³",
                             "isWordProblemApplied": false
@@ -5407,12 +5601,12 @@ export const CONTENT_MAP = [
                                 "type": "cylinder",
                                 "show": "diameter",
                                 "labels": {
-                                    "d": 4,
+                                    "d": 6,
                                     "h": 14
                                 }
                             },
                             "description": "Beräkna cylinderns volym ($\\pi \\approx 3,14$).",
-                            "interceptorToken": "2 ; 14",
+                            "interceptorToken": "3 ; 14",
                             "answerType": "numeric",
                             "suffix": "cm³",
                             "isWordProblemApplied": false
@@ -5445,17 +5639,16 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 7,
-                        "ex": "En container har formen av ett rätblock med bredden 2 dm, höjden 5 dm och djupet 7 dm. Vad är dess volym i liter?",
+                        "ex": "En trafikkon har formen av ett kon med radien 10 cm och höjden 5 cm. Vad är dess volym i liter?",
                         "renderData": {
                             "geometry": {
-                                "type": "cuboid",
+                                "type": "cone",
                                 "labels": {
-                                    "w": 2,
-                                    "h": 5,
-                                    "d": 7
+                                    "r": 10,
+                                    "h": 5
                                 }
                             },
-                            "description": "En container har formen av ett rätblock med bredden 2 dm, höjden 5 dm och djupet 7 dm. Vad är dess volym i liter?",
+                            "description": "En trafikkon har formen av ett kon med radien 10 cm och höjden 5 cm. Vad är dess volym i liter?",
                             "answerType": "numeric",
                             "suffix": "l",
                             "isWordProblemApplied": false
@@ -5493,9 +5686,9 @@ export const CONTENT_MAP = [
                             "geometry": {
                                 "type": "cuboid",
                                 "labels": {
-                                    "w": 10,
-                                    "d": 9,
-                                    "h": 5
+                                    "w": 7,
+                                    "d": 5,
+                                    "h": 12
                                 }
                             },
                             "description": "Beräkna rätblockets ytarea (arean av alla sex sidor sammanlagt).",
@@ -5555,10 +5748,10 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Kolla igenom åldrar listan: 15, 11, 17, 12, 13, 15, 13, 13. Vilket är typvärdet?",
+                        "ex": "Kolla igenom åldrar listan: 15, 15, 16, 15, 15, 15, 17, 16. Vilket är typvärdet?",
                         "renderData": {
-                            "description": "Kolla igenom åldrar listan: 15, 11, 17, 12, 13, 15, 13, 13. Vilket är typvärdet?",
-                            "interceptorToken": "15, 11, 17, 12, 13, 15, 13, 13 ; 13",
+                            "description": "Kolla igenom åldrar listan: 15, 15, 16, 15, 15, 15, 17, 16. Vilket är typvärdet?",
+                            "interceptorToken": "15, 15, 16, 15, 15, 15, 17, 16 ; 15",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -5590,10 +5783,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Beräkna medelvärdet för följande åldrar: 12, 12, 14, 12, 12.",
+                        "ex": "Beräkna medelvärdet för följande skostorlekar: 37, 44, 39, 37, 42.",
                         "renderData": {
-                            "description": "Beräkna medelvärdet för följande åldrar: 12, 12, 14, 12, 12.",
-                            "interceptorToken": "12, 12, 14, 12, 12 ; 62 ; 5 ; 12.4",
+                            "description": "Beräkna medelvärdet för följande skostorlekar: 37, 44, 39, 37, 42.",
+                            "interceptorToken": "37, 44, 39, 37, 42 ; 199 ; 5 ; 39.8",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -5625,10 +5818,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "Bestäm medianen för följande gjorda mål: 5, 2, 0, 1, 3, 5.",
+                        "ex": "Bestäm medianen för följande poäng: 6, 18, 13, 8, 23, 13.",
                         "renderData": {
-                            "description": "Bestäm medianen för följande gjorda mål: 5, 2, 0, 1, 3, 5.",
-                            "interceptorToken": "5, 2, 0, 1, 3, 5 ; 2.5",
+                            "description": "Bestäm medianen för följande poäng: 6, 18, 13, 8, 23, 13.",
+                            "interceptorToken": "6, 18, 13, 8, 23, 13 ; 13",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -5660,10 +5853,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "Medelvärdet av fyra tal är 14. Tre av talen är 10, 17 och 12. Vilket är det fjärde talet?",
+                        "ex": "Medelvärdet av fyra tal är 14. Tre av talen är 8, 19 och 14. Vilket är det fjärde talet?",
                         "renderData": {
-                            "description": "Medelvärdet av fyra tal är 14. Tre av talen är 10, 17 och 12. Vilket är det fjärde talet?",
-                            "interceptorToken": "14 ; 10, 17, 12 ; 17",
+                            "description": "Medelvärdet av fyra tal är 14. Tre av talen är 8, 19 och 14. Vilket är det fjärde talet?",
+                            "interceptorToken": "14 ; 8, 19, 14 ; 15",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -5695,33 +5888,41 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "Hur många observationer (totalt antal) visas i stolpdiagrammet?",
+                        "ex": "Hur många observationer (totalt antal) visas i frekvenstabellen?",
                         "renderData": {
-                            "description": "Hur många observationer (totalt antal) visas i stolpdiagrammet?",
+                            "description": "Hur många observationer (totalt antal) visas i frekvenstabellen?",
                             "interceptorToken": "26",
                             "answerType": "numeric",
                             "geometry": {
-                                "type": "bar_graph",
+                                "type": "frequency_table",
                                 "headers": [
                                     "Värde",
                                     "Antal"
                                 ],
                                 "rows": [
                                     [
-                                        7,
+                                        13,
+                                        1
+                                    ],
+                                    [
+                                        14,
                                         6
                                     ],
                                     [
-                                        8,
-                                        6
+                                        15,
+                                        5
                                     ],
                                     [
-                                        9,
+                                        16,
                                         4
                                     ],
                                     [
-                                        10,
-                                        10
+                                        17,
+                                        6
+                                    ],
+                                    [
+                                        18,
+                                        4
                                     ]
                                 ]
                             },
@@ -5802,17 +6003,17 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Hjulet har 12 lika stora fält. 6 av fälten är grön. Vad är sannolikheten att pilen stannar på grön? Svar med bråk i enklaste form.",
+                        "ex": "Hjulet har 10 lika stora fält. 4 av fälten är blå. Vad är sannolikheten att pilen stannar på blå? Svar med bråk i enklaste form.",
                         "renderData": {
-                            "description": "Hjulet har 12 lika stora fält. 6 av fälten är grön. Vad är sannolikheten att pilen stannar på grön? Svar med bråk i enklaste form.",
+                            "description": "Hjulet har 10 lika stora fält. 4 av fälten är blå. Vad är sannolikheten att pilen stannar på blå? Svar med bråk i enklaste form.",
                             "answerType": "fraction",
                             "geometry": {
                                 "type": "spinner",
-                                "sections": 12,
+                                "sections": 10,
                                 "counts": {
                                     "red": 0,
-                                    "blue": 0,
-                                    "green": 6
+                                    "blue": 4,
+                                    "green": 0
                                 }
                             },
                             "isWordProblemApplied": false
@@ -5845,9 +6046,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Sannolikheten för en vinst i ett lotteri är 4/5. Vad är sannolikheten uttryckt i procent?",
+                        "ex": "Sannolikheten för en vinst i ett lotteri är 1/10. Vad är sannolikheten uttryckt i procent?",
                         "renderData": {
-                            "description": "Sannolikheten för en vinst i ett lotteri är 4/5. Vad är sannolikheten uttryckt i procent?",
+                            "description": "Sannolikheten för en vinst i ett lotteri är 1/10. Vad är sannolikheten uttryckt i procent?",
                             "answerType": "numeric",
                             "suffix": "%",
                             "isWordProblemApplied": false
@@ -5880,9 +6081,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "Vad är sannolikheten att få en 4:a vid ett kast med en vanlig sexsidig tärning? Svar med bråk i enklaste form.",
+                        "ex": "Vad är sannolikheten att få en 1:a vid ett kast med en vanlig sexsidig tärning? Svar med bråk i enklaste form.",
                         "renderData": {
-                            "description": "Vad är sannolikheten att få en 4:a vid ett kast med en vanlig sexsidig tärning? Svar med bråk i enklaste form.",
+                            "description": "Vad är sannolikheten att få en 1:a vid ett kast med en vanlig sexsidig tärning? Svar med bråk i enklaste form.",
                             "answerType": "fraction",
                             "isWordProblemApplied": false
                         },
@@ -5950,10 +6151,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "En restaurangmeny erbjuder 4 förrätter, 4 varmrätter och 4 efterrätter. På hur många olika sätt kan du komponera en trerättersmiddag?",
+                        "ex": "En restaurangmeny erbjuder 4 förrätter, 7 varmrätter och 3 efterrätter. På hur många olika sätt kan du komponera en trerättersmiddag?",
                         "renderData": {
-                            "description": "En restaurangmeny erbjuder 4 förrätter, 4 varmrätter och 4 efterrätter. På hur många olika sätt kan du komponera en trerättersmiddag?",
-                            "interceptorToken": "4 ; 4 ; 4",
+                            "description": "En restaurangmeny erbjuder 4 förrätter, 7 varmrätter och 3 efterrätter. På hur många olika sätt kan du komponera en trerättersmiddag?",
+                            "interceptorToken": "4 ; 7 ; 3",
                             "answerType": "numeric",
                             "isWordProblemApplied": false
                         },
@@ -5985,9 +6186,9 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "Du kastar ett mynt 2 gånger. Vad är sannolikheten att få krona alla 2 gånger? Svar med bråk i enklaste form.",
+                        "ex": "Du kastar ett mynt 3 gånger. Vad är sannolikheten att få klave alla 3 gånger? Svar med bråk i enklaste form.",
                         "renderData": {
-                            "description": "Du kastar ett mynt 2 gånger. Vad är sannolikheten att få krona alla 2 gånger? Svar med bråk i enklaste form.",
+                            "description": "Du kastar ett mynt 3 gånger. Vad är sannolikheten att få klave alla 3 gånger? Svar med bråk i enklaste form.",
                             "answerType": "fraction",
                             "isWordProblemApplied": false
                         },
@@ -6019,10 +6220,10 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 7,
-                        "ex": "I en påse finns 5 röda och 7 blåa kulor. Du drar två kulor utan återläggning. Vad är sannolikheten att få en röd först och sedan en blå? Svar med bråk i enklaste form.",
+                        "ex": "I en påse finns 4 röda och 7 blåa kulor. Du drar två kulor utan återläggning. Vad är sannolikheten att få en röd först och sedan en blå? Svar med bråk i enklaste form.",
                         "renderData": {
-                            "description": "I en påse finns 5 röda och 7 blåa kulor. Du drar två kulor utan återläggning. Vad är sannolikheten att få en röd först och sedan en blå? Svar med bråk i enklaste form.",
-                            "interceptorToken": "5 ; 7 ; 12",
+                            "description": "I en påse finns 4 röda och 7 blåa kulor. Du drar två kulor utan återläggning. Vad är sannolikheten att få en röd först och sedan en blå? Svar med bråk i enklaste form.",
+                            "interceptorToken": "4 ; 7 ; 11",
                             "answerType": "fraction",
                             "geometry": {
                                 "type": "probability_tree",
@@ -6031,7 +6232,7 @@ export const CONTENT_MAP = [
                                     "Blå"
                                 ],
                                 "initialCounts": [
-                                    5,
+                                    4,
                                     7
                                 ],
                                 "targetBranch": "s2_1"

@@ -9,12 +9,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Lös ekvationen.",
-      "latex": "x + 10 = 22",
+      "latex": "3x = 33",
       "hasVisual": false
     },
     "en": {
       "description": "Solve the equation.",
-      "latex": "x - 16 = -5",
+      "latex": "9x = 99",
       "hasVisual": false
     }
   },
@@ -24,7 +24,7 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Vilket räknesätt används för att beräkna värdet på x?",
-      "latex": "\\frac{x}{5} = 8",
+      "latex": "\\frac{x}{3} = 2",
       "hasVisual": false,
       "options": [
         {
@@ -47,7 +47,7 @@ export const VARIATION_MAP = {
     },
     "en": {
       "description": "Which operation is used to calculate the value of x?",
-      "latex": "\\frac{x}{9} = 6",
+      "latex": "x + 8 = 14",
       "hasVisual": false,
       "options": [
         {
@@ -74,7 +74,7 @@ export const VARIATION_MAP = {
     "variationKey": "onestep_spot_lie",
     "level": 1,
     "sv": {
-      "description": "Om $x = 8$, vilket påstående är FALSKT?",
+      "description": "Om $x = 10$, vilket påstående är FALSKT?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -93,7 +93,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "If $x = 6$, which statement is FALSE?",
+      "description": "If $x = 5$, which statement is FALSE?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -118,12 +118,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Lös ekvationen.",
-      "latex": "\\frac{x}{3} - 1 = 1",
+      "latex": "6x + 4 = 70",
       "hasVisual": false
     },
     "en": {
       "description": "Solve the equation.",
-      "latex": "\\frac{x}{5} - 1 = 3",
+      "latex": "3x - 8 = 1",
       "hasVisual": false
     }
   },
@@ -132,7 +132,7 @@ export const VARIATION_MAP = {
     "variationKey": "twostep_concept_order",
     "level": 2,
     "sv": {
-      "description": "För $4x + 4 = 20$, vilket strategiskt steg är bäst att börja med?",
+      "description": "För $5x + 9 = 20$, vilket strategiskt steg är bäst att börja med?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -147,7 +147,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "For $2x + 3 = 20$, which strategic step is best to start with?",
+      "description": "For $3x + 2 = 20$, which strategic step is best to start with?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -167,13 +167,13 @@ export const VARIATION_MAP = {
     "variationKey": "twostep_write_problem",
     "level": 2,
     "sv": {
-      "description": "En planka är 96 cm lång. Den kapas i två bitar. Den långa biten är x cm. Den korta biten är 10 cm kortare. Skriv en ekvation som beskriver denna uppgift.",
-      "latex": "2x-10=96",
+      "description": "En hyrbil kostar 49 kr i fast avgift plus 28 kr per mil. Den totala kostnaden blev 273 kr för x körda mil. Skriv en ekvation som beskriver denna uppgift.",
+      "latex": "28x+49=273",
       "hasVisual": false
     },
     "en": {
-      "description": "You buy x sweaters for 199 kr/each. You use a discount coupon of 100 kr. In total you pay 696 kr. Write an equation that describes this problem.",
-      "latex": "199x-100=696",
+      "description": "Mia has x kr. Lucas has 13 kr more than Mia. Together they have 89 kr. Write an equation that describes this problem.",
+      "latex": "2x+13=89",
       "hasVisual": false
     }
   },
@@ -182,13 +182,13 @@ export const VARIATION_MAP = {
     "variationKey": "twostep_solve_problem",
     "level": 2,
     "sv": {
-      "description": "En planka är 125 cm lång. Den kapas i två bitar. Den långa biten är x cm. Den korta biten är 21 cm kortare. Lös problemet och ta reda på vilket värde variabeln x har.",
-      "latex": "2x-21=125",
+      "description": "Oscar har x kr. Alice har 16 kr mer än Oscar. Tillsammans har de 92 kr. Lös problemet och ta reda på vilket värde variabeln x har.",
+      "latex": "2x+16=92",
       "hasVisual": false
     },
     "en": {
-      "description": "You buy x kg of apples for 25 kr/kg and a shopping bag for 59 kr. In total you pay 684 kr. Solve the problem and find the value of the variable x.",
-      "latex": "25x+59=684",
+      "description": "Oliver has x kr. George has 7 kr more than Oliver. Together they have 59 kr. Solve the problem and find the value of the variable x.",
+      "latex": "2x+7=59",
       "hasVisual": false
     }
   },
@@ -198,12 +198,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Lös ekvationen.",
-      "latex": "4(x + 6) = 52",
+      "latex": "5(x + 2) = 25",
       "hasVisual": false
     },
     "en": {
       "description": "Solve the equation.",
-      "latex": "2(x + 2) = 12",
+      "latex": "3(x + 2) = 21",
       "hasVisual": false
     }
   },
@@ -256,12 +256,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Samla x på ena sidan och siffror på den andra.",
-      "latex": "7x + 4 = 4x + 22",
+      "latex": "7x + 11 = 4x + 32",
       "hasVisual": false
     },
     "en": {
       "description": "Gather x on one side and numbers on the other.",
-      "latex": "8x + 6 = 3x + 56",
+      "latex": "9x + 8 = 4x + 43",
       "hasVisual": false
     }
   },
@@ -270,7 +270,7 @@ export const VARIATION_MAP = {
     "variationKey": "bothsides_concept_strategy",
     "level": 4,
     "sv": {
-      "description": "För $10x + 12 = 4x + 48$, vad är smartast att göra först?",
+      "description": "För $7x + 12 = 3x + 44$, vad är smartast att göra först?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -285,7 +285,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "For $8x + 5 = 2x + 41$, what is smartest to do first?",
+      "description": "For $8x + 4 = 2x + 34$, what is smartest to do first?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -305,13 +305,13 @@ export const VARIATION_MAP = {
     "variationKey": "rate_fixed_add_write",
     "level": 1,
     "sv": {
-      "description": "Du köper x kg äpplen för 25 kr/kg och en bärkasse för 49 kr. Totalt betalar du 374 kr. Skriv en ekvation som beskriver denna uppgift.",
-      "latex": "25x+49=374",
+      "description": "En hyrbil kostar 49 kr i fast avgift plus 9 kr per mil. Den totala kostnaden blev 94 kr för x körda mil. Skriv en ekvation som beskriver denna uppgift.",
+      "latex": "9x+49=94",
       "hasVisual": false
     },
     "en": {
-      "description": "A rental car costs a fixed fee of 29 kr plus 12 kr per mile. The total cost was 173 kr for x miles driven. Write an equation that describes this problem.",
-      "latex": "12x+29=173",
+      "description": "You buy x kg of apples for 5 kr/kg and a shopping bag for 19 kr. In total you pay 139 kr. Write an equation that describes this problem.",
+      "latex": "5x+19=139",
       "hasVisual": false
     }
   },
@@ -320,13 +320,13 @@ export const VARIATION_MAP = {
     "variationKey": "rate_fixed_add_solve",
     "level": 1,
     "sv": {
-      "description": "Du köper x kg äpplen för 10 kr/kg och en bärkasse för 29 kr. Totalt betalar du 269 kr. Lös problemet och ta reda på vilket värde variabeln x har.",
-      "latex": "10x+29=269",
+      "description": "En hyrbil kostar 59 kr i fast avgift plus 24 kr per mil. Den totala kostnaden blev 299 kr för x körda mil. Lös problemet och ta reda på vilket värde variabeln x har.",
+      "latex": "24x+59=299",
       "hasVisual": false
     },
     "en": {
-      "description": "You buy x kg of apples for 8 kr/kg and a shopping bag for 19 kr. In total you pay 139 kr. Solve the problem and find the value of the variable x.",
-      "latex": "8x+19=139",
+      "description": "A rental car costs a fixed fee of 49 kr plus 29 kr per mile. The total cost was 194 kr for x miles driven. Solve the problem and find the value of the variable x.",
+      "latex": "29x+49=194",
       "hasVisual": false
     }
   },
@@ -335,13 +335,13 @@ export const VARIATION_MAP = {
     "variationKey": "rate_fixed_sub_write",
     "level": 1,
     "sv": {
-      "description": "Du köper x st tröjor för 302 kr/st. Du använder en rabattcheck på 150 kr. Totalt betalar du 1058 kr. Skriv en ekvation som beskriver denna uppgift.",
-      "latex": "302x-150=1058",
+      "description": "Du köper x st tröjor för 398 kr/st. Du använder en rabattcheck på 100 kr. Totalt betalar du 2686 kr. Skriv en ekvation som beskriver denna uppgift.",
+      "latex": "398x-100=2686",
       "hasVisual": false
     },
     "en": {
-      "description": "You buy x sweaters for 261 kr/each. You use a discount coupon of 100 kr. In total you pay 1727 kr. Write an equation that describes this problem.",
-      "latex": "261x-100=1727",
+      "description": "You buy x sweaters for 298 kr/each. You use a discount coupon of 50 kr. In total you pay 844 kr. Write an equation that describes this problem.",
+      "latex": "298x-50=844",
       "hasVisual": false
     }
   },
@@ -350,13 +350,13 @@ export const VARIATION_MAP = {
     "variationKey": "rate_fixed_sub_solve",
     "level": 1,
     "sv": {
-      "description": "Du köper x st tröjor för 154 kr/st. Du använder en rabattcheck på 50 kr. Totalt betalar du 720 kr. Lös problemet och ta reda på vilket värde variabeln x har.",
-      "latex": "154x-50=720",
+      "description": "Du köper x st tröjor för 360 kr/st. Du använder en rabattcheck på 150 kr. Totalt betalar du 930 kr. Lös problemet och ta reda på vilket värde variabeln x har.",
+      "latex": "360x-150=930",
       "hasVisual": false
     },
     "en": {
-      "description": "You buy x sweaters for 168 kr/each. You use a discount coupon of 150 kr. In total you pay 1026 kr. Solve the problem and find the value of the variable x.",
-      "latex": "168x-150=1026",
+      "description": "You buy x sweaters for 206 kr/each. You use a discount coupon of 150 kr. In total you pay 674 kr. Solve the problem and find the value of the variable x.",
+      "latex": "206x-150=674",
       "hasVisual": false
     }
   },
@@ -365,13 +365,13 @@ export const VARIATION_MAP = {
     "variationKey": "compare_word_sum_write",
     "level": 1,
     "sv": {
-      "description": "Oscar har x kr. Sara har 20 kr mer än Oscar. Tillsammans har de 64 kr. Skriv en ekvation som beskriver denna uppgift.",
-      "latex": "2x+20=64",
+      "description": "Lukas har x kr. Oscar har 6 kr mer än Lukas. Tillsammans har de 94 kr. Skriv en ekvation som beskriver denna uppgift.",
+      "latex": "2x+6=94",
       "hasVisual": false
     },
     "en": {
-      "description": "Amelia has x kr. Freddie has 6 kr more than Amelia. Together they have 58 kr. Write an equation that describes this problem.",
-      "latex": "2x+6=58",
+      "description": "Oliver has x kr. Lucas has 16 kr more than Oliver. Together they have 50 kr. Write an equation that describes this problem.",
+      "latex": "2x+16=50",
       "hasVisual": false
     }
   },
@@ -380,13 +380,13 @@ export const VARIATION_MAP = {
     "variationKey": "compare_word_sum_solve",
     "level": 1,
     "sv": {
-      "description": "Lukas har x kr. Sam har 20 kr mer än Lukas. Tillsammans har de 62 kr. Lös problemet och ta reda på vilket värde variabeln x har.",
-      "latex": "2x+20=62",
+      "description": "Ebba har x kr. Alice har 5 kr mer än Ebba. Tillsammans har de 99 kr. Lös problemet och ta reda på vilket värde variabeln x har.",
+      "latex": "2x+5=99",
       "hasVisual": false
     },
     "en": {
-      "description": "Lucas has x kr. Freddie has 5 kr more than Lucas. Together they have 25 kr. Solve the problem and find the value of the variable x.",
-      "latex": "2x+5=25",
+      "description": "Lucas has x kr. Arthur has 12 kr more than Lucas. Together they have 56 kr. Solve the problem and find the value of the variable x.",
+      "latex": "2x+12=56",
       "hasVisual": false
     }
   },
@@ -395,13 +395,13 @@ export const VARIATION_MAP = {
     "variationKey": "compare_word_diff_write",
     "level": 1,
     "sv": {
-      "description": "En planka är 137 cm lång. Den kapas i två bitar. Den långa biten är x cm. Den korta biten är 13 cm kortare. Skriv en ekvation som beskriver denna uppgift.",
-      "latex": "2x-13=137",
+      "description": "En planka är 68 cm lång. Den kapas i två bitar. Den långa biten är x cm. Den korta biten är 30 cm kortare. Skriv en ekvation som beskriver denna uppgift.",
+      "latex": "2x-30=68",
       "hasVisual": false
     },
     "en": {
-      "description": "A plank is 126 cm long. It is cut into two pieces. The long piece is x cm. The short piece is 24 cm shorter. Write an equation that describes this problem.",
-      "latex": "2x-24=126",
+      "description": "A plank is 126 cm long. It is cut into two pieces. The long piece is x cm. The short piece is 10 cm shorter. Write an equation that describes this problem.",
+      "latex": "2x-10=126",
       "hasVisual": false
     }
   },
@@ -410,13 +410,13 @@ export const VARIATION_MAP = {
     "variationKey": "compare_word_diff_solve",
     "level": 1,
     "sv": {
-      "description": "En planka är 103 cm lång. Den kapas i två bitar. Den långa biten är x cm. Den korta biten är 11 cm kortare. Lös problemet och ta reda på vilket värde variabeln x har.",
-      "latex": "2x-11=103",
+      "description": "En planka är 88 cm lång. Den kapas i två bitar. Den långa biten är x cm. Den korta biten är 18 cm kortare. Lös problemet och ta reda på vilket värde variabeln x har.",
+      "latex": "2x-18=88",
       "hasVisual": false
     },
     "en": {
-      "description": "A plank is 88 cm long. It is cut into two pieces. The long piece is x cm. The short piece is 20 cm shorter. Solve the problem and find the value of the variable x.",
-      "latex": "2x-20=88",
+      "description": "A plank is 148 cm long. It is cut into two pieces. The long piece is x cm. The short piece is 10 cm shorter. Solve the problem and find the value of the variable x.",
+      "latex": "2x-10=148",
       "hasVisual": false
     }
   },
@@ -468,7 +468,7 @@ export const VARIATION_MAP = {
     "variationKey": "combine_concept_id",
     "level": 1,
     "sv": {
-      "description": "Vilken term kan förenklas ihop med 5x?",
+      "description": "Vilken term kan förenklas ihop med 3x?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -512,12 +512,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Förenkla uttrycket genom att sortera och slå ihop sorterna för sig.",
-      "latex": "18x + 17 - 4x - 4",
+      "latex": "16x + 17 - 4x - 4",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify the expression by sorting and grouping matching types together.",
-      "latex": "11x - 13 - 7x - 2",
+      "latex": "12x + 20 + 3x + 2",
       "hasVisual": false
     }
   },
@@ -527,12 +527,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Förenkla uttrycket.",
-      "latex": "4 \\cdot 5x + 8x + 9",
+      "latex": "8x + 3 \\cdot 4x - 5",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify the expression.",
-      "latex": "7x + 3 \\cdot 3x - 6",
+      "latex": "4x + 4 \\cdot 6x + 4",
       "hasVisual": false
     }
   },
@@ -542,12 +542,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Förenkla uttrycket.",
-      "latex": "\\frac{4x}{2} + 8x + 5",
+      "latex": "\\frac{15x}{3} + 8x + 8",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify the expression.",
-      "latex": "\\frac{30x}{5} - 4x - 6",
+      "latex": "\\frac{15x}{5} + 7x + 5",
       "hasVisual": false
     }
   },
@@ -557,12 +557,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Förenkla uttrycket.",
-      "latex": "5 \\cdot 4x + \\frac{12x}{4}",
+      "latex": "3 \\cdot 5x + \\frac{24x}{4}",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify the expression.",
-      "latex": "2 \\cdot 4x + \\frac{12x}{4}",
+      "latex": "2 \\cdot 5x - \\frac{18x}{3}",
       "hasVisual": false
     }
   },
@@ -615,12 +615,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Ta bort parentesen och förenkla uttrycket.",
-      "latex": "10x + (2x + 10)",
+      "latex": "19x + (5x + 8)",
       "hasVisual": false
     },
     "en": {
       "description": "Remove the parentheses and simplify the expression.",
-      "latex": "15x + (5x + 10)",
+      "latex": "12x + (2x + 2)",
       "hasVisual": false
     }
   },
@@ -630,12 +630,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Ta bort parentesen och förenkla uttrycket.",
-      "latex": "11x - (3x + 4)",
+      "latex": "15x - (5x + 3)",
       "hasVisual": false
     },
     "en": {
       "description": "Remove the parentheses and simplify the expression.",
-      "latex": "20x - (3x + 8)",
+      "latex": "19x - (3x + 9)",
       "hasVisual": false
     }
   },
@@ -645,12 +645,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Öppna upp båda parenteserna och förenkla uttrycket.",
-      "latex": "2(x + 4) - 4(x + 3)",
+      "latex": "3(x + 1) - 4(x + 4)",
       "hasVisual": false
     },
     "en": {
       "description": "Open up both sets of parentheses and simplify the expression.",
-      "latex": "2(x + 5) + 2(x + 4)",
+      "latex": "2(x + 5) - 2(x + 4)",
       "hasVisual": false
     }
   },
@@ -660,12 +660,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Multiplicera in i parentesen och slå sedan ihop lika sorter.",
-      "latex": "2(3x + 3) - 7x",
+      "latex": "4(4x + 3) + 3x",
       "hasVisual": false
     },
     "en": {
       "description": "Multiply into the parentheses and then combine like terms.",
-      "latex": "4(3x + 4) - 8x",
+      "latex": "2(2x + 3) + 8x",
       "hasVisual": false
     }
   },
@@ -710,12 +710,12 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Ta bort parentesen och förenkla uttrycket.",
-      "latex": "14x - (5x + 10)",
+      "latex": "18x - (2x + 8)",
       "hasVisual": false
     },
     "en": {
       "description": "Remove the parenthesis walls and simplify the expression.",
-      "latex": "15x - (6x + 4)",
+      "latex": "18x - (2x + 2)",
       "hasVisual": false
     }
   },
@@ -725,12 +725,12 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Ta bort parentesen och förenkla uttrycket.",
-      "latex": "16x - (4x - 4)",
+      "latex": "13x - (5x - 2)",
       "hasVisual": false
     },
     "en": {
       "description": "Remove the parenthesis walls and simplify the expression.",
-      "latex": "20x - (6x - 5)",
+      "latex": "13x - (6x - 7)",
       "hasVisual": false
     }
   },
@@ -754,12 +754,12 @@ export const VARIATION_MAP = {
     "variationKey": "perimeter_solve",
     "level": 2,
     "sv": {
-      "description": "En liksidig triangels omkrets är 87 cm. Beräkna x.",
+      "description": "Kvadratens omkrets är 268 cm. Beräkna x.",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "The rectangle's perimeter is 104 cm. Calculate x.",
+      "description": "The rectangle's perimeter is 216 cm. Calculate x.",
       "latex": null,
       "hasVisual": true
     }
@@ -784,12 +784,12 @@ export const VARIATION_MAP = {
     "variationKey": "area_solve",
     "level": 4,
     "sv": {
-      "description": "Triangelns area är 126 cm². Beräkna x.",
+      "description": "Triangelns area är 280 cm². Beräkna x.",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "The triangle's area is 154 cm². Calculate x.",
+      "description": "The rectangle's area is 129 cm². Calculate x.",
       "latex": null,
       "hasVisual": true
     }
@@ -917,12 +917,12 @@ export const VARIATION_MAP = {
     "variationKey": "high_term",
     "level": 2,
     "sv": {
-      "description": "Vilket värde har tal nummer 20 i mönstret: 5, 11, 17... ?",
+      "description": "Vilket värde har tal nummer 10 i mönstret: 8, 15, 22... ?",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "What is the value of term 100 in the pattern: 6, 11, 16... ?",
+      "description": "What is the value of term 10 in the pattern: 7, 11, 15... ?",
       "latex": null,
       "hasVisual": true
     }
@@ -947,12 +947,12 @@ export const VARIATION_MAP = {
     "variationKey": "visual_calc",
     "level": 3,
     "sv": {
-      "description": "Mönstret följer formeln $V = 3n + 4$. Hur många stickor behövs till figur nummer 6?",
+      "description": "Mönstret följer formeln $V = 5n + 6$. Hur många stickor behövs till figur nummer 12?",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "The pattern follows the formula $V = 3n + 7$. How many sticks are needed for figure 5?",
+      "description": "The pattern follows the formula $V = 2n + 5$. How many sticks are needed for figure 6?",
       "latex": null,
       "hasVisual": true
     }
@@ -1007,12 +1007,12 @@ export const VARIATION_MAP = {
     "variationKey": "reverse_calc",
     "level": 5,
     "sv": {
-      "description": "I ett mönster med formeln $V = 5n + 2$, vilket figurnummer (n) har värdet 102?",
+      "description": "I ett mönster med formeln $V = 5n + 11$, vilket figurnummer (n) har värdet 166?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "In a pattern with the formula $V = 9n + 12$, which figure (n) has the value 138?",
+      "description": "In a pattern with the formula $V = 5n + 10$, which figure (n) has the value 80?",
       "latex": null,
       "hasVisual": false
     }
@@ -1112,12 +1112,12 @@ export const VARIATION_MAP = {
     "variationKey": "table_fill_function",
     "level": 3,
     "sv": {
-      "description": "Formeln för tabellen är $y=5x+6$. Vilket värde saknas vid frågetecknet där $x = 4$?",
+      "description": "Formeln för tabellen är $y=5x+7$. Vilket värde saknas vid frågetecknet där $x = 3$?",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "The table formula is $y=-2x-2$. What number replaces the question mark where $x = 0$?",
+      "description": "The table formula is $y=3x+2$. What number replaces the question mark where $x = 2$?",
       "latex": null,
       "hasVisual": true
     }
@@ -1172,7 +1172,7 @@ export const VARIATION_MAP = {
     "variationKey": "graph_eval_point",
     "level": 4,
     "sv": {
-      "description": "Läs av grafen. Vad är y-värdet när $x = -2$?",
+      "description": "Läs av grafen. Vad är y-värdet när $x = -1$?",
       "latex": null,
       "hasVisual": true
     },
@@ -1187,7 +1187,7 @@ export const VARIATION_MAP = {
     "variationKey": "point_on_line",
     "level": 5,
     "sv": {
-      "description": "Ligger punkten $(1, -1)$ på linjen $y=-x-1$?",
+      "description": "Ligger punkten $(2, -8)$ på linjen $y=-2x-4$?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -1202,7 +1202,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "Does the point $(1, 3)$ lie on the line $y=3x-1$?",
+      "description": "Does the point $(4, 8)$ lie on the line $y=3x-4$?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -1222,7 +1222,7 @@ export const VARIATION_MAP = {
     "variationKey": "parallel_lines_id",
     "level": 5,
     "sv": {
-      "description": "Vilken av linjerna är parallell med $y=4x-4$?",
+      "description": "Vilken av linjerna är parallell med $y=-3x-2$?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -1245,7 +1245,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "Which line is parallel to $y=4x+1$?",
+      "description": "Which line is parallel to $y=4x-4$?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -1319,12 +1319,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Beräkna summan.",
-      "latex": "\\begin{array}{rr} & 179 \\\\ + & 34 \\\\ \\hline \\end{array}",
+      "latex": "\\begin{array}{rr} & 102 \\\\ + & 45 \\\\ \\hline \\end{array}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the sum.",
-      "latex": "\\begin{array}{rr} & 106 \\\\ + & 87 \\\\ \\hline \\end{array}",
+      "latex": "\\begin{array}{rr} & 130 \\\\ + & 83 \\\\ \\hline \\end{array}",
       "hasVisual": false
     }
   },
@@ -1334,12 +1334,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Vilket tal saknas för att summan ska stämma?",
-      "latex": "52 + x = 110",
+      "latex": "20 + x = 34",
       "hasVisual": false
     },
     "en": {
       "description": "What number is missing to make the sum correct?",
-      "latex": "9 + x = 22",
+      "latex": "82 + x = 169",
       "hasVisual": false
     }
   },
@@ -1392,12 +1392,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Beräkna summan.",
-      "latex": "51 + 90",
+      "latex": "89 + 95",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the sum.",
-      "latex": "125 + 190",
+      "latex": "146 + 12",
       "hasVisual": false
     }
   },
@@ -1407,12 +1407,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Beräkna differensen.",
-      "latex": "\\begin{array}{rr} & 61 \\\\ - & 56 \\\\ \\hline \\end{array}",
+      "latex": "\\begin{array}{rr} & 171 \\\\ - & 38 \\\\ \\hline \\end{array}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the difference.",
-      "latex": "\\begin{array}{rr} & 138 \\\\ - & 12 \\\\ \\hline \\end{array}",
+      "latex": "\\begin{array}{rr} & 172 \\\\ - & 112 \\\\ \\hline \\end{array}",
       "hasVisual": false
     }
   },
@@ -1422,12 +1422,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Vilket tal saknas?",
-      "latex": "105 - x = 60",
+      "latex": "98 - x = 31",
       "hasVisual": false
     },
     "en": {
       "description": "Find the missing number.",
-      "latex": "110 - x = 30",
+      "latex": "114 - x = 90",
       "hasVisual": false
     }
   },
@@ -1437,12 +1437,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Beräkna differensen.",
-      "latex": "98 - 31",
+      "latex": "53 - 15",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the difference.",
-      "latex": "183 - 92",
+      "latex": "133 - 122",
       "hasVisual": false
     }
   },
@@ -1452,12 +1452,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Ställ upp och beräkna.",
-      "latex": "39,2 + 1,08",
+      "latex": "41,5 + 0,56",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate.",
-      "latex": "20.2 + 2.44",
+      "latex": "37 + 1.43",
       "hasVisual": false
     }
   },
@@ -1467,12 +1467,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Ställ upp och beräkna.",
-      "latex": "38,3 - 2,62",
+      "latex": "36,5 - 1,4",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate.",
-      "latex": "36.1 - 1",
+      "latex": "25.8 - 2.54",
       "hasVisual": false
     }
   },
@@ -1482,12 +1482,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Beräkna produkten.",
-      "latex": "7 \\cdot 6",
+      "latex": "2 \\cdot 4",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the product.",
-      "latex": "4 \\cdot 10",
+      "latex": "3 \\cdot 9",
       "hasVisual": false
     }
   },
@@ -1496,7 +1496,7 @@ export const VARIATION_MAP = {
     "variationKey": "mult_commutative",
     "level": 4,
     "sv": {
-      "description": "Vilket uttryck ger samma svar som 9 · 4?",
+      "description": "Vilket uttryck ger samma svar som 10 · 8?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -1515,7 +1515,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "Which expression gives the same answer as 3 · 6?",
+      "description": "Which expression gives the same answer as 8 · 10?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -1540,12 +1540,12 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Beräkna.",
-      "latex": "\\begin{array}{rr} & 37 \\\\ \\times & 7 \\\\ \\hline \\end{array}",
+      "latex": "\\begin{array}{rr} & 14 \\\\ \\times & 6 \\\\ \\hline \\end{array}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate.",
-      "latex": "\\begin{array}{rr} & 22 \\\\ \\times & 3 \\\\ \\hline \\end{array}",
+      "latex": "\\begin{array}{rr} & 32 \\\\ \\times & 4 \\\\ \\hline \\end{array}",
       "hasVisual": false
     }
   },
@@ -1554,12 +1554,12 @@ export const VARIATION_MAP = {
     "variationKey": "mult_distributive",
     "level": 5,
     "sv": {
-      "description": "Beräkna 45·9 genom att dela upp faktorn: (40·9)+(5·9)",
+      "description": "Beräkna 29·4 genom att dela upp faktorn: (20·4)+(9·4)",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Calculate 33·9 by splitting the factors: (30·9)+(3·9)",
+      "description": "Calculate 31·9 by splitting the factors: (30·9)+(1·9)",
       "latex": null,
       "hasVisual": false
     }
@@ -1570,12 +1570,12 @@ export const VARIATION_MAP = {
     "level": 6,
     "sv": {
       "description": "Beräkna produkten.",
-      "latex": "0,9 \\cdot 11",
+      "latex": "0,9 \\cdot 12",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the product.",
-      "latex": "0.27 \\cdot 8",
+      "latex": "0.48 \\cdot 7",
       "hasVisual": false
     }
   },
@@ -1628,12 +1628,12 @@ export const VARIATION_MAP = {
     "level": 7,
     "sv": {
       "description": "Beräkna kvoten.",
-      "latex": "\\frac{42}{7}",
+      "latex": "\\frac{48}{6}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the quotient.",
-      "latex": "\\frac{70}{10}",
+      "latex": "\\frac{60}{6}",
       "hasVisual": false
     }
   },
@@ -1642,12 +1642,12 @@ export const VARIATION_MAP = {
     "variationKey": "div_inverse_logic",
     "level": 7,
     "sv": {
-      "description": "Om vi vet att 8 · 9 = 72, vad är då 72 / 8?",
+      "description": "Om vi vet att 10 · 4 = 40, vad är då 40 / 10?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "If we know 8 · 8 = 64, what is 64 / 8?",
+      "description": "If we know 8 · 10 = 80, what is 80 / 8?",
       "latex": null,
       "hasVisual": false
     }
@@ -1657,7 +1657,7 @@ export const VARIATION_MAP = {
     "variationKey": "div_rule_check",
     "level": 8,
     "sv": {
-      "description": "Vilket av följande tal är delbart med 5?",
+      "description": "Vilket av följande tal är delbart med 3?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -1700,13 +1700,13 @@ export const VARIATION_MAP = {
     "variationKey": "div_rule_missing",
     "level": 8,
     "sv": {
-      "description": "Vilken är den minsta möjliga siffran som kan ersätta strecket för att talet 51_ ska vara delbart med 10?",
-      "latex": "51\\_",
+      "description": "Vilken är den största möjliga siffran som kan ersätta strecket för att talet 55_ ska vara delbart med 5?",
+      "latex": "55\\_",
       "hasVisual": false
     },
     "en": {
-      "description": "What is the smallest possible digit that can replace the blank to make the number 54_ divisible by 3?",
-      "latex": "54\\_",
+      "description": "What is the smallest possible digit that can replace the blank to make the number 20_ divisible by 5?",
+      "latex": "20\\_",
       "hasVisual": false
     }
   },
@@ -1715,7 +1715,7 @@ export const VARIATION_MAP = {
     "variationKey": "div_rule_tf",
     "level": 8,
     "sv": {
-      "description": "Om ett tal är delbart med 10, är det alltid delbart med 5.",
+      "description": "Om ett tal är delbart med 2 och slutar på 5, är det delbart med 10.",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -1730,7 +1730,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "If a number is divisible by 5, it is always divisible by 10.",
+      "description": "If a number is divisible by 10, it is always divisible by 5.",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -1751,12 +1751,12 @@ export const VARIATION_MAP = {
     "level": 9,
     "sv": {
       "description": "Beräkna kvoten.",
-      "latex": "\\frac{0,45}{5}",
+      "latex": "\\frac{0,18}{6}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the quotient.",
-      "latex": "\\frac{0.24}{8}",
+      "latex": "\\frac{2.8}{4}",
       "hasVisual": false
     }
   },
@@ -1766,12 +1766,12 @@ export const VARIATION_MAP = {
     "level": 9,
     "sv": {
       "description": "Beräkna kvoten.",
-      "latex": "\\frac{0,28}{0,07}",
+      "latex": "\\frac{5,4}{0,9}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the quotient.",
-      "latex": "\\frac{0.66}{0.06}",
+      "latex": "\\frac{0.15}{0.05}",
       "hasVisual": false
     }
   },
@@ -1780,12 +1780,12 @@ export const VARIATION_MAP = {
     "variationKey": "pv_whole_value",
     "level": 1,
     "sv": {
-      "description": "Vilket värde har siffran 2 i talet 3129?",
+      "description": "Vilket värde har siffran 6 i talet 604?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "What value does the digit 2 have in the number 9236?",
+      "description": "What value does the digit 8 have in the number 1823?",
       "latex": null,
       "hasVisual": false
     }
@@ -1795,12 +1795,12 @@ export const VARIATION_MAP = {
     "variationKey": "pv_whole_digit",
     "level": 1,
     "sv": {
-      "description": "Vilken siffra står på tusentalets plats i talet 49107?",
+      "description": "Vilken siffra står på tiotalets plats i talet 94215?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Which digit is in the thousands place in the number 21038?",
+      "description": "Which digit is in the thousands place in the number 56134?",
       "latex": null,
       "hasVisual": false
     }
@@ -1810,12 +1810,12 @@ export const VARIATION_MAP = {
     "variationKey": "pv_whole_build",
     "level": 1,
     "sv": {
-      "description": "Skriv talet som beskrivs: 6 tusental, 4 ental",
+      "description": "Skriv talet som beskrivs: 4 tiotal, 3 ental, 7 tusental",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Write the number described: 8 hundreds, 3 ten thousands, 3 tens, 7 thousands",
+      "description": "Write the number described: 3 ten thousands, 9 tens, 2 ones, 5 hundreds",
       "latex": null,
       "hasVisual": false
     }
@@ -1825,12 +1825,12 @@ export const VARIATION_MAP = {
     "variationKey": "pv_dec_value",
     "level": 2,
     "sv": {
-      "description": "Vilket värde har siffran 6 i talet 237,6? Svara i decimalform.",
+      "description": "Vilket värde har siffran 4 i talet 670,14? Svara i decimalform.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "What value does the digit 7 have in the number 69.27? Answer in decimal form.",
+      "description": "What value does the digit 8 have in the number 90.481? Answer in decimal form.",
       "latex": null,
       "hasVisual": false
     }
@@ -1840,12 +1840,12 @@ export const VARIATION_MAP = {
     "variationKey": "pv_dec_digit",
     "level": 2,
     "sv": {
-      "description": "Vilken siffra står på tiondelets plats i talet 39,17?",
+      "description": "Vilken siffra står på tiondelets plats i talet 416,538?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Which digit is in the hundredths place in the number 13.79?",
+      "description": "Which digit is in the hundredths place in the number 21.94?",
       "latex": null,
       "hasVisual": false
     }
@@ -1855,12 +1855,12 @@ export const VARIATION_MAP = {
     "variationKey": "pv_dec_build",
     "level": 2,
     "sv": {
-      "description": "Skriv decimaltalet som beskrivs: 5 hundradelar, 9 tiondelar, 8 hundratal, 8 tusendelar",
+      "description": "Skriv decimaltalet som beskrivs: 2 hundratal, 7 ental, 9 tiondelar, 9 tiotal, 3 tusendelar",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Write the decimal number described: 8 ones, 4 hundredths, 6 tenths, 7 hundreds, 1 tens",
+      "description": "Write the decimal number described: 8 hundreds, 8 thousandths, 4 tens, 6 hundredths",
       "latex": null,
       "hasVisual": false
     }
@@ -1870,12 +1870,12 @@ export const VARIATION_MAP = {
     "variationKey": "pv_round_whole",
     "level": 3,
     "sv": {
-      "description": "Avrunda talet 8588,02 till närmaste hundratal. (Svara som ett heltal utan kommatecken)",
+      "description": "Avrunda talet 5243,26 till närmaste tiotal. (Svara som ett heltal utan kommatecken)",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Round the number 9316.34 to the nearest hundreds. (Answer as a whole number without decimals)",
+      "description": "Round the number 8582.43 to the nearest hundreds. (Answer as a whole number without decimals)",
       "latex": null,
       "hasVisual": false
     }
@@ -1885,12 +1885,12 @@ export const VARIATION_MAP = {
     "variationKey": "pv_round_dec",
     "level": 3,
     "sv": {
-      "description": "Avrunda talet 21,452 till närmaste tiondel. (Svara med exakt en decimal)",
+      "description": "Avrunda talet 25,127 till närmaste tiondel. (Svara med exakt en decimal)",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Round the number 70.51 to the nearest tenths. (Answer with exactly one decimal place)",
+      "description": "Round the number 11.397 to the nearest hundredths. (Answer with exactly two decimal places)",
       "latex": null,
       "hasVisual": false
     }
@@ -1901,12 +1901,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Räkna ut värdet i rätt ordning.",
-      "latex": "\\frac{28}{4} + 2",
+      "latex": "\\frac{15}{3} - 2",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the value using the correct order of operations.",
-      "latex": "4 + 4 · 6",
+      "latex": "\\frac{20}{4} - 1",
       "hasVisual": false
     }
   },
@@ -1916,12 +1916,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Beräkna uttrycket i rätt ordning.",
-      "latex": "(3 + 5) \\cdot 3 - 3",
+      "latex": "3 + 2 \\cdot (7 - 4)",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the expression using the correct order of operations.",
-      "latex": "(5 + 6) \\cdot 4 - 1",
+      "latex": "(2 + 8) \\cdot 3 - 5",
       "hasVisual": false
     }
   },
@@ -1931,12 +1931,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Lös. Följ prioriteringsreglerna.",
-      "latex": "\\frac{9 + 21}{6} + 14 - 6 · 2",
+      "latex": "\\frac{9 + 47}{7} + 19 + 2 · 7",
       "hasVisual": false
     },
     "en": {
       "description": "Follow the order of operations to solve the expression.",
-      "latex": "(5 + 9) · 5 + 31 + 8 · 8",
+      "latex": "10 · 6 - 14 - \\frac{32 + 16}{8}",
       "hasVisual": false
     }
   },
@@ -1946,12 +1946,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Beräkna värdet med rätt ordning på stegen.",
-      "latex": "15 + 4^{2} - \\frac{17 + 71}{11}",
+      "latex": "3^{2} + 16 + \\frac{21 + 60}{9}",
       "hasVisual": false
     },
     "en": {
       "description": "Prioritize the correct steps to calculate the expression value.",
-      "latex": "7^{2} + 15 + \\frac{1 + 20}{7}",
+      "latex": "7 · 6 + 13 + 4^{2}",
       "hasVisual": false
     }
   },
@@ -1960,12 +1960,12 @@ export const VARIATION_MAP = {
     "variationKey": "theory_number_line",
     "level": 1,
     "sv": {
-      "description": "Du står på talet 1 på tallinjen. Om du går 10 steg åt vänster, på vilket tal hamnar du?",
+      "description": "Du står på talet -1 på tallinjen. Om du går 4 steg åt höger, på vilket tal hamnar du?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "You are at 2 on the number line. If you move 10 steps to the right, what number do you land on?",
+      "description": "You are at -2 on the number line. If you move 7 steps to the left, what number do you land on?",
       "latex": null,
       "hasVisual": false
     }
@@ -1975,7 +1975,7 @@ export const VARIATION_MAP = {
     "variationKey": "theory_sign_dominance",
     "level": 1,
     "sv": {
-      "description": "Utan att räkna ut svaret, avgör om $10 + (-18)$ blir positivt eller negativt.",
+      "description": "Utan att räkna ut svaret, avgör om $20 + (-17)$ blir positivt eller negativt.",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -1990,7 +1990,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "Without calculating the answer, determine if $25 + (-24)$ will be positive or negative.",
+      "description": "Without calculating the answer, determine if $14 + (-11)$ will be positive or negative.",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -2062,12 +2062,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Beräkna värdet.",
-      "latex": "5 + (-5) - (-3) + (-5)",
+      "latex": "(-4) + 0 - 4 + (-2)",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the value.",
-      "latex": "4 + 3 - 3 + (-5)",
+      "latex": "1 + (-5) - 2 + 5",
       "hasVisual": false
     }
   },
@@ -2077,12 +2077,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Förenkla tecknen emellan och räkna ut svaret.",
-      "latex": "1 - (-9)",
+      "latex": "-6 - (-9)",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify the signs in between and calculate the answer.",
-      "latex": "-9 - (-8)",
+      "latex": "7 - (-6)",
       "hasVisual": false
     }
   },
@@ -2092,12 +2092,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Förenkla tecknen emellan och räkna ut svaret.",
-      "latex": "-10 - (-5)",
+      "latex": "8 - (-12)",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify the signs in between and calculate the answer.",
-      "latex": "-5 - (-6)",
+      "latex": "-7 - (-8)",
       "hasVisual": false
     }
   },
@@ -2107,12 +2107,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Förenkla tecknen emellan och räkna ut svaret.",
-      "latex": "8 + (-8)",
+      "latex": "11 + (-10)",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify the signs in between and calculate the answer.",
-      "latex": "11 + (-11)",
+      "latex": "-7 + (-14)",
       "hasVisual": false
     }
   },
@@ -2121,7 +2121,7 @@ export const VARIATION_MAP = {
     "variationKey": "fluency_transform_match",
     "level": 2,
     "sv": {
-      "description": "Vilket uttryck betyder exakt samma sak som $5 - (-10)$?",
+      "description": "Vilket uttryck betyder exakt samma sak som $-10 - (-3)$?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -2140,7 +2140,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "Which expression means exactly the same thing as $-1 - (-6)$?",
+      "description": "Which expression means exactly the same thing as $6 - (-8)$?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -2165,12 +2165,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Beräkna produkten.",
-      "latex": "(-7) \\cdot (-2)",
+      "latex": "(-6) \\cdot (-2)",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the product.",
-      "latex": "(-9) \\cdot (-7)",
+      "latex": "(-9) \\cdot (-3)",
       "hasVisual": false
     }
   },
@@ -2180,12 +2180,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Beräkna produkten.",
-      "latex": "(-2) \\cdot 8",
+      "latex": "(-8) \\cdot 5",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the product.",
-      "latex": "(-2) \\cdot 5",
+      "latex": "(-9) \\cdot 6",
       "hasVisual": false
     }
   },
@@ -2195,12 +2195,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Beräkna produkten.",
-      "latex": "(-5) \\cdot 9",
+      "latex": "(-9) \\cdot 9",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the product.",
-      "latex": "(-3) \\cdot 2",
+      "latex": "(-5) \\cdot 8",
       "hasVisual": false
     }
   },
@@ -2210,12 +2210,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Beräkna.",
-      "latex": "(-5) \\cdot 4 \\cdot (-2) \\cdot (-3)",
+      "latex": "1 \\cdot 3 \\cdot (-1) \\cdot 2 \\cdot 4",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate.",
-      "latex": "(-1) \\cdot (-1) \\cdot (-1) \\cdot (-1)",
+      "latex": "(-2) \\cdot (-5) \\cdot 5 \\cdot 1 \\cdot (-2)",
       "hasVisual": false
     }
   },
@@ -2225,12 +2225,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Räkna ut kvoten.",
-      "latex": "\\frac{-42}{-7}",
+      "latex": "\\frac{42}{6}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the quotient.",
-      "latex": "\\frac{20}{5}",
+      "latex": "\\frac{15}{5}",
       "hasVisual": false
     }
   },
@@ -2240,12 +2240,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Räkna ut kvoten.",
-      "latex": "\\frac{30}{-5}",
+      "latex": "\\frac{8}{-4}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the quotient.",
-      "latex": "\\frac{14}{-7}",
+      "latex": "\\frac{32}{-4}",
       "hasVisual": false
     }
   },
@@ -2254,40 +2254,40 @@ export const VARIATION_MAP = {
     "variationKey": "div_check_logic",
     "level": 4,
     "sv": {
-      "description": "Vilken multiplikation bevisar att $\\frac{10}{-2} = -5$?",
+      "description": "Vilken multiplikation bevisar att $\\frac{21}{7} = 3$?",
       "latex": null,
       "hasVisual": false,
       "options": [
         {
           "id": "A",
-          "label": "$10 \\cdot (-2) = (-5)$"
+          "label": "$3 \\cdot 7 = 21$"
         },
         {
           "id": "B",
-          "label": "$(-5) \\cdot (-2) = 10$"
+          "label": "$21 \\cdot 7 = 3$"
         },
         {
           "id": "C",
-          "label": "$(-5) + (-2) = 10$"
+          "label": "$3 + 7 = 21$"
         }
       ]
     },
     "en": {
-      "description": "Which multiplication layout proves that $\\frac{-30}{-5} = 6$?",
+      "description": "Which multiplication layout proves that $\\frac{-12}{-2} = 6$?",
       "latex": null,
       "hasVisual": false,
       "options": [
         {
           "id": "A",
-          "label": "$6 \\cdot (-5) = -30$"
+          "label": "$(-12) \\cdot (-2) = 6$"
         },
         {
           "id": "B",
-          "label": "$6 + (-5) = -30$"
+          "label": "$6 + (-2) = -12$"
         },
         {
           "id": "C",
-          "label": "$(-30) \\cdot (-5) = 6$"
+          "label": "$6 \\cdot (-2) = -12$"
         }
       ]
     }
@@ -2298,12 +2298,12 @@ export const VARIATION_MAP = {
     "level": 6,
     "sv": {
       "description": "Beräkna uttrycket.",
-      "latex": "\\frac{9  +  (-3)  \\cdot  5}{2}",
+      "latex": "\\frac{9  +  (-6)  \\cdot  (-1)}{-5}",
       "hasVisual": false
     },
     "en": {
       "description": "Evaluate the expression.",
-      "latex": "\\frac{-39  +  4  \\cdot  6}{-5}",
+      "latex": "\\frac{15  +  3  \\cdot  (-2)}{-3}",
       "hasVisual": false
     }
   },
@@ -2313,12 +2313,12 @@ export const VARIATION_MAP = {
     "level": 6,
     "sv": {
       "description": "Beräkna uttrycket.",
-      "latex": "\\frac{-6 \\cdot (0 + 8)}{-3}",
+      "latex": "\\frac{-12 \\cdot (-8 + 4)}{3}",
       "hasVisual": false
     },
     "en": {
       "description": "Evaluate the expression.",
-      "latex": "\\frac{-6 \\cdot (-4 + 2)}{2}",
+      "latex": "\\frac{-3 \\cdot (-1 + 5)}{-3}",
       "hasVisual": false
     }
   },
@@ -2370,7 +2370,7 @@ export const VARIATION_MAP = {
     "variationKey": "visual_inverse",
     "level": 1,
     "sv": {
-      "description": "Du har 18 kulor. Hur många kulor motsvarar 1/3?",
+      "description": "Du har 30 kulor. Hur många kulor motsvarar 1/10?",
       "latex": null,
       "hasVisual": false
     },
@@ -2385,7 +2385,7 @@ export const VARIATION_MAP = {
     "variationKey": "visual_calc",
     "level": 1,
     "sv": {
-      "description": "Hur stor andel av kulorna är gröna?",
+      "description": "Hur stor andel av kulorna är blåa?",
       "latex": null,
       "hasVisual": true
     },
@@ -2400,12 +2400,12 @@ export const VARIATION_MAP = {
     "variationKey": "part_inverse",
     "level": 2,
     "sv": {
-      "description": "Om en 1/5 av ett okänt tal är 48, vad är då hela talet totalt?",
+      "description": "Om en 1/10 av ett okänt tal är 49, vad är då hela talet totalt?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "If 1/3) of an unknown number is 41, what is the whole number in total?",
+      "description": "If 1/10) of an unknown number is 11, what is the whole number in total?",
       "latex": null,
       "hasVisual": false
     }
@@ -2458,12 +2458,12 @@ export const VARIATION_MAP = {
     "variationKey": "part_calc",
     "level": 2,
     "sv": {
-      "description": "Beräkna 1/8 av 88.",
+      "description": "Beräkna 1/4 av 116.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Calculate 1/8 of 120.",
+      "description": "Calculate 1/10 of 140.",
       "latex": null,
       "hasVisual": false
     }
@@ -2473,7 +2473,7 @@ export const VARIATION_MAP = {
     "variationKey": "mixed_bounds",
     "level": 3,
     "sv": {
-      "description": "Mellan vilka två hela siffror ligger bråket $\\frac{23}{6}$?",
+      "description": "Mellan vilka två hela siffror ligger bråket $\\frac{13}{4}$?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -2492,7 +2492,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "Between which two whole numbers does the fraction $$\\frac{16}{5}$$ lie?",
+      "description": "Between which two whole numbers does the fraction $$\\frac{16}{3}$$ lie?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -2517,12 +2517,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Skriv om från bråkform till blandad form.",
-      "latex": "\\frac{13}{5}",
+      "latex": "\\frac{15}{6}",
       "hasVisual": false
     },
     "en": {
       "description": "Convert from improper fraction to mixed fraction.",
-      "latex": "\\frac{11}{4}",
+      "latex": "\\frac{16}{6}",
       "hasVisual": false
     }
   },
@@ -2532,12 +2532,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Skriv om från blandad form till bråkform.",
-      "latex": "4\\frac{1}{6}",
+      "latex": "4\\frac{3}{6}",
       "hasVisual": false
     },
     "en": {
       "description": "Convert from a mixed fraction to an improper fraction.",
-      "latex": "5\\frac{2}{4}",
+      "latex": "5\\frac{2}{6}",
       "hasVisual": false
     }
   },
@@ -2547,12 +2547,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Skriv om från bråkform till blandad form.",
-      "latex": "\\frac{16}{6}",
+      "latex": "\\frac{15}{4}",
       "hasVisual": false
     },
     "en": {
       "description": "Convert from improper fraction to mixed fraction.",
-      "latex": "\\frac{25}{6}",
+      "latex": "\\frac{18}{4}",
       "hasVisual": false
     }
   },
@@ -2562,12 +2562,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Vilket tal saknas?.",
-      "latex": "\\frac{1}{6} = \\frac{?}{12}",
+      "latex": "\\frac{5}{9} = \\frac{?}{36}",
       "hasVisual": false
     },
     "en": {
       "description": "Which number is missing?.",
-      "latex": "\\frac{4}{7} = \\frac{?}{42}",
+      "latex": "\\frac{5}{9} = \\frac{?}{27}",
       "hasVisual": false
     }
   },
@@ -2576,7 +2576,7 @@ export const VARIATION_MAP = {
     "variationKey": "simplify_concept",
     "level": 4,
     "sv": {
-      "description": "Vilket av följande bråk är värt exakt lika mycket som $\\frac{1}{6}$?",
+      "description": "Vilket av följande bråk är värt exakt lika mycket som $\\frac{8}{9}$?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -2595,7 +2595,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "Which of the following fractions is worth exactly the same as $\\frac{1}{8}$?",
+      "description": "Which of the following fractions is worth exactly the same as $\\frac{5}{6}$?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -2620,12 +2620,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Förenkla bråket till enklaste form.",
-      "latex": "\\frac{2}{6}",
+      "latex": "\\frac{4}{32}",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify the fraction to simplest form.",
-      "latex": "\\frac{15}{25}",
+      "latex": "\\frac{24}{42}",
       "hasVisual": false
     }
   },
@@ -2635,7 +2635,7 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Vilken näbb eller tecken passar bäst i cirkeln?",
-      "latex": "\\frac{4}{5} \\quad \\bigcirc \\quad 0,85",
+      "latex": "\\frac{2}{3} \\quad \\bigcirc \\quad 0,72",
       "hasVisual": false,
       "options": [
         {
@@ -2654,7 +2654,7 @@ export const VARIATION_MAP = {
     },
     "en": {
       "description": "Which inequality sign fits best inside the circle?",
-      "latex": "\\frac{3}{4} \\quad \\bigcirc \\quad 0,65",
+      "latex": "\\frac{1}{4} \\quad \\bigcirc \\quad 0,3",
       "hasVisual": false,
       "options": [
         {
@@ -2678,7 +2678,7 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Skriv om bråket som ett decimaltal.",
-      "latex": "\\frac{1}{5}",
+      "latex": "\\frac{1}{2}",
       "hasVisual": false
     },
     "en": {
@@ -2693,12 +2693,12 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Skriv om decimaltalet till ett bråktal i enklaste form.",
-      "latex": "0,6",
+      "latex": "0,25",
       "hasVisual": false
     },
     "en": {
       "description": "Convert this decimal value into a fraction in simplest form.",
-      "latex": "0,2",
+      "latex": "0,1",
       "hasVisual": false
     }
   },
@@ -2707,14 +2707,42 @@ export const VARIATION_MAP = {
     "variationKey": "equivalence_basic_frac",
     "level": 5,
     "sv": {
-      "description": "Du har 12 kulor. Hur många kulor motsvarar 1/4?",
+      "description": "Titta på rutan. Vilket påstående stämmer INTE?",
       "latex": null,
-      "hasVisual": false
+      "hasVisual": true,
+      "options": [
+        {
+          "id": "A",
+          "label": ""
+        },
+        {
+          "id": "B",
+          "label": ""
+        },
+        {
+          "id": "C",
+          "label": ""
+        }
+      ]
     },
     "en": {
-      "description": "What fraction of the marbles are red?",
+      "description": "Look at the grid. Which statement is NOT correct?",
       "latex": null,
-      "hasVisual": true
+      "hasVisual": true,
+      "options": [
+        {
+          "id": "A",
+          "label": ""
+        },
+        {
+          "id": "B",
+          "label": ""
+        },
+        {
+          "id": "C",
+          "label": ""
+        }
+      ]
     }
   },
   "fractions_basics__equivalence_basic_dec": {
@@ -2722,14 +2750,28 @@ export const VARIATION_MAP = {
     "variationKey": "equivalence_basic_dec",
     "level": 5,
     "sv": {
-      "description": "Du har 20 kulor. Hur många kulor motsvarar 1/10?",
-      "latex": null,
-      "hasVisual": false
-    },
-    "en": {
-      "description": "What fraction of the marbles are green?",
+      "description": "Hur stor andel av kulorna är blåa?",
       "latex": null,
       "hasVisual": true
+    },
+    "en": {
+      "description": "Look at the grid. Which statement is NOT correct?",
+      "latex": null,
+      "hasVisual": true,
+      "options": [
+        {
+          "id": "A",
+          "label": ""
+        },
+        {
+          "id": "B",
+          "label": ""
+        },
+        {
+          "id": "C",
+          "label": ""
+        }
+      ]
     }
   },
   "fraction_arith__add_concept": {
@@ -2743,19 +2785,19 @@ export const VARIATION_MAP = {
       "options": [
         {
           "id": "A",
-          "label": "$\\frac{1}{5}$ + $\\frac{3}{5}$ = $\\frac{4}{10}$"
+          "label": "$\\frac{1}{5}$ + $\\frac{1}{5}$ = $\\frac{1}{5}$"
         },
         {
           "id": "B",
-          "label": "$\\frac{1}{5}$ + $\\frac{3}{5}$ = $\\frac{4}{5}$"
+          "label": "$\\frac{1}{5}$ + $\\frac{1}{5}$ = $\\frac{2}{5}$"
         },
         {
           "id": "C",
-          "label": "$\\frac{1}{5}$ + $\\frac{3}{5}$ = $\\frac{4}{25}$"
+          "label": "$\\frac{1}{5}$ + $\\frac{1}{5}$ = $\\frac{2}{10}$"
         },
         {
           "id": "D",
-          "label": "$\\frac{1}{5}$ + $\\frac{3}{5}$ = $\\frac{3}{5}$"
+          "label": "$\\frac{1}{5}$ + $\\frac{1}{5}$ = $\\frac{2}{25}$"
         }
       ]
     },
@@ -2766,19 +2808,19 @@ export const VARIATION_MAP = {
       "options": [
         {
           "id": "A",
-          "label": "$\\frac{1}{7}$ + $\\frac{3}{7}$ = $\\frac{4}{49}$"
+          "label": "$\\frac{1}{9}$ + $\\frac{4}{9}$ = $\\frac{5}{9}$"
         },
         {
           "id": "B",
-          "label": "$\\frac{1}{7}$ + $\\frac{3}{7}$ = $\\frac{4}{7}$"
+          "label": "$\\frac{1}{9}$ + $\\frac{4}{9}$ = $\\frac{4}{9}$"
         },
         {
           "id": "C",
-          "label": "$\\frac{1}{7}$ + $\\frac{3}{7}$ = $\\frac{3}{7}$"
+          "label": "$\\frac{1}{9}$ + $\\frac{4}{9}$ = $\\frac{5}{81}$"
         },
         {
           "id": "D",
-          "label": "$\\frac{1}{7}$ + $\\frac{3}{7}$ = $\\frac{4}{14}$"
+          "label": "$\\frac{1}{9}$ + $\\frac{4}{9}$ = $\\frac{5}{18}$"
         }
       ]
     }
@@ -2789,12 +2831,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Vilket tal är x?",
-      "latex": "\\frac{4}{10} + \\frac{x}{10} = \\frac{7}{10}",
+      "latex": "\\frac{4}{11} + \\frac{x}{11} = \\frac{8}{11}",
       "hasVisual": false
     },
     "en": {
       "description": "Which number is x?",
-      "latex": "\\frac{4}{7} + \\frac{x}{7} = \\frac{5}{7}",
+      "latex": "\\frac{2}{11} + \\frac{x}{11} = \\frac{10}{11}",
       "hasVisual": false
     }
   },
@@ -2804,12 +2846,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Beräkna summan och svara i enklaste form.",
-      "latex": "\\frac{2}{8} + \\frac{1}{8}",
+      "latex": "\\frac{4}{8} + \\frac{3}{8}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the sum and answer in simplest form.",
-      "latex": "\\frac{10}{11} + \\frac{3}{11}",
+      "latex": "\\frac{6}{7} + \\frac{1}{7}",
       "hasVisual": false
     }
   },
@@ -2819,12 +2861,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Beräkna differensen och svara i enklaste form.",
-      "latex": "\\frac{4}{12} - \\frac{3}{12}",
+      "latex": "\\frac{5}{10} - \\frac{1}{10}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the difference and answer in simplest form.",
-      "latex": "\\frac{9}{10} - \\frac{2}{10}",
+      "latex": "\\frac{3}{4} - \\frac{2}{4}",
       "hasVisual": false
     }
   },
@@ -2833,12 +2875,12 @@ export const VARIATION_MAP = {
     "variationKey": "lcd_find",
     "level": 2,
     "sv": {
-      "description": "Hitta den minsta gemensamma nämnaren (MGN) för 8 och 11.",
+      "description": "Hitta den minsta gemensamma nämnaren (MGN) för 6 och 9.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Find the lowest common denominator (LCD) for 7 and 15.",
+      "description": "Find the lowest common denominator (LCD) for 2 and 9.",
       "latex": null,
       "hasVisual": false
     }
@@ -2849,12 +2891,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Beräkna summan. Svara i bråkform och i enklaste form.",
-      "latex": "\\frac{2}{7} + \\frac{1}{9}",
+      "latex": "\\frac{2}{3} + \\frac{3}{10}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the sum. Answer as an improper fraction and in simplest form.",
-      "latex": "\\frac{1}{6} + \\frac{2}{9}",
+      "latex": "\\frac{3}{2} + \\frac{2}{10}",
       "hasVisual": false
     }
   },
@@ -2864,12 +2906,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Beräkna summan. Svara i bråkform och i enklaste form.",
-      "latex": "\\frac{2}{5} + \\frac{3}{8}",
+      "latex": "\\frac{1}{6} + \\frac{3}{9}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the sum. Answer as an improper fraction and in simplest form.",
-      "latex": "\\frac{1}{8} + \\frac{3}{3}",
+      "latex": "\\frac{3}{8} + \\frac{1}{3}",
       "hasVisual": false
     }
   },
@@ -2884,7 +2926,7 @@ export const VARIATION_MAP = {
     },
     "en": {
       "description": "Calculate the difference. Answer as an improper fraction and in simplest form.",
-      "latex": "\\frac{1}{4} - \\frac{2}{10}",
+      "latex": "\\frac{1}{9} - \\frac{1}{10}",
       "hasVisual": false
     }
   },
@@ -2894,12 +2936,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Beräkna och svara i blandad form och enklaste form.",
-      "latex": "5\\frac{1}{3} + 2\\frac{1}{5}",
+      "latex": "4\\frac{1}{4} + 1\\frac{1}{3}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate and answer as a mixed fraction in simplest form.",
-      "latex": "4\\frac{1}{4} + 1\\frac{1}{4}",
+      "latex": "4\\frac{1}{4} + 2\\frac{1}{3}",
       "hasVisual": false
     }
   },
@@ -2909,12 +2951,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Beräkna och svara i blandad form och enklaste form.",
-      "latex": "5\\frac{1}{2} + 2\\frac{1}{4}",
+      "latex": "3\\frac{1}{3} + 2\\frac{1}{5}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate and answer as a mixed fraction in simplest form.",
-      "latex": "3\\frac{1}{3} + 2\\frac{1}{4}",
+      "latex": "5\\frac{1}{3} + 1\\frac{1}{3}",
       "hasVisual": false
     }
   },
@@ -2924,12 +2966,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Beräkna och svara i blandad form och enklaste form.",
-      "latex": "3\\frac{1}{3} - 2\\frac{1}{4}",
+      "latex": "5\\frac{1}{2} - 2\\frac{1}{4}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate and answer as a mixed fraction in simplest form.",
-      "latex": "5\\frac{1}{4} - 2\\frac{1}{4}",
+      "latex": "5\\frac{1}{3} - 2\\frac{1}{5}",
       "hasVisual": false
     }
   },
@@ -2939,12 +2981,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Beräkna och svara i blandad form och enklaste form.",
-      "latex": "5\\frac{1}{3} + 2\\frac{1}{3}",
+      "latex": "4\\frac{1}{2} + 2\\frac{1}{4}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate and answer as a mixed fraction in simplest form.",
-      "latex": "3\\frac{1}{2} + 1\\frac{1}{3}",
+      "latex": "3\\frac{1}{3} + 2\\frac{1}{5}",
       "hasVisual": false
     }
   },
@@ -2954,12 +2996,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Beräkna och svara i blandad form och enklaste form.",
-      "latex": "4\\frac{1}{3} - 1\\frac{1}{3}",
+      "latex": "4\\frac{1}{4} - 2\\frac{1}{5}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate and answer as a mixed fraction in simplest form.",
-      "latex": "5\\frac{1}{3} - 1\\frac{1}{5}",
+      "latex": "3\\frac{1}{4} - 2\\frac{1}{4}",
       "hasVisual": false
     }
   },
@@ -2969,12 +3011,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Multiplicera bråken. Svara i bråkform OCH i enklaste form.",
-      "latex": "\\frac{3}{7} \\cdot \\frac{4}{8}",
+      "latex": "\\frac{1}{6} \\cdot \\frac{7}{2}",
       "hasVisual": false
     },
     "en": {
       "description": "Multiply the fractions. Answer as an improper fraction and in simplest form.",
-      "latex": "\\frac{4}{5} \\cdot \\frac{4}{5}",
+      "latex": "\\frac{2}{10} \\cdot \\frac{2}{9}",
       "hasVisual": false
     }
   },
@@ -2984,12 +3026,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Multiplicera bråken. Svara i bråkform OCH i enklaste form.",
-      "latex": "\\frac{8}{8} \\cdot \\frac{2}{6}",
+      "latex": "\\frac{4}{2} \\cdot \\frac{6}{6}",
       "hasVisual": false
     },
     "en": {
       "description": "Multiply the fractions. Answer as an improper fraction and in simplest form.",
-      "latex": "\\frac{7}{3} \\cdot \\frac{1}{6}",
+      "latex": "\\frac{1}{9} \\cdot \\frac{3}{3}",
       "hasVisual": false
     }
   },
@@ -2999,12 +3041,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Multiplicera bråken. Svara i bråkform OCH i enklaste form.",
-      "latex": "\\frac{6}{3} \\cdot \\frac{1}{10}",
+      "latex": "\\frac{8}{9} \\cdot \\frac{5}{2}",
       "hasVisual": false
     },
     "en": {
       "description": "Multiply the fractions. Answer as an improper fraction and in simplest form.",
-      "latex": "\\frac{4}{7} \\cdot \\frac{1}{6}",
+      "latex": "\\frac{6}{10} \\cdot \\frac{7}{2}",
       "hasVisual": false
     }
   },
@@ -3014,12 +3056,12 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Beräkna kvoten. Svara i bråkform.",
-      "latex": "\\frac{2}{10} \\div \\frac{2}{10}",
+      "latex": "\\frac{5}{8} \\div \\frac{2}{9}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the quotient.",
-      "latex": "\\frac{5}{8} \\div \\frac{5}{12}",
+      "latex": "\\frac{3}{9} \\div \\frac{2}{9}",
       "hasVisual": false
     }
   },
@@ -3029,12 +3071,12 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Beräkna kvoten. Svara i bråkform.",
-      "latex": "\\frac{3}{8} \\div \\frac{2}{9}",
+      "latex": "\\frac{2}{10} \\div \\frac{4}{9}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the quotient.",
-      "latex": "\\frac{4}{5} \\div \\frac{5}{8}",
+      "latex": "\\frac{2}{7} \\div \\frac{2}{8}",
       "hasVisual": false
     }
   },
@@ -3044,12 +3086,12 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Beräkna kvoten. Svara i bråkform.",
-      "latex": "\\frac{2}{8} \\div \\frac{4}{7}",
+      "latex": "\\frac{3}{12} \\div \\frac{5}{12}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the quotient.",
-      "latex": "\\frac{1}{8} \\div \\frac{1}{12}",
+      "latex": "\\frac{3}{6} \\div \\frac{3}{8}",
       "hasVisual": false
     }
   },
@@ -3059,12 +3101,12 @@ export const VARIATION_MAP = {
     "level": 6,
     "sv": {
       "description": "Beräkna och svara i enklaste form.",
-      "latex": "-\\frac{1}{6} - \\frac{1}{2}",
+      "latex": "-\\frac{1}{2} + \\left(-\\frac{1}{6}\\right)",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate and answer in simplest form.",
-      "latex": "\\frac{2}{3} + \\left(-\\frac{1}{2}\\right)",
+      "latex": "\\frac{1}{2} + \\left(-\\frac{2}{3}\\right)",
       "hasVisual": false
     }
   },
@@ -3074,12 +3116,12 @@ export const VARIATION_MAP = {
     "level": 6,
     "sv": {
       "description": "Beräkna och svara i enklaste form.",
-      "latex": "-\\frac{3}{5} \\div \\frac{1}{2}",
+      "latex": "-\\frac{3}{5} \\cdot \\left(-\\frac{2}{5}\\right)",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate and answer in simplest form.",
-      "latex": "-\\frac{2}{5} \\cdot \\frac{1}{2}",
+      "latex": "-\\frac{1}{3} \\div \\frac{1}{5}",
       "hasVisual": false
     }
   },
@@ -3089,12 +3131,12 @@ export const VARIATION_MAP = {
     "level": 7,
     "sv": {
       "description": "Beräkna med rätt prioriteringsordning.",
-      "latex": "\\frac{1}{2} \\cdot \\frac{3}{4} + \\frac{4}{8}",
+      "latex": "\\frac{1}{2} \\cdot \\frac{2}{4} + \\frac{5}{8}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate using correct order of operations.",
-      "latex": "\\frac{1}{2} \\cdot \\frac{1}{4} + \\frac{3}{4}",
+      "latex": "\\frac{2}{6} + \\frac{1}{2} \\cdot \\frac{2}{3}",
       "hasVisual": false
     }
   },
@@ -3104,12 +3146,12 @@ export const VARIATION_MAP = {
     "level": 7,
     "sv": {
       "description": "Beräkna uttrycket.",
-      "latex": "\\left(\\frac{1}{2} - \\frac{1}{6}\\right) \\cdot \\frac{3}{5}",
+      "latex": "\\left(\\frac{1}{2} - \\frac{1}{4}\\right) \\cdot \\frac{2}{3}",
       "hasVisual": false
     },
     "en": {
       "description": "Evaluate the expression.",
-      "latex": "\\left(\\frac{1}{2} + \\frac{1}{8}\\right) \\cdot \\frac{1}{2}",
+      "latex": "\\left(\\frac{7}{10} - \\frac{1}{2}\\right) \\cdot \\frac{3}{4}",
       "hasVisual": false
     }
   },
@@ -3119,12 +3161,12 @@ export const VARIATION_MAP = {
     "level": 8,
     "sv": {
       "description": "Förenkla och beräkna.",
-      "latex": "\\left(-\\frac{1}{3}\\right)^{2} - \\frac{1}{3}",
+      "latex": "\\left(-\\frac{1}{3}\\right)^{2} + \\frac{1}{6}",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify and evaluate.",
-      "latex": "\\left(-\\frac{1}{4}\\right)^{2} - \\frac{2}{8}",
+      "latex": "\\left(-\\frac{1}{2}\\right)^{2} + \\frac{1}{8}",
       "hasVisual": false
     }
   },
@@ -3134,12 +3176,12 @@ export const VARIATION_MAP = {
     "level": 8,
     "sv": {
       "description": "Beräkna.",
-      "latex": "\\left(\\frac{3}{6} + \\frac{1}{3}\\right)^2",
+      "latex": "\\left(\\frac{8}{10} - \\frac{1}{2}\\right)^2",
       "hasVisual": false
     },
     "en": {
       "description": "Evaluate.",
-      "latex": "\\left(\\frac{4}{5} + \\frac{5}{10}\\right)^2",
+      "latex": "\\left(\\frac{4}{5} + \\frac{4}{10}\\right)^2",
       "hasVisual": false
     }
   },
@@ -3149,12 +3191,12 @@ export const VARIATION_MAP = {
     "level": 8,
     "sv": {
       "description": "Förenkla det komplexa bråket.",
-      "latex": "\\frac{\\frac{4}{8} - \\frac{1}{2}}{\\left(-\\frac{1}{3}\\right)^{2}}",
+      "latex": "\\frac{-\\frac{2}{4} - \\frac{6}{8}}{\\left(-\\frac{1}{3}\\right)^{2}}",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify the complex fraction.",
-      "latex": "\\frac{\\frac{2}{3} - \\frac{5}{6}}{\\left(-\\frac{1}{3}\\right)^{2}}",
+      "latex": "\\frac{-\\frac{6}{8} - \\frac{2}{4}}{\\left(-\\frac{1}{3}\\right)^{2}}",
       "hasVisual": false
     }
   },
@@ -3178,14 +3220,42 @@ export const VARIATION_MAP = {
     "variationKey": "visual_lie",
     "level": 1,
     "sv": {
-      "description": "Vilket decimaltal motsvarar 36%?",
+      "description": "Studera rutnätet. Vilket påstående är FALSKT?",
       "latex": null,
-      "hasVisual": false
+      "hasVisual": true,
+      "options": [
+        {
+          "id": "A",
+          "label": ""
+        },
+        {
+          "id": "B",
+          "label": ""
+        },
+        {
+          "id": "C",
+          "label": ""
+        }
+      ]
     },
     "en": {
-      "description": "Which decimal corresponds to 13%?",
+      "description": "Examine the grid. Which statement is FALSE?",
       "latex": null,
-      "hasVisual": false
+      "hasVisual": true,
+      "options": [
+        {
+          "id": "A",
+          "label": ""
+        },
+        {
+          "id": "B",
+          "label": ""
+        },
+        {
+          "id": "C",
+          "label": ""
+        }
+      ]
     }
   },
   "percent__equivalence": {
@@ -3193,12 +3263,12 @@ export const VARIATION_MAP = {
     "variationKey": "equivalence",
     "level": 1,
     "sv": {
-      "description": "Vilket decimaltal motsvarar 12,5%?",
+      "description": "Vilket decimaltal motsvarar 91%?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Which decimal corresponds to 28%?",
+      "description": "Which decimal corresponds to 72%?",
       "latex": null,
       "hasVisual": false
     }
@@ -3208,12 +3278,12 @@ export const VARIATION_MAP = {
     "variationKey": "equivalence_basic_frac",
     "level": 1,
     "sv": {
-      "description": "Hur många procent motsvarar bråket $\\frac{11}{20}$?",
+      "description": "Hur många procent motsvarar bråket $\\frac{1}{2}$?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "What percentage corresponds to the fraction $\\frac{1}{2}$?",
+      "description": "What percentage corresponds to the fraction $\\frac{1}{10}$?",
       "latex": null,
       "hasVisual": false
     }
@@ -3223,12 +3293,12 @@ export const VARIATION_MAP = {
     "variationKey": "equivalence_basic_dec",
     "level": 1,
     "sv": {
-      "description": "Vilket decimaltal motsvarar 40%?",
+      "description": "Skriv decimaltalet 0,3 i procentform.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Which decimal corresponds to 33%?",
+      "description": "Write the decimal 0.75 as a percentage.",
       "latex": null,
       "hasVisual": false
     }
@@ -3238,13 +3308,13 @@ export const VARIATION_MAP = {
     "variationKey": "benchmark_calc",
     "level": 2,
     "sv": {
-      "description": "Beräkna 5% av 240.",
-      "latex": "5\\% \\cdot 240",
+      "description": "Beräkna 25% av 200.",
+      "latex": "25\\% \\cdot 200",
       "hasVisual": false
     },
     "en": {
-      "description": "Calculate 25% of 800.",
-      "latex": "25\\% \\cdot 800",
+      "description": "Calculate 1% of 800.",
+      "latex": "1\\% \\cdot 800",
       "hasVisual": false
     }
   },
@@ -3253,13 +3323,13 @@ export const VARIATION_MAP = {
     "variationKey": "benchmark_inverse",
     "level": 2,
     "sv": {
-      "description": "Om 5% av ett tal är 69, vad är då 100%?",
-      "latex": "5\\% = 69",
+      "description": "Om 10% av ett tal är 29, vad är då 100%?",
+      "latex": "10\\% = 29",
       "hasVisual": false
     },
     "en": {
-      "description": "If 25% of a number is 53, what is 100%?",
-      "latex": "25\\% = 53",
+      "description": "If 20% of a number is 5, what is 100%?",
+      "latex": "20\\% = 5",
       "hasVisual": false
     }
   },
@@ -3268,13 +3338,13 @@ export const VARIATION_MAP = {
     "variationKey": "benchmark_commutative",
     "level": 2,
     "sv": {
-      "description": "Beräkna 80% av 25.",
-      "latex": "80\\% \\cdot 25",
+      "description": "Beräkna 68% av 25.",
+      "latex": "68\\% \\cdot 25",
       "hasVisual": false
     },
     "en": {
-      "description": "Calculate 40% of 50.",
-      "latex": "40\\% \\cdot 50",
+      "description": "Calculate 32% of 50.",
+      "latex": "32\\% \\cdot 50",
       "hasVisual": false
     }
   },
@@ -3283,13 +3353,13 @@ export const VARIATION_MAP = {
     "variationKey": "find_percent_basic",
     "level": 3,
     "sv": {
-      "description": "Hur många procent är 40 av 100?",
-      "latex": "\\frac{40}{100}",
+      "description": "Hur många procent är 80 av 100?",
+      "latex": "\\frac{80}{100}",
       "hasVisual": false
     },
     "en": {
-      "description": "What percentage is 20 of 40?",
-      "latex": "\\frac{20}{40}",
+      "description": "What percentage is 3 of 12?",
+      "latex": "\\frac{3}{12}",
       "hasVisual": false
     }
   },
@@ -3298,13 +3368,13 @@ export const VARIATION_MAP = {
     "variationKey": "find_percent_test",
     "level": 3,
     "sv": {
-      "description": "Du fick 9 rätt av 12 möjliga poäng på ett prov. Hur många procent rätt hade du?",
-      "latex": "\\frac{9}{12}",
+      "description": "Du fick 6 rätt av 12 möjliga poäng på ett prov. Hur många procent rätt hade du?",
+      "latex": "\\frac{6}{12}",
       "hasVisual": false
     },
     "en": {
-      "description": "You got 160 correct out of 200 points on a test. What percentage did you score?",
-      "latex": "\\frac{160}{200}",
+      "description": "You got 2 correct out of 4 points on a test. What percentage did you score?",
+      "latex": "\\frac{2}{4}",
       "hasVisual": false
     }
   },
@@ -3313,13 +3383,13 @@ export const VARIATION_MAP = {
     "variationKey": "find_percent_discount",
     "level": 3,
     "sv": {
-      "description": "En vara sänktes med 48 kr från ordinarie pris 50 kr. Vad var rabatten i procent?",
-      "latex": "\\frac{48}{50}",
+      "description": "En vara sänktes med 4 kr från ordinarie pris 8 kr. Vad var rabatten i procent?",
+      "latex": "\\frac{4}{8}",
       "hasVisual": false
     },
     "en": {
-      "description": "An item was discounted by 8 kr from the regular price of 10 kr. What was the discount in percent?",
-      "latex": "\\frac{8}{10}",
+      "description": "An item was discounted by 40 kr from the regular price of 80 kr. What was the discount in percent?",
+      "latex": "\\frac{40}{80}",
       "hasVisual": false
     }
   },
@@ -3328,13 +3398,13 @@ export const VARIATION_MAP = {
     "variationKey": "find_percent_group",
     "level": 3,
     "sv": {
-      "description": "I en grupp på 100 personer röstade 80 ja. Hur många procent röstade ja?",
-      "latex": "\\frac{80}{100}",
+      "description": "I en grupp på 20 personer röstade 10 ja. Hur många procent röstade ja?",
+      "latex": "\\frac{10}{20}",
       "hasVisual": false
     },
     "en": {
-      "description": "In a group of 300 people, 105 voted yes. What percentage voted yes?",
-      "latex": "\\frac{105}{300}",
+      "description": "In a group of 100 people, 52 voted yes. What percentage voted yes?",
+      "latex": "\\frac{52}{100}",
       "hasVisual": false
     }
   },
@@ -3343,13 +3413,13 @@ export const VARIATION_MAP = {
     "variationKey": "composition",
     "level": 4,
     "sv": {
-      "description": "Beräkna 80% av 850.",
-      "latex": "80\\% \\cdot 850",
+      "description": "Beräkna 90% av 810.",
+      "latex": "90\\% \\cdot 810",
       "hasVisual": false
     },
     "en": {
-      "description": "Calculate 90% of 110.",
-      "latex": "90\\% \\cdot 110",
+      "description": "Calculate 70% of 580.",
+      "latex": "70\\% \\cdot 580",
       "hasVisual": false
     }
   },
@@ -3358,13 +3428,13 @@ export const VARIATION_MAP = {
     "variationKey": "decomposition",
     "level": 4,
     "sv": {
-      "description": "Beräkna 95% av 780.",
-      "latex": "95\\% \\cdot 780",
+      "description": "Beräkna 35% av 140.",
+      "latex": "35\\% \\cdot 140",
       "hasVisual": false
     },
     "en": {
-      "description": "Calculate 30% of 640.",
-      "latex": "30\\% \\cdot 640",
+      "description": "Calculate 15% of 720.",
+      "latex": "15\\% \\cdot 720",
       "hasVisual": false
     }
   },
@@ -3373,14 +3443,50 @@ export const VARIATION_MAP = {
     "variationKey": "estimation",
     "level": 4,
     "sv": {
-      "description": "Beräkna 27% av 200.",
-      "latex": "27\\% \\cdot 200",
-      "hasVisual": false
+      "description": "Uppskatta ungefär hur mycket 11% av 790 är.",
+      "latex": null,
+      "hasVisual": false,
+      "options": [
+        {
+          "id": "A",
+          "label": ""
+        },
+        {
+          "id": "B",
+          "label": ""
+        },
+        {
+          "id": "C",
+          "label": ""
+        },
+        {
+          "id": "D",
+          "label": ""
+        }
+      ]
     },
     "en": {
-      "description": "Calculate 19% of 500.",
-      "latex": "19\\% \\cdot 500",
-      "hasVisual": false
+      "description": "Estimate approximately how much 76% of 398 is.",
+      "latex": null,
+      "hasVisual": false,
+      "options": [
+        {
+          "id": "A",
+          "label": ""
+        },
+        {
+          "id": "B",
+          "label": ""
+        },
+        {
+          "id": "C",
+          "label": ""
+        },
+        {
+          "id": "D",
+          "label": ""
+        }
+      ]
     }
   },
   "percent__calc_any_percent": {
@@ -3388,13 +3494,13 @@ export const VARIATION_MAP = {
     "variationKey": "calc_any_percent",
     "level": 4,
     "sv": {
-      "description": "Beräkna 69% av 400.",
-      "latex": "69\\% \\cdot 400",
+      "description": "Beräkna 32% av 350.",
+      "latex": "32\\% \\cdot 350",
       "hasVisual": false
     },
     "en": {
-      "description": "Calculate 85% of 140.",
-      "latex": "85\\% \\cdot 140",
+      "description": "Calculate 59% of 100.",
+      "latex": "59\\% \\cdot 100",
       "hasVisual": false
     }
   },
@@ -3403,13 +3509,13 @@ export const VARIATION_MAP = {
     "variationKey": "change_calc",
     "level": 5,
     "sv": {
-      "description": "Ett värde ändrades från 250 till 175. Vad var förändringen i procent?",
-      "latex": "\\frac{75}{250}",
+      "description": "Ett värde ändrades från 800 till 920. Vad var förändringen i procent?",
+      "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A value changed from 20 to 14. What was the change in percent?",
-      "latex": "\\frac{6}{20}",
+      "description": "A value changed from 120 to 72. What was the change in percent?",
+      "latex": null,
       "hasVisual": false
     }
   },
@@ -3418,12 +3524,12 @@ export const VARIATION_MAP = {
     "variationKey": "change_multiplier",
     "level": 5,
     "sv": {
-      "description": "Vilken förändringsfaktor motsvarar en minskning med 5%?",
+      "description": "Vilken förändringsfaktor motsvarar en minskning med 85%?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Which change multiplier corresponds to an increase of 200%?",
+      "description": "Which change multiplier corresponds to an increase of 2%?",
       "latex": null,
       "hasVisual": false
     }
@@ -3433,14 +3539,42 @@ export const VARIATION_MAP = {
     "variationKey": "change_trap",
     "level": 5,
     "sv": {
-      "description": "Ett värde ändrades från 90 till 180. Vad var förändringen i procent?",
-      "latex": "\\frac{90}{90}",
-      "hasVisual": false
+      "description": "En jacka kostar 200 kr. Priset höjs först med 20% och sänks sedan med 20%. Vad händer med priset?",
+      "latex": null,
+      "hasVisual": false,
+      "options": [
+        {
+          "id": "A",
+          "label": ""
+        },
+        {
+          "id": "B",
+          "label": ""
+        },
+        {
+          "id": "C",
+          "label": ""
+        }
+      ]
     },
     "en": {
-      "description": "A value changed from 30 to 27. What was the change in percent?",
-      "latex": "\\frac{3}{30}",
-      "hasVisual": false
+      "description": "A jacket costs 200 kr. Its price increases by 50% and then decreases by 50%. What happens to the price?",
+      "latex": null,
+      "hasVisual": false,
+      "options": [
+        {
+          "id": "A",
+          "label": ""
+        },
+        {
+          "id": "B",
+          "label": ""
+        },
+        {
+          "id": "C",
+          "label": ""
+        }
+      ]
     }
   },
   "percent__reverse_find_whole": {
@@ -3448,13 +3582,13 @@ export const VARIATION_MAP = {
     "variationKey": "reverse_find_whole",
     "level": 6,
     "sv": {
-      "description": "15% av ett belopp är 150 kr. Vad är hela beloppet (100%)?",
-      "latex": "15\\% = 150",
+      "description": "6% av ett belopp är 126 kr. Vad är hela beloppet (100%)?",
+      "latex": "6\\% = 126",
       "hasVisual": false
     },
     "en": {
-      "description": "30% of an amount is 60 kr. What is the full amount (100%)?",
-      "latex": "30\\% = 60",
+      "description": "8% of an amount is 200 kr. What is the full amount (100%)?",
+      "latex": "8\\% = 200",
       "hasVisual": false
     }
   },
@@ -3463,13 +3597,13 @@ export const VARIATION_MAP = {
     "variationKey": "reverse_scaling",
     "level": 6,
     "sv": {
-      "description": "50% av ett belopp är 25 kr. Vad är hela beloppet (100%)?",
-      "latex": "50\\% = 25",
+      "description": "10% av en sträcka är 5 m. Hur lång är hela sträckan (100%)?",
+      "latex": "10\\% = 5",
       "hasVisual": false
     },
     "en": {
-      "description": "50% of an amount is 22 kr. What is the full amount (100%)?",
-      "latex": "50\\% = 22",
+      "description": "10% of a distance is 26 m. How long is the whole distance (100%)?",
+      "latex": "10\\% = 26",
       "hasVisual": false
     }
   },
@@ -3478,14 +3612,42 @@ export const VARIATION_MAP = {
     "variationKey": "reverse_concept",
     "level": 6,
     "sv": {
-      "description": "4% av ett belopp är 11 kr. Vad är hela beloppet (100%)?",
-      "latex": "4\\% = 11",
-      "hasVisual": false
+      "description": "Du vet att 10% av ett tal är 30. Hur räknar du snabbast ut vad 100% är?",
+      "latex": null,
+      "hasVisual": false,
+      "options": [
+        {
+          "id": "A",
+          "label": ""
+        },
+        {
+          "id": "B",
+          "label": ""
+        },
+        {
+          "id": "C",
+          "label": ""
+        }
+      ]
     },
     "en": {
-      "description": "2% of an amount is 23 kr. What is the full amount (100%)?",
-      "latex": "2\\% = 23",
-      "hasVisual": false
+      "description": "You know that 20% of a number is 140. What is the fastest way to find 100%?",
+      "latex": null,
+      "hasVisual": false,
+      "options": [
+        {
+          "id": "A",
+          "label": ""
+        },
+        {
+          "id": "B",
+          "label": ""
+        },
+        {
+          "id": "C",
+          "label": ""
+        }
+      ]
     }
   },
   "change_factor__pct_to_factor_inc": {
@@ -3493,12 +3655,12 @@ export const VARIATION_MAP = {
     "variationKey": "pct_to_factor_inc",
     "level": 1,
     "sv": {
-      "description": "Ett värde ökar med 76%. Vilken förändringsfaktor motsvarar denna ökning?",
+      "description": "Ett värde ökar med 6%. Vilken förändringsfaktor motsvarar denna ökning?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A value increases by 9%. What is the change factor corresponding to this increase?",
+      "description": "A value increases by 25%. What is the change factor corresponding to this increase?",
       "latex": null,
       "hasVisual": false
     }
@@ -3508,12 +3670,12 @@ export const VARIATION_MAP = {
     "variationKey": "pct_to_factor_dec",
     "level": 1,
     "sv": {
-      "description": "Ett värde minskar med 66%. Vilken förändringsfaktor motsvarar denna minskning?",
+      "description": "Ett värde minskar med 20%. Vilken förändringsfaktor motsvarar denna minskning?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A value decreases by 37.5%. What is the change factor corresponding to this decrease?",
+      "description": "A value decreases by 7.5%. What is the change factor corresponding to this decrease?",
       "latex": null,
       "hasVisual": false
     }
@@ -3523,12 +3685,12 @@ export const VARIATION_MAP = {
     "variationKey": "factor_to_pct_inc",
     "level": 1,
     "sv": {
-      "description": "Förändringsfaktorn är 1,93. Hur många procents ökning innebär detta?",
+      "description": "Förändringsfaktorn är 2,1. Hur många procents ökning innebär detta?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "The change factor is 4. What percentage increase does this represent?",
+      "description": "The change factor is 3.5. What percentage increase does this represent?",
       "latex": null,
       "hasVisual": false
     }
@@ -3538,12 +3700,12 @@ export const VARIATION_MAP = {
     "variationKey": "factor_to_pct_dec",
     "level": 1,
     "sv": {
-      "description": "Förändringsfaktorn är 0,875. Hur många procents minskning innebär detta?",
+      "description": "Förändringsfaktorn är 0,825. Hur många procents minskning innebär detta?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "The change factor is 0.975. What percentage decrease does this represent?",
+      "description": "The change factor is 0.825. What percentage decrease does this represent?",
       "latex": null,
       "hasVisual": false
     }
@@ -3553,12 +3715,12 @@ export const VARIATION_MAP = {
     "variationKey": "apply_factor_inc",
     "level": 2,
     "sv": {
-      "description": "Ett värde på 1200 kr ska höjas med 7%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
+      "description": "Ett värde på 1000 kr ska höjas med 66%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A value of 2400 kr is to be increased by 11%. Calculate the new value using a change factor.",
+      "description": "A value of 2300 kr is to be increased by 47%. Calculate the new value using a change factor.",
       "latex": null,
       "hasVisual": false
     }
@@ -3568,12 +3730,12 @@ export const VARIATION_MAP = {
     "variationKey": "apply_factor_dec",
     "level": 2,
     "sv": {
-      "description": "Ett värde på 120 kr ska sänkas med 35%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
+      "description": "Ett värde på 900 kr ska sänkas med 68%. Beräkna det nya värdet med hjälp av förändringsfaktor.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A value of 1700 kr is to be decreased by 33%. Calculate the new value using a change factor.",
+      "description": "A value of 1550 kr is to be decreased by 26%. Calculate the new value using a change factor.",
       "latex": null,
       "hasVisual": false
     }
@@ -3583,12 +3745,12 @@ export const VARIATION_MAP = {
     "variationKey": "find_original_inc",
     "level": 3,
     "sv": {
-      "description": "Efter en höjning med 12% är det nya priset 364 kr. Vad var priset från början?",
+      "description": "Efter en höjning med 75% är det nya priset 1330 kr. Vad var priset från början?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "After an increase of 50%, the new price is 630 kr. What was the original price?",
+      "description": "After an increase of 50%, the new price is 930 kr. What was the original price?",
       "latex": null,
       "hasVisual": false
     }
@@ -3598,12 +3760,12 @@ export const VARIATION_MAP = {
     "variationKey": "find_original_dec",
     "level": 3,
     "sv": {
-      "description": "Efter en sänkning med 75% är det nya priset 300 kr. Vad var priset från början?",
+      "description": "Efter en sänkning med 60% är det nya priset 700 kr. Vad var priset från början?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "After an decrease of 75%, the new price is 140 kr. What was the original price?",
+      "description": "After an decrease of 24%, the new price is 494 kr. What was the original price?",
       "latex": null,
       "hasVisual": false
     }
@@ -3613,12 +3775,12 @@ export const VARIATION_MAP = {
     "variationKey": "sequential_factors",
     "level": 4,
     "sv": {
-      "description": "Ett pris ändras i två steg: först en minskning med 40%, därefter en minskning med 2%. Beräkna den totala förändringsfaktorn.",
+      "description": "Ett pris ändras i två steg: först en ökning med 10%, därefter en ökning med 35%. Beräkna den totala förändringsfaktorn.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A price changes in two steps: first an increase of 2%, then an decrease of 12%. Calculate the total change factor.",
+      "description": "A price changes in two steps: first an increase of 8%, then an increase of 25%. Calculate the total change factor.",
       "latex": null,
       "hasVisual": false
     }
@@ -3628,12 +3790,12 @@ export const VARIATION_MAP = {
     "variationKey": "sequential_total_pct",
     "level": 5,
     "sv": {
-      "description": "Ett pris höjs först med 50% och höjs därefter med 15%. Med hur många procent har priset förändrats totalt?",
+      "description": "Ett pris sänks först med 12% och höjs därefter med 15%. Med hur många procent har priset förändrats totalt? (Svara med minustecken vid minskning, t.ex. -12)",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A price is first increased by 20% and then decreased by 15%. By what total percentage has the price changed?",
+      "description": "A price is first decreased by 12% and then increased by 25%. By what total percentage has the price changed? (Use a minus sign for a decrease, e.g. -12)",
       "latex": null,
       "hasVisual": false
     }
@@ -3643,12 +3805,12 @@ export const VARIATION_MAP = {
     "variationKey": "repeated_change_years",
     "level": 5,
     "sv": {
-      "description": "Ett föremål är värt 15000 kr och värdet ökar med 10% varje år. Vad är föremålet värt efter 2 år?",
+      "description": "Ett föremål är värt 8500 kr och värdet ökar med 2% varje år. Vad är föremålet värt efter 3 år? Avrunda till hela kronor.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "An item is worth 12000 kr and its value decreases by 15% each year. What is the item worth after 2 years?",
+      "description": "An item is worth 250000 kr and its value increases by 20% each year. What is the item worth after 3 years? Round to the nearest whole kr.",
       "latex": null,
       "hasVisual": false
     }
@@ -3659,12 +3821,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Beräkna värdet av uttrycket.",
-      "latex": "92^{0}",
+      "latex": "474^{0}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the value of the expression.",
-      "latex": "482^{0}",
+      "latex": "404^{0}",
       "hasVisual": false
     }
   },
@@ -3674,12 +3836,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Beräkna värdet av uttrycket.",
-      "latex": "381^{1}",
+      "latex": "59^{1}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the value of the expression.",
-      "latex": "383^{1}",
+      "latex": "354^{1}",
       "hasVisual": false
     }
   },
@@ -3689,12 +3851,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Beräkna potensen.",
-      "latex": "6^{2}",
+      "latex": "9^{3}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the power.",
-      "latex": "2^{2}",
+      "latex": "10^{2}",
       "hasVisual": false
     }
   },
@@ -3747,12 +3909,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Skriv tiopotensen som ett heltal.",
-      "latex": "10^{6}",
+      "latex": "10^{4}",
       "hasVisual": false
     },
     "en": {
       "description": "Write the power of ten as an integer.",
-      "latex": "10^{5}",
+      "latex": "10^{6}",
       "hasVisual": false
     }
   },
@@ -3776,8 +3938,8 @@ export const VARIATION_MAP = {
     "variationKey": "ten_inverse_counting",
     "level": 2,
     "sv": {
-      "description": "Skriv 10000 som en tiopotens.",
-      "latex": "10^{x} = 10000",
+      "description": "Skriv 10000000 som en tiopotens.",
+      "latex": "10^{x} = 10000000",
       "hasVisual": false
     },
     "en": {
@@ -3791,12 +3953,12 @@ export const VARIATION_MAP = {
     "variationKey": "scientific_to_form",
     "level": 3,
     "sv": {
-      "description": "Skriv talet 690 000 i grundpotensform.",
+      "description": "Skriv talet 96 000 000 i grundpotensform.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Write the number 6,800 in scientific notation.",
+      "description": "Write the number 8,200,000 in scientific notation.",
       "latex": null,
       "hasVisual": false
     }
@@ -3807,12 +3969,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Vilket tal saknas på platsen för 'a'?",
-      "latex": "4 600 = a \\cdot 10^{3}",
+      "latex": "58 000 = a \\cdot 10^{4}",
       "hasVisual": false
     },
     "en": {
       "description": "Which number is missing in place of 'a'?",
-      "latex": "28,000,000 = a \\cdot 10^{7}",
+      "latex": "1,500,000 = a \\cdot 10^{6}",
       "hasVisual": false
     }
   },
@@ -3822,12 +3984,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Vilket tal saknas på platsen för 'n'?",
-      "latex": "4 500 000 = 4{,}5 \\cdot 10^{n}",
+      "latex": "22 000 = 2{,}2 \\cdot 10^{n}",
       "hasVisual": false
     },
     "en": {
       "description": "Which number is missing in place of 'n'?",
-      "latex": "6,000 = 6 \\cdot 10^{n}",
+      "latex": "1,400,000 = 1.4 \\cdot 10^{n}",
       "hasVisual": false
     }
   },
@@ -3837,12 +3999,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Beräkna kvadratroten.",
-      "latex": "\\sqrt{49}",
+      "latex": "\\sqrt{81}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the square root.",
-      "latex": "\\sqrt{9}",
+      "latex": "\\sqrt{64}",
       "hasVisual": false
     }
   },
@@ -3852,12 +4014,12 @@ export const VARIATION_MAP = {
     "level": 4,
     "sv": {
       "description": "Lös ekvationen (hitta x).",
-      "latex": "x^2 = 121",
+      "latex": "x^2 = 81",
       "hasVisual": false
     },
     "en": {
       "description": "Solve the equation (find x).",
-      "latex": "x^2 = 100",
+      "latex": "x^2 = 81",
       "hasVisual": false
     }
   },
@@ -3867,12 +4029,12 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Förenkla till en enda potens.",
-      "latex": "x^{4} \\cdot x^{3}",
+      "latex": "x^{7} \\cdot x^{4}",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify to a single power.",
-      "latex": "x^{9} \\cdot x^{3}",
+      "latex": "x^{5} \\cdot x^{3}",
       "hasVisual": false
     }
   },
@@ -3882,12 +4044,12 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Förenkla till en enda potens.",
-      "latex": "\\frac{x^{11}}{x^{3}}",
+      "latex": "\\frac{x^{18}}{x^{8}}",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify to a single power.",
-      "latex": "\\frac{x^{16}}{x^{9}}",
+      "latex": "\\frac{x^{17}}{x^{7}}",
       "hasVisual": false
     }
   },
@@ -3897,12 +4059,12 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Förenkla uttrycket.",
-      "latex": "\\frac{x^{2} · x^{2}}{x^{3}}",
+      "latex": "\\frac{x^{2} · x^{5}}{x^{2}}",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify the expression.",
-      "latex": "\\frac{x^{5} · x^{3}}{x^{3}}",
+      "latex": "\\frac{x^{2} · x^{5}}{x^{4}}",
       "hasVisual": false
     }
   },
@@ -3912,12 +4074,12 @@ export const VARIATION_MAP = {
     "level": 5,
     "sv": {
       "description": "Förenkla uttrycket.",
-      "latex": "\\frac{x^{3} · x^{4}}{x^{3}}",
+      "latex": "\\frac{x^{5} · x^{4}}{x^{3}}",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify the expression.",
-      "latex": "\\frac{x^{3} · x^{4}}{x^{3}}",
+      "latex": "\\frac{x^{2} · x^{5}}{x^{2}}",
       "hasVisual": false
     }
   },
@@ -3927,12 +4089,12 @@ export const VARIATION_MAP = {
     "level": 6,
     "sv": {
       "description": "Förenkla uttrycket.",
-      "latex": "(x^{2})^{3}",
+      "latex": "(x^{5})^{3}",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify the expression.",
-      "latex": "(x^{2})^{3}",
+      "latex": "(x^{2})^{4}",
       "hasVisual": false
     }
   },
@@ -3942,12 +4104,12 @@ export const VARIATION_MAP = {
     "level": 6,
     "sv": {
       "description": "Förenkla till en enda potens.",
-      "latex": "(x^{3})^{3} · x^{2}",
+      "latex": "(x^{2})^{2} · x^{4}",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify to a single power.",
-      "latex": "(x^{2})^{3} · x^{2}",
+      "latex": "(x^{3})^{3} · x^{2}",
       "hasVisual": false
     }
   },
@@ -3957,12 +4119,12 @@ export const VARIATION_MAP = {
     "level": 6,
     "sv": {
       "description": "Förenkla till en enda potens.",
-      "latex": "(x^{2})^{2} · x^{3}",
+      "latex": "(x^{3})^{2} · x^{4}",
       "hasVisual": false
     },
     "en": {
       "description": "Simplify to a single power.",
-      "latex": "(x^{3})^{2} · x^{4}",
+      "latex": "(x^{2})^{3} · x^{4}",
       "hasVisual": false
     }
   },
@@ -3972,12 +4134,12 @@ export const VARIATION_MAP = {
     "level": 7,
     "sv": {
       "description": "Beräkna och svara i grundpotensform.",
-      "latex": "2 \\cdot 10^{7} \\cdot 4 \\cdot 10^{-1}",
+      "latex": "3 \\cdot 10^{1} \\cdot 3 \\cdot 10^{-2}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate and answer in scientific notation.",
-      "latex": "9 \\cdot 10^{6} \\cdot 3 \\cdot 10^{-4}",
+      "latex": "9 \\cdot 10^{0} \\cdot 8 \\cdot 10^{-3}",
       "hasVisual": false
     }
   },
@@ -3987,12 +4149,12 @@ export const VARIATION_MAP = {
     "level": 7,
     "sv": {
       "description": "Beräkna och svara i grundpotensform.",
-      "latex": "\\frac{5 \\cdot 10^{-5}}{4 \\cdot 10^{-2}}",
+      "latex": "\\frac{1 \\cdot 10^{-4}}{5 \\cdot 10^{4}}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate and answer in scientific notation.",
-      "latex": "\\frac{4 \\cdot 10^{1}}{5 \\cdot 10^{-3}}",
+      "latex": "\\frac{6 \\cdot 10^{7}}{8 \\cdot 10^{-6}}",
       "hasVisual": false
     }
   },
@@ -4002,12 +4164,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Räkna ut värdet genom att flytta kommatecknet.",
-      "latex": "0,86 \\cdot 100",
+      "latex": "90 \\cdot 10000",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the value by shifting the decimal point.",
-      "latex": "1.4 \\cdot 1000",
+      "latex": "0.41 \\cdot 10000",
       "hasVisual": false
     }
   },
@@ -4017,12 +4179,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Räkna ut värdet genom att flytta kommatecknet.",
-      "latex": "\\frac{3}{10000}",
+      "latex": "\\frac{27}{10000}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the value by shifting the decimal point.",
-      "latex": "\\frac{42}{100}",
+      "latex": "\\frac{2.4}{1000}",
       "hasVisual": false
     }
   },
@@ -4032,12 +4194,12 @@ export const VARIATION_MAP = {
     "level": 1,
     "sv": {
       "description": "Vilket tal (10, 100, 1000 eller 10000) gömmer sig bakom frågetecknet?",
-      "latex": "66 \\cdot ? = 660",
+      "latex": "\\frac{0,19}{?} = 0,0019",
       "hasVisual": false
     },
     "en": {
       "description": "Which number (10, 100, 1000, or 10000) hides behind the question mark?",
-      "latex": "0.61 \\cdot ? = 61",
+      "latex": "0.81 \\cdot ? = 810",
       "hasVisual": false
     }
   },
@@ -4046,8 +4208,8 @@ export const VARIATION_MAP = {
     "variationKey": "power_discovery",
     "level": 1,
     "sv": {
-      "description": "Skriv talet 100 000 i formen $10^{?}$ genom att hitta den lilla upphöjda siffran.",
-      "latex": "100 000 = 10^{?}",
+      "description": "Skriv talet 100 i formen $10^{?}$ genom att hitta den lilla upphöjda siffran.",
+      "latex": "100 = 10^{?}",
       "hasVisual": false
     },
     "en": {
@@ -4172,12 +4334,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Räkna ut värdet genom att flytta kommatecknet.",
-      "latex": "49 \\cdot 0,001",
+      "latex": "0,47 \\cdot 0,001",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the value by shifting the decimal point.",
-      "latex": "2.3 \\cdot 0.1",
+      "latex": "1.3 \\cdot 0.01",
       "hasVisual": false
     }
   },
@@ -4187,12 +4349,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Räkna ut värdet genom att flytta kommatecknet.",
-      "latex": "\\frac{6,8}{0,1}",
+      "latex": "\\frac{6,1}{0,001}",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the value by shifting the decimal point.",
-      "latex": "\\frac{6.3}{0.1}",
+      "latex": "\\frac{0.59}{0.01}",
       "hasVisual": false
     }
   },
@@ -4202,12 +4364,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Räkna ut värdet genom att flytta kommatecknet.",
-      "latex": "62 \\cdot 0,1",
+      "latex": "98 \\cdot 0,1",
       "hasVisual": false
     },
     "en": {
       "description": "Calculate the value by shifting the decimal point.",
-      "latex": "9.8 \\cdot 0.1",
+      "latex": "8.2 \\cdot 0.1",
       "hasVisual": false
     }
   },
@@ -4216,13 +4378,13 @@ export const VARIATION_MAP = {
     "variationKey": "len_basic",
     "level": 1,
     "sv": {
-      "description": "Omvandla från decimeter till millimeter.",
-      "latex": "760 \\text{ dm} = \\text{\\_\\_\\_} \\text{ mm}",
+      "description": "Omvandla från millimeter till decimeter.",
+      "latex": "85,2 \\text{ mm} = \\text{\\_\\_\\_} \\text{ dm}",
       "hasVisual": false
     },
     "en": {
-      "description": "Convert from millimeters to meters.",
-      "latex": "70 \\text{ mm} = \\text{\\_\\_\\_} \\text{ m}",
+      "description": "Convert from meters to millimeters.",
+      "latex": "82,2 \\text{ m} = \\text{\\_\\_\\_} \\text{ mm}",
       "hasVisual": false
     }
   },
@@ -4231,13 +4393,13 @@ export const VARIATION_MAP = {
     "variationKey": "len_decimals",
     "level": 1,
     "sv": {
-      "description": "Omvandla från meter till centimeter.",
-      "latex": "70,2 \\text{ m} = \\text{\\_\\_\\_} \\text{ cm}",
+      "description": "Omvandla från decimeter till centimeter.",
+      "latex": "24,6 \\text{ dm} = \\text{\\_\\_\\_} \\text{ cm}",
       "hasVisual": false
     },
     "en": {
-      "description": "Convert from decimeters to millimeters.",
-      "latex": "98,6 \\text{ dm} = \\text{\\_\\_\\_} \\text{ mm}",
+      "description": "Convert from millimeters to decimeters.",
+      "latex": "7 \\text{ mm} = \\text{\\_\\_\\_} \\text{ dm}",
       "hasVisual": false
     }
   },
@@ -4246,13 +4408,13 @@ export const VARIATION_MAP = {
     "variationKey": "len_km_m",
     "level": 1,
     "sv": {
-      "description": "Omvandla från kilometer till meter.",
-      "latex": "52 \\text{ km} = \\text{\\_\\_\\_} \\text{ m}",
+      "description": "Omvandla från meter till kilometer.",
+      "latex": "37,9 \\text{ m} = \\text{\\_\\_\\_} \\text{ km}",
       "hasVisual": false
     },
     "en": {
       "description": "Convert from meters to kilometers.",
-      "latex": "94 \\text{ m} = \\text{\\_\\_\\_} \\text{ km}",
+      "latex": "38,2 \\text{ m} = \\text{\\_\\_\\_} \\text{ km}",
       "hasVisual": false
     }
   },
@@ -4261,13 +4423,13 @@ export const VARIATION_MAP = {
     "variationKey": "len_concept",
     "level": 1,
     "sv": {
-      "description": "Omvandla från meter till centimeter.",
-      "latex": "351 \\text{ m} = \\text{\\_\\_\\_} \\text{ cm}",
+      "description": "Omvandla från centimeter till meter.",
+      "latex": "373 \\text{ cm} = \\text{\\_\\_\\_} \\text{ m}",
       "hasVisual": false
     },
     "en": {
-      "description": "Convert from centimeters to meters.",
-      "latex": "6,2 \\text{ cm} = \\text{\\_\\_\\_} \\text{ m}",
+      "description": "Convert from meters to centimeters.",
+      "latex": "420 \\text{ m} = \\text{\\_\\_\\_} \\text{ cm}",
       "hasVisual": false
     }
   },
@@ -4276,13 +4438,13 @@ export const VARIATION_MAP = {
     "variationKey": "weight_basic",
     "level": 2,
     "sv": {
-      "description": "Omvandla från hekto till kilogram.",
-      "latex": "730 \\text{ hg} = \\text{\\_\\_\\_} \\text{ kg}",
+      "description": "Omvandla från kilogram till hekto.",
+      "latex": "191 \\text{ kg} = \\text{\\_\\_\\_} \\text{ hg}",
       "hasVisual": false
     },
     "en": {
-      "description": "Convert from kilograms to tonnes.",
-      "latex": "40,7 \\text{ kg} = \\text{\\_\\_\\_} \\text{ ton}",
+      "description": "Convert from grams to milligrams.",
+      "latex": "140 \\text{ g} = \\text{\\_\\_\\_} \\text{ mg}",
       "hasVisual": false
     }
   },
@@ -4291,13 +4453,13 @@ export const VARIATION_MAP = {
     "variationKey": "weight_decimals",
     "level": 2,
     "sv": {
-      "description": "Omvandla från ton till kilogram.",
-      "latex": "82,9 \\text{ ton} = \\text{\\_\\_\\_} \\text{ kg}",
+      "description": "Omvandla från kilogram till hekto.",
+      "latex": "33,1 \\text{ kg} = \\text{\\_\\_\\_} \\text{ hg}",
       "hasVisual": false
     },
     "en": {
-      "description": "Convert from grams to milligrams.",
-      "latex": "41,7 \\text{ g} = \\text{\\_\\_\\_} \\text{ mg}",
+      "description": "Convert from hectograms to grams.",
+      "latex": "75,7 \\text{ hg} = \\text{\\_\\_\\_} \\text{ g}",
       "hasVisual": false
     }
   },
@@ -4306,13 +4468,13 @@ export const VARIATION_MAP = {
     "variationKey": "weight_ton_kg",
     "level": 2,
     "sv": {
-      "description": "Omvandla från gram till kilogram.",
-      "latex": "30 \\text{ g} = \\text{\\_\\_\\_} \\text{ kg}",
+      "description": "Omvandla från kilogram till gram.",
+      "latex": "120 \\text{ kg} = \\text{\\_\\_\\_} \\text{ g}",
       "hasVisual": false
     },
     "en": {
       "description": "Convert from kilograms to grams.",
-      "latex": "220 \\text{ kg} = \\text{\\_\\_\\_} \\text{ g}",
+      "latex": "210 \\text{ kg} = \\text{\\_\\_\\_} \\text{ g}",
       "hasVisual": false
     }
   },
@@ -4322,12 +4484,12 @@ export const VARIATION_MAP = {
     "level": 2,
     "sv": {
       "description": "Omvandla från gram till kilogram.",
-      "latex": "610 \\text{ g} = \\text{\\_\\_\\_} \\text{ kg}",
+      "latex": "9 \\text{ g} = \\text{\\_\\_\\_} \\text{ kg}",
       "hasVisual": false
     },
     "en": {
-      "description": "Convert from grams to kilograms.",
-      "latex": "680 \\text{ g} = \\text{\\_\\_\\_} \\text{ kg}",
+      "description": "Convert from kilograms to grams.",
+      "latex": "348 \\text{ kg} = \\text{\\_\\_\\_} \\text{ g}",
       "hasVisual": false
     }
   },
@@ -4336,13 +4498,13 @@ export const VARIATION_MAP = {
     "variationKey": "vol_basic",
     "level": 3,
     "sv": {
-      "description": "Omvandla från milliliter till deciliter.",
-      "latex": "43,3 \\text{ ml} = \\text{\\_\\_\\_} \\text{ dl}",
+      "description": "Omvandla från centiliter till milliliter.",
+      "latex": "430 \\text{ cl} = \\text{\\_\\_\\_} \\text{ ml}",
       "hasVisual": false
     },
     "en": {
-      "description": "Convert from liters to deciliters.",
-      "latex": "99,9 \\text{ l} = \\text{\\_\\_\\_} \\text{ dl}",
+      "description": "Convert from milliliters to centiliters.",
+      "latex": "304 \\text{ ml} = \\text{\\_\\_\\_} \\text{ cl}",
       "hasVisual": false
     }
   },
@@ -4351,13 +4513,13 @@ export const VARIATION_MAP = {
     "variationKey": "vol_decimals",
     "level": 3,
     "sv": {
-      "description": "Omvandla från centiliter till milliliter.",
-      "latex": "21 \\text{ cl} = \\text{\\_\\_\\_} \\text{ ml}",
+      "description": "Omvandla från centiliter till liter.",
+      "latex": "22,8 \\text{ cl} = \\text{\\_\\_\\_} \\text{ l}",
       "hasVisual": false
     },
     "en": {
-      "description": "Convert from liters to deciliters.",
-      "latex": "49,8 \\text{ l} = \\text{\\_\\_\\_} \\text{ dl}",
+      "description": "Convert from liters to centiliters.",
+      "latex": "31,1 \\text{ l} = \\text{\\_\\_\\_} \\text{ cl}",
       "hasVisual": false
     }
   },
@@ -4367,12 +4529,12 @@ export const VARIATION_MAP = {
     "level": 3,
     "sv": {
       "description": "Omvandla från liter till deciliter.",
-      "latex": "160 \\text{ l} = \\text{\\_\\_\\_} \\text{ dl}",
+      "latex": "57 \\text{ l} = \\text{\\_\\_\\_} \\text{ dl}",
       "hasVisual": false
     },
     "en": {
       "description": "Convert from liters to deciliters.",
-      "latex": "40 \\text{ l} = \\text{\\_\\_\\_} \\text{ dl}",
+      "latex": "62 \\text{ l} = \\text{\\_\\_\\_} \\text{ dl}",
       "hasVisual": false
     }
   },
@@ -4426,12 +4588,12 @@ export const VARIATION_MAP = {
     "variationKey": "perimeter_inverse",
     "level": 1,
     "sv": {
-      "description": "En rektangel har omkretsen 26 cm. Basen är 9 cm. Hur lång är höjden?",
+      "description": "En rektangel har omkretsen 24 cm. Basen är 8 cm. Hur lång är höjden?",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "A rectangle has a perimeter of 28 cm. The base is 9 cm. What is the height?",
+      "description": "A rectangle has a perimeter of 42 cm. The base is 14 cm. What is the height?",
       "latex": null,
       "hasVisual": true
     }
@@ -4954,7 +5116,7 @@ export const VARIATION_MAP = {
     "variationKey": "classification_check_acute",
     "level": 1,
     "sv": {
-      "description": "Är en vinkel på 77° spetsig?",
+      "description": "Är en vinkel på 135° spetsig?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -4969,7 +5131,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "Is an angle of 56° acute?",
+      "description": "Is an angle of 45° acute?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -5212,7 +5374,7 @@ export const VARIATION_MAP = {
     "variationKey": "pyth_correct_setup",
     "level": 1,
     "sv": {
-      "description": "Vilken uppställning visar Pythagoras sats för kateterna 8 och 15 samt hypotenusan c?",
+      "description": "Vilken uppställning visar Pythagoras sats för kateterna 7 och 24 samt hypotenusan c?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -5235,7 +5397,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "Which equation shows Pythagoras theorem for legs 5 and 12 and hypotenuse c?",
+      "description": "Which equation shows Pythagoras theorem for legs 10 and 24 and hypotenuse c?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -5344,12 +5506,12 @@ export const VARIATION_MAP = {
     "variationKey": "pyth_hyp_equation_solve",
     "level": 2,
     "sv": {
-      "description": "En rätvinklig triangel har kateterna 8 och 15. Vad är värdet på c²?",
+      "description": "En rätvinklig triangel har kateterna 9 och 12. Vad är värdet på c²?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A right triangle has legs 12 and 16. What is the value of c²?",
+      "description": "A right triangle has legs 3 and 4. What is the value of c²?",
       "latex": null,
       "hasVisual": false
     }
@@ -5359,12 +5521,12 @@ export const VARIATION_MAP = {
     "variationKey": "pyth_leg_calc",
     "level": 3,
     "sv": {
-      "description": "Hypotenusan är 15 och den ena kateten är 12. Beräkna kateten a.",
+      "description": "Hypotenusan är 26 och den ena kateten är 24. Beräkna kateten a.",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "The hypotenuse is 5 and one leg is 4. Calculate leg a.",
+      "description": "The hypotenuse is 15 and one leg is 12. Calculate leg a.",
       "latex": null,
       "hasVisual": true
     }
@@ -5408,7 +5570,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "You know hypotenuse (20) and leg (16). Which equation solves for leg a?",
+      "description": "You know hypotenuse (15) and leg (12). Which equation solves for leg a?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -5432,7 +5594,7 @@ export const VARIATION_MAP = {
     "variationKey": "pyth_converse_check",
     "level": 4,
     "sv": {
-      "description": "En triangel har sidorna 12 cm, 16 cm och 20 cm. Är den rätvinklig?",
+      "description": "En triangel har sidorna 7 cm, 24 cm och 26 cm. Är den rätvinklig?",
       "latex": null,
       "hasVisual": true,
       "options": [
@@ -5447,7 +5609,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "A triangle has sides 12 cm, 16 cm, and 20 cm. Is it right-angled?",
+      "description": "A triangle has sides 12 cm, 16 cm, and 19 cm. Is it right-angled?",
       "latex": null,
       "hasVisual": true,
       "options": [
@@ -5467,12 +5629,12 @@ export const VARIATION_MAP = {
     "variationKey": "pyth_carpenter_rule",
     "level": 4,
     "sv": {
-      "description": "En snickare mäter upp kateterna 9 cm och 12 cm i ett hörn. Hur lång måste diagonalen vara för att vinkeln ska vara exakt 90°?",
+      "description": "En snickare mäter upp kateterna 15 cm och 20 cm i ett hörn. Hur lång måste diagonalen vara för att vinkeln ska vara exakt 90°?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A carpenter measures legs of 18 cm and 24 cm in a corner. How long must the diagonal be to make the angle exactly 90°?",
+      "description": "A carpenter measures legs of 12 cm and 16 cm in a corner. How long must the diagonal be to make the angle exactly 90°?",
       "latex": null,
       "hasVisual": false
     }
@@ -5482,7 +5644,7 @@ export const VARIATION_MAP = {
     "variationKey": "pyth_converse_which_is_right",
     "level": 4,
     "sv": {
-      "description": "Triangeln ABC har sidorna AB = 10, BC = 24 och AC = 26. Vilket hörn är den räta vinkeln?",
+      "description": "Triangeln ABC har sidorna AB = 3, BC = 4 och AC = 5. Vilket hörn är den räta vinkeln?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -5501,7 +5663,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "Triangle ABC has sides AB = 5, BC = 12, and AC = 13. Which corner has the right angle?",
+      "description": "Triangle ABC has sides AB = 3, BC = 4, and AC = 5. Which corner has the right angle?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -5525,12 +5687,12 @@ export const VARIATION_MAP = {
     "variationKey": "pyth_coord_dist_int",
     "level": 5,
     "sv": {
-      "description": "Bestäm avståndet d mellan punkterna A(1, 1) och B(6, 13).",
+      "description": "Bestäm avståndet d mellan punkterna A(0, -2) och B(5, 10).",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "Determine the distance d between points A(-1, 2) and B(4, 14).",
+      "description": "Determine the distance d between points A(-2, 1) and B(1, 5).",
       "latex": null,
       "hasVisual": true
     }
@@ -5621,12 +5783,12 @@ export const VARIATION_MAP = {
     "variationKey": "pyth_rect_diagonal",
     "level": 6,
     "sv": {
-      "description": "En rektangel har sidorna 8 cm och 6 cm. Beräkna diagonalens längd d.",
+      "description": "En rektangel har sidorna 12 cm och 9 cm. Beräkna diagonalens längd d.",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "A rectangle has sides of 4 cm and 3 cm. Calculate the length of diagonal d.",
+      "description": "A rectangle has sides of 24 cm and 7 cm. Calculate the length of diagonal d.",
       "latex": null,
       "hasVisual": true
     }
@@ -5874,17 +6036,17 @@ export const VARIATION_MAP = {
     "variationKey": "scale_direction_type",
     "level": 1,
     "sv": {
-      "description": "Anger skalan 1:2 en förstoring eller en förminskning?",
+      "description": "Anger skalan 500:1 en förstoring eller en förminskning?",
       "latex": null,
       "hasVisual": false,
       "options": [
         {
           "id": "A",
-          "label": "Förminskning"
+          "label": "Förstoring"
         },
         {
           "id": "B",
-          "label": "Förstoring"
+          "label": "Förminskning"
         },
         {
           "id": "C",
@@ -5893,21 +6055,21 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "Does the scale 4:1 represent an enlargement or a reduction?",
+      "description": "Does the scale 3:1 represent an enlargement or a reduction?",
       "latex": null,
       "hasVisual": false,
       "options": [
         {
           "id": "A",
-          "label": "Reduction"
+          "label": "Natural size (1:1)"
         },
         {
           "id": "B",
-          "label": "Enlargement"
+          "label": "Reduction"
         },
         {
           "id": "C",
-          "label": "Natural size (1:1)"
+          "label": "Enlargement"
         }
       ]
     }
@@ -5917,12 +6079,12 @@ export const VARIATION_MAP = {
     "variationKey": "scale_reading_val",
     "level": 1,
     "sv": {
-      "description": "En karta är ritad i skala 1:5. Hur många centimeter i verkligheten motsvarar 1 cm på kartan?",
+      "description": "En karta är ritad i skala 1:75. Hur många centimeter i verkligheten motsvarar 1 cm på kartan?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A map is drawn at scale 1:20. How many centimeters in reality does 1 cm on the map represent?",
+      "description": "A map is drawn at scale 1:5. How many centimeters in reality does 1 cm on the map represent?",
       "latex": null,
       "hasVisual": false
     }
@@ -5932,12 +6094,12 @@ export const VARIATION_MAP = {
     "variationKey": "reduction_calc_direct",
     "level": 2,
     "sv": {
-      "description": "En ritning har skalan 1:5. En sträcka på ritningen är 9 cm. Hur lång är sträckan i verkligheten? Svara i centimeter.",
+      "description": "En ritning har skalan 1:10. En sträcka på ritningen är 2 cm. Hur lång är sträckan i verkligheten? Svara i centimeter.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A drawing has a scale of 1:25. A line on the drawing is 3 cm. How long is the line in reality? Answer in centimeters.",
+      "description": "A drawing has a scale of 1:10. A line on the drawing is 2 cm. How long is the line in reality? Answer in centimeters.",
       "latex": null,
       "hasVisual": false
     }
@@ -5947,12 +6109,12 @@ export const VARIATION_MAP = {
     "variationKey": "reduction_cm_to_m",
     "level": 2,
     "sv": {
-      "description": "En ritning har skalan 1:50. En sträcka på ritningen är 9 cm. Hur lång är sträckan i verkligheten? Svara i meter.",
+      "description": "En ritning har skalan 1:100. En sträcka på ritningen är 6 cm. Hur lång är sträckan i verkligheten? Svara i meter.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A drawing has a scale of 1:250. A line on the drawing is 7 cm. How long is the line in reality? Answer in meters.",
+      "description": "A drawing has a scale of 1:500. A line on the drawing is 7 cm. How long is the line in reality? Answer in meters.",
       "latex": null,
       "hasVisual": false
     }
@@ -5962,12 +6124,12 @@ export const VARIATION_MAP = {
     "variationKey": "enlargement_calc_direct",
     "level": 3,
     "sv": {
-      "description": "Ett litet föremål är 3 mm i verkligheten. Hur långt blir föremålet på en bild i skala 2:1? Svara i millimeter.",
+      "description": "Ett litet föremål är 11 mm i verkligheten. Hur långt blir föremålet på en bild i skala 5:1? Svara i millimeter.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A small object is 11 mm in reality. How long will the object be in an image with scale 2:1? Answer in millimeters.",
+      "description": "A small object is 7 mm in reality. How long will the object be in an image with scale 8:1? Answer in millimeters.",
       "latex": null,
       "hasVisual": false
     }
@@ -5977,12 +6139,12 @@ export const VARIATION_MAP = {
     "variationKey": "enlargement_mm_to_cm",
     "level": 3,
     "sv": {
-      "description": "Ett litet föremål är 15 mm i verkligheten. Hur långt blir föremålet på en bild i skala 50:1? Svara i centimeter.",
+      "description": "Ett litet föremål är 4 mm i verkligheten. Hur långt blir föremålet på en bild i skala 10:1? Svara i centimeter.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A small object is 7 mm in reality. How long will the object be in an image with scale 40:1? Answer in centimeters.",
+      "description": "A small object is 7 mm in reality. How long will the object be in an image with scale 15:1? Answer in centimeters.",
       "latex": null,
       "hasVisual": false
     }
@@ -5992,12 +6154,12 @@ export const VARIATION_MAP = {
     "variationKey": "determine_scale_blueprint",
     "level": 4,
     "sv": {
-      "description": "En sträcka är 4 m i verkligheten och 4 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
+      "description": "En sträcka är 1 m i verkligheten och 2 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A distance is 1.2 m in reality and 8 cm on a map. What is the scale of the map? (Answer as 1:...)",
+      "description": "A distance is 3.2 m in reality and 8 cm on a map. What is the scale of the map? (Answer as 1:...)",
       "latex": null,
       "hasVisual": false
     }
@@ -6007,12 +6169,12 @@ export const VARIATION_MAP = {
     "variationKey": "determine_scale_map",
     "level": 4,
     "sv": {
-      "description": "En sträcka är 1.2 km i verkligheten och 6 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
+      "description": "En sträcka är 1.2 km i verkligheten och 8 cm på en ritning. Vilken skala är ritningen ritad i? (Svara som 1:...)",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A distance is 5 km in reality and 5 cm on a map. What is the scale of the map? (Answer as 1:...)",
+      "description": "A distance is 0.6 km in reality and 3 cm on a map. What is the scale of the map? (Answer as 1:...)",
       "latex": null,
       "hasVisual": false
     }
@@ -6082,12 +6244,12 @@ export const VARIATION_MAP = {
     "variationKey": "area_scale_direct",
     "level": 7,
     "sv": {
-      "description": "Två likformiga rektanglar har längdskalan 1:10. Den mindre rektangeln har arean 2 cm². Beräkna arean av den större rektangeln.",
+      "description": "Två likformiga rektanglar har längdskalan 1:10. Den mindre rektangeln har arean 12 cm². Beräkna arean av den större rektangeln.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Two similar rectangles have a scale factor of 1:4. The smaller rectangle has an area of 7 cm². Calculate the area of the larger rectangle.",
+      "description": "Two similar rectangles have a scale factor of 1:10. The smaller rectangle has an area of 8 cm². Calculate the area of the larger rectangle.",
       "latex": null,
       "hasVisual": false
     }
@@ -6097,12 +6259,12 @@ export const VARIATION_MAP = {
     "variationKey": "area_scale_inverse",
     "level": 7,
     "sv": {
-      "description": "Två likformiga figurer har areorna 3 dm² och 75 dm². En sida i den mindre figuren är 4 dm. Hur lång är motsvarande sida i den större figuren?",
+      "description": "Två likformiga figurer har areorna 15 dm² och 60 dm². En sida i den mindre figuren är 7 dm. Hur lång är motsvarande sida i den större figuren?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Two similar shapes have areas of 8 dm² and 200 dm². A side of the smaller shape is 3 dm. What is the length of the corresponding side in the larger shape?",
+      "description": "Two similar shapes have areas of 5 dm² and 45 dm². A side of the smaller shape is 6 dm. What is the length of the corresponding side in the larger shape?",
       "latex": null,
       "hasVisual": false
     }
@@ -6112,12 +6274,12 @@ export const VARIATION_MAP = {
     "variationKey": "volume_scale_direct",
     "level": 8,
     "sv": {
-      "description": "Två likformiga cylindrar har längdskalan 1:10. Den mindre rymmer 3 liter. Hur många liter rymmer den större cylindern?",
+      "description": "Två likformiga cylindrar har längdskalan 1:2. Den mindre rymmer 2.5 liter. Hur många liter rymmer den större cylindern?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Two similar cylinders have a linear scale of 1:4. The smaller holds 3 liters. How many liters does the larger cylinder hold?",
+      "description": "Two similar cylinders have a linear scale of 1:10. The smaller holds 10 liters. How many liters does the larger cylinder hold?",
       "latex": null,
       "hasVisual": false
     }
@@ -6127,12 +6289,12 @@ export const VARIATION_MAP = {
     "variationKey": "volume_scale_inverse",
     "level": 8,
     "sv": {
-      "description": "Två likformiga rätblock har volymerna 5 dm³ och 40 dm³. Det lilla rätblocket har höjden 2 cm. Vad är höjden på det stora rätblocket?",
+      "description": "Två likformiga rätblock har volymerna 3 dm³ och 375 dm³. Det lilla rätblocket har höjden 2 cm. Vad är höjden på det stora rätblocket?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Two similar cuboids have volumes of 8 dm³ and 512 dm³. The small cuboid has a height of 12 cm. What is the height of the large cuboid?",
+      "description": "Two similar cuboids have volumes of 8 dm³ and 512 dm³. The small cuboid has a height of 7 cm. What is the height of the large cuboid?",
       "latex": null,
       "hasVisual": false
     }
@@ -6157,12 +6319,12 @@ export const VARIATION_MAP = {
     "variationKey": "vol_cuboid_inverse",
     "level": 1,
     "sv": {
-      "description": "Ett rätblock har volymen 45 cm³ och en bottenarea på 15 cm². Hur högt är rätblocket?",
+      "description": "Ett rätblock har volymen 352 cm³ och en bottenarea på 32 cm². Hur högt är rätblocket?",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "A rectangular prism has a volume of 162 cm³ and a base area of 18 cm². What is the height?",
+      "description": "A rectangular prism has a volume of 108 cm³ and a base area of 12 cm². What is the height?",
       "latex": null,
       "hasVisual": true
     }
@@ -6191,7 +6353,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "If you make a cuboid 5 times taller without changing the base, what happens to the volume?",
+      "description": "If you make a cuboid 7 times taller without changing the base, what happens to the volume?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -6335,12 +6497,12 @@ export const VARIATION_MAP = {
     "variationKey": "vol_sphere_std",
     "level": 5,
     "sv": {
-      "description": "Beräkna klotets volym med radien 8 cm.",
+      "description": "Beräkna klotets volym med radien 9 cm.",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "Calculate the volume of the sphere with radius 8 cm.",
+      "description": "Calculate the volume of the sphere with radius 5 cm.",
       "latex": null,
       "hasVisual": true
     }
@@ -6380,12 +6542,12 @@ export const VARIATION_MAP = {
     "variationKey": "vol_sphere_diameter",
     "level": 6,
     "sv": {
-      "description": "Beräkna konens volym ($\\pi \\approx 3,14$).",
+      "description": "Beräkna cylinderns volym ($\\pi \\approx 3,14$).",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "Calculate the volume of the sphere with radius 6 cm.",
+      "description": "Calculate the volume of the cylinder ($\\pi \\approx 3.14$).",
       "latex": null,
       "hasVisual": true
     }
@@ -6400,7 +6562,7 @@ export const VARIATION_MAP = {
       "hasVisual": true
     },
     "en": {
-      "description": "Calculate the volume of the cone ($\\pi \\approx 3.14$).",
+      "description": "Calculate the volume of the cylinder ($\\pi \\approx 3.14$).",
       "latex": null,
       "hasVisual": true
     }
@@ -6410,12 +6572,12 @@ export const VARIATION_MAP = {
     "variationKey": "vol_units_liter",
     "level": 7,
     "sv": {
-      "description": "Ett rum har formen av ett rätblock med bredden 5 dm, höjden 8 dm och djupet 10 dm. Vad är dess volym i liter?",
+      "description": "En läskburk har formen av ett cylinder med radien 8 cm och höjden 13 cm. Vad är dess volym i milliliter?",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "A candle is shaped like a cylinder with radius 9 cm and height 10 cm. What is its volume in liters?",
+      "description": "An ice cream cone is shaped like a cone with radius 8 dm and height 11 dm. What is its volume in liters?",
       "latex": null,
       "hasVisual": true
     }
@@ -6425,12 +6587,12 @@ export const VARIATION_MAP = {
     "variationKey": "vol_units_m3",
     "level": 7,
     "sv": {
-      "description": "Ett rör har formen av ett cylinder med radien 5 cm och höjden 6 cm. Vad är dess volym i liter?",
+      "description": "En tratt har formen av ett kon med radien 8 cm och höjden 11 cm. Vad är dess volym i liter?",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "A paper cup is shaped like a cone with radius 10 dm and height 12 dm. What is its volume in liters?",
+      "description": "A chest is shaped like a cuboid with width 9 dm, height 8 dm and depth 9 dm. What is its volume in liters?",
       "latex": null,
       "hasVisual": true
     }
@@ -6440,13 +6602,13 @@ export const VARIATION_MAP = {
     "variationKey": "vol_unit_conv",
     "level": 7,
     "sv": {
-      "description": "Omvandla 135 dm³ till l.",
-      "latex": "135 \\text{ dm³} = \\text{\\_\\_\\_} \\text{ l}",
+      "description": "Omvandla 2 l till cm³.",
+      "latex": "2 \\text{ l} = \\text{\\_\\_\\_} \\text{ cm³}",
       "hasVisual": false
     },
     "en": {
-      "description": "Convert 99 cm³ to ml.",
-      "latex": "99 \\text{ cm³} = \\text{\\_\\_\\_} \\text{ ml}",
+      "description": "Convert 495 dm³ to l.",
+      "latex": "495 \\text{ dm³} = \\text{\\_\\_\\_} \\text{ l}",
       "hasVisual": false
     }
   },
@@ -6455,12 +6617,12 @@ export const VARIATION_MAP = {
     "variationKey": "vol_word_unit",
     "level": 7,
     "sv": {
-      "description": "En megafon har formen av ett kon med radien 9 dm och höjden 10 dm. Vad är dess volym i liter?",
+      "description": "En chokladkaka har formen av ett rätblock med bredden 7 cm, höjden 3 cm och djupet 7 cm. Vad är dess volym i liter?",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "A brick is shaped like a cuboid with width 2 dm, height 6 dm and depth 3 dm. What is its volume in liters?",
+      "description": "A party hat is shaped like a cone with radius 3 cm and height 7 cm. What is its volume in liters?",
       "latex": null,
       "hasVisual": true
     }
@@ -6485,37 +6647,7 @@ export const VARIATION_MAP = {
     "variationKey": "sa_cylinder",
     "level": 8,
     "sv": {
-      "description": "Beräkna ytarean för ett klot med radien 12 cm.",
-      "latex": null,
-      "hasVisual": true
-    },
-    "en": {
-      "description": "Calculate the surface area for a sphere with radius 6 cm.",
-      "latex": null,
-      "hasVisual": true
-    }
-  },
-  "volume__sa_cone": {
-    "topicId": "volume",
-    "variationKey": "sa_cone",
-    "level": 8,
-    "sv": {
-      "description": "Beräkna ytarean för ett klot med radien 5 cm.",
-      "latex": null,
-      "hasVisual": true
-    },
-    "en": {
-      "description": "Calculate the surface area for a sphere with radius 5 cm.",
-      "latex": null,
-      "hasVisual": true
-    }
-  },
-  "volume__sa_sphere": {
-    "topicId": "volume",
-    "variationKey": "sa_sphere",
-    "level": 8,
-    "sv": {
-      "description": "Beräkna ytarean för ett klot med radien 16 cm.",
+      "description": "Beräkna ytarean för ett klot med radien 15 cm.",
       "latex": null,
       "hasVisual": true
     },
@@ -6525,17 +6657,47 @@ export const VARIATION_MAP = {
       "hasVisual": true
     }
   },
+  "volume__sa_cone": {
+    "topicId": "volume",
+    "variationKey": "sa_cone",
+    "level": 8,
+    "sv": {
+      "description": "Beräkna ytarean för ett klot med radien 17 cm.",
+      "latex": null,
+      "hasVisual": true
+    },
+    "en": {
+      "description": "Calculate the surface area for a sphere with radius 19 cm.",
+      "latex": null,
+      "hasVisual": true
+    }
+  },
+  "volume__sa_sphere": {
+    "topicId": "volume",
+    "variationKey": "sa_sphere",
+    "level": 8,
+    "sv": {
+      "description": "Beräkna ytarean för ett klot med radien 13 cm.",
+      "latex": null,
+      "hasVisual": true
+    },
+    "en": {
+      "description": "Calculate the surface area for a sphere with radius 9 cm.",
+      "latex": null,
+      "hasVisual": true
+    }
+  },
   "statistics__find_mode": {
     "topicId": "statistics",
     "variationKey": "find_mode",
     "level": 1,
     "sv": {
-      "description": "Kolla igenom temperaturer listan: 22, 19, 18, 19, 15, 19. Vilket är typvärdet?",
+      "description": "Kolla igenom åldrar listan: 12, 16, 16, 15, 14, 16. Vilket är typvärdet?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Examine the list of points: 13, 23, 15, 19, 11, 19, 18, 19. What is the mode?",
+      "description": "Examine the list of goals scored: 0, 5, 0, 0, 5, 3, 3, 4. What is the mode?",
       "latex": null,
       "hasVisual": false
     }
@@ -6545,12 +6707,12 @@ export const VARIATION_MAP = {
     "variationKey": "find_range",
     "level": 1,
     "sv": {
-      "description": "Beräkna variationsbredden för följande gjorda mål: 1, 2, 0, 2, 2, 3.",
+      "description": "Beräkna variationsbredden för följande skostorlekar: 44, 37, 37, 40, 37, 36, 43, 37.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Calculate the range for the following ages: 13, 16, 13, 14, 13, 13.",
+      "description": "Calculate the range for the following temperatures: 12, 20, 20, 15, 21, 20.",
       "latex": null,
       "hasVisual": false
     }
@@ -6560,12 +6722,12 @@ export const VARIATION_MAP = {
     "variationKey": "find_min_max",
     "level": 1,
     "sv": {
-      "description": "Vilket är det största värdet i listan: 11, 17, 11, 17, 17, 12, 11, 14?",
+      "description": "Vilket är det minsta värdet i listan: 12, 21, 16, 20, 12, 12, 16?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "What is the maximum value in the list: 18, 18, 18, 17, 19, 18, 21?",
+      "description": "What is the minimum value in the list: 20, 13, 19, 19, 15, 15, 15?",
       "latex": null,
       "hasVisual": false
     }
@@ -6575,7 +6737,7 @@ export const VARIATION_MAP = {
     "variationKey": "stats_lie",
     "level": 1,
     "sv": {
-      "description": "En elev ska bestämma typvärdet (det vanligaste värdet) för listan: 16, 13, 17, 23, 17, 17, 9.\n\nEleven får fram svaret 14, men det är fel! Vilket statistiskt begrepp har eleven egentligen räknat ut för att få fram det talet?",
+      "description": "En elev ska bestämma typvärdet (det vanligaste värdet) för listan: 25, 13, 18, 25, 5, 25, 25.\n\nEleven får fram svaret 20, men det är fel! Vilket statistiskt begrepp har eleven egentligen räknat ut för att få fram det talet?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -6598,7 +6760,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "A student needs to determine the mode (most common value) for the list: 22, 21, 14, 23, 13, 19, 19, 19.\n\nThe student answers 10, but this is incorrect! Which statistical concept did the student *actually* calculate to get that number?",
+      "description": "A student needs to determine the mode (most common value) for the list: 39, 44, 39, 39, 37, 38.\n\nThe student answers 7, but this is incorrect! Which statistical concept did the student *actually* calculate to get that number?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -6626,12 +6788,12 @@ export const VARIATION_MAP = {
     "variationKey": "calc_mean",
     "level": 2,
     "sv": {
-      "description": "Beräkna medelvärdet för följande skostorlekar: 42, 41, 44, 38, 42.",
+      "description": "Beräkna medelvärdet för följande skostorlekar: 38, 40, 37, 42, 41.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Calculate the mean for the following shoe sizes: 38, 41, 38, 44, 42.",
+      "description": "Calculate the mean for the following shoe sizes: 45, 44, 43, 36, 38.",
       "latex": null,
       "hasVisual": false
     }
@@ -6684,12 +6846,12 @@ export const VARIATION_MAP = {
     "variationKey": "mean_negatives",
     "level": 2,
     "sv": {
-      "description": "Beräkna medelvärdet för följande temperaturer: 24, 14, 18, 14, 21.",
+      "description": "Beräkna medelvärdet för följande skostorlekar: 39, 44, 43, 39, 41.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Calculate the mean for the following points: 20, 11, 23, 8, 15.",
+      "description": "Calculate the mean for the following points: 13, 20, 16, 18, 7.",
       "latex": null,
       "hasVisual": false
     }
@@ -6699,12 +6861,12 @@ export const VARIATION_MAP = {
     "variationKey": "median_odd",
     "level": 3,
     "sv": {
-      "description": "Bestäm medianen för följande skostorlekar: 44, 43, 36, 41, 37, 41, 38.",
+      "description": "Bestäm medianen för följande temperaturer: 15, 23, 23, 21, 15, 15, 12.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Determine the median for the following points: 12, 21, 12, 5, 11, 22.",
+      "description": "Determine the median for the following points: 7, 17, 11, 10, 13, 8, 6.",
       "latex": null,
       "hasVisual": false
     }
@@ -6714,12 +6876,12 @@ export const VARIATION_MAP = {
     "variationKey": "median_even",
     "level": 3,
     "sv": {
-      "description": "Bestäm medianen för följande skostorlekar: 43, 43, 42, 44, 45, 45, 44, 37.",
+      "description": "Bestäm medianen för följande poäng: 22, 7, 24, 11, 11, 19, 17, 10.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Determine the median for the following temperatures: 16, 15, 15, 12, 21, 21, 20.",
+      "description": "Determine the median for the following ages: 14, 15, 11, 12, 12, 14, 15.",
       "latex": null,
       "hasVisual": false
     }
@@ -6729,12 +6891,12 @@ export const VARIATION_MAP = {
     "variationKey": "median_lie",
     "level": 3,
     "sv": {
-      "description": "Bestäm medianen för följande poäng: 7, 20, 25, 16, 14, 19, 18, 7.",
+      "description": "Bestäm medianen för följande temperaturer: 21, 20, 21, 17, 12, 22.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "Determine the median for the following points: 16, 7, 5, 5, 17.",
+      "description": "Determine the median for the following ages: 14, 17, 15, 13, 15, 13, 13, 12.",
       "latex": null,
       "hasVisual": false
     }
@@ -6744,12 +6906,12 @@ export const VARIATION_MAP = {
     "variationKey": "reverse_mean_calc",
     "level": 4,
     "sv": {
-      "description": "Medelvärdet av fyra tal är 17. Tre av talen är 9, 16 och 10. Vilket är det fjärde talet?",
+      "description": "Medelvärdet av fyra tal är 18. Tre av talen är 8, 17 och 13. Vilket är det fjärde talet?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "The mean of four numbers is 15. Three of the numbers are 10, 18, and 11. What is the fourth number?",
+      "description": "The mean of four numbers is 16. Three of the numbers are 10, 17, and 13. What is the fourth number?",
       "latex": null,
       "hasVisual": false
     }
@@ -6759,12 +6921,12 @@ export const VARIATION_MAP = {
     "variationKey": "mean_target_score",
     "level": 4,
     "sv": {
-      "description": "Medelvärdet av fyra tal är 15. Tre av talen är 10, 20 och 10. Vilket är det fjärde talet?",
+      "description": "Medelvärdet av fyra tal är 15. Tre av talen är 10, 18 och 13. Vilket är det fjärde talet?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "The mean of four numbers is 16. Three of the numbers are 8, 19, and 13. What is the fourth number?",
+      "description": "The mean of four numbers is 15. Three of the numbers are 10, 17, and 11. What is the fourth number?",
       "latex": null,
       "hasVisual": false
     }
@@ -6774,7 +6936,7 @@ export const VARIATION_MAP = {
     "variationKey": "freq_count",
     "level": 5,
     "sv": {
-      "description": "Hur många observationer (totalt antal) visas i frekvenstabellen?",
+      "description": "Hur många observationer (totalt antal) visas i stolpdiagrammet?",
       "latex": null,
       "hasVisual": true
     },
@@ -6794,7 +6956,7 @@ export const VARIATION_MAP = {
       "hasVisual": true
     },
     "en": {
-      "description": "What is the mode according to the frequency table?",
+      "description": "What is the mode according to the bar graph?",
       "latex": null,
       "hasVisual": true
     }
@@ -6824,7 +6986,7 @@ export const VARIATION_MAP = {
       "hasVisual": true
     },
     "en": {
-      "description": "Calculate the mean for the measurements in the frequency table. (Round to one decimal if needed)",
+      "description": "Calculate the mean for the measurements in the bar graph. (Round to one decimal if needed)",
       "latex": null,
       "hasVisual": true
     }
@@ -6937,7 +7099,7 @@ export const VARIATION_MAP = {
     "variationKey": "prob_scale_vocab",
     "level": 1,
     "sv": {
-      "description": "Hur sannolikt är det: \"att få krona eller klave vid ett vanligt myntkast\"?",
+      "description": "Hur sannolikt är det: \"att slå en 7:a med en vanlig sexsidig tärning\"?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -6956,7 +7118,7 @@ export const VARIATION_MAP = {
       ]
     },
     "en": {
-      "description": "How likely is the event: \"rolling a 7 on a standard six-sided die\"?",
+      "description": "How likely is the event: \"getting heads when tossing a standard coin\"?",
       "latex": null,
       "hasVisual": false,
       "options": [
@@ -6980,12 +7142,12 @@ export const VARIATION_MAP = {
     "variationKey": "prob_visual_spinner",
     "level": 1,
     "sv": {
-      "description": "Hjulet har 8 lika stora fält. 1 av fälten är grön. Vad är sannolikheten att pilen stannar på grön? Svar med bråk i enklaste form.",
+      "description": "Hjulet har 8 lika stora fält. 1 av fälten är röd. Vad är sannolikheten att pilen stannar på röd? Svar med bråk i enklaste form.",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "The wheel has 10 equal sectors. 4 of the sectors are red. What is the probability of the pointer landing on red? Answer with a fraction in simplest form.",
+      "description": "The wheel has 12 equal sectors. 4 of the sectors are red. What is the probability of the pointer landing on red? Answer with a fraction in simplest form.",
       "latex": null,
       "hasVisual": true
     }
@@ -6995,12 +7157,12 @@ export const VARIATION_MAP = {
     "variationKey": "prob_visual_marbles",
     "level": 1,
     "sv": {
-      "description": "I skålen finns 5 röda, 2 blåa och 4 gröna kulor. Du drar en kula slumpmässigt. Vad är sannolikheten att den är grön? Svar med bråk i enklaste form.",
+      "description": "I skålen finns 4 röda, 4 blåa och 1 gröna kulor. Du drar en kula slumpmässigt. Vad är sannolikheten att den är röd? Svar med bråk i enklaste form.",
       "latex": null,
       "hasVisual": true
     },
     "en": {
-      "description": "In the bowl there are 4 red, 3 blue, and 4 green marbles. You pick one at random. What is the probability that it is blue? Answer with a fraction in simplest form.",
+      "description": "In the bowl there are 5 red, 3 blue, and 1 green marbles. You pick one at random. What is the probability that it is green? Answer with a fraction in simplest form.",
       "latex": null,
       "hasVisual": true
     }
@@ -7010,12 +7172,12 @@ export const VARIATION_MAP = {
     "variationKey": "prob_rep_to_percent",
     "level": 2,
     "sv": {
-      "description": "Sannolikheten för en vinst i ett lotteri är 1/4. Vad är sannolikheten uttryckt i procent?",
+      "description": "Sannolikheten för en vinst i ett lotteri är 1/2. Vad är sannolikheten uttryckt i procent?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "The probability of winning a lottery is 3/5. What is the probability expressed as a percentage?",
+      "description": "The probability of winning a lottery is 1/4. What is the probability expressed as a percentage?",
       "latex": null,
       "hasVisual": false
     }
@@ -7025,12 +7187,12 @@ export const VARIATION_MAP = {
     "variationKey": "prob_rep_to_decimal",
     "level": 2,
     "sv": {
-      "description": "Sannolikheten för en händelse är 1/5. Skriv sannolikheten i decimalform.",
+      "description": "Sannolikheten för en händelse är 3/5. Skriv sannolikheten i decimalform.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "The probability of an event is 1/5. Write the probability as a decimal.",
+      "description": "The probability of an event is 1/20. Write the probability as a decimal.",
       "latex": null,
       "hasVisual": false
     }
@@ -7045,7 +7207,7 @@ export const VARIATION_MAP = {
       "hasVisual": false
     },
     "en": {
-      "description": "The probability of an outcome is 40%. Provide the probability as a fraction in simplest form.",
+      "description": "The probability of an outcome is 80%. Provide the probability as a fraction in simplest form.",
       "latex": null,
       "hasVisual": false
     }
@@ -7055,7 +7217,7 @@ export const VARIATION_MAP = {
     "variationKey": "prob_dice_single",
     "level": 3,
     "sv": {
-      "description": "Vad är sannolikheten att få en 2:a vid ett kast med en vanlig sexsidig tärning? Svar med bråk i enklaste form.",
+      "description": "Vad är sannolikheten att få en 6:a vid ett kast med en vanlig sexsidig tärning? Svar med bråk i enklaste form.",
       "latex": null,
       "hasVisual": false
     },
@@ -7070,7 +7232,7 @@ export const VARIATION_MAP = {
     "variationKey": "prob_dice_parity",
     "level": 3,
     "sv": {
-      "description": "Vad är sannolikheten att slå ett jämnt tal med en sexsidig tärning? Svar med bråk i enklaste form.",
+      "description": "Vad är sannolikheten att slå ett udda tal med en sexsidig tärning? Svar med bråk i enklaste form.",
       "latex": null,
       "hasVisual": false
     },
@@ -7085,12 +7247,12 @@ export const VARIATION_MAP = {
     "variationKey": "prob_dice_threshold",
     "level": 3,
     "sv": {
-      "description": "Vad är sannolikheten att slå ett tal som är större än 2 med en tärning? Svar med bråk i enklaste form.",
+      "description": "Vad är sannolikheten att slå ett tal som är större än 4 med en tärning? Svar med bråk i enklaste form.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "What is the probability of rolling a number greater than 5 on a die? Answer with a fraction in simplest form.",
+      "description": "What is the probability of rolling a number less than 4 on a die? Answer with a fraction in simplest form.",
       "latex": null,
       "hasVisual": false
     }
@@ -7100,12 +7262,12 @@ export const VARIATION_MAP = {
     "variationKey": "prob_cards_suit",
     "level": 3,
     "sv": {
-      "description": "Du drar ett kort slumpmässigt ur en vanlig kortlek med 52 kort (utan jokrar). Vad är sannolikheten att du drar ett spader? Svar med bråk i enklaste form.",
+      "description": "Du drar ett kort slumpmässigt ur en vanlig kortlek med 52 kort (utan jokrar). Vad är sannolikheten att du drar ett hjärter? Svar med bråk i enklaste form.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "You draw a card at random from a standard 52-card deck (no jokers). What is the probability of drawing a spade? Answer with a fraction in simplest form.",
+      "description": "You draw a card at random from a standard 52-card deck (no jokers). What is the probability of drawing a club? Answer with a fraction in simplest form.",
       "latex": null,
       "hasVisual": false
     }
@@ -7130,12 +7292,12 @@ export const VARIATION_MAP = {
     "variationKey": "prob_cards_rank",
     "level": 3,
     "sv": {
-      "description": "Vad är sannolikheten att dra en tia ur en vanlig kortlek på 52 kort? Svar med bråk i enklaste form.",
+      "description": "Vad är sannolikheten att dra en sjua ur en vanlig kortlek på 52 kort? Svar med bråk i enklaste form.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "What is the probability of drawing a 7 from a standard 52-card deck? Answer with a fraction in simplest form.",
+      "description": "What is the probability of drawing an Ace from a standard 52-card deck? Answer with a fraction in simplest form.",
       "latex": null,
       "hasVisual": false
     }
@@ -7145,12 +7307,12 @@ export const VARIATION_MAP = {
     "variationKey": "prob_comp_lottery",
     "level": 4,
     "sv": {
-      "description": "Chansen att vinna i ett lotteri är 25%. Vad är sannolikheten att man INTE vinner?",
+      "description": "Chansen att vinna i ett lotteri är 10%. Vad är sannolikheten att man INTE vinner?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "The chance of winning a lottery is 45%. What is the probability of NOT winning?",
+      "description": "The chance of winning a lottery is 20%. What is the probability of NOT winning?",
       "latex": null,
       "hasVisual": false
     }
@@ -7160,7 +7322,7 @@ export const VARIATION_MAP = {
     "variationKey": "prob_comp_cards_dice",
     "level": 4,
     "sv": {
-      "description": "Du kastar en vanlig tärning. Vad är sannolikheten att du INTE slår en 3:a? Svar med bråk i enklaste form.",
+      "description": "Du kastar en vanlig tärning. Vad är sannolikheten att du INTE slår en 4:a? Svar med bråk i enklaste form.",
       "latex": null,
       "hasVisual": false
     },
@@ -7190,12 +7352,12 @@ export const VARIATION_MAP = {
     "variationKey": "prob_ternary_remainder",
     "level": 4,
     "sv": {
-      "description": "I en ask med 25 kulor är 4 vita och 8 svarta. Resten är röda. Vad är sannolikheten att dra en röd kula? Svar med bråk i enklaste form.",
+      "description": "I en ask med 25 kulor är 5 vita och 5 svarta. Resten är röda. Vad är sannolikheten att dra en röd kula? Svar med bråk i enklaste form.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "In a box of 30 marbles, 6 are white and 5 are black. The remainder are red. What is the probability of picking a red marble? Answer with a fraction in simplest form.",
+      "description": "In a box of 20 marbles, 4 are white and 6 are black. The remainder are red. What is the probability of picking a red marble? Answer with a fraction in simplest form.",
       "latex": null,
       "hasVisual": false
     }
@@ -7205,12 +7367,12 @@ export const VARIATION_MAP = {
     "variationKey": "prob_comb_multiplication",
     "level": 5,
     "sv": {
-      "description": "En restaurangmeny erbjuder 3 förrätter, 4 varmrätter och 3 efterrätter. På hur många olika sätt kan du komponera en trerättersmiddag?",
+      "description": "En restaurangmeny erbjuder 3 förrätter, 6 varmrätter och 4 efterrätter. På hur många olika sätt kan du komponera en trerättersmiddag?",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "A restaurant menu offers 3 starters, 4 main dishes, and 4 desserts. In how many different ways can you compose a three-course dinner?",
+      "description": "A restaurant menu offers 5 starters, 5 main dishes, and 2 desserts. In how many different ways can you compose a three-course dinner?",
       "latex": null,
       "hasVisual": false
     }
@@ -7235,12 +7397,12 @@ export const VARIATION_MAP = {
     "variationKey": "prob_indep_coins",
     "level": 6,
     "sv": {
-      "description": "Du kastar ett mynt 3 gånger. Vad är sannolikheten att få krona alla 3 gånger? Svar med bråk i enklaste form.",
+      "description": "Du kastar ett mynt 2 gånger. Vad är sannolikheten att få klave alla 2 gånger? Svar med bråk i enklaste form.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "You flip a coin 3 times. What is the probability of getting heads all 3 times? Answer with a fraction in simplest form.",
+      "description": "You flip a coin 3 times. What is the probability of getting tails all 3 times? Answer with a fraction in simplest form.",
       "latex": null,
       "hasVisual": false
     }
@@ -7265,7 +7427,7 @@ export const VARIATION_MAP = {
     "variationKey": "prob_indep_with_replacement",
     "level": 6,
     "sv": {
-      "description": "En påse innehåller 5 röda och 4 blåa kulor. Du drar en kula, lägger tillbaka den (med återläggning), och drar sedan en kula till. Vad är sannolikheten att först få en röd och sedan en blå? Svar med bråk i enklaste form.",
+      "description": "En påse innehåller 4 röda och 6 blåa kulor. Du drar en kula, lägger tillbaka den (med återläggning), och drar sedan en kula till. Vad är sannolikheten att först få en röd och sedan en blå? Svar med bråk i enklaste form.",
       "latex": null,
       "hasVisual": false
     },
@@ -7285,7 +7447,7 @@ export const VARIATION_MAP = {
       "hasVisual": true
     },
     "en": {
-      "description": "In a bag there are 5 red and 5 blue marbles. You pick two marbles without replacement. What is the probability of getting a red first and then a blue? Answer with a fraction in simplest form.",
+      "description": "In a bag there are 6 red and 5 blue marbles. You pick two marbles without replacement. What is the probability of getting a red first and then a blue? Answer with a fraction in simplest form.",
       "latex": null,
       "hasVisual": true
     }
@@ -7295,12 +7457,12 @@ export const VARIATION_MAP = {
     "variationKey": "prob_dep_one_of_each",
     "level": 7,
     "sv": {
-      "description": "I en skål finns 6 röda och 5 blåa kulor. Du drar två kulor utan återläggning. Vad är sannolikheten att få en av varje färg? Svar med bråk i enklaste form.",
+      "description": "I en skål finns 3 röda och 6 blåa kulor. Du drar två kulor utan återläggning. Vad är sannolikheten att få en av varje färg? Svar med bråk i enklaste form.",
       "latex": null,
       "hasVisual": false
     },
     "en": {
-      "description": "In a bowl there are 3 red and 5 blue marbles. You pick two marbles without replacement. What is the probability of getting one of each color? Answer with a fraction in simplest form.",
+      "description": "In a bowl there are 4 red and 4 blue marbles. You pick two marbles without replacement. What is the probability of getting one of each color? Answer with a fraction in simplest form.",
       "latex": null,
       "hasVisual": false
     }
