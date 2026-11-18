@@ -64,6 +64,11 @@ export class ScaleGen {
         return Buffer.from(str).toString('base64');
     }
 
+    private formatNum(num: number, lang: string): string {
+        const clean = Math.round(num * 10000) / 10000;
+        return lang === 'sv' ? clean.toString().replace('.', ',') : clean.toString();
+    }
+
     private getVariation(pool: { key: string; type: 'concept' | 'calculate' }[], options: any): string {
         let filtered = pool;
         if (options?.exclude && options.exclude.length > 0) {
@@ -89,10 +94,8 @@ export class ScaleGen {
 
         if (v === 'scale_direction_type') {
             const isEnlargement = Math.random() > 0.5;
-            // Expanded scale pool
             const k = MathUtils.randomChoice([2, 3, 4, 5, 8, 10, 15, 20, 25, 50, 75, 100, 200, 500]);
             const ratioStr = isEnlargement ? `${k}:1` : `1:${k}`;
-
             const randomShape = MathUtils.randomChoice(['rectangle', 'circle']);
 
             const correctLabel = isEnlargement ? (isSv ? "Förstoring" : "Enlargement") : (isSv ? "Förminskning" : "Reduction");
@@ -134,17 +137,17 @@ export class ScaleGen {
                         text: isSv 
                             ? (isEnlargement 
                                 ? `Eftersom det första talet (${k}) är större än 1 är bilden större än verkligheten. Det är en förstoring.` 
-                                : `Eftersom det första talet är 1 och det andra talet är större än 1 (${k}) är bilden mindre än verkligheten. Det är en förminskning.`)
+                                : `Eftersom det första talet är 1 och det andra talet är större (${k}) är bilden mindre än verkligheten. Det är en förminskning.`)
                             : (isEnlargement 
                                 ? `Since the first number (${k}) is larger than 1, the picture is larger than reality. It is an enlargement.` 
-                                : `Since the first number is 1 and the second is larger (${k}), the picture is smaller than reality. It is a reduction.`)
+                                : `Since the first number is 1 and the second is larger (${k}), the picture is smaller than reality. It is a reduction.`),
+                        latex: `\\mathbf{\\text{${correctLabel}}}`
                     }
                 ],
                 metadata: { variation_key: v, difficulty: 1 }
             };
         }
 
-        // Expanded reading scales
         const k = MathUtils.randomChoice([5, 10, 15, 20, 25, 40, 50, 75, 100, 150, 200, 250, 300, 400, 500, 1000]);
         const randomShape = MathUtils.randomChoice(['rectangle', 'circle']);
         return {
@@ -175,7 +178,7 @@ export class ScaleGen {
                 },
                 {
                     text: isSv ? `Svar: ${k}` : `Answer: ${k}`,
-                    latex: `${k}`
+                    latex: `\\mathbf{${k}}`
                 }
             ],
             metadata: { 
@@ -199,12 +202,10 @@ export class ScaleGen {
         const isSv = lang === 'sv';
         const isToMeters = v === 'reduction_cm_to_m';
 
-        // Expanded k pools
         const k = isToMeters 
             ? MathUtils.randomChoice([50, 100, 150, 200, 250, 300, 400, 500]) 
             : MathUtils.randomChoice([5, 10, 12, 15, 20, 25, 30, 40, 50]);
 
-        // Expanded picture length (including clean half-centimeters)
         const picCm = isToMeters && k >= 200 
             ? MathUtils.randomChoice([2, 3, 4, 5, 6, 7, 8, 10, 12, 15])
             : MathUtils.randomChoice([2, 2.5, 3, 4, 4.5, 5, 6, 7, 8, 9, 10, 12]);
@@ -213,33 +214,37 @@ export class ScaleGen {
         const finalNum = isToMeters ? Math.round((realCmTotal / 100) * 100) / 100 : realCmTotal;
         const unit = isToMeters ? "m" : "cm";
 
+        const picStr = this.formatNum(picCm, lang);
+        const realCmStr = this.formatNum(realCmTotal, lang);
+        const finalStr = this.formatNum(finalNum, lang);
+
         const clues = [
             {
                 text: isSv 
                     ? `Skalan 1:${k} innebär att verkligheten är ${k} gånger längre än ritningen.` 
                     : `The scale 1:${k} means that reality is ${k} times longer than the drawing.`,
-                latex: `\\text{Verklig längd} = ${picCm} \\cdot ${k}`
+                latex: `\\text{Verklig längd} = ${picStr} \\cdot ${k}`
             },
             {
                 text: isSv 
-                    ? `Beräkna den verkliga längden i centimeter: ${picCm} · ${k} = ${realCmTotal} cm.` 
-                    : `Calculate the real length in centimeters: ${picCm} · ${k} = ${realCmTotal} cm.`,
-                latex: `${picCm} \\cdot ${k} = ${realCmTotal}\\text{ cm}`
+                    ? `Beräkna den verkliga längden i centimeter:` 
+                    : `Calculate the real length in centimeters:`,
+                latex: `${picStr} \\cdot ${k} = \\mathbf{${realCmStr}}\\text{ cm}`
             }
         ];
 
         if (isToMeters) {
             clues.push({
                 text: isSv 
-                    ? `Omvandla till meter genom att dela med 100: ${realCmTotal} / 100 = ${finalNum} m.` 
-                    : `Convert to meters by dividing by 100: ${realCmTotal} / 100 = ${finalNum} m.`,
-                latex: `\\frac{${realCmTotal}}{100} = ${finalNum}\\text{ m}`
+                    ? `Omvandla till meter genom att dela med 100:` 
+                    : `Convert to meters by dividing by 100:`,
+                latex: `\\frac{${realCmStr}}{100} = \\mathbf{${finalStr}}\\text{ m}`
             });
         }
 
         clues.push({
-            text: isSv ? `Svar: ${finalNum}` : `Answer: ${finalNum}`,
-            latex: `${finalNum}`
+            text: isSv ? `Svar: ${finalStr}` : `Answer: ${finalStr}`,
+            latex: `\\mathbf{${finalStr}}`
         });
 
         const rawExpr = `${k} ; ${picCm} ; ${finalNum}`;
@@ -248,14 +253,14 @@ export class ScaleGen {
         return {
             renderData: {
                 description: isSv 
-                    ? `En ritning har skalan 1:${k}. En sträcka på ritningen är ${picCm} cm. Hur lång är sträckan i verkligheten? Svara i ${unit === 'm' ? 'meter' : 'centimeter'}.` 
-                    : `A drawing has a scale of 1:${k}. A line on the drawing is ${picCm} cm. How long is the line in reality? Answer in ${unit === 'm' ? 'meters' : 'centimeters'}.`,
+                    ? `En ritning har skalan 1:${k}. En sträcka på ritningen är ${picStr} cm. Hur lång är sträckan i verkligheten? Svara i ${unit === 'm' ? 'meter' : 'centimeter'}.` 
+                    : `A drawing has a scale of 1:${k}. A line on the drawing is ${picStr} cm. How long is the line in reality? Answer in ${unit === 'm' ? 'meters' : 'centimeters'}.`,
                 latex: "",
                 answerType: 'numeric',
                 scale: {
                     type: 'scale_compare',
                     ratio: `1:${k}`,
-                    pictureLength: `${picCm} cm`,
+                    pictureLength: `${picStr} cm`,
                     realLength: "x",
                     mode: 'reduction',
                     shape: randomShape
@@ -286,7 +291,6 @@ export class ScaleGen {
         const isSv = lang === 'sv';
         const isToCm = v === 'enlargement_mm_to_cm';
 
-        // Expanded enlargement ratios and real millimeter ranges
         const k = isToCm 
             ? MathUtils.randomChoice([5, 10, 15, 20, 25, 40, 50]) 
             : MathUtils.randomChoice([2, 3, 4, 5, 6, 8, 10, 12, 15]);
@@ -299,33 +303,37 @@ export class ScaleGen {
         const finalNum = isToCm ? Math.round((picMmTotal / 10) * 10) / 10 : picMmTotal;
         const unit = isToCm ? "cm" : "mm";
 
+        const realStr = this.formatNum(realMm, lang);
+        const picMmStr = this.formatNum(picMmTotal, lang);
+        const finalStr = this.formatNum(finalNum, lang);
+
         const clues = [
             {
                 text: isSv 
                     ? `Skalan ${k}:1 är en förstoring där bilden är ${k} gånger större än verkligheten.` 
                     : `The scale ${k}:1 is an enlargement where the image is ${k} times larger than reality.`,
-                latex: `\\text{Bildens längd} = ${realMm} \\cdot ${k}`
+                latex: `\\text{Bildens längd} = ${realStr} \\cdot ${k}`
             },
             {
                 text: isSv 
-                    ? `Multiplicera med skalfaktorn: ${realMm} · ${k} = ${picMmTotal} mm.` 
-                    : `Multiply by the scale factor: ${realMm} · ${k} = ${picMmTotal} mm.`,
-                latex: `${realMm} \\cdot ${k} = ${picMmTotal}\\text{ mm}`
+                    ? `Multiplicera med skalfaktorn:` 
+                    : `Multiply by the scale factor:`,
+                latex: `${realStr} \\cdot ${k} = \\mathbf{${picMmStr}}\\text{ mm}`
             }
         ];
 
         if (isToCm) {
             clues.push({
                 text: isSv 
-                    ? `Omvandla millimeter till centimeter genom att dela med 10: ${picMmTotal} / 10 = ${finalNum} cm.` 
-                    : `Convert millimeters to centimeters by dividing by 10: ${picMmTotal} / 10 = ${finalNum} cm.`,
-                latex: `\\frac{${picMmTotal}}{10} = ${finalNum}\\text{ cm}`
+                    ? `Omvandla millimeter till centimeter genom att dela med 10:` 
+                    : `Convert millimeters to centimeters by dividing by 10:`,
+                latex: `\\frac{${picMmStr}}{10} = \\mathbf{${finalStr}}\\text{ cm}`
             });
         }
 
         clues.push({
-            text: isSv ? `Svar: ${finalNum}` : `Answer: ${finalNum}`,
-            latex: `${finalNum}`
+            text: isSv ? `Svar: ${finalStr}` : `Answer: ${finalStr}`,
+            latex: `\\mathbf{${finalStr}}`
         });
 
         const rawExpr = `${k} ; ${realMm} ; ${finalNum}`;
@@ -333,15 +341,15 @@ export class ScaleGen {
         return {
             renderData: {
                 description: isSv 
-                    ? `Ett litet föremål är ${realMm} mm i verkligheten. Hur långt blir föremålet på en bild i skala ${k}:1? Svara i ${unit === 'cm' ? 'centimeter' : 'millimeter'}.` 
-                    : `A small object is ${realMm} mm in reality. How long will the object be in an image with scale ${k}:1? Answer in ${unit === 'cm' ? 'centimeters' : 'millimeters'}.`,
+                    ? `Ett litet föremål är ${realStr} mm i verkligheten. Hur långt blir föremålet på en bild i skala ${k}:1? Svara i ${unit === 'cm' ? 'centimeter' : 'millimeter'}.` 
+                    : `A small object is ${realStr} mm in reality. How long will the object be in an image with scale ${k}:1? Answer in ${unit === 'cm' ? 'centimeters' : 'millimeters'}.`,
                 latex: "",
                 answerType: 'numeric',
                 scale: {
                     type: 'scale_compare',
                     ratio: `${k}:1`,
                     pictureLength: "x",
-                    realLength: `${realMm} mm`,
+                    realLength: `${realStr} mm`,
                     mode: 'enlargement'
                 }
             },
@@ -370,19 +378,21 @@ export class ScaleGen {
         const isSv = lang === 'sv';
         const isMap = v === 'determine_scale_map';
 
-        // Substantially widened scale denominators
         const k = isMap 
             ? MathUtils.randomChoice([2000, 4000, 5000, 10000, 15000, 20000, 25000, 50000, 100000]) 
             : MathUtils.randomChoice([15, 20, 25, 40, 50, 75, 100, 150, 200, 250, 300, 400, 500]);
         
-        // Expanded picture measurement
         const picCm = MathUtils.randomChoice([2, 3, 4, 5, 6, 8, 10]);
         const realCmTotal = picCm * k;
         const realM = realCmTotal / 100;
         const realKm = Math.round((realM / 1000) * 100) / 100;
 
-        const realValStr = isMap ? `${realKm} km` : `${realM} m`;
+        const realValStr = isMap ? `${this.formatNum(realKm, lang)} km` : `${this.formatNum(realM, lang)} m`;
         const rawExpr = isMap ? `${picCm} ; ${realKm} ; ${k}` : `${picCm} ; ${realM} ; ${k}`;
+
+        const conversionSteps = isMap
+            ? `${this.formatNum(realKm, lang)}\\text{ km} \\cdot 1000 = ${this.formatNum(realM, lang)}\\text{ m} \\cdot 100 = \\mathbf{${realCmTotal}}\\text{ cm}`
+            : `${this.formatNum(realM, lang)}\\text{ m} \\cdot 100 = \\mathbf{${realCmTotal}}\\text{ cm}`;
 
         return {
             renderData: {
@@ -405,25 +415,19 @@ export class ScaleGen {
             clues: [
                 {
                     text: isSv 
-                        ? "Skala definieras som förhållandet mellan bildens längd och verklighetens längd. Båda måste ha samma enhet!" 
-                        : "Scale is defined as the ratio between picture length and real length. Both must have the same unit!",
-                    latex: `\\text{Skala} = \\frac{\\text{bild}}{\\text{verklighet}}`
+                        ? "Skala är förhållandet mellan bild och verklighet. Omvandla först verklighetens längd till centimeter:" 
+                        : "Scale is the ratio between picture and reality. Convert the real distance to centimeters first:",
+                    latex: conversionSteps
                 },
                 {
                     text: isSv 
-                        ? `Gör om verklighetens längd till centimeter: ${realValStr} = ${realCmTotal} cm.` 
-                        : `Convert the real distance to centimeters: ${realValStr} = ${realCmTotal} cm.`,
-                    latex: `${realValStr} = ${realCmTotal}\\text{ cm}`
-                },
-                {
-                    text: isSv 
-                        ? `Skriv förhållandet som ett bråk och förkorta med ${picCm}: ${picCm} / ${realCmTotal} = 1 / ${k}.` 
-                        : `Write the ratio as a fraction and reduce by ${picCm}: ${picCm} / ${realCmTotal} = 1 / ${k}.`,
-                    latex: `\\frac{${picCm}}{${realCmTotal}} = \\frac{1}{${k}}`
+                        ? `Skriv förhållandet som ett bråk och förkorta med ${picCm}:` 
+                        : `Write the ratio as a fraction and reduce by ${picCm}:`,
+                    latex: `\\frac{${picCm}}{${realCmTotal}} = \\frac{1}{\\mathbf{${k}}}`
                 },
                 {
                     text: isSv ? `Svar: 1:${k}` : `Answer: 1:${k}`,
-                    latex: `1:${k}`
+                    latex: `\\mathbf{1:${k}}`
                 }
             ],
             metadata: { 
@@ -446,14 +450,12 @@ export class ScaleGen {
         const v = variationKey || this.getVariation(pool, options);
         const isSv = lang === 'sv';
 
-        // 🟢 1. Randomize the polygon family!
         const shapeConfig = MathUtils.randomChoice([
-            { shapeType: 'triangle', subtype: 'right' },
-            { shapeType: 'triangle', subtype: 'isosceles' },
-            { shapeType: 'parallelogram', subtype: 'standard' }
+            { shapeType: 'triangle', subtype: 'right', nameSv: 'rätvinkliga trianglarna', nameEn: 'right triangles' },
+            { shapeType: 'triangle', subtype: 'isosceles', nameSv: 'likbenta trianglarna', nameEn: 'isosceles triangles' },
+            { shapeType: 'parallelogram', subtype: 'standard', nameSv: 'parallellogrammerna', nameEn: 'parallelograms' }
         ]);
 
-        // Broader k and dimension range
         const k = MathUtils.randomChoice([1.5, 2, 2.5, 3, 4, 5]);
         const base1 = MathUtils.randomChoice([4, 6, 8, 10, 12, 14, 16]);
         const height1 = MathUtils.randomChoice([3, 5, 6, 7, 8, 9, 10, 12]);
@@ -463,16 +465,22 @@ export class ScaleGen {
         const isHeightTarget = v === 'similarity_tri_height';
         const finalVal = isHeightTarget ? height2 : base2;
 
+        const kStr = this.formatNum(k, lang);
+        const finalStr = this.formatNum(finalVal, lang);
+        const knownLarge = isHeightTarget ? base2 : height2;
+        const knownSmall = isHeightTarget ? base1 : height1;
+        const targetSmall = isHeightTarget ? height1 : base1;
+
         return {
             renderData: {
                 description: isSv 
-                    ? "De två rätvinkliga trianglarna nedan är likformiga. Beräkna längden på sidan som är markerad med x." 
-                    : "The two right triangles below are similar. Calculate the length of the side marked with x.",
+                    ? `De två ${shapeConfig.nameSv} nedan är likformiga. Beräkna längden på sidan som är markerad med x.` 
+                    : `The two ${shapeConfig.nameEn} below are similar. Calculate the length of the side marked with x.`,
                 latex: "",
                 answerType: 'numeric',
                 similarity: {
                     type: 'similarity_compare',
-                    shapeType: shapeConfig.shapeType, // 🟢 Dynamic!
+                    shapeType: shapeConfig.shapeType,
                     subtype: shapeConfig.subtype,
                     leftDims: { w: base1, h: height1 },
                     leftLabels: { b: `${base1}`, h: `${height1}` },
@@ -489,21 +497,19 @@ export class ScaleGen {
             clues: [
                 {
                     text: isSv 
-                        ? "Vid likformighet är förhållandet mellan motsvarande sidor i figurerna konstant (längdskalan)." 
-                        : "For similar figures, the ratio of corresponding side lengths is constant (the scale factor).",
-                    latex: `\\frac{\\text{stor sida}}{\\text{liten sida}} = k`
+                        ? "Bestäm skalfaktorn k genom att dividera de motsvarande kända sidorna:" 
+                        : "Determine the scale factor k by dividing the corresponding known sides:",
+                    latex: `k = \\frac{${knownLarge}}{${knownSmall}} = \\mathbf{${kStr}}`
                 },
                 {
                     text: isSv 
-                        ? `Bestäm skalfaktorn k via de kända sidorna: ${isHeightTarget ? base2 : height2} / ${isHeightTarget ? base1 : height1} = ${k}.` 
-                        : `Determine the scale factor k from the known sides: ${isHeightTarget ? base2 : height2} / ${isHeightTarget ? base1 : height1} = ${k}.`,
-                    latex: `k = ${k}`
+                        ? "Multiplicera den lilla figurens motsvarande sida med skalfaktorn:" 
+                        : "Multiply the corresponding side of the small figure by the scale factor:",
+                    latex: `x = ${targetSmall} \\cdot ${kStr} = \\mathbf{${finalStr}}`
                 },
                 {
-                    text: isSv 
-                        ? `Multiplicera den lilla triangelns sida med skalfaktorn: ${isHeightTarget ? height1 : base1} · ${k} = ${finalVal}.` 
-                        : `Multiply the corresponding side of the small triangle by the scale factor: ${isHeightTarget ? height1 : base1} · ${k} = ${finalVal}.`,
-                    latex: `x = ${finalVal}`
+                    text: isSv ? `Svar: ${finalStr}` : `Answer: ${finalStr}`,
+                    latex: `\\mathbf{${finalStr}}`
                 }
             ],
             metadata: { variation_key: v, difficulty: 3 }
@@ -520,8 +526,8 @@ export class ScaleGen {
         ];
         const v = variationKey || this.getVariation(pool, options);
         const isSv = lang === 'sv';
+        const isSideTarget = v === 'nested_topptriangel_side';
 
-        // Choose pairs where k is clean (integer or .5)
         const candidates = [
             { top: 2, bot: 2, k: 2 },
             { top: 2, bot: 4, k: 3 },
@@ -543,10 +549,16 @@ export class ScaleGen {
         const topBase = MathUtils.randomChoice([2, 3, 4, 5, 6, 8, 10]);
         const fullBase = Math.round(topBase * k * 10) / 10;
 
+        const targetVal = isSideTarget ? fullSide : fullBase;
+        const targetStr = this.formatNum(targetVal, lang);
+        const kStr = this.formatNum(k, lang);
+
         return {
             renderData: {
                 description: isSv 
-                    ? "Den horisontella transversalen är parallell med basen. Enligt topptriangelsatsen är den lilla topptriangeln likformig med hela triangeln. Beräkna x." 
+                    ? (isSideTarget 
+                        ? "Den horisontella transversalen är parallell med basen. Enligt topptriangelsatsen är topptriangeln likformig med hela triangeln. Beräkna hela sidans längd x."
+                        : "Den horisontella transversalen är parallell med basen. Enligt topptriangelsatsen är den lilla topptriangeln likformig med hela triangeln. Beräkna basen x.")
                     : "The horizontal transversal is parallel to the base. By the triangle proportionality theorem, the top triangle is similar to the entire triangle. Calculate x.",
                 latex: "",
                 answerType: 'numeric',
@@ -555,33 +567,48 @@ export class ScaleGen {
                     variant: 'nested',
                     nested: {
                         topBase: `${topBase}`,
-                        fullBase: "x",
+                        fullBase: isSideTarget ? `${fullBase}` : "x",
                         topSide: `${topSide}`,
-                        fullSide: `${fullSide}`
+                        fullSide: isSideTarget ? "x" : `${fullSide}`
                     }
                 }
             },
-            token: this.toBase64(fullBase.toString()),
+            token: this.toBase64(targetVal.toString()),
             variationKey: v,
             type: 'calculate',
-            clues: [
+            clues: isSideTarget ? [
                 {
                     text: isSv 
-                        ? `Topptriangelns sida är ${topSide} och hela triangelns sida är ${topSide} + ${bottomSeg} = ${fullSide}.` 
-                        : `The top triangle's side is ${topSide} and the full triangle's side is ${topSide} + ${bottomSeg} = ${fullSide}.`,
-                    latex: `\\text{Hela sidan} = ${topSide} + ${bottomSeg} = ${fullSide}`
+                        ? "Bestäm skalfaktorn k från de två parallella baserna:" 
+                        : "Determine the scale factor k from the two parallel bases:",
+                    latex: `k = \\frac{${fullBase}}{${topBase}} = \\mathbf{${kStr}}`
                 },
                 {
                     text: isSv 
-                        ? `Skalfaktorn k från topptriangeln till hela triangeln är ${fullSide} / ${topSide} = ${k}.` 
-                        : `The scale factor k from the top triangle to the full triangle is ${fullSide} / ${topSide} = ${k}.`,
-                    latex: `k = \\frac{${fullSide}}{${topSide}} = ${k}`
+                        ? "Multiplicera topptriangelns sida med skalfaktorn k:" 
+                        : "Multiply the top triangle's side by the scale factor k:",
+                    latex: `x = ${topSide} \\cdot ${kStr} = \\mathbf{${targetStr}}`
+                },
+                {
+                    text: isSv ? `Svar: ${targetStr}` : `Answer: ${targetStr}`,
+                    latex: `\\mathbf{${targetStr}}`
+                }
+            ] : [
+                {
+                    text: isSv 
+                        ? `Bestäm skalfaktorn k från topptriangelns sida (${topSide}) till hela sidans längd (${fullSide}):` 
+                        : `Determine the scale factor k from the top side (${topSide}) to the full side (${fullSide}):`,
+                    latex: `k = \\frac{${fullSide}}{${topSide}} = \\mathbf{${kStr}}`
                 },
                 {
                     text: isSv 
-                        ? `Beräkna den stora basen genom att multiplicera toppens bas med k: ${topBase} · ${k} = ${fullBase}.` 
-                        : `Calculate the full base by multiplying the top base by k: ${topBase} · ${k} = ${fullBase}.`,
-                    latex: `x = ${topBase} \\cdot ${k} = ${fullBase}`
+                        ? "Multiplicera topptriangelns bas med skalfaktorn k:" 
+                        : "Multiply the top triangle's base by the scale factor k:",
+                    latex: `x = ${topBase} \\cdot ${kStr} = \\mathbf{${targetStr}}`
+                },
+                {
+                    text: isSv ? `Svar: ${targetStr}` : `Answer: ${targetStr}`,
+                    latex: `\\mathbf{${targetStr}}`
                 }
             ],
             metadata: { variation_key: v, difficulty: 4 }
@@ -601,21 +628,21 @@ export class ScaleGen {
         const isInverse = v === 'area_scale_inverse';
 
         const shapeType = MathUtils.randomChoice(['rectangle', 'circle']);
+        const shapeNameSv = shapeType === 'circle' ? 'cirklar' : 'rektanglar';
+        const shapeNameEn = shapeType === 'circle' ? 'circles' : 'rectangles';
 
-        // Expanded k pool
         const k = MathUtils.randomChoice([2, 3, 4, 5, 6, 10]);
         const areaFactor = k * k;
 
         if (!isInverse) {
-            // Highly varied small areas
             const smallArea = MathUtils.randomChoice([2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25]);
             const largeArea = smallArea * areaFactor;
 
             return {
                 renderData: {
                     description: isSv 
-                        ? `Två likformiga rektanglar har längdskalan 1:${k}. Den mindre rektangeln har arean ${smallArea} cm². Beräkna arean av den större rektangeln.` 
-                        : `Two similar rectangles have a scale factor of 1:${k}. The smaller rectangle has an area of ${smallArea} cm². Calculate the area of the larger rectangle.`,
+                        ? `Två likformiga ${shapeNameSv} har längdskalan 1:${k}. Den mindre figuren har arean ${smallArea} cm². Beräkna arean av den större figuren.` 
+                        : `Two similar ${shapeNameEn} have a scale factor of 1:${k}. The smaller figure has an area of ${smallArea} cm². Calculate the area of the larger figure.`,
                     latex: "",
                     answerType: 'numeric',
                     compareArea: {
@@ -636,22 +663,25 @@ export class ScaleGen {
                 clues: [
                     {
                         text: isSv 
-                            ? "När längden förstoras med skalfaktorn k förstoras arean med k²." 
-                            : "When linear dimensions are scaled by factor k, area scales by k².",
-                        latex: `\\text{Areaskala} = (\\text{Längdskala})^2 = ${k}^2 = ${areaFactor}`
+                            ? "När längden förstoras med skalfaktorn k förstoras arean med k² (areaskalan):" 
+                            : "When linear dimensions are scaled by factor k, area scales by k²:",
+                        latex: `\\text{Areaskala} = k^2 = ${k}^2 = \\mathbf{${areaFactor}}`
                     },
                     {
                         text: isSv 
-                            ? `Multiplicera den mindre figurens area med areaskalan: ${smallArea} · ${areaFactor} = ${largeArea} cm².` 
-                            : `Multiply the small area by the area scale factor: ${smallArea} · ${areaFactor} = ${largeArea} cm².`,
-                        latex: `\\text{Area} = ${smallArea} \\cdot ${areaFactor} = ${largeArea}\\text{ cm}^2`
+                            ? "Multiplicera den mindre figurens area med areaskalan:" 
+                            : "Multiply the small area by the area scale factor:",
+                        latex: `\\text{Area} = ${smallArea} \\cdot ${areaFactor} = \\mathbf{${largeArea}}\\text{ cm}^2`
+                    },
+                    {
+                        text: isSv ? `Svar: ${largeArea}` : `Answer: ${largeArea}`,
+                        latex: `\\mathbf{${largeArea}}`
                     }
                 ],
                 metadata: { variation_key: v, difficulty: 4 }
             };
         }
 
-        // Varied base areas instead of hardcoded 10
         const smallArea = MathUtils.randomChoice([2, 3, 4, 5, 6, 8, 10, 12, 15, 20]);
         const smallSide = MathUtils.randomChoice([2, 3, 4, 5, 6, 7, 8]);
         const largeSide = smallSide * k;
@@ -682,21 +712,25 @@ export class ScaleGen {
             clues: [
                 {
                     text: isSv 
-                        ? `Beräkna areaskalan först genom att dividera areorna: ${largeArea} / ${smallArea} = ${areaFactor}.` 
-                        : `Calculate the area scale factor first by dividing the areas: ${largeArea} / ${smallArea} = ${areaFactor}.`,
-                    latex: `\\text{Areaskala} = \\frac{${largeArea}}{${smallArea}} = ${areaFactor}`
+                        ? "Beräkna areaskalan genom att dividera de två areorna:" 
+                        : "Calculate the area scale factor by dividing the areas:",
+                    latex: `\\text{Areaskala} = \\frac{${largeArea}}{${smallArea}} = \\mathbf{${areaFactor}}`
                 },
                 {
                     text: isSv 
-                        ? `Längdskalan k är kvadratroten ur areaskalan: √${areaFactor} = ${k}.` 
-                        : `The linear scale factor k is the square root of the area scale: √${areaFactor} = ${k}.`,
-                    latex: `k = \\sqrt{${areaFactor}} = ${k}`
+                        ? "Längdskalan k är kvadratroten ur areaskalan:" 
+                        : "The linear scale factor k is the square root of the area scale:",
+                    latex: `k = \\sqrt{${areaFactor}} = \\mathbf{${k}}`
                 },
                 {
                     text: isSv 
-                        ? `Multiplicera den lilla figurens sida med längdskalan: ${smallSide} · ${k} = ${largeSide} dm.` 
-                        : `Multiply the small side by the linear scale factor: ${smallSide} · ${k} = ${largeSide} dm.`,
-                    latex: `x = ${smallSide} \\cdot ${k} = ${largeSide}\\text{ dm}`
+                        ? "Multiplicera den lilla figurens sida med längdskalan k:" 
+                        : "Multiply the small side by the linear scale factor:",
+                    latex: `x = ${smallSide} \\cdot ${k} = \\mathbf{${largeSide}}\\text{ dm}`
+                },
+                {
+                    text: isSv ? `Svar: ${largeSide}` : `Answer: ${largeSide}`,
+                    latex: `\\mathbf{${largeSide}}`
                 }
             ],
             metadata: { variation_key: v, difficulty: 4 }
@@ -715,28 +749,31 @@ export class ScaleGen {
         const isSv = lang === 'sv';
         const isInverse = v === 'volume_scale_inverse';
 
-        // 🟢 Randomize between 3D Cuboids and Cylinders
         const shapeType = MathUtils.randomChoice(['cuboid', 'cylinder']);
+        const shapeNameSv = shapeType === 'cylinder' ? 'cylindrar' : 'rätblock';
+        const shapeNameEn = shapeType === 'cylinder' ? 'cylinders' : 'cuboids';
+
         const k = MathUtils.randomChoice([2, 3, 4, 5, 10]);
         const volFactor = k * k * k;
 
         if (!isInverse) {
-            // Broadened small volume selection
             const smallVol = MathUtils.randomChoice([1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 15, 20]);
             const largeVol = Math.round(smallVol * volFactor * 10) / 10;
+            const smallVolStr = this.formatNum(smallVol, lang);
+            const largeVolStr = this.formatNum(largeVol, lang);
 
             return {
                 renderData: {
                     description: isSv 
-                        ? `Två likformiga cylindrar har längdskalan 1:${k}. Den mindre rymmer ${smallVol} liter. Hur många liter rymmer den större cylindern?` 
-                        : `Two similar cylinders have a linear scale of 1:${k}. The smaller holds ${smallVol} liters. How many liters does the larger cylinder hold?`,
+                        ? `Två likformiga ${shapeNameSv} har längdskalan 1:${k}. Den mindre rymmer ${smallVolStr} liter. Hur många liter rymmer den större?` 
+                        : `Two similar ${shapeNameEn} have a linear scale of 1:${k}. The smaller holds ${smallVolStr} liters. How many liters does the larger hold?`,
                     latex: "",
                     answerType: 'numeric',
                     compareVolume: {
                         type: 'compare_volume',
                         shapeType: shapeType,
                         k,
-                        leftVol: `${smallVol} l`,
+                        leftVol: `${smallVolStr} l`,
                         rightVol: "x",
                         leftLabels: { r: "r", h: "h" },
                         rightLabels: { r: `${k}r`, h: `${k}h` }
@@ -748,22 +785,25 @@ export class ScaleGen {
                 clues: [
                     {
                         text: isSv 
-                            ? "När en kropps längdmått förstoras med k förstoras volymen med k³ (volymskalan)." 
-                            : "When linear dimensions are scaled by factor k, volume scales by k³.",
-                        latex: `\\text{Volymskala} = (\\text{Längdskala})^3 = ${k}^3 = ${volFactor}`
+                            ? "När en kropps längdmått förstoras med k förstoras volymen med k³ (volymskalan):" 
+                            : "When linear dimensions are scaled by factor k, volume scales by k³:",
+                        latex: `\\text{Volymskala} = k^3 = ${k}^3 = \\mathbf{${volFactor}}`
                     },
                     {
                         text: isSv 
-                            ? `Multiplicera den mindre volymen med volymskalan: ${smallVol} · ${volFactor} = ${largeVol} liter.` 
-                            : `Multiply the small volume by the volume scale: ${smallVol} · ${volFactor} = ${largeVol} liters.`,
-                        latex: `V = ${smallVol} \\cdot ${volFactor} = ${largeVol}\\text{ liter}`
+                            ? "Multiplicera den mindre volymen med volymskalan:" 
+                            : "Multiply the small volume by the volume scale:",
+                        latex: `V = ${smallVolStr} \\cdot ${volFactor} = \\mathbf{${largeVolStr}}\\text{ liter}`
+                    },
+                    {
+                        text: isSv ? `Svar: ${largeVolStr}` : `Answer: ${largeVolStr}`,
+                        latex: `\\mathbf{${largeVolStr}}`
                     }
                 ],
                 metadata: { variation_key: v, difficulty: 5 }
             };
         }
 
-        // Varied base volumes instead of hardcoded 3
         const smallVol = MathUtils.randomChoice([2, 3, 4, 5, 6, 8, 10, 15]);
         const smallHeight = MathUtils.randomChoice([2, 3, 4, 5, 6, 7, 8, 10, 12]);
         const largeHeight = smallHeight * k;
@@ -772,8 +812,8 @@ export class ScaleGen {
         return {
             renderData: {
                 description: isSv 
-                    ? `Två likformiga rätblock har volymerna ${smallVol} dm³ och ${largeVol} dm³. Det lilla rätblocket har höjden ${smallHeight} cm. Vad är höjden på det stora rätblocket?` 
-                    : `Two similar cuboids have volumes of ${smallVol} dm³ and ${largeVol} dm³. The small cuboid has a height of ${smallHeight} cm. What is the height of the large cuboid?`,
+                    ? `Två likformiga ${shapeNameSv} har volymerna ${smallVol} dm³ och ${largeVol} dm³. Den mindre har höjden ${smallHeight} cm. Vad är höjden på den större?` 
+                    : `Two similar ${shapeNameEn} have volumes of ${smallVol} dm³ and ${largeVol} dm³. The smaller has a height of ${smallHeight} cm. What is the height of the larger?`,
                 latex: "",
                 answerType: 'numeric',
                 compareVolume: {
@@ -792,21 +832,25 @@ export class ScaleGen {
             clues: [
                 {
                     text: isSv 
-                        ? `Beräkna volymskalan genom att dividera volymerna: ${largeVol} / ${smallVol} = ${volFactor}.` 
-                        : `Calculate the volume scale factor by dividing the volumes: ${largeVol} / ${smallVol} = ${volFactor}.`,
-                    latex: `\\text{Volymskala} = \\frac{${largeVol}}{${smallVol}} = ${volFactor}`
+                        ? "Beräkna volymskalan genom att dividera de två volymerna:" 
+                        : "Calculate the volume scale factor by dividing the volumes:",
+                    latex: `\\text{Volymskala} = \\frac{${largeVol}}{${smallVol}} = \\mathbf{${volFactor}}`
                 },
                 {
                     text: isSv 
-                        ? `Längdskalan k är kubikroten (tredjeroten) ur volymskalan: ∛${volFactor} = ${k}.` 
-                        : `The linear scale factor k is the cube root of the volume scale: ∛${volFactor} = ${k}.`,
-                    latex: `k = \\sqrt[3]{${volFactor}} = ${k}`
+                        ? "Längdskalan k är kubikroten (tredjeroten) ur volymskalan:" 
+                        : "The linear scale factor k is the cube root of the volume scale:",
+                    latex: `k = \\sqrt[3]{${volFactor}} = \\mathbf{${k}}`
                 },
                 {
                     text: isSv 
-                        ? `Multiplicera den lilla höjden med längdskalan: ${smallHeight} · ${k} = ${largeHeight} cm.` 
-                        : `Multiply the small height by the linear scale factor: ${smallHeight} · ${k} = ${largeHeight} cm.`,
-                    latex: `h = ${smallHeight} \\cdot ${k} = ${largeHeight}\\text{ cm}`
+                        ? "Multiplicera den lilla höjden med längdskalan k:" 
+                        : "Multiply the small height by the linear scale factor:",
+                    latex: `h = ${smallHeight} \\cdot ${k} = \\mathbf{${largeHeight}}\\text{ cm}`
+                },
+                {
+                    text: isSv ? `Svar: ${largeHeight}` : `Answer: ${largeHeight}`,
+                    latex: `\\mathbf{${largeHeight}}`
                 }
             ],
             metadata: { variation_key: v, difficulty: 5 }

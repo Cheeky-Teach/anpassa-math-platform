@@ -43,15 +43,28 @@ export default function QuestionPromptCard({
         rd?.graph ||
         rd?.pattern ||
         rd?.marbles ||
+        rd?.spinner ||
+        rd?.tree ||
         rd?.diagram ||
         rd?.visualType ||
-        rd?.frequencyTable
+        rd?.frequencyTable ||
+        rd?.freqTable ||
+        rd?.percentGrid ||
+        rd?.scale ||
+        rd?.similarity ||
+        rd?.compareArea ||
+        rd?.compareVolume
     );
 
     const alwaysShowVisual = Boolean(
         rd?.graph ||
         rd?.geometry?.type === 'frequency_table' ||
-        rd?.frequencyTable
+        rd?.frequencyTable ||
+        rd?.freqTable ||
+        rd?.scale ||
+        rd?.similarity ||
+        rd?.compareArea ||
+        rd?.compareVolume
     );
 
     const shouldRenderLatex = Boolean(
