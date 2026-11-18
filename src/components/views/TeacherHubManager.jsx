@@ -4,7 +4,7 @@ import {
     Plus, Star, Eye, EyeOff, Copy, Trash2, 
     Calendar as CalendarIcon, FolderOpen, Layers, Loader2,
     ChevronDown, ChevronUp, Folder, X, Check, Edit2, 
-    BookOpen, Target, GripVertical,
+    BookOpen, Target, GripVertical, Printer,
     Bookmark, Beaker, Archive, ArchiveRestore, Filter, GitBranch
 } from 'lucide-react';
 import ContentModal from '../modals/ContentModal'; 
@@ -15,6 +15,7 @@ import MathDisplay from '../shared/MathDisplay';
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
 import CheckpointModal from '../modals/CheckpointModal';
 import { SKILL_GRAPH } from '../../constants/skillGraph';
+import UnitStudyGuidePrintView from './UnitStudyGuidePrintView';
 
 // Helper to get localized topic names
 const getTopicName = (topicId, lang = 'sv') => {
@@ -248,6 +249,10 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
     const [editFolderValue, setEditFolderValue] = useState('');
     const [folderOrder, setFolderOrder] = useState([]); 
 
+    // Unit Study Guide Printable
+    const [teacherClassCode, setTeacherClassCode] = useState('');
+    const [printingGuideBucket, setPrintingGuideBucket] = useState(null);
+
     // Bucket Creation State
     const [newBucketName, setNewBucketName] = useState('');
     const [newBucketColor, setNewBucketColor] = useState('emerald');
@@ -304,9 +309,14 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                 }));
                 setBuckets(fetchedBuckets);
 
-                const { data: profileData } = await supabase.from('profiles').select('folder_order').eq('id', teacherId).single();
-                if (profileData && profileData.folder_order) {
-                    setFolderOrder(profileData.folder_order);
+                const { data: profileData } = await supabase
+                    .from('profiles')
+                    .select('folder_order, class_code')
+                    .eq('id', teacherId)
+                    .single();
+                if (profileData) {
+                    if (profileData.folder_order) setFolderOrder(profileData.folder_order);
+                    if (profileData.class_code) setTeacherClassCode(profileData.class_code);
                 }
             } catch (err) { 
                 console.error("Error fetching buckets:", err); 
@@ -811,6 +821,17 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
 
     const todayStr = new Date().toISOString().split('T')[0]; 
 
+    if (printingGuideBucket) {
+        return (
+            <UnitStudyGuidePrintView
+                bucket={printingGuideBucket}
+                classCode={teacherClassCode}
+                lang={lang}
+                onBack={() => setPrintingGuideBucket(null)}
+            />
+        );
+    }
+
     if (isLoading) return <div className="w-full flex justify-center py-20"><Loader2 className="animate-spin text-emerald-600 dark:text-emerald-400" size={32} /></div>;
 
     return (
@@ -1113,6 +1134,15 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                     >
                                                                         <span>{lang === 'sv' ? "Ordna Delar & Steg" : "Sequence"}</span>
                                                                         {isSequencerOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                                                    </button>
+                                                                    
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setPrintingGuideBucket(bucket)}
+                                                                        className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] hover:border-emerald-600 border border-[var(--border-main)] transition-all cursor-pointer shadow-2xs"
+                                                                        title={lang === 'sv' ? "Skriv ut studieplan & checklista" : "Print Study Guide & Checklist"}
+                                                                    >
+                                                                        <Printer size={14} />
                                                                     </button>
 
                                                                     <div className="w-px h-5 bg-[var(--border-main)] mx-0.5" />

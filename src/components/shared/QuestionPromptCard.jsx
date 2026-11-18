@@ -108,7 +108,7 @@ export default function QuestionPromptCard({
                     >
                         <div className="w-full flex flex-col justify-center items-center gap-3">
                             {showVisual && hasVisual && (
-                                <div className="w-full max-w-[420px] min-h-[100px] flex justify-center items-center mx-auto overflow-visible empty:hidden">
+                               <div className="w-full max-w-[580px] min-h-[100px] flex justify-center items-center mx-auto overflow-visible empty:hidden">
                                     <VisualRenderer
                                         data={rd}
                                         isWordProblem={effectiveWordProblem}

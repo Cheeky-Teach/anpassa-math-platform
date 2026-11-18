@@ -18,6 +18,7 @@ import DashboardTutorialModal from '../modals/DashboardTutorialModal';
 import CapacityModal from '../modals/CapacityModal';
 import InstructionSlideModal from '../modals/InstructionSlideModal';
 import ConceptMapDashboard from './ConceptMapDashboard';
+import UnitStudyGuideBanner from '../shared/UnitStudyGuideBanner';
 import {
     getTopicDisplayName as getTopicName,
     getPartDisplayTitle,
@@ -690,74 +691,43 @@ const Dashboard = ({
                                 userRole === 'student' && activeBucket && activeBucket !== 'FREE_PLAY' ? (
                                     /* Curated Bucket Roadmap */
                                     <div className="space-y-4">
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--bg-card)] p-5 rounded-2xl border border-[var(--border-main)]">
-                                            {progressPercentage === 100 && (
-                                                <div className="w-full bg-emerald-600 rounded-xl p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in-95 duration-300">
-                                                    <div className="flex items-center gap-3.5">
-                                                        <div className="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
-                                                            <Award size={26} className="text-amber-300" />
-                                                        </div>
-                                                        <div>
-                                                            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-100 block">
-                                                                {lang === 'sv' ? "Enheten slutförd" : "Unit Complete"}
-                                                            </span>
-                                                            <h3 className="text-lg font-extrabold leading-tight">
-                                                                {lang === 'sv' ? "Alla moment är avklarade!" : "All parts completed!"}
-                                                            </h3>
-                                                            <p className="text-xs font-medium text-emerald-100/90 mt-0.5">
-                                                                {lang === 'sv' 
-                                                                    ? `Du har gått igenom alla ${allUnitSteps.length} moment i ${activeBucket.name}.` 
-                                                                    : `You have mastered all ${allUnitSteps.length} steps in ${activeBucket.name}.`}
-                                                            </p>
-                                                        </div>
+                                        {progressPercentage === 100 && (
+                                            <div className="w-full bg-emerald-600 rounded-xl p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in-95 duration-300">
+                                                <div className="flex items-center gap-3.5">
+                                                    <div className="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
+                                                        <Award size={26} className="text-amber-300" />
                                                     </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={onBackToGateway}
-                                                        className="w-full sm:w-auto px-5 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0"
-                                                    >
-                                                        {lang === 'sv' ? "Välj ny enhet →" : "Choose New Unit →"}
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {progressPercentage < 100 && (
-                                                <>
-                                                    <div className="flex-1 max-w-xl">
-                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                                                            {lang === 'sv' ? "Aktiv enhet" : "Active Unit"}
+                                                    <div>
+                                                        <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-100 block">
+                                                            {lang === 'sv' ? "Område slutförd" : "Unit Complete"}
                                                         </span>
-                                                        <h2 className="text-xl font-extrabold text-[var(--text-main)] tracking-tight mt-0.5">
-                                                            {activeBucket.name}
-                                                        </h2>
-                                                        
-                                                        <div className="mt-2.5 space-y-1.5">
-                                                            <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-muted)]">
-                                                                <span>
-                                                                    {lang === 'sv' 
-                                                                        ? `${completedCount} av ${allUnitSteps.length} steg klara` 
-                                                                        : `${completedCount} of ${allUnitSteps.length} steps completed`}
-                                                                </span>
-                                                                <span className="font-bold font-mono text-[var(--text-main)]">{progressPercentage}%</span>
-                                                            </div>
-                                                            <div className="w-full h-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-main)] overflow-hidden">
-                                                                <div 
-                                                                    className="h-full bg-emerald-600 transition-all duration-500 ease-out rounded-full"
-                                                                    style={{ width: `${progressPercentage}%` }}
-                                                                />
-                                                            </div>
-                                                        </div>
+                                                        <h3 className="text-lg font-extrabold leading-tight">
+                                                            {lang === 'sv' ? "Alla moment är avklarade!" : "All parts completed!"}
+                                                        </h3>
+                                                        <p className="text-xs font-medium text-emerald-100/90 mt-0.5">
+                                                            {lang === 'sv' 
+                                                                ? `Du har gått igenom alla ${allUnitSteps.length} moment i ${activeBucket.name}.` 
+                                                                : `You have mastered all ${allUnitSteps.length} steps in ${activeBucket.name}.`}
+                                                        </p>
                                                     </div>
-                                                    <button 
-                                                        type="button"
-                                                        onClick={onBackToGateway}
-                                                        className="w-full sm:w-auto px-4 py-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 border border-[var(--border-strong)] cursor-pointer shrink-0"
-                                                    >
-                                                        <ChevronLeft size={15}/> {lang === 'sv' ? "Byt område" : "Change Unit"}
-                                                    </button>
-                                                </>
-                                            )}
-                                        </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={onBackToGateway}
+                                                    className="w-full sm:w-auto px-5 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0"
+                                                >
+                                                    {lang === 'sv' ? "Välj ny område →" : "Choose New Unit →"}
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        <UnitStudyGuideBanner
+                                            bucket={activeBucket}
+                                            completedStepIds={completedStepIds}
+                                            lang={lang}
+                                            onChangeUnit={onBackToGateway}
+                                            onOpenTestLab={onLabOpen}
+                                        />
 
                                         {/* Parts Sequence */}
                                         <div className="space-y-3">

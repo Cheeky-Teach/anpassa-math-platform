@@ -143,7 +143,6 @@ export default function SkillGraphExplorer({
             || null;
     }, [focusedTarget]);
 
-    // Keep browseCatId synced when user picks a node via search or timeline
     useEffect(() => {
         if (focusedNode?.category && SKILL_BUCKETS[focusedNode.category]) {
             setBrowseCatId(focusedNode.category);
@@ -624,7 +623,7 @@ export default function SkillGraphExplorer({
                             : 'grid grid-cols-1 lg:grid-cols-12 gap-5 items-start'
                     }>
                         {/* PANE A: Goldilocks Diagnostic Stage */}
-                        <div className={`${compactHorizontal ? 'lg:col-span-6 overflow-y-auto custom-scrollbar flex flex-col justify-between p-4' : 'lg:col-span-7 p-5 sm:p-6'} bg-[var(--bg-card)] border-2 border-emerald-600 rounded-2xl shadow-sm space-y-3`}>
+                        <div className={`${compactHorizontal ? 'lg:col-span-6 overflow-y-auto custom-scrollbar flex flex-col justify-between p-4' : 'lg:col-span-7 p-5 sm:p-6'} bg-[var(--bg-card)] border-2 border-emerald-600 rounded-2xl space-y-3`}>
                             <div className="space-y-3">
                                 <div className="flex items-start justify-between gap-2.5">
                                     <div>
@@ -634,7 +633,7 @@ export default function SkillGraphExplorer({
                                         <h3 className="text-base sm:text-lg font-extrabold text-[var(--text-main)] tracking-tight leading-snug">
                                             {focusedNode.topicLabel?.[lang] || focusedNode.topicLabel?.sv}
                                         </h3>
-                                        <p className="text-xs font-semibold text-[var(--text-muted)] mt-0.5">
+                                        <p className="text-sm font-bold text-[var(--text-main)] mt-1 leading-snug">
                                             {focusedNode.levelDesc?.[lang] || focusedNode.levelDesc?.sv}
                                         </p>
                                     </div>
@@ -653,7 +652,7 @@ export default function SkillGraphExplorer({
                                                     key={sib.id}
                                                     type="button"
                                                     onClick={() => handleStepToNode(sib.topicId, sib.level)}
-                                                    className={`px-2 py-1.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                    className={`px-2.5 py-2 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2 ${
                                                         isCurrent
                                                             ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-600 text-[var(--text-main)] font-bold'
                                                             : 'bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-[var(--border-strong)]'
@@ -664,7 +663,7 @@ export default function SkillGraphExplorer({
                                                     }`}>
                                                         N{sib.level}
                                                     </span>
-                                                    <span className="text-[11px] leading-tight line-clamp-1">
+                                                    <span className="text-xs font-bold leading-snug line-clamp-1">
                                                         {sib.levelDesc?.[lang] || sib.levelDesc?.sv}
                                                     </span>
                                                 </button>
@@ -737,7 +736,7 @@ export default function SkillGraphExplorer({
                                 <button
                                     type="button"
                                     onClick={() => onAddNode && onAddNode(focusedNode)}
-                                    className={`w-full py-2.5 px-4 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-sm transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 shrink-0 ${
+                                    className={`w-full py-2.5 px-4 rounded-xl font-extrabold text-xs uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 shrink-0 ${
                                         isFocusedAlreadyAdded
                                             ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
                                             : 'bg-emerald-600 hover:bg-emerald-700 text-white'
@@ -783,7 +782,7 @@ export default function SkillGraphExplorer({
                                                 saveNodeToRecent(focusedNode.topicId, focusedNode.level);
                                                 if (onStartPractice) onStartPractice(focusedNode.topicId, focusedNode.level);
                                             }}
-                                            className="py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all active:scale-[0.98] cursor-pointer flex flex-col items-center justify-center gap-0.5 text-center"
+                                            className="py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all active:scale-[0.98] cursor-pointer flex flex-col items-center justify-center gap-0.5 text-center"
                                         >
                                             <span className="flex items-center gap-1.5">
                                                 <Play size={13} fill="currentColor" />
@@ -848,12 +847,12 @@ export default function SkillGraphExplorer({
                                                             {prereq.topicLabel?.[lang] || prereq.topicLabel?.sv}
                                                         </span>
                                                     </div>
-                                                    <p className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5 line-clamp-1">
+                                                    <p className="text-xs font-bold text-[var(--text-main)] mt-1 line-clamp-1">
                                                         {prereq.levelDesc?.[lang] || prereq.levelDesc?.sv}
                                                     </p>
                                                 </div>
                                                 {prereq.example && (
-                                                    <div className="text-xs font-semibold text-[var(--text-main)] truncate pt-1 border-t border-[var(--border-main)]">
+                                                    <div className="text-xs font-medium text-[var(--text-muted)] truncate pt-1 border-t border-[var(--border-main)]">
                                                         <MathDisplay content={prereq.example} />
                                                     </div>
                                                 )}
@@ -897,12 +896,12 @@ export default function SkillGraphExplorer({
                                                             {nextNode.topicLabel?.[lang] || nextNode.topicLabel?.sv}
                                                         </span>
                                                     </div>
-                                                    <p className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5 line-clamp-1">
+                                                    <p className="text-xs font-bold text-[var(--text-main)] mt-1 line-clamp-1">
                                                         {nextNode.levelDesc?.[lang] || nextNode.levelDesc?.sv}
                                                     </p>
                                                 </div>
                                                 {nextNode.example && (
-                                                    <div className="text-xs font-semibold text-[var(--text-main)] truncate pt-1 border-t border-[var(--border-main)]">
+                                                    <div className="text-xs font-medium text-[var(--text-muted)] truncate pt-1 border-t border-[var(--border-main)]">
                                                         <MathDisplay content={nextNode.example} />
                                                     </div>
                                                 )}
@@ -921,11 +920,11 @@ export default function SkillGraphExplorer({
                                         ? (lang === 'sv' ? 'Förkunskaper & Nästa steg' : 'Prerequisites & Next Steps')
                                         : (lang === 'sv' ? 'Din väg hit & vidare' : 'Your Path Here & Forward')}
                                 </h4>
-                                <p className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5">
+                                <p className="text-xs font-medium text-[var(--text-muted)] mt-0.5">
                                     {isTeacherMode
                                         ? (lang === 'sv'
-                                            ? 'Klicka på ett kort för att granska eller + för att lägga till.'
-                                            : 'Click a card to inspect or + to add to targets.')
+                                            ? 'Klicka på ett kort för att granska eller lägg till direkt i testet.'
+                                            : 'Click a card to inspect or add directly to your test.')
                                         : (lang === 'sv'
                                             ? 'Klicka på ett steg i tidslinjen för att granska dess uppgift.'
                                             : 'Click any step on the timeline to inspect its sample problem.')}
@@ -952,48 +951,59 @@ export default function SkillGraphExplorer({
                                         </p>
                                     ) : (
                                         <div className="divide-y divide-[var(--border-main)] border border-[var(--border-main)] rounded-xl bg-[var(--bg-surface)] overflow-hidden">
-                                            {directPrereqs.map(prereq => (
-                                                <div
-                                                    key={prereq.id}
-                                                    className="p-2.5 hover:bg-[var(--bg-card)] transition-colors flex items-center justify-between gap-2 group"
-                                                >
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleStepToNode(prereq.topicId, prereq.level)}
-                                                        className="min-w-0 flex-1 text-left space-y-0.5 cursor-pointer"
+                                            {directPrereqs.map(prereq => {
+                                                const isPrereqAdded = selectedNodeIds.has(`${prereq.topicId}:${prereq.level}`);
+                                                return (
+                                                    <div
+                                                        key={prereq.id}
+                                                        className="p-3 hover:bg-[var(--bg-card)] transition-colors flex items-center justify-between gap-2.5 group"
                                                     >
-                                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-amber-600 text-white shrink-0">
-                                                                N{prereq.level}
-                                                            </span>
-                                                            <span className="text-xs font-bold text-[var(--text-main)] group-hover:text-amber-800 dark:group-hover:text-amber-200 truncate">
-                                                                {prereq.topicLabel?.[lang] || prereq.topicLabel?.sv}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1">
-                                                            {prereq.levelDesc?.[lang] || prereq.levelDesc?.sv}
-                                                        </p>
-                                                        {prereq.example && (
-                                                            <div className="text-[11px] font-semibold text-[var(--text-main)] truncate pt-0.5">
-                                                                <MathDisplay content={prereq.example} />
-                                                            </div>
-                                                        )}
-                                                    </button>
-
-                                                    {isTeacherMode && onAddNode ? (
                                                         <button
                                                             type="button"
-                                                            onClick={() => onAddNode(prereq)}
-                                                            className="w-7 h-7 rounded-lg bg-[var(--bg-card)] hover:bg-amber-600 text-[var(--text-main)] hover:text-white border border-[var(--border-strong)] flex items-center justify-center shrink-0 cursor-pointer transition-colors"
-                                                            title={lang === 'sv' ? 'Lägg till' : 'Add'}
+                                                            onClick={() => handleStepToNode(prereq.topicId, prereq.level)}
+                                                            className="min-w-0 flex-1 text-left space-y-0.5 cursor-pointer"
                                                         >
-                                                            <Plus size={14} />
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-amber-600 text-white shrink-0">
+                                                                    N{prereq.level}
+                                                                </span>
+                                                                <span className="text-xs font-extrabold text-[var(--text-main)] group-hover:text-amber-800 dark:group-hover:text-amber-200 truncate">
+                                                                    {prereq.topicLabel?.[lang] || prereq.topicLabel?.sv}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[13px] font-bold text-[var(--text-main)] line-clamp-2 leading-snug pt-0.5">
+                                                                {prereq.levelDesc?.[lang] || prereq.levelDesc?.sv}
+                                                            </p>
+                                                            {prereq.example && (
+                                                                <div className="text-xs font-medium text-[var(--text-muted)] truncate pt-0.5">
+                                                                    <MathDisplay content={prereq.example} />
+                                                                </div>
+                                                            )}
                                                         </button>
-                                                    ) : (
-                                                        <ArrowRight size={14} className="text-[var(--text-muted)] shrink-0" />
-                                                    )}
-                                                </div>
-                                            ))}
+
+                                                        {isTeacherMode && onAddNode ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => onAddNode(prereq)}
+                                                                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
+                                                                    isPrereqAdded
+                                                                        ? 'bg-emerald-600 border-emerald-600 text-white'
+                                                                        : 'bg-[var(--bg-card)] hover:bg-amber-600 text-[var(--text-main)] hover:text-white border-[var(--border-strong)] hover:border-amber-600'
+                                                                }`}
+                                                            >
+                                                                {isPrereqAdded ? <Check size={13} strokeWidth={3} /> : <Plus size={13} strokeWidth={2.5} />}
+                                                                <span>
+                                                                    {isPrereqAdded
+                                                                        ? (lang === 'sv' ? 'Tillagd' : 'Added')
+                                                                        : (lang === 'sv' ? 'Lägg till' : 'Add')}
+                                                                </span>
+                                                            </button>
+                                                        ) : (
+                                                            <ArrowRight size={14} className="text-[var(--text-muted)] shrink-0" />
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </div>
@@ -1030,48 +1040,59 @@ export default function SkillGraphExplorer({
                                         </p>
                                     ) : (
                                         <div className="divide-y divide-[var(--border-main)] border border-[var(--border-main)] rounded-xl bg-[var(--bg-surface)] overflow-hidden">
-                                            {directUnlocks.map(nextNode => (
-                                                <div
-                                                    key={nextNode.id}
-                                                    className="p-2.5 hover:bg-[var(--bg-card)] transition-colors flex items-center justify-between gap-2 group"
-                                                >
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleStepToNode(nextNode.topicId, nextNode.level)}
-                                                        className="min-w-0 flex-1 text-left space-y-0.5 cursor-pointer"
+                                            {directUnlocks.map(nextNode => {
+                                                const isNextAdded = selectedNodeIds.has(`${nextNode.topicId}:${nextNode.level}`);
+                                                return (
+                                                    <div
+                                                        key={nextNode.id}
+                                                        className="p-3 hover:bg-[var(--bg-card)] transition-colors flex items-center justify-between gap-2.5 group"
                                                     >
-                                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-sky-600 text-white shrink-0">
-                                                                N{nextNode.level}
-                                                            </span>
-                                                            <span className="text-xs font-bold text-[var(--text-main)] group-hover:text-sky-800 dark:group-hover:text-sky-200 truncate">
-                                                                {nextNode.topicLabel?.[lang] || nextNode.topicLabel?.sv}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1">
-                                                            {nextNode.levelDesc?.[lang] || nextNode.levelDesc?.sv}
-                                                        </p>
-                                                        {nextNode.example && (
-                                                            <div className="text-[11px] font-semibold text-[var(--text-main)] truncate pt-0.5">
-                                                                <MathDisplay content={nextNode.example} />
-                                                            </div>
-                                                        )}
-                                                    </button>
-
-                                                    {isTeacherMode && onAddNode ? (
                                                         <button
                                                             type="button"
-                                                            onClick={() => onAddNode(nextNode)}
-                                                            className="w-7 h-7 rounded-lg bg-[var(--bg-card)] hover:bg-sky-600 text-[var(--text-main)] hover:text-white border border-[var(--border-strong)] flex items-center justify-center shrink-0 cursor-pointer transition-colors"
-                                                            title={lang === 'sv' ? 'Lägg till' : 'Add'}
+                                                            onClick={() => handleStepToNode(nextNode.topicId, nextNode.level)}
+                                                            className="min-w-0 flex-1 text-left space-y-0.5 cursor-pointer"
                                                         >
-                                                            <Plus size={14} />
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-sky-600 text-white shrink-0">
+                                                                    N{nextNode.level}
+                                                                </span>
+                                                                <span className="text-xs font-extrabold text-[var(--text-main)] group-hover:text-sky-800 dark:group-hover:text-sky-200 truncate">
+                                                                    {nextNode.topicLabel?.[lang] || nextNode.topicLabel?.sv}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[13px] font-bold text-[var(--text-main)] line-clamp-2 leading-snug pt-0.5">
+                                                                {nextNode.levelDesc?.[lang] || nextNode.levelDesc?.sv}
+                                                            </p>
+                                                            {nextNode.example && (
+                                                                <div className="text-xs font-medium text-[var(--text-muted)] truncate pt-0.5">
+                                                                    <MathDisplay content={nextNode.example} />
+                                                                </div>
+                                                            )}
                                                         </button>
-                                                    ) : (
-                                                        <ArrowRight size={14} className="text-[var(--text-muted)] shrink-0" />
-                                                    )}
-                                                </div>
-                                            ))}
+
+                                                        {isTeacherMode && onAddNode ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => onAddNode(nextNode)}
+                                                                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
+                                                                    isNextAdded
+                                                                        ? 'bg-emerald-600 border-emerald-600 text-white'
+                                                                        : 'bg-[var(--bg-card)] hover:bg-sky-600 text-[var(--text-main)] hover:text-white border-[var(--border-strong)] hover:border-sky-600'
+                                                                }`}
+                                                            >
+                                                                {isNextAdded ? <Check size={13} strokeWidth={3} /> : <Plus size={13} strokeWidth={2.5} />}
+                                                                <span>
+                                                                    {isNextAdded
+                                                                        ? (lang === 'sv' ? 'Tillagd' : 'Added')
+                                                                        : (lang === 'sv' ? 'Lägg till' : 'Add')}
+                                                                </span>
+                                                            </button>
+                                                        ) : (
+                                                            <ArrowRight size={14} className="text-[var(--text-muted)] shrink-0" />
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </div>
