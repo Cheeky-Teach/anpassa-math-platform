@@ -64,7 +64,6 @@ export const IntegerCounterTool = {
         let matchedPartnerId = null;
         let minDistance = threshold;
 
-        // Only pair with an opposite-value counter that is NOT already paired with someone else
         const eligibleOpposites = allElements.filter(el => 
             el.id !== target.id && 
             el.type === 'integer_counter' && 
@@ -72,12 +71,14 @@ export const IntegerCounterTool = {
             (!el.pairedWithId || el.pairedWithId === target.id)
         );
 
+        const snugOffset = COUNTER_RADIUS * 2 + 2; // 66px (touching edge-to-edge)
+
         for (const other of eligibleOpposites) {
             const dist = Math.hypot(other.x - target.x, other.y - target.y);
             if (dist < minDistance) {
                 minDistance = dist;
                 bestX = other.x;
-                bestY = other.y + (target.value > 0 ? -COUNTER_RADIUS * 2 - 10 : COUNTER_RADIUS * 2 + 10);
+                bestY = other.y + (target.value > 0 ? -snugOffset : snugOffset);
                 matchedPartnerId = other.id;
             }
         }
@@ -218,13 +219,10 @@ export const IntegerCounterTool = {
                     {glyph}
                 </text>
 
-                {/* 5. Magnetic Zero-Pair Indicator Badge */}
-                {el.pairedWithId && (
-                    <g transform={`translate(${cx + r + 4}, ${cy - 12})`} className="pointer-events-none select-none">
-                        <rect x={0} y={0} width={42} height={24} rx={12} fill="#0f172a" stroke="#cbd5e1" strokeWidth={1.5} />
-                        <text x={21} y={13} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="900" fill="#fbbf24">
-                            = 0
-                        </text>
+                {/* 5. Standard Whiteboard Selection Handles (black =0 badge removed) */}
+                {showUI && renderHandles && (
+                    <g transform={`translate(${-el.x}, ${-el.y})`}>
+                        {renderHandles(el, r, { canRotate: false })}
                     </g>
                 )}
 

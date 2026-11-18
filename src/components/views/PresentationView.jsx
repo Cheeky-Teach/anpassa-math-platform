@@ -115,9 +115,16 @@ export default function PresentationView({
         if (!toolDef || typeof toolDef.createDefault !== 'function') return;
 
         const id = `el_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        const newEl = toolDef.createDefault(id, '#059669', { type, ...payload });
 
-        updateCurrentSlideElements(prev => [...prev, newEl]);
+        updateCurrentSlideElements(prev => {
+            const safePrev = Array.isArray(prev) ? prev : [];
+            const newEl = toolDef.createDefault(id, '#059669', {
+                type,
+                ...payload,
+                existingElements: safePrev
+            });
+            return [...safePrev, newEl];
+        });
     };
 
     const [draggedSlideIndex, setDraggedSlideIndex] = useState(null);

@@ -329,7 +329,6 @@ function InteractiveCanvas({
 
     // 4. Decoupled Drawer Tool Spawner
     const handleSpawnFromDrawer = (type, payload = {}) => {
-        // Non-element canvas mode switches (pen, eraser, etc.)
         const toolModes = ['pen', 'highlighter', 'eraser', 'line', 'select'];
         if (toolModes.includes(type)) {
             setActiveTool(type);
@@ -341,18 +340,15 @@ function InteractiveCanvas({
         if (!toolDef || typeof toolDef.createDefault !== 'function') return;
 
         const id = `el_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        
-        // Transparent pass-through: Canvas does not know or care what tool or payload this is
-        const newElement = toolDef.createDefault(id, color, { type, ...payload });
-        
+
         setElements(prev => {
-            // Pass the live elements list so the spawner knows how many tiles already exist
-            const newElement = toolDef.createDefault(id, color, { 
-                type, 
-                ...payload, 
-                existingElements: prev 
+            const safePrev = Array.isArray(prev) ? prev : [];
+            const newElement = toolDef.createDefault(id, color, {
+                type,
+                ...payload,
+                existingElements: safePrev
             });
-            return [...prev, newElement];
+            return [...safePrev, newElement];
         });
 
         setSelectedIds([id]);

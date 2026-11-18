@@ -55,59 +55,41 @@ export const BasicShapesTool = {
     type: 'basic_shapes',
     hasOptions: true,
 
-    createDefault: (id, color = '#0f172a', payload = {}) => ({
-        id,
-        type: payload.type || 'polygon',
-        x: 550,
-        y: 240,
-        width: 340,
-        height: 300,
-        polygonSides: 5,
-        triangleType: 'right',
-        rectType: 'rectangle',
-        showAngles: false,
-        angleMode: 'degrees',
-        showSideLengths: false,
-        sideLabels: {},
-        stroke: color,
-        strokeWidth: 3.5,
-        fill: '#ffffff',
-        fillOpacity: 0.1,
-        rotation: 0,
-        opacity: 1
-    }),
+    createDefault: (id, color = '#0f172a', payload = {}) => {
+        const shapeType = payload.type || 'polygon';
+        const rectType = payload.rectType || 'rectangle';
+        const isEquilateralQuad = shapeType === 'rect' && (rectType === 'square' || rectType === 'rhombus');
 
-    renderContextMenu: ({ el, setElements, lang = 'sv', t }) => {
+        return {
+            id,
+            type: shapeType,
+            x: 550,
+            y: 240,
+            width: isEquilateralQuad ? 300 : 340,
+            height: 300,
+            polygonSides: payload.polygonSides || 5,
+            triangleType: payload.triangleType || 'right',
+            rectType,
+            showAngles: false,
+            angleMode: 'degrees',
+            showSideLengths: false,
+            sideLabels: {},
+            stroke: color,
+            strokeWidth: 3.5,
+            fill: '#ffffff',
+            fillOpacity: 0.1,
+            rotation: 0,
+            opacity: 1
+        };
+    },
+
+    renderContextMenu: ({ el, setElements, lang = 'sv' }) => {
         const isPoly = el.type === 'polygon';
-        const isTri = el.type === 'triangle';
-        const isRect = el.type === 'rect';
-        const activeRectType = el.rectType || 'rectangle';
         const sides = Number(el.polygonSides) || 5;
 
         const updateSides = (delta) => {
             const next = Math.max(3, Math.min(10, sides + delta));
             setElements(prev => prev.map(o => o.id === el.id ? { ...o, polygonSides: next, sideLabels: {} } : o));
-        };
-
-        const handleSelectRectType = (nextType) => {
-            setElements(prev => prev.map(o => {
-                if (o.id !== el.id) return o;
-                const curW = Number(o.width) || 340;
-                const curH = Number(o.height) || 300;
-                const equalSide = Math.round((curW + curH) / 2);
-
-                // Normalize dimensions when toggling between equilateral & oblong quadrilaterals
-                const nextDims = (nextType === 'square' || nextType === 'rhombus')
-                    ? { width: equalSide, height: equalSide }
-                    : (curW === curH ? { width: Math.round(equalSide * 1.25), height: Math.round(equalSide * 0.85) } : {});
-
-                return {
-                    ...o,
-                    ...nextDims,
-                    rectType: nextType,
-                    sideLabels: {}
-                };
-            }));
         };
 
         const toggleAngles = () => {
@@ -125,6 +107,8 @@ export const BasicShapesTool = {
             setElements(prev => prev.map(o => o.id === el.id ? { ...o, showSideLengths: !o.showSideLengths } : o));
         };
 
+        if (el.type === 'circle') return null;
+
         return (
             <div 
                 className="flex items-center gap-2.5 font-sans font-bold text-sm select-none !text-slate-900" 
@@ -132,133 +116,79 @@ export const BasicShapesTool = {
             >
                 {/* 1. Polygon Sides Stepper */}
                 {isPoly && (
-                    <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
-                        <button
-                            type="button"
-                            onClick={() => updateSides(-1)}
-                            disabled={sides <= 3}
-                            className="w-8 h-8 flex items-center justify-center bg-white hover:bg-slate-200 text-slate-700 disabled:opacity-30 rounded-xl transition-colors cursor-pointer border border-slate-200 shadow-xs active:scale-95"
-                            title={lang === 'sv' ? "Färre sidor" : "Fewer sides"}
-                        >
-                            <Minus size={14} strokeWidth={3} />
-                        </button>
-                        <span className="text-xs font-black px-2 min-w-[95px] text-center text-slate-800">
-                            {POLYGON_NAMES[sides]?.[lang === 'sv' ? 'sv' : 'en'] || `${sides} sidor`}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => updateSides(1)}
-                            disabled={sides >= 10}
-                            className="w-8 h-8 flex items-center justify-center bg-white hover:bg-slate-200 text-slate-700 disabled:opacity-30 rounded-xl transition-colors cursor-pointer border border-slate-200 shadow-xs active:scale-95"
-                            title={lang === 'sv' ? "Fler sidor" : "More sides"}
-                        >
-                            <Plus size={14} strokeWidth={3} />
-                        </button>
-                    </div>
-                )}
-
-                {/* 2. Triangle Presets */}
-                {isTri && (
-                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200">
-                        {[
-                            { id: 'right', label: lang === 'sv' ? 'Rätvinklig' : 'Right' },
-                            { id: 'isosceles', label: lang === 'sv' ? 'Likbent' : 'Isosceles' },
-                            { id: 'equilateral', label: lang === 'sv' ? 'Liksidig' : 'Equilateral' },
-                            { id: 'scalene', label: lang === 'sv' ? 'Oliksidig' : 'Scalene' }
-                        ].map(m => (
-                            <button
-                                key={m.id}
-                                type="button"
-                                onClick={() => setElements(p => p.map(o => o.id === el.id ? { ...o, triangleType: m.id, sideLabels: {} } : o))}
-                                className={`px-2.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                                    el.triangleType === m.id
-                                        ? 'bg-indigo-600 text-white shadow-xs'
-                                        : 'bg-white hover:bg-slate-200 text-slate-700'
-                                }`}
-                            >
-                                {m.label}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {/* 2b. Quadrilateral / Rectangle Presets */}
-                {isRect && (
-                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200">
-                        {[
-                            { id: 'rectangle', label: lang === 'sv' ? 'Rektangel' : 'Rectangle' },
-                            { id: 'square', label: lang === 'sv' ? 'Kvadrat' : 'Square' },
-                            { id: 'parallelogram', label: lang === 'sv' ? 'Parallellogram' : 'Parallelogram' },
-                            { id: 'rhombus', label: lang === 'sv' ? 'Romb' : 'Rhombus' },
-                            { id: 'trapezoid', label: lang === 'sv' ? 'Paralleltrapets' : 'Trapezoid' }
-                        ].map(m => (
-                            <button
-                                key={m.id}
-                                type="button"
-                                onClick={() => handleSelectRectType(m.id)}
-                                className={`px-2.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                                    activeRectType === m.id
-                                        ? 'bg-indigo-600 text-white shadow-xs'
-                                        : 'bg-white hover:bg-slate-200 text-slate-700'
-                                }`}
-                            >
-                                {m.label}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                <div className="w-px h-6 bg-slate-200 mx-0.5" />
-
-                {/* 3. Toggle Angle Arcs */}
-                {el.type !== 'circle' && (
-                    <div className="flex items-center gap-1">
-                        <button
-                            type="button"
-                            onClick={toggleAngles}
-                            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 ${
-                                el.showAngles
-                                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm'
-                                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                            }`}
-                        >
-                            <Hash size={15} />
-                            <span>{lang === 'sv' ? "Vinklar" : "Angles"}</span>
-                        </button>
-
-                        {el.showAngles && (
+                    <>
+                        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
                             <button
                                 type="button"
-                                onClick={toggleAngleMode}
-                                className={`px-3 py-2 rounded-2xl border text-xs font-black uppercase transition-all cursor-pointer shadow-xs active:scale-95 ${
-                                    el.angleMode === 'unknown'
-                                        ? 'bg-purple-600 text-white border-purple-700 shadow-sm'
-                                        : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
-                                }`}
-                                title={lang === 'sv' ? "Växla grader / variabel 'x'" : "Toggle degrees / variable 'x'"}
+                                onClick={() => updateSides(-1)}
+                                disabled={sides <= 3}
+                                className="w-8 h-8 flex items-center justify-center bg-white hover:bg-slate-200 text-slate-700 disabled:opacity-30 rounded-xl transition-colors cursor-pointer border border-slate-200 shadow-xs active:scale-95"
+                                title={lang === 'sv' ? "Färre sidor" : "Fewer sides"}
                             >
-                                <span>{el.angleMode === 'unknown' ? 'x' : 'θ°'}</span>
+                                <Minus size={14} strokeWidth={3} />
                             </button>
-                        )}
-                    </div>
+                            <span className="text-xs font-black px-2 min-w-[95px] text-center text-slate-800">
+                                {POLYGON_NAMES[sides]?.[lang === 'sv' ? 'sv' : 'en'] || `${sides} sidor`}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => updateSides(1)}
+                                disabled={sides >= 10}
+                                className="w-8 h-8 flex items-center justify-center bg-white hover:bg-slate-200 text-slate-700 disabled:opacity-30 rounded-xl transition-colors cursor-pointer border border-slate-200 shadow-xs active:scale-95"
+                                title={lang === 'sv' ? "Fler sidor" : "More sides"}
+                            >
+                                <Plus size={14} strokeWidth={3} />
+                            </button>
+                        </div>
+                        <div className="w-px h-6 bg-slate-200 mx-0.5" />
+                    </>
                 )}
 
-                {/* 4. Toggle Side Length Labels */}
-                {el.type !== 'circle' && (
+                {/* 2. Toggle Angle Arcs */}
+                <div className="flex items-center gap-1">
                     <button
                         type="button"
-                        onClick={toggleSideLengths}
+                        onClick={toggleAngles}
                         className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 ${
-                            el.showSideLengths
-                                ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
+                            el.showAngles
+                                ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm'
                                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                         }`}
-                        title={lang === 'sv' ? "Visa mått och längder på sidorna" : "Show side lengths"}
                     >
-                        <Ruler size={15} />
-                        <span>{lang === 'sv' ? "Sidmått" : "Sides"}</span>
+                        <Hash size={15} />
+                        <span>{lang === 'sv' ? "Vinklar" : "Angles"}</span>
                     </button>
-                )}
+
+                    {el.showAngles && (
+                        <button
+                            type="button"
+                            onClick={toggleAngleMode}
+                            className={`px-3 py-2 rounded-2xl border text-xs font-black uppercase transition-all cursor-pointer shadow-xs active:scale-95 ${
+                                el.angleMode === 'unknown'
+                                    ? 'bg-purple-600 text-white border-purple-700 shadow-sm'
+                                    : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                            }`}
+                            title={lang === 'sv' ? "Växla grader / variabel 'x'" : "Toggle degrees / variable 'x'"}
+                        >
+                            <span>{el.angleMode === 'unknown' ? 'x' : 'θ°'}</span>
+                        </button>
+                    )}
+                </div>
+
+                {/* 3. Toggle Side Length Labels */}
+                <button
+                    type="button"
+                    onClick={toggleSideLengths}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 ${
+                        el.showSideLengths
+                            ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    }`}
+                    title={lang === 'sv' ? "Visa mått och längder på sidorna" : "Show side lengths"}
+                >
+                    <Ruler size={15} />
+                    <span>{lang === 'sv' ? "Sidmått" : "Sides"}</span>
+                </button>
             </div>
         );
     },
@@ -379,7 +309,7 @@ export const BasicShapesTool = {
 
         const capturePointer = (e) => e.stopPropagation();
 
-        // 🟢 Scaled typography calculations
+        // Scaled typography calculations
         const baseDimension = Math.min(w, h);
         const angleFontSize = Math.max(13, Math.min(22, Math.round(baseDimension * 0.052)));
         const anglePillWidth = Math.max(42, Math.round(angleFontSize * 3.2));
@@ -422,7 +352,7 @@ export const BasicShapesTool = {
                     <GripHorizontal size={14} className="text-slate-400 group-hover:text-indigo-500 transition-colors" x={w / 2 - 7} y={-23} />
                 </g>
 
-                {/* 2. Shape Geometry Rendering (Clickable Area) */}
+                {/* 2. Shape Geometry Rendering */}
                 {el.type === 'circle' ? (
                     <circle 
                         cx={w / 2} 
@@ -493,7 +423,6 @@ export const BasicShapesTool = {
                                 />
                             )}
 
-                            {/* Prominent Angle Text Pill */}
                             <g transform={`translate(${bx}, ${by})`}>
                                 <rect 
                                     x={-anglePillWidth / 2} 
@@ -535,7 +464,6 @@ export const BasicShapesTool = {
                     const len = Math.hypot(dx, dy) || 1;
                     const norm = { x: -dy / len, y: dx / len };
 
-                    // 🟢 Realistic classroom cm default (e.g. 5 cm, 8 cm, 12 cm)
                     const defaultCm = Math.max(1, Math.round(len / 35));
                     const labelVal = el.sideLabels?.[idx] ?? `${defaultCm} cm`;
 
