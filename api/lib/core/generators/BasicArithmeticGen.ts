@@ -94,6 +94,30 @@ export class BasicArithmeticGen {
         return `\\begin{array}{rr} & ${top} \\\\ ${op} & ${bottom} \\\\ \\hline \\end{array}`;
     }
 
+    /**
+     * Renders a vertical column table with live carry/borrow marks above the top row
+     * and an updated partial/final result below the rule.
+     */
+    private makeVerticalStep(
+        top: number | string,
+        bottom: number | string,
+        op: string,
+        carryNote: string = '',
+        resultBottom: string = ''
+    ): string {
+        const lines: string[] = [];
+        if (carryNote) {
+            lines.push(`& \\scriptstyle{\\mathbf{${carryNote}}} \\\\`);
+        }
+        lines.push(`& ${top} \\\\`);
+        lines.push(`${op} & ${bottom} \\\\`);
+        lines.push(`\\hline`);
+        if (resultBottom) {
+            lines.push(`\\\\ & ${resultBottom}`);
+        }
+        return `\\begin{array}{rr} ${lines.join(' ')} \\end{array}`;
+    }
+
     private getVariation(pool: {key: string, type: 'concept' | 'calculate'}[], options: any): string {
         let filtered = pool;
         if (options?.exclude && options.exclude.length > 0) {
@@ -151,37 +175,36 @@ export class BasicArithmeticGen {
             const hundredsSum = aHundreds + bHundreds + carry2;
 
             const baseExpression = isVertical ? this.makeVertical(a, b, '+') : `${a} + ${b}`;
-            const gridStart = `\\begin{array}{rr} & ${a} \\\\ + & ${b} \\\\ \\hline \\end{array}`;
-            const gridStep1 = `\\begin{array}{rr} & ${a} \\\\ + & ${b} \\\\ \\hline & \\mathbf{${onesDigit}} \\end{array}`;
-            const gridStep2 = `\\begin{array}{rr} & ${a} \\\\ + & ${b} \\\\ \\hline & \\mathbf{${tensDigit}${onesDigit}} \\end{array}`;
-            const gridFinal = `\\begin{array}{rr} & ${a} \\\\ + & ${b} \\\\ \\hline & \\mathbf{${ans}} \\end{array}`;
+
+            const carryAfterOnes = carry1 > 0 ? `^${carry1}\\text{ (tiotal)}` : '';
+            const carryAfterTens = carry2 > 0 ? `^${carry2}\\text{ (hundratal)}` : '';
 
             const clues: any[] = [
                 { 
                     text: lang === 'sv' 
                         ? "Ställ upp talen lodrätt och börja med entalen (kolumnen längst till höger)." 
                         : "Set up the numbers vertically and start with the ones column on the far right.", 
-                    latex: gridStart 
+                    latex: this.makeVerticalStep(a, b, '+')
                 },
                 {
                     text: carry1 > 0
                         ? (lang === 'sv' 
-                            ? `Ental: ${aOnes} + ${bOnes} = ${onesSum}. Skriv ${onesDigit} under strecket och sätt ${carry1} som minnessiffra ovanför tiotalen.` 
-                            : `Ones: ${aOnes} + ${bOnes} = ${onesSum}. Write ${onesDigit} below the line and carry over ${carry1} to the tens column.`)
+                            ? `Ental: ${aOnes} + ${bOnes} = ${onesSum}. Skriv ${onesDigit} i entalskolumnen och sätt minnessiffran ${carry1} ovanför tiotalen.` 
+                            : `Ones: ${aOnes} + ${bOnes} = ${onesSum}. Write ${onesDigit} in the ones column and place the carried digit ${carry1} above the tens.`)
                         : (lang === 'sv' 
-                            ? `Ental: ${aOnes} + ${bOnes} = ${onesSum}. Skriv ${onesDigit} under strecket.` 
-                            : `Ones: ${aOnes} + ${bOnes} = ${onesSum}. Write ${onesDigit} below the line.`),
-                    latex: gridStep1
+                            ? `Ental: ${aOnes} + ${bOnes} = ${onesSum}. Skriv ${onesDigit} i entalskolumnen (ingen minnessiffra).` 
+                            : `Ones: ${aOnes} + ${bOnes} = ${onesSum}. Write ${onesDigit} in the ones column (no carry).`),
+                    latex: this.makeVerticalStep(a, b, '+', carryAfterOnes, `\\mathbf{${onesDigit}}`)
                 },
                 {
                     text: carry1 > 0
                         ? (lang === 'sv' 
-                            ? `Tiotal: Addera tiotalen och minnessiffran (${carry1}): ${aTens} + ${bTens} + ${carry1} = ${tensSum}.` 
-                            : `Tens: Add the tens and the carried digit (${carry1}): ${aTens} + ${bTens} + ${carry1} = ${tensSum}.`)
+                            ? `Tiotal: Räkna ${aTens} + ${bTens} + minnessiffran ${carry1} = ${tensSum}. Skriv ${tensDigit} i tiotalskolumnen${carry2 > 0 ? ` och sätt ${carry2} i minne ovanför hundratalen` : ' (minnessiffran från entalen är nu använd)'}.` 
+                            : `Tens: Calculate ${aTens} + ${bTens} + carried ${carry1} = ${tensSum}. Write ${tensDigit} in the tens column${carry2 > 0 ? ` and carry ${carry2} to the hundreds` : ' (ones carry is now used)'}.`)
                         : (lang === 'sv' 
-                            ? `Tiotal: Addera tiotalen: ${aTens} + ${bTens} = ${tensSum}.` 
-                            : `Tens: Add the tens: ${aTens} + ${bTens} = ${tensSum}.`),
-                    latex: gridStep2
+                            ? `Tiotal: Räkna ${aTens} + ${bTens} = ${tensSum}. Skriv ${tensDigit} i tiotalskolumnen${carry2 > 0 ? ` och sätt ${carry2} i minne` : ''}.` 
+                            : `Tens: Calculate ${aTens} + ${bTens} = ${tensSum}. Write ${tensDigit} in the tens column${carry2 > 0 ? ` and carry ${carry2}` : ''}.`),
+                    latex: this.makeVerticalStep(a, b, '+', carryAfterTens, `\\mathbf{${tensDigit}${onesDigit}}`)
                 }
             ];
 
@@ -189,12 +212,12 @@ export class BasicArithmeticGen {
                 clues.push({
                     text: carry2 > 0
                         ? (lang === 'sv' 
-                            ? `Hundratal: Addera hundratalen och minnessiffran: ${aHundreds} + ${bHundreds} + ${carry2} = ${hundredsSum}.` 
-                            : `Hundreds: Add the hundreds and the carried digit: ${aHundreds} + ${bHundreds} + ${carry2} = ${hundredsSum}.`)
+                            ? `Hundratal: Räkna ${aHundreds} + ${bHundreds} + minnessiffran ${carry2} = ${hundredsSum}. Nu är alla minnessiffror använda!` 
+                            : `Hundreds: Calculate ${aHundreds} + ${bHundreds} + carried ${carry2} = ${hundredsSum}. All carries are now used!`)
                         : (lang === 'sv' 
-                            ? `Hundratal: ${aHundreds} + ${bHundreds} = ${hundredsSum}.` 
-                            : `Hundreds: ${aHundreds} + ${bHundreds} = ${hundredsSum}.`),
-                    latex: gridFinal
+                            ? `Hundratal: Räkna ${aHundreds} + ${bHundreds} = ${hundredsSum}.` 
+                            : `Hundreds: Calculate ${aHundreds} + ${bHundreds} = ${hundredsSum}.`),
+                    latex: this.makeVerticalStep(a, b, '+', '', `\\mathbf{${ans}}`)
                 });
             }
 
@@ -296,7 +319,7 @@ export class BasicArithmeticGen {
     }
 
     // =========================================================================
-    // LEVEL 2: SUBTRACTION
+    // LEVEL 2: SUBTRACTION (WITH LIVE BORROW / LÅN UPDATES)
     // =========================================================================
     private level2_SubSimple(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
@@ -342,61 +365,64 @@ export class BasicArithmeticGen {
                 effectiveTens += 10;
             }
             const tensDiff = effectiveTens - bTens;
-            const hundredsDiff = effectiveHundreds - bHundreds;
-
-            const gridStart = `\\begin{array}{rr} & ${a} \\\\ - & ${b} \\\\ \\hline \\end{array}`;
-            const gridStep1 = `\\begin{array}{rr} & ${a} \\\\ - & ${b} \\\\ \\hline & \\mathbf{${onesDiff}} \\end{array}`;
-            const gridFinal = `\\begin{array}{rr} & ${a} \\\\ - & ${b} \\\\ \\hline & \\mathbf{${ans}} \\end{array}`;
 
             const clues: any[] = [
                 { 
                     text: lang === 'sv' 
-                        ? "Ställ upp talen lodrätt och börja med entalen (längst till höger)." 
-                        : "Set up the numbers vertically and start with the ones (far right column).", 
-                    latex: gridStart 
+                        ? "Ställ upp talen lodrätt och börja med entalen (kolumnen längst till höger)." 
+                        : "Set up the numbers vertically and start with the ones column on the far right.", 
+                    latex: this.makeVerticalStep(a, b, '-')
                 }
             ];
 
             if (zeroInTens) {
+                const borrowNotice = lang === 'sv'
+                    ? `\\text{Lån: 1 hundratal } \\rightarrow \\text{ 9 tiotal + 10 ental}`
+                    : `\\text{Borrow: 1 hundred } \\rightarrow \\text{ 9 tens + 10 ones}`;
+
                 clues.push({
                     text: lang === 'sv'
-                        ? `Entalen kan inte subtraheras (${aOnes} är mindre än ${bOnes}). Vi vill låna från tiotalen, men där står 0. Låna därför från hundratalet först: 1 hundratal blir 10 tiotal.`
-                        : `The ones cannot subtract (${aOnes} is less than ${bOnes}). We look to borrow from the tens, but there is 0. Borrow from hundreds first: 1 hundred becomes 10 tens.`,
-                    latex: `1 \\text{ hundratal} = 10 \\text{ tiotal}`
+                        ? `Ental: ${aOnes} är mindre än ${bOnes}. Vi vill låna från tiotalen, men där står 0. Vi lånar därför 1 hundratal som blir 9 tiotal i minnet och 10 extra ental (${effectiveOnes} ental).`
+                        : `Ones: ${aOnes} is smaller than ${bOnes}. There is a 0 in the tens column, so we borrow 1 hundred to make 9 tens in memory and 10 extra ones (${effectiveOnes} ones).`,
+                    latex: this.makeVerticalStep(a, b, '-', borrowNotice)
                 });
                 clues.push({
                     text: lang === 'sv'
-                        ? `Nu lånar vi 1 tiotal till entalen: Tiotalen minskar från 10 till 9, och entalen blir ${effectiveOnes}. Räkna entalen: ${effectiveOnes} - ${bOnes} = ${onesDiff}.`
-                        : `Now borrow 1 ten for the ones: Tens decrease from 10 to 9, and ones become ${effectiveOnes}. Calculate ones: ${effectiveOnes} - ${bOnes} = ${onesDiff}.`,
-                    latex: gridStep1
+                        ? `Räkna entalen: ${effectiveOnes} - ${bOnes} = ${onesDiff}. Skriv ${onesDiff} under strecket (9 tiotal kvar i minnet).`
+                        : `Subtract the ones: ${effectiveOnes} - ${bOnes} = ${onesDiff}. Write ${onesDiff} below the line (9 tens remaining in memory).`,
+                    latex: this.makeVerticalStep(a, b, '-', lang === 'sv' ? `\\text{9 tiotal kvar}` : `\\text{9 tens left}`, `\\mathbf{${onesDiff}}`)
                 });
                 clues.push({
                     text: lang === 'sv'
-                        ? `Tiotal: I tiotalskolumnen har vi 9 kvar. Räkna tiotalen: 9 - ${bTens} = ${tensDiff}.`
-                        : `Tens: In the tens column we have 9 remaining. Calculate tens: 9 - ${bTens} = ${tensDiff}.`,
-                    latex: gridFinal
+                        ? `Tiotal: Använd de 9 tiotalen i minnet: 9 - ${bTens} = ${tensDiff}. Skriv ${tensDiff} i tiotalskolumnen.`
+                        : `Tens: Use the 9 tens in memory: 9 - ${bTens} = ${tensDiff}. Write ${tensDiff} in the tens column.`,
+                    latex: this.makeVerticalStep(a, b, '-', '', `\\mathbf{${ans}}`)
                 });
             } else {
+                const borrowOnesLabel = needsBorrowOnes
+                    ? (lang === 'sv' ? `\\text{Lån: 1 tiotal } \\rightarrow \\text{ ${effectiveOnes} ental, ${effectiveTens} tiotal kvar}` : `\\text{Borrow: 1 ten } \\rightarrow \\text{ ${effectiveOnes} ones, ${effectiveTens} tens left}`)
+                    : '';
+
                 clues.push({
                     text: needsBorrowOnes
                         ? (lang === 'sv' 
-                            ? `Ental: ${aOnes} är mindre än ${bOnes}. Låna 1 tiotal från tiotalskolumnen så att entalet blir ${effectiveOnes}. Räkna sedan: ${effectiveOnes} - ${bOnes} = ${onesDiff}.` 
-                            : `Ones: ${aOnes} is less than ${bOnes}. Borrow 1 ten from the tens column to make ${effectiveOnes}. Then calculate: ${effectiveOnes} - ${bOnes} = ${onesDiff}.`)
+                            ? `Ental: ${aOnes} är mindre än ${bOnes}. Låna 1 tiotal så att entalet blir ${effectiveOnes} (och ${effectiveTens} tiotal blir kvar). Räkna sedan: ${effectiveOnes} - ${bOnes} = ${onesDiff}.` 
+                            : `Ones: ${aOnes} is less than ${bOnes}. Borrow 1 ten to make ${effectiveOnes} ones (${effectiveTens} tens left). Then calculate: ${effectiveOnes} - ${bOnes} = ${onesDiff}.`)
                         : (lang === 'sv' 
-                            ? `Ental: ${aOnes} - ${bOnes} = ${onesDiff}.` 
-                            : `Ones: ${aOnes} - ${bOnes} = ${onesDiff}.`),
-                    latex: gridStep1
+                            ? `Ental: Räkna ${aOnes} - ${bOnes} = ${onesDiff}. Skriv ${onesDiff} under strecket.` 
+                            : `Ones: Calculate ${aOnes} - ${bOnes} = ${onesDiff}. Write ${onesDiff} below the line.`),
+                    latex: this.makeVerticalStep(a, b, '-', borrowOnesLabel, `\\mathbf{${onesDiff}}`)
                 });
 
                 clues.push({
                     text: needsBorrowOnes
                         ? (lang === 'sv' 
-                            ? `Tiotal: Eftersom vi lånade bort 1 tiotal har vi ${effectiveTens} kvar. Räkna tiotalen: ${effectiveTens} - ${bTens} = ${tensDiff}.` 
-                            : `Tens: Because we borrowed 1 ten, we have ${effectiveTens} left. Calculate tens: ${effectiveTens} - ${bTens} = ${tensDiff}.`)
+                            ? `Tiotal: Räkna med de ${effectiveTens} tiotalen som är kvar: ${effectiveTens} - ${bTens} = ${tensDiff}. Nu är lånet använt!` 
+                            : `Tens: Calculate with the ${effectiveTens} tens remaining: ${effectiveTens} - ${bTens} = ${tensDiff}. The borrow is now used!`)
                         : (lang === 'sv' 
-                            ? `Tiotal: Räkna tiotalen: ${effectiveTens} - ${bTens} = ${tensDiff}.` 
-                            : `Tens: Calculate tens: ${effectiveTens} - ${bTens} = ${tensDiff}.`),
-                    latex: gridFinal
+                            ? `Tiotal: Räkna ${effectiveTens} - ${bTens} = ${tensDiff}.` 
+                            : `Tens: Calculate ${effectiveTens} - ${bTens} = ${tensDiff}.`),
+                    latex: this.makeVerticalStep(a, b, '-', '', `\\mathbf{${ans}}`)
                 });
             }
 
@@ -452,7 +478,7 @@ export class BasicArithmeticGen {
     }
 
     // =========================================================================
-    // LEVEL 3: DECIMALS (Standard KaTeX array formatting)
+    // LEVEL 3: DECIMALS (LIVE VERTICAL PLACE-VALUE & CARRY/BORROW STEPS)
     // =========================================================================
     private level3_Decimals(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
@@ -477,6 +503,128 @@ export class BasicArithmeticGen {
         const v1PadStr = lang === 'sv' ? v1Pad.replace('.', ',') : v1Pad;
         const v2PadStr = lang === 'sv' ? v2Pad.replace('.', ',') : v2Pad;
 
+        const c1A = Number(v1Pad.slice(-1));
+        const c1B = Number(v2Pad.slice(-1));
+        const t1A = Number(v1Pad.split('.')[1][0]);
+        const t1B = Number(v2Pad.split('.')[1][0]);
+
+        const clues: any[] = [
+            { 
+                text: lang === 'sv' 
+                    ? "Ställ upp talen lodrätt så att kommatecknen hamnar rakt under varandra." 
+                    : "Set up the numbers vertically so the decimal points line up straight under each other.", 
+                latex: this.makeVerticalStep(val1Str, val2Str, op)
+            },
+            { 
+                text: lang === 'sv' 
+                    ? "Fyll på med nollor i slutet så att båda talen har lika många decimaler (hundradelar)." 
+                    : "Pad with trailing zeros so both numbers have the same number of decimal places (hundredths).", 
+                latex: this.makeVerticalStep(v1PadStr, v2PadStr, op)
+            }
+        ];
+
+        if (op === '+') {
+            const rawHund = c1A + c1B;
+            const carryHund = Math.floor(rawHund / 10);
+            const hundDigit = rawHund % 10;
+
+            const rawTent = t1A + t1B + carryHund;
+            const carryTent = Math.floor(rawTent / 10);
+            const tentDigit = rawTent % 10;
+
+            const decSep = lang === 'sv' ? ',' : '.';
+
+            clues.push({
+                text: carryHund > 0
+                    ? (lang === 'sv'
+                        ? `Hundradelar: ${c1A} + ${c1B} = ${rawHund}. Skriv ${hundDigit} i hundradelskolumnen och sätt minnessiffran ${carryHund} ovanför tiondelarna.`
+                        : `Hundredths: ${c1A} + ${c1B} = ${rawHund}. Write ${hundDigit} in the hundredths column and carry ${carryHund} above the tenths.`)
+                    : (lang === 'sv'
+                        ? `Hundradelar: ${c1A} + ${c1B} = ${hundDigit}. Skriv ${hundDigit} i hundradelskolumnen.`
+                        : `Hundredths: ${c1A} + ${c1B} = ${hundDigit}. Write ${hundDigit} in the hundredths column.`),
+                latex: this.makeVerticalStep(
+                    v1PadStr,
+                    v2PadStr,
+                    '+',
+                    carryHund > 0 ? `^${carryHund}\\text{ (tiondelar)}` : '',
+                    `\\mathbf{${hundDigit}}`
+                )
+            });
+
+            clues.push({
+                text: carryHund > 0
+                    ? (lang === 'sv'
+                        ? `Tiondelar: Räkna ${t1A} + ${t1B} + minnessiffran ${carryHund} = ${rawTent}. Skriv ${tentDigit} och placera kommatecknet${carryTent > 0 ? ` (samt ${carryTent} i minne ovanför entalen)` : ''}.`
+                        : `Tenths: Calculate ${t1A} + ${t1B} + carried ${carryHund} = ${rawTent}. Write ${tentDigit} and place the decimal point${carryTent > 0 ? ` (carrying ${carryTent} above the ones)` : ''}.`)
+                    : (lang === 'sv'
+                        ? `Tiondelar: Räkna ${t1A} + ${t1B} = ${rawTent}. Skriv ${tentDigit} och placera kommatecknet${carryTent > 0 ? ` (samt ${carryTent} i minne ovanför entalen)` : ''}.`
+                        : `Tenths: Calculate ${t1A} + ${t1B} = ${rawTent}. Write ${tentDigit} and place the decimal point${carryTent > 0 ? ` (carrying ${carryTent} above the ones)` : ''}.`),
+                latex: this.makeVerticalStep(
+                    v1PadStr,
+                    v2PadStr,
+                    '+',
+                    carryTent > 0 ? `^${carryTent}\\text{ (ental)}` : '',
+                    `\\mathbf{${decSep}${tentDigit}${hundDigit}}`
+                )
+            });
+        } else {
+            const borrowHund = c1A < c1B;
+            const effHundA = borrowHund ? c1A + 10 : c1A;
+            const effTentA = borrowHund ? t1A - 1 : t1A;
+            const hundDiff = effHundA - c1B;
+
+            const borrowTent = effTentA < t1B;
+            const effTentAfterBorrow = borrowTent ? effTentA + 10 : effTentA;
+            const tentDiff = effTentAfterBorrow - t1B;
+            const decSep = lang === 'sv' ? ',' : '.';
+
+            clues.push({
+                text: borrowHund
+                    ? (lang === 'sv'
+                        ? `Hundradelar: ${c1A} är mindre än ${c1B}. Låna 1 tiondel (10 hundradelar) så att vi får ${effHundA} hundradelar (${effTentA} tiondelar kvar). Räkna: ${effHundA} - ${c1B} = ${hundDiff}.`
+                        : `Hundredths: ${c1A} is less than ${c1B}. Borrow 1 tenth (10 hundredths) to get ${effHundA} hundredths (${effTentA} tenths left). Calculate: ${effHundA} - ${c1B} = ${hundDiff}.`)
+                    : (lang === 'sv'
+                        ? `Hundradelar: Räkna ${c1A} - ${c1B} = ${hundDiff}.`
+                        : `Hundredths: Calculate ${c1A} - ${c1B} = ${hundDiff}.`),
+                latex: this.makeVerticalStep(
+                    v1PadStr,
+                    v2PadStr,
+                    '-',
+                    borrowHund ? (lang === 'sv' ? `\\text{${effTentA} tiondelar kvar}` : `\\text{${effTentA} tenths left}`) : '',
+                    `\\mathbf{${hundDiff}}`
+                )
+            });
+
+            clues.push({
+                text: borrowTent
+                    ? (lang === 'sv'
+                        ? `Tiondelar: Låna 1 ental (10 tiondelar) till tiondelarna (${effTentAfterBorrow} tiondelar). Räkna: ${effTentAfterBorrow} - ${t1B} = ${tentDiff}.`
+                        : `Tenths: Borrow 1 one (10 tenths) for the tenths column (${effTentAfterBorrow} tenths). Calculate: ${effTentAfterBorrow} - ${t1B} = ${tentDiff}.`)
+                    : (lang === 'sv'
+                        ? `Tiondelar: Räkna ${effTentA} - ${t1B} = ${tentDiff}.`
+                        : `Tenths: Calculate ${effTentA} - ${t1B} = ${tentDiff}.`),
+                latex: this.makeVerticalStep(
+                    v1PadStr,
+                    v2PadStr,
+                    '-',
+                    borrowTent ? (lang === 'sv' ? `\\text{Lån från ental}` : `\\text{Borrowed from ones}`) : '',
+                    `\\mathbf{${decSep}${tentDiff}${hundDiff}}`
+                )
+            });
+        }
+
+        clues.push({
+            text: lang === 'sv'
+                ? `Slutför resten av kolumnerna: Svaret blir ${ansStr}.`
+                : `Complete the remaining columns: The answer is ${ansStr}.`,
+            latex: this.makeVerticalStep(v1PadStr, v2PadStr, op, '', `\\mathbf{${ansStr}}`)
+        });
+
+        clues.push({ 
+            text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, 
+            latex: `${ansStr}` 
+        });
+
         return {
             renderData: {
                 description: lang === 'sv' ? "Ställ upp och beräkna." : "Calculate.",
@@ -486,30 +634,7 @@ export class BasicArithmeticGen {
             token: this.toBase64(ansStr), 
             variationKey: v, 
             type: 'calculate',
-            clues: [
-                { 
-                    text: lang === 'sv' 
-                        ? "Ställ upp talen lodrätt så att kommatecknen hamnar rakt under varandra." 
-                        : "Set up the numbers vertically so the decimal points line up straight under each other.", 
-                    latex: `\\begin{array}{rr} & ${val1Str} \\\\ ${op} & ${val2Str} \\\\ \\hline \\end{array}` 
-                },
-                { 
-                    text: lang === 'sv' 
-                        ? "Fyll på med nollor i slutet så att båda talen har lika många decimaler." 
-                        : "Add zeros at the end so both numbers have the same number of decimal places.", 
-                    latex: `\\begin{array}{rr} & ${v1PadStr} \\\\ ${op} & ${v2PadStr} \\\\ \\hline \\end{array}` 
-                },
-                { 
-                    text: lang === 'sv' 
-                        ? "Räkna från höger till vänster (hundradelar, tiondelar, ental). Kommatecknet placeras rakt under de andra." 
-                        : "Calculate from right to left (hundredths, tenths, ones). Place the decimal point straight below the others.", 
-                    latex: `${v1PadStr} ${op} ${v2PadStr} = \\mathbf{${ansStr}}` 
-                },
-                { 
-                    text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, 
-                    latex: `${ansStr}` 
-                }
-            ]
+            clues
         };
     }
 
@@ -588,7 +713,7 @@ export class BasicArithmeticGen {
     }
 
     // =========================================================================
-    // LEVEL 5: MULT MEDIUM
+    // LEVEL 5: MULT MEDIUM (LIVE VERTICAL CARRY OVER TIOTAL)
     // =========================================================================
     private level5_MultMedium(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
@@ -620,29 +745,35 @@ export class BasicArithmeticGen {
                 clues: [
                     { 
                         text: lang === 'sv' 
-                            ? `Börja med att multiplicera entalet i det övre talet (${aOnes}) med den undre siffran (${b}).` 
-                            : `Start by multiplying the ones digit of the top number (${aOnes}) by the bottom digit (${b}).`, 
-                        latex: carry > 0 
-                            ? `${aOnes} \\cdot ${b} = ${prodOnes} \\quad (\\mathbf{${onesResult}} \\text{ och } ${carry} \\text{ i minne})` 
-                            : `${aOnes} \\cdot ${b} = \\mathbf{${onesResult}}` 
+                            ? "Ställ upp multiplikationen lodrätt och börja med entalet i det övre talet." 
+                            : "Set up the multiplication vertically and start with the ones digit of the top number.", 
+                        latex: this.makeVerticalStep(a, b, '\\times')
                     },
                     { 
                         text: carry > 0
                             ? (lang === 'sv' 
-                                ? `Multiplicera sedan tiotalet (${aTens}) med ${b} och lägg till minnessiffran (${carry}): ${aTens} · ${b} + ${carry} = ${prodTens}.` 
-                                : `Next multiply the tens digit (${aTens}) by ${b} and add the carried digit (${carry}): ${aTens} · ${b} + ${carry} = ${prodTens}.`)
+                                ? `Ental: ${aOnes} · ${b} = ${prodOnes}. Skriv ${onesResult} under strecket och sätt minnessiffran ${carry} ovanför tiotalen.` 
+                                : `Ones: ${aOnes} · ${b} = ${prodOnes}. Write ${onesResult} below the line and carry ${carry} above the tens column.`)
                             : (lang === 'sv' 
-                                ? `Multiplicera sedan tiotalet (${aTens}) med ${b}: ${aTens} · ${b} = ${prodTens}.` 
-                                : `Next multiply the tens digit (${aTens}) by ${b}: ${aTens} · ${b} = ${prodTens}.`),
-                        latex: carry > 0 
-                            ? `${aTens} \\cdot ${b} + ${carry} = \\mathbf{${prodTens}}` 
-                            : `${aTens} \\cdot ${b} = \\mathbf{${prodTens}}` 
+                                ? `Ental: ${aOnes} · ${b} = ${prodOnes}. Skriv ${onesResult} under strecket (ingen minnessiffra).` 
+                                : `Ones: ${aOnes} · ${b} = ${prodOnes}. Write ${onesResult} below the line (no carry).`),
+                        latex: this.makeVerticalStep(
+                            a,
+                            b,
+                            '\\times',
+                            carry > 0 ? `^${carry}\\text{ (minne)}` : '',
+                            `\\mathbf{${onesResult}}`
+                        )
                     },
                     { 
-                        text: lang === 'sv' 
-                            ? `Sätt samman resultatet: ${ans}.` 
-                            : `Combine the digits: ${ans}.`, 
-                        latex: `\\mathbf{${ans}}` 
+                        text: carry > 0
+                            ? (lang === 'sv' 
+                                ? `Tiotal: Multiplicera ${aTens} · ${b} och lägg till minnessiffran ${carry}: ${aTens * b} + ${carry} = ${prodTens}. Minnessiffran är nu använd!` 
+                                : `Tens: Multiply ${aTens} · ${b} and add carried ${carry}: ${aTens * b} + ${carry} = ${prodTens}. The carry is now used!`)
+                            : (lang === 'sv' 
+                                ? `Tiotal: Multiplicera ${aTens} · ${b} = ${prodTens}.` 
+                                : `Tens: Multiply ${aTens} · ${b} = ${prodTens}.`),
+                        latex: this.makeVerticalStep(a, b, '\\times', '', `\\mathbf{${ans}}`)
                     },
                     { 
                         text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
@@ -682,7 +813,7 @@ export class BasicArithmeticGen {
     }
 
     // =========================================================================
-    // LEVEL 6: MULT HARD (DECIMALS)
+    // LEVEL 6: MULT HARD (DECIMALS WITH VERTICAL CARRY OVER)
     // =========================================================================
     private level6_MultHard(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
@@ -705,6 +836,14 @@ export class BasicArithmeticGen {
         const ansStr = this.formatNum(ans, lang);
 
         if (v === 'mult_decimal_std') {
+            const onesDigitA = wholeA % 10;
+            const tensDigitA = Math.floor(wholeA / 10);
+            const onesDigitB = b % 10;
+            const prodFirst = onesDigitA * onesDigitB;
+            const carryFirst = Math.floor(prodFirst / 10);
+            const remFirst = prodFirst % 10;
+            const wholeProd = wholeA * b;
+
             return {
                 renderData: { 
                     description: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.", 
@@ -717,21 +856,27 @@ export class BasicArithmeticGen {
                 clues: [
                     { 
                         text: lang === 'sv' 
-                            ? `Räkna först som vanliga heltal utan kommatecken: ${wholeA} · ${b}.` 
-                            : `First calculate as whole numbers without decimal points: ${wholeA} · ${b}.`, 
-                        latex: `${wholeA} \\cdot ${b} = \\mathbf{${wholeA * b}}` 
+                            ? `Börja med att räkna som vanliga heltal utan kommatecken: ställ upp ${wholeA} · ${b} och börja med sista siffran (${onesDigitA} · ${onesDigitB} = ${prodFirst}).` 
+                            : `Start as whole numbers without decimal points: set up ${wholeA} · ${b} and begin with the rightmost digits (${onesDigitA} · ${onesDigitB} = ${prodFirst}).`, 
+                        latex: this.makeVerticalStep(
+                            wholeA,
+                            b,
+                            '\\times',
+                            carryFirst > 0 ? `^${carryFirst}\\text{ (minne)}` : '',
+                            `\\mathbf{${remFirst}}`
+                        )
                     },
                     { 
                         text: lang === 'sv' 
-                            ? `Räkna det totala antalet decimaler i talen: ${aStr} har ${numDecimals} decimal${numDecimals > 1 ? 'er' : ''} och ${b} har 0 (totalt ${numDecimals}).` 
-                            : `Count the total number of decimals: ${aStr} has ${numDecimals} decimal place${numDecimals > 1 ? 's' : ''} and ${b} has 0 (total ${numDecimals}).`, 
-                        latex: `${numDecimals} + 0 = \\mathbf{${numDecimals} \\text{ decimal${numDecimals > 1 && lang === 'sv' ? 'er' : numDecimals > 1 ? 's' : ''}}}` 
+                            ? `Slutför heltalets multiplikation (${tensDigitA > 0 ? `lägg till minnessiffran ${carryFirst} när du multiplicerar vidare: ` : ''}${wholeA} · ${b} = ${wholeProd}).` 
+                            : `Complete the whole-number multiplication (${tensDigitA > 0 ? `include the carry ${carryFirst} as you multiply the remaining digits: ` : ''}${wholeA} · ${b} = ${wholeProd}).`, 
+                        latex: this.makeVerticalStep(wholeA, b, '\\times', '', `\\mathbf{${wholeProd}}`)
                     },
                     { 
                         text: lang === 'sv' 
-                            ? `Placera kommatecknet i svaret genom att räkna ${numDecimals} steg från höger i talet ${wholeA * b}.` 
-                            : `Place the decimal point in the answer by counting ${numDecimals} step${numDecimals > 1 ? 's' : ''} from the right in ${wholeA * b}.`, 
-                        latex: `${wholeA * b} \\rightarrow \\mathbf{${ansStr}}` 
+                            ? `Räkna decimalerna: ${aStr} har ${numDecimals} decimal${numDecimals > 1 ? 'er' : ''} och ${b} har 0. Flytta kommatecknet ${numDecimals} steg från höger i ${wholeProd}.` 
+                            : `Count the decimals: ${aStr} has ${numDecimals} decimal place${numDecimals > 1 ? 's' : ''} and ${b} has 0. Move the decimal point ${numDecimals} place${numDecimals > 1 ? 's' : ''} from the right in ${wholeProd}.`, 
+                        latex: `${wholeProd} \\rightarrow \\mathbf{${ansStr}}` 
                     },
                     { 
                         text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, 
