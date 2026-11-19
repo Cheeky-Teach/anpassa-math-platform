@@ -5,7 +5,7 @@ import {
     Calendar as CalendarIcon, FolderOpen, Layers, Loader2,
     ChevronDown, ChevronUp, Folder, X, Check, Edit2, 
     BookOpen, Target, GripVertical, Printer,
-    Bookmark, Beaker, Archive, ArchiveRestore, Filter, GitBranch
+    Bookmark, Beaker, Archive, ArchiveRestore, Filter, GitBranch, HelpCircle
 } from 'lucide-react';
 import ContentModal from '../modals/ContentModal'; 
 import { supabase } from '../../lib/supabaseClient';
@@ -16,6 +16,7 @@ import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
 import CheckpointModal from '../modals/CheckpointModal';
 import { SKILL_GRAPH } from '../../constants/skillGraph';
 import UnitStudyGuidePrintView from './UnitStudyGuidePrintView';
+import SpotlightTour from '../shared/SpotlightTour';
 
 // Helper to get localized topic names
 const getTopicName = (topicId, lang = 'sv') => {
@@ -101,6 +102,10 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [collapsedFolders, setCollapsedFolders] = useState({});
+
+    // Interactive Spotlight Tour State
+    const tourStorageKey = 'has_seen_hub_manager_guide';
+    const [isTourOpen, setIsTourOpen] = useState(false);
 
     // Filter Chip State
     const [activeFolderFilter, setActiveFolderFilter] = useState('ALL');
@@ -326,6 +331,19 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         };
         fetchBuckets();
     }, [teacherId, lang]);
+
+    // Auto-open interactive spotlight tour once loading completes on first visit
+    useEffect(() => {
+        if (!isLoading && !printingGuideBucket && !localStorage.getItem(tourStorageKey)) {
+            const timer = setTimeout(() => setIsTourOpen(true), 350);
+            return () => clearTimeout(timer);
+        }
+    }, [isLoading, printingGuideBucket, tourStorageKey]);
+
+    const handleCloseTour = () => {
+        localStorage.setItem(tourStorageKey, 'true');
+        setIsTourOpen(false);
+    };
 
     const getPartDisplayTitle = (part, partIndex, lang = 'sv') => {
         if (part.customTitle && part.customTitle.trim()) {
@@ -821,6 +839,81 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
 
     const todayStr = new Date().toISOString().split('T')[0]; 
 
+    // Interactive Spotlight Tour Steps
+    const hubTourSteps = useMemo(() => {
+        const firstActiveBucket = activeBuckets[0];
+        const firstFolder = firstActiveBucket?.folder;
+
+        const steps = [
+            {
+                selector: '[data-tour="hub-create-strip"]',
+                title: {
+                    sv: '1. Skapa en ny planering eller modul',
+                    en: '1. Create a New Unit or Module'
+                },
+                description: {
+                    sv: 'Välj en mapp/klass (eller skapa en ny), namnge arbetsområdet, sätt en färgkod och ett slutdatum, och klicka på "Skapa".',
+                    en: 'Pick a folder/class (or create a new one), name your unit, pick a color tag and end date, and click "Create".'
+                }
+            },
+            {
+                selector: '[data-tour="hub-nav-strip"]',
+                title: {
+                    sv: '2. Aktiva område, arkiv & mappfilter',
+                    en: '2. Active Units, Archive & Folder Filters'
+                },
+                description: {
+                    sv: 'Växla mellan pågående arbetsområden och arkiverade arbetsområde som kan återanvändas nästa termin, eller filtrera på en specifik klassmapp.',
+                    en: 'Switch between active units and archived modules ready for reuse next term, or filter by a specific class folder.'
+                }
+            }
+        ];
+
+        if (firstActiveBucket) {
+            steps.push(
+                {
+                    selector: '[data-tour="hub-unit-actions"]',
+                    onEnter: () => {
+                        setActiveTab('active');
+                        setActiveFolderFilter('ALL');
+                        if (firstFolder) {
+                            setCollapsedFolders(prev => ({ ...prev, [firstFolder]: false }));
+                        }
+                    },
+                    title: {
+                        sv: '3. Styr synlighet, Dagens Fokus & utskrift',
+                        en: '3. Control Visibility, Today’s Focus & Print'
+                    },
+                    description: {
+                        sv: 'Skriv ut en elevchecklista med studieplan, markera modulen som "Dagens Fokus" högst upp på elevernas startsida, eller dölj/visa den för klassen.',
+                        en: 'Print a student study-guide checklist, pin the unit as "Today’s Focus" at the top of student gateways, or toggle visibility.'
+                    }
+                },
+                {
+                    selector: '[data-tour="hub-sequencer-panel"]',
+                    onEnter: () => {
+                        setActiveTab('active');
+                        setActiveFolderFilter('ALL');
+                        if (firstFolder) {
+                            setCollapsedFolders(prev => ({ ...prev, [firstFolder]: false }));
+                        }
+                        setExpandedSequencerBucketId(firstActiveBucket.id);
+                    },
+                    title: {
+                        sv: '4. Bygg delar, förkunskaper & delprov',
+                        en: '4. Sequence Parts, Prerequisites & Checkpoints'
+                    },
+                    description: {
+                        sv: 'Skapa delar och fyll dem med övningsnivåer (+ Nivåer), genomgångar (+ Genomgång), delprov (+ Delprov) eller rekommenderade förkunskaper (+ Förkunskaper). Dra och släpp för att ändra ordning!',
+                        en: 'Create parts and populate them with practice levels (+ Levels), walkthrough slides (+ Walkthrough), checkpoints (+ Checkpoint), or recommended prerequisites (+ Prerequisites). Drag and drop to reorder!'
+                    }
+                }
+            );
+        }
+
+        return steps;
+    }, [activeBuckets]);
+
     if (printingGuideBucket) {
         return (
             <UnitStudyGuidePrintView
@@ -834,20 +927,35 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
 
     if (isLoading) return <div className="w-full flex justify-center py-20"><Loader2 className="animate-spin text-emerald-600 dark:text-emerald-400" size={32} /></div>;
 
+    const firstActiveBucketId = activeBuckets[0]?.id || null;
+
     return (
         <div className="w-full max-w-5xl mx-auto font-sans animate-in fade-in text-[var(--text-main)]">
             
             {/* Header & Creation Strip */}
-            <div className="bg-[var(--bg-card)] rounded-2xl p-6 shadow-2xs border border-[var(--border-strong)] mb-6 transition-colors">
+            <div
+                data-tour="hub-create-strip"
+                className="bg-[var(--bg-card)] rounded-2xl p-6 shadow-2xs border border-[var(--border-strong)] mb-6 transition-colors"
+            >
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h2 className="text-lg font-extrabold tracking-tight text-[var(--text-main)]">
-                            {lang === 'sv' ? "Grupper & Moduler" : "Groups & Units"}
+                            {lang === 'sv' ? "Grupper & Arbetsområde" : "Groups & Units"}
                         </h2>
                         <p className="text-xs font-medium text-[var(--text-muted)]">
                             {lang === 'sv' ? "Skapa och organisera arbetsområden för dina klasser" : "Create and organize curriculum units for your classes"}
                         </p>
                     </div>
+
+                    <button
+                        type="button"
+                        onClick={() => setIsTourOpen(true)}
+                        className="px-3 py-1.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-main)] rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                        title={lang === 'sv' ? "Snabbguide & Hjälp" : "Quick Guide & Help"}
+                    >
+                        <HelpCircle size={14} className="text-amber-600 dark:text-amber-400" />
+                        <span className="hidden sm:inline">{lang === 'sv' ? "Guide" : "Help"}</span>
+                    </button>
                 </div>
                 
                 <div className="flex flex-col md:flex-row gap-3.5 items-end">
@@ -878,7 +986,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
 
                     <div className="flex-1 w-full">
                         <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider block mb-1.5">
-                            {lang === 'sv' ? "Enhetens namn" : "Unit Name"}
+                            {lang === 'sv' ? "Arbetsområde" : "Unit Name"}
                         </label>
                         <input 
                             type="text" value={newBucketName} onChange={(e) => setNewBucketName(e.target.value)} placeholder={lang === 'sv' ? "t.ex. Ekvationer & Bråk" : "e.g. Equations & Fractions"}
@@ -919,7 +1027,10 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
             </div>
 
             {/* Navigation Strip: Active/Archive Toggle + Folder Filter Chips */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <div
+                data-tour="hub-nav-strip"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5"
+            >
                 <div className="flex bg-[var(--bg-card)] p-1 rounded-xl border border-[var(--border-strong)] shadow-2xs self-start">
                     <button 
                         type="button"
@@ -986,7 +1097,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                         <FolderOpen size={32} className="mx-auto text-[var(--text-muted)] opacity-50 mb-2.5" />
                         <p className="text-[var(--text-muted)] font-semibold text-xs">
                             {activeTab === 'active' 
-                                ? (lang === 'sv' ? "Du har inga aktiva moduler i denna grupp." : "No active units in this group.") 
+                                ? (lang === 'sv' ? "Du har inga aktiva arbetsområde i denna grupp." : "No active units in this group.") 
                                 : (lang === 'sv' ? "Arkivet är tomt." : "The archive is empty.")
                             }
                         </p>
@@ -1055,6 +1166,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                             const isSequencerOpen = expandedSequencerBucketId === bucket.id;
                                             const parts = bucket.payload || [];
                                             const totalStepsCount = parts.reduce((acc, p) => acc + (p.steps?.length || 0), 0);
+                                            const isFirstActiveBucket = bucket.id === firstActiveBucketId;
 
                                             return (
                                                 <div 
@@ -1120,7 +1232,10 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                         </div>
 
                                                         {/* Right Side: Action Pod */}
-                                                        <div className="flex items-center gap-1.5 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] shrink-0 w-full xl:w-auto overflow-x-auto custom-scrollbar">
+                                                        <div
+                                                            data-tour={isFirstActiveBucket ? 'hub-unit-actions' : undefined}
+                                                            className="flex items-center gap-1.5 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] shrink-0 w-full xl:w-auto overflow-x-auto custom-scrollbar"
+                                                        >
                                                             {!isExpired ? (
                                                                 <>
                                                                     <button 
@@ -1196,7 +1311,10 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
 
                                                     {/* EXPANDABLE SEQUENCER DRAWER */}
                                                     {isSequencerOpen && (
-                                                        <div className="mt-1 pt-4 border-t border-[var(--border-main)] space-y-3.5 animate-in fade-in duration-150">
+                                                        <div
+                                                            data-tour={isFirstActiveBucket ? 'hub-sequencer-panel' : undefined}
+                                                            className="mt-1 pt-4 border-t border-[var(--border-main)] space-y-3.5 animate-in fade-in duration-150"
+                                                        >
                                                             {/* Sequencer Toolbar */}
                                                             <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--bg-surface)] p-3 rounded-xl border border-[var(--border-main)]">
                                                                 <div className="flex items-center gap-2">
@@ -1787,6 +1905,14 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                     })
                 )}
             </div>
+
+            {/* INTERACTIVE SPOTLIGHT WALKTHROUGH TOUR */}
+            <SpotlightTour
+                steps={hubTourSteps}
+                isOpen={isTourOpen}
+                onClose={handleCloseTour}
+                lang={lang}
+            />
 
             {/* CHECKPOINT MODAL */}
             <CheckpointModal

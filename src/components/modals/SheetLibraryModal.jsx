@@ -1,5 +1,5 @@
 // src/components/modals/SheetLibraryModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Search, Filter, Plus, Trash2, Layers, Building2, Globe, FileText, 
@@ -10,7 +10,7 @@ import { useLibrary } from '../../hooks/useLibrary';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets';
 import VisualRenderer from '../visuals/VisualRenderer';
 import MathDisplay from '../shared/MathDisplay';
-import StudioTutorialModal from '../modals/StudioTutorialModal.jsx';
+import SpotlightTour from '../shared/SpotlightTour';
 
 export default function SheetLibraryModal({
     isOpen = true,
@@ -55,12 +55,76 @@ export default function SheetLibraryModal({
     const [showMoveModal, setShowMoveModal] = useState(null);
     const [peekSheet, setPeekSheet] = useState(null);
 
-    const [showTutorial, setShowTutorial] = useState(() => !localStorage.getItem('has_seen_studio_guide'));
+    // Interactive Spotlight Tour State (separate storage key from QuestionStudio)
+    const [showTutorial, setShowTutorial] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && !localStorage.getItem('has_seen_library_guide')) {
+            const timer = setTimeout(() => setShowTutorial(true), 350);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
 
     const handleCloseTutorial = () => {
-        localStorage.setItem('has_seen_studio_guide', 'true');
+        localStorage.setItem('has_seen_library_guide', 'true');
         setShowTutorial(false);
     };
+
+    const libraryTourSteps = useMemo(() => {
+        const steps = [];
+
+        if (showCreationActions && onCreateNew) {
+            steps.push({
+                selector: '[data-tour="library-create"]',
+                title: {
+                    sv: '1. Skapa nytt material',
+                    en: '1. Create New Material'
+                },
+                description: {
+                    sv: 'Starta från grunden med ett utskrivbart Arbetsblad, ett Do Now Grid för projektorn, en Presentation eller ett klassrumsspel.',
+                    en: 'Start from scratch with a printable Worksheet, a projector Do Now Grid, a Presentation board, or a classroom Game.'
+                }
+            });
+        }
+
+        steps.push(
+            {
+                selector: '[data-tour="library-locations"]',
+                title: {
+                    sv: '2. Bläddra bland dina sparade filer & delade bibliotek',
+                    en: '2. Browse Saved Files & Shared Libraries'
+                },
+                description: {
+                    sv: 'Växla mellan "Mina sparade", material som kollegor på "Min Skola" delat, det "Globala" biblioteket eller "Papperskorgen".',
+                    en: 'Switch between "My Saved", resources shared by colleagues in "My School", the "Global" library, or "Trash".'
+                }
+            },
+            {
+                selector: '[data-tour="library-filters"]',
+                title: {
+                    sv: '3. Filtrera på typ, ämne eller titel',
+                    en: '3. Filter by Format, Topic, or Title'
+                },
+                description: {
+                    sv: 'Filtrera snabbt fram enbart Presentationer, Arbetsblad, Grids eller Spel — och begränsa på kursplanens ämnesområden.',
+                    en: 'Quickly filter by Presentations, Worksheets, Grids, or Games — and narrow down by curriculum topic.'
+                }
+            },
+            {
+                selector: '[data-tour="library-table"]',
+                title: {
+                    sv: '4. Öppna, förhandsgranska eller organisera',
+                    en: '4. Open, Peek, or Organize'
+                },
+                description: {
+                    sv: 'Klicka på valfri rad för att öppna materialet, använd ögat för att tjuvkika på innehållet, eller sortera dina filer i egna mappar.',
+                    en: 'Click any row to open the resource, click the eye icon to peek inside, or organize your files into folders.'
+                }
+            }
+        );
+
+        return steps;
+    }, [showCreationActions, onCreateNew]);
 
     if (!isOpen) return null;
 
@@ -303,7 +367,7 @@ export default function SheetLibraryModal({
                                 </p>
 
                                 {showCreationActions && onCreateNew && (
-                                    <div className="flex flex-col gap-1.5 mt-3.5">
+                                    <div data-tour="library-create" className="flex flex-col gap-1.5 mt-3.5">
                                         <button 
                                             type="button"
                                             onClick={() => onCreateNew('worksheet')} 
@@ -338,7 +402,7 @@ export default function SheetLibraryModal({
                                 )}
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                            <div data-tour="library-locations" className="flex-1 overflow-y-auto p-3 space-y-1">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-2.5 block mb-1">
                                     {lang === 'sv' ? "Platser" : "Locations"}
                                 </span>
@@ -435,7 +499,10 @@ export default function SheetLibraryModal({
                             </div>
 
                             {/* Filters Toolbar */}
-                            <div className="px-6 py-2.5 bg-[var(--bg-surface)]/60 border-b border-[var(--border-main)] flex flex-wrap justify-between items-center gap-3">
+                            <div
+                                data-tour="library-filters"
+                                className="px-6 py-2.5 bg-[var(--bg-surface)]/60 border-b border-[var(--border-main)] flex flex-wrap justify-between items-center gap-3"
+                            >
                                 <div className="flex gap-1 p-1 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-main)]">
                                     {[
                                         { id: 'all', label: lang === 'sv' ? 'Alla' : 'All' },
@@ -486,7 +553,10 @@ export default function SheetLibraryModal({
                             </div>
 
                             {/* Table Viewport */}
-                            <div className="flex-1 overflow-auto custom-scrollbar px-6 py-3">
+                            <div
+                                data-tour="library-table"
+                                className="flex-1 overflow-auto custom-scrollbar px-6 py-3"
+                            >
                                 {isLoading ? (
                                     <div className="flex justify-center py-24"><Loader2 className="animate-spin text-emerald-600" size={32} /></div>
                                 ) : (
@@ -859,7 +929,9 @@ export default function SheetLibraryModal({
                         )}
                     </AnimatePresence>
 
-                    <StudioTutorialModal
+                    {/* INTERACTIVE SPOTLIGHT TOUR */}
+                    <SpotlightTour
+                        steps={libraryTourSteps}
                         isOpen={showTutorial}
                         onClose={handleCloseTutorial}
                         lang={lang}

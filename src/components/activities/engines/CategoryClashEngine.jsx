@@ -11,7 +11,6 @@ import {
 import { useGameQuestionPool } from '../../../hooks/useGameQuestionPool.js';
 import GameQuestionStageModal from '../../shared/GameQuestionStageModal.jsx';
 import MathDisplay from '../../shared/MathDisplay.jsx';
-import CategoryClashHelpModal from '../shared/CategoryClashHelpModal.jsx';
 import { saveActivityToLibrary } from '../../live/core/activityQuestionUtils.js';
 import { useActivityEngineSession } from '../hooks/useActivityEngineSession.js';
 import PreferencesToggle from '../../ui/PreferencesToggle.jsx';
@@ -1581,12 +1580,6 @@ export default function CategoryClashEngine({
                 showPointsAwarding={Boolean(mode === 'play' || isLive) && teams.length > 0}
                 isLive={isLive && mode === 'play'}
                 liveResponses={currentSlotResponses}
-            />
-
-            <CategoryClashHelpModal
-                isOpen={isHelpOpen}
-                onClose={() => setIsHelpOpen(false)}
-                lang={lang}
             />
         </motion.div>
     );

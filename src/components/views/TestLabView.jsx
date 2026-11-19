@@ -23,7 +23,7 @@ import { CONTENT_MAP } from '../../constants/content_map.generated';
 import QuestionPromptCard from '../shared/QuestionPromptCard';
 import QuestionResponseBox from '../shared/QuestionResponseBox';
 import SkillGraphExplorer from '../shared/SkillGraphExplorer';
-import TestLabTutorialModal from '../modals/TestLabTutorialModal.jsx';
+import SpotlightTour from '../shared/SpotlightTour';
 import MathDisplay from '../shared/MathDisplay';
 
 import { syncProgress } from '../../lib/progressSync';
@@ -117,6 +117,84 @@ export default function TestLabView({
 
     const [isMobile, setIsMobile] = useState(false);
     const isTeacherOrAdmin = profile?.role === 'teacher' || profile?.role === 'super_admin';
+
+    // First-visit automatic Spotlight Tour trigger
+    const tourStorageKey = `has_seen_testlab_tour_${profile?.role || 'student'}`;
+
+    useEffect(() => {
+        if (internalMode === 'SETUP' && !localStorage.getItem(tourStorageKey)) {
+            const timer = setTimeout(() => setShowGuideModal(true), 350);
+            return () => clearTimeout(timer);
+        }
+    }, [internalMode, tourStorageKey]);
+
+    const handleCloseTour = () => {
+        localStorage.setItem(tourStorageKey, 'true');
+        setShowGuideModal(false);
+    };
+
+    const testLabTourSteps = useMemo(() => [
+        {
+            selector: '[data-tour="testlab-matrix"]',
+            onEnter: () => setSetupTab('matrix'),
+            title: {
+                sv: '1. Välj områden & nivåer',
+                en: '1. Pick Topics & Levels'
+            },
+            description: {
+                sv: 'Bocka i exakt de nivåer (1–9) du vill träna på. Klicka på ögat bredvid en nivå för att se en exempeluppgift och kopplade förkunskaper.',
+                en: 'Check off the exact levels (1–9) you want to include. Click the eye icon next to any level to preview a sample problem and connected skills.'
+            }
+        },
+        {
+            selector: '[data-tour="testlab-view-switcher"]',
+            title: {
+                sv: '2. Byt mellan lista & kunskapsträd',
+                en: '2. Switch Between List & Skill Graph'
+            },
+            description: {
+                sv: 'Använd "Sök & Utforska" för att söka på begrepp eller se hur olika matematikområden bygger vidare på varandra.',
+                en: 'Use "Search & Explore" to search by concept or visualize how math topics build upon each other.'
+            }
+        },
+        {
+            selector: '[data-tour="testlab-presets"]',
+            title: {
+                sv: '3. Snabbval & valt innehåll',
+                en: '3. Presets & Selected Content'
+            },
+            description: {
+                sv: 'Här ser du alla nivåer du har lagt till — eller välj ett färdigt paket (t.ex. inför Nationella provet) med ett klick.',
+                en: 'Review every level you have added here — or load a ready-made bundle in a single click.'
+            }
+        },
+        {
+            selector: '[data-tour="testlab-settings"]',
+            title: {
+                sv: '4. Välj Öva eller Provläge',
+                en: '4. Choose Practice or Exam Mode'
+            },
+            description: {
+                sv: 'I "Öva" får du direkt rättning, lösningar och kan granska dina misstag under passet. "Provläge" döljer facit tills allt är inlämnat.',
+                en: 'In "Practice Mode" you get instant feedback, worked solutions, and error review. "Exam Mode" hides answers until submitted.'
+            }
+        },
+        {
+            selector: '[data-tour="testlab-actions"]',
+            title: isTeacherOrAdmin
+                ? { sv: '5. Starta, dela länk eller spara i modul', en: '5. Start, Share Link, or Save to Unit' }
+                : { sv: '5. Starta ditt pass!', en: '5. Start Your Session!' },
+            description: isTeacherOrAdmin
+                ? {
+                      sv: 'Klicka på "Starta pass" för att testa direkt, kopiera en direktlänk till eleverna eller lägg in provet som ett steg i en modul.',
+                      en: 'Click "Start Test" to launch immediately, copy a shareable student link, or insert it directly into a custom unit.'
+                  }
+                : {
+                      sv: 'När du har valt minst ett område klickar du på "Starta pass" för att börja träna!',
+                      en: 'Once you have selected at least one topic, click "Start Test" to begin practicing!'
+                  }
+        }
+    ], [isTeacherOrAdmin]);
 
     const hasWordProblemSupport = Object.entries(selection).some(([topicId, conf]) => {
         if (!conf?.enabled) return false;
@@ -776,7 +854,7 @@ export default function TestLabView({
                         <aside className="lab-sidebar">
                             <div className="card p-0 overflow-hidden border border-[var(--border-main)]">
 
-                                {/* SECTION 1: HEADER & PRESETS */}
+                                {/* SECTION 1: HEADER, PRESETS & SELECTED MANIFEST */}
                                 <div className="p-5 space-y-4">
                                     <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-3">
@@ -796,77 +874,80 @@ export default function TestLabView({
                                         <button
                                             type="button"
                                             onClick={() => setShowGuideModal(true)}
-                                            className="p-2 bg-[var(--bg-surface)] text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] rounded-xl transition-colors border border-[var(--border-main)] flex items-center gap-1 text-xs font-bold cursor-pointer"
+                                            className="px-2.5 py-2 bg-[var(--bg-surface)] text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] rounded-xl transition-colors border border-[var(--border-main)] flex items-center gap-1.5 text-xs font-bold cursor-pointer"
                                             title={t.guideBtn}
                                         >
-                                            <HelpCircle size={16} />
+                                            <HelpCircle size={15} className="text-emerald-600" />
+                                            <span className="hidden xl:inline">{t.guideBtn}</span>
                                         </button>
                                     </div>
 
-                                    {/* Preset Selector */}
-                                    <div>
-                                        <label className="block text-[11px] font-bold uppercase text-[var(--text-muted)] tracking-wider mb-1.5">
-                                            {lang === 'sv' ? "Snabbval (Färdiga paket)" : "Presets"}
-                                        </label>
-                                        <select
-                                            value={meta.bundleId || ""}
-                                            onChange={(e) => applyPresetSelection(e.target.value)}
-                                            className="w-full bg-[var(--bg-surface)] border border-[var(--border-main)] focus:border-emerald-600 rounded-xl px-3.5 py-2 text-xs font-semibold text-[var(--text-main)] outline-none transition-colors cursor-pointer"
-                                        >
-                                            <option value="">{lang === 'sv' ? "-- Välj färdigt paket --" : "-- Choose a preset --"}</option>
-                                            {Object.entries(BUNDLE_PRESETS).map(([id, data]) => (
-                                                <option key={id} value={id}>{data.title} ({id})</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    {/* Live Selected Topics Manifest */}
-                                    <div className="space-y-2 pt-1">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                                                {lang === 'sv' ? "Valt innehåll" : "Selected Content"}
-                                            </span>
-                                            <span className="text-xs font-bold font-mono text-emerald-700 dark:text-emerald-400">
-                                                {totalSelectedTopics} {lang === 'sv' ? 'områden' : 'topics'} · {totalSelectedNodes} {lang === 'sv' ? 'nivåer' : 'levels'}
-                                            </span>
+                                    <div data-tour="testlab-presets" className="space-y-3">
+                                        {/* Preset Selector */}
+                                        <div>
+                                            <label className="block text-[11px] font-bold uppercase text-[var(--text-muted)] tracking-wider mb-1.5">
+                                                {lang === 'sv' ? "Snabbval (Färdiga paket)" : "Presets"}
+                                            </label>
+                                            <select
+                                                value={meta.bundleId || ""}
+                                                onChange={(e) => applyPresetSelection(e.target.value)}
+                                                className="w-full bg-[var(--bg-surface)] border border-[var(--border-main)] focus:border-emerald-600 rounded-xl px-3.5 py-2 text-xs font-semibold text-[var(--text-main)] outline-none transition-colors cursor-pointer"
+                                            >
+                                                <option value="">{lang === 'sv' ? "-- Välj färdigt paket --" : "-- Choose a preset --"}</option>
+                                                {Object.entries(BUNDLE_PRESETS).map(([id, data]) => (
+                                                    <option key={id} value={id}>{data.title} ({id})</option>
+                                                ))}
+                                            </select>
                                         </div>
 
-                                        {totalSelectedTopics === 0 ? (
-                                            <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-dashed border-[var(--border-strong)] text-xs text-[var(--text-muted)] text-center">
-                                                {lang === 'sv'
-                                                    ? 'Inga områden valda ännu. Välj nivåer till höger.'
-                                                    : 'No topics selected yet. Pick levels on the right.'}
+                                        {/* Live Selected Topics Manifest */}
+                                        <div className="space-y-2 pt-1">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                                                    {lang === 'sv' ? "Valt innehåll" : "Selected Content"}
+                                                </span>
+                                                <span className="text-xs font-bold font-mono text-emerald-700 dark:text-emerald-400">
+                                                    {totalSelectedTopics} {lang === 'sv' ? 'områden' : 'topics'} · {totalSelectedNodes} {lang === 'sv' ? 'nivåer' : 'levels'}
+                                                </span>
                                             </div>
-                                        ) : (
-                                            <div className="max-h-36 overflow-y-auto custom-scrollbar flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)]">
-                                                {enabledTopicEntries.map(([topicId, conf]) => (
-                                                    <span
-                                                        key={topicId}
-                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-main)] text-xs font-semibold text-[var(--text-main)]"
-                                                    >
-                                                        <span className="truncate max-w-[140px]">
-                                                            {getTopicDisplayName(topicId, lang)}
-                                                        </span>
-                                                        <span className="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
-                                                            N{conf.levels.join(',')}
-                                                        </span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeTopicFromSelection(topicId)}
-                                                            className="text-[var(--text-muted)] hover:text-rose-600 cursor-pointer ml-0.5"
-                                                            title={lang === 'sv' ? 'Ta bort' : 'Remove'}
+
+                                            {totalSelectedTopics === 0 ? (
+                                                <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-dashed border-[var(--border-strong)] text-xs text-[var(--text-muted)] text-center">
+                                                    {lang === 'sv'
+                                                        ? 'Inga områden valda ännu. Välj nivåer till höger.'
+                                                        : 'No topics selected yet. Pick levels on the right.'}
+                                                </div>
+                                            ) : (
+                                                <div className="max-h-36 overflow-y-auto custom-scrollbar flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)]">
+                                                    {enabledTopicEntries.map(([topicId, conf]) => (
+                                                        <span
+                                                            key={topicId}
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-main)] text-xs font-semibold text-[var(--text-main)]"
                                                         >
-                                                            <X size={12} />
-                                                        </button>
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
+                                                            <span className="truncate max-w-[140px]">
+                                                                {getTopicDisplayName(topicId, lang)}
+                                                            </span>
+                                                            <span className="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                                                                N{conf.levels.join(',')}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeTopicFromSelection(topicId)}
+                                                                className="text-[var(--text-muted)] hover:text-rose-600 cursor-pointer ml-0.5"
+                                                                title={lang === 'sv' ? 'Ta bort' : 'Remove'}
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* SECTION 2: CONTROLS & BEHAVIOR */}
-                                <div className="p-5 border-t border-[var(--border-main)] space-y-3">
+                                <div data-tour="testlab-settings" className="p-5 border-t border-[var(--border-main)] space-y-3">
                                     <div className="flex items-center gap-2">
                                         <Settings2 size={14} className="text-[var(--text-muted)]" />
                                         <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -982,7 +1063,7 @@ export default function TestLabView({
                                 </div>
 
                                 {/* SECTION 3: ACTIONS & DESTINATIONS */}
-                                <div className="p-5 border-t border-[var(--border-main)] bg-[var(--bg-surface)]/50 space-y-2.5">
+                                <div data-tour="testlab-actions" className="p-5 border-t border-[var(--border-main)] bg-[var(--bg-surface)]/50 space-y-2.5">
                                     <button
                                         type="button"
                                         onClick={startNewSession}
@@ -1067,7 +1148,10 @@ export default function TestLabView({
                                     </p>
                                 </div>
 
-                                <div className="inline-flex p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)] shrink-0 self-start sm:self-auto">
+                                <div
+                                    data-tour="testlab-view-switcher"
+                                    className="inline-flex p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-main)] shrink-0 self-start sm:self-auto"
+                                >
                                     <button
                                         type="button"
                                         onClick={() => setSetupTab('matrix')}
@@ -1158,7 +1242,10 @@ export default function TestLabView({
                                     </div>
 
                                     {/* Active Category or Filtered Search Topic Grid */}
-                                    <div className="card p-5 sm:p-6 bg-[var(--bg-card)] border border-[var(--border-main)]">
+                                    <div
+                                        data-tour="testlab-matrix"
+                                        className="card p-5 sm:p-6 bg-[var(--bg-card)] border border-[var(--border-main)]"
+                                    >
                                         {filteredSearchTopics ? (
                                             <>
                                                 <div className="mb-5 flex items-center justify-between border-b border-[var(--border-main)] pb-3.5">
@@ -1452,13 +1539,14 @@ export default function TestLabView({
                     </div>
                 )}
 
-                {/* GUIDE MODAL OVERLAY */}
-                <TestLabTutorialModal
+                {/* INTERACTIVE SPOTLIGHT WALKTHROUGH TOUR */}
+                <SpotlightTour
+                    steps={testLabTourSteps}
                     isOpen={showGuideModal}
-                    onClose={() => setShowGuideModal(false)}
+                    onClose={handleCloseTour}
                     lang={lang}
-                    userRole={profile?.role || 'teacher'}
                 />
+
                 {isTeacherOrAdmin && (
                     <SaveToUnitModal
                         isOpen={showSaveToUnitModal}

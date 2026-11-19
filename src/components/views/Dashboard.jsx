@@ -1,3 +1,4 @@
+// src/components/views/Dashboard.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { 
@@ -14,7 +15,7 @@ import TeacherHubManager from './TeacherHubManager';
 import { CONTENT_MAP } from '../../constants/content_map.generated';
 import MathDisplay from '../shared/MathDisplay';
 import VisualRenderer from '../visuals/VisualRenderer';
-import DashboardTutorialModal from '../modals/DashboardTutorialModal';
+import SpotlightTour from '../shared/SpotlightTour';
 import CapacityModal from '../modals/CapacityModal';
 import InstructionSlideModal from '../modals/InstructionSlideModal';
 import ConceptMapDashboard from './ConceptMapDashboard';
@@ -158,8 +159,162 @@ const Dashboard = ({
     const t = TEXT[lang] || TEXT.sv;
     const latestUpdate = APP_UPDATES[0];
 
-    const storageKey = `has_seen_dashboard_guide_${userRole}`;
-    const [showDashboardTutorial, setShowDashboardTutorial] = useState(() => !localStorage.getItem(storageKey));
+    const isEducator = ['teacher', 'super_admin'].includes(userRole);
+    const isCuratedUnit = !isEducator && Boolean(activeBucket && activeBucket !== 'FREE_PLAY');
+
+    const storageKey = `has_seen_dashboard_guide_${userRole}${isCuratedUnit ? '_unit' : ''}`;
+    const [showDashboardTutorial, setShowDashboardTutorial] = useState(false);
+
+    useEffect(() => {
+        if (!localStorage.getItem(storageKey)) {
+            const timer = setTimeout(() => setShowDashboardTutorial(true), 400);
+            return () => clearTimeout(timer);
+        }
+    }, [storageKey]);
+
+    const handleCloseDashboardTutorial = () => {
+        localStorage.setItem(storageKey, 'true');
+        setShowDashboardTutorial(false);
+    };
+
+    const dashboardTourSteps = useMemo(() => {
+        // 1. EDUCATOR WALKTHROUGH
+        if (isEducator) {
+            return [
+                {
+                    selector: '[data-tour="dash-educator-profile"]',
+                    title: {
+                        sv: '1. Din klasskod & elevplatser',
+                        en: '1. Your Class Code & Student Slots'
+                    },
+                    description: {
+                        sv: 'Dela din klasskod med eleverna så att de får tillgång till dina planerade moduler. Under "Hantera platser" ser och administrerar du dina anslutna elever.',
+                        en: 'Share your class code with students so they can access your assigned units. Use "Manage slots" to view and manage connected students.'
+                    }
+                },
+                {
+                    selector: '[data-tour="dash-educator-tools"]',
+                    title: {
+                        sv: '2. Lärarverktyg & lektionsbyggare',
+                        en: '2. Teaching Tools & Lesson Builders'
+                    },
+                    description: {
+                        sv: 'Öppna Question Studio för att skapa arbetsblad, Do Now-grids och live-lektioner, eller använd Digitala laborationer, Test Lab och klassrumstimer.',
+                        en: 'Open Question Studio to create worksheets, Do Now grids, and live lessons, or launch Digital Manipulatives, Test Lab, and the classroom timer.'
+                    }
+                },
+                {
+                    selector: '[data-tour="dash-educator-tabs"]',
+                    onEnter: () => setActiveTab('curriculum'),
+                    title: {
+                        sv: '3. Kursmaterial, Grupper & Lektionsarkiv',
+                        en: '3. Course Material, Custom Units & Archive'
+                    },
+                    description: {
+                        sv: 'Växla mellan hela kursplanen, "Grupper" (där du bygger moduler och studieplaner åt dina klasser) och "Lektionsarkiv" (7 dagars resultat & rapporter).',
+                        en: 'Switch between the full curriculum, "Custom Units" (build scaffolded modules for your classes), and "Session Archive" (7-day reports & results).'
+                    }
+                },
+                {
+                    selector: '[data-tour="dash-concept-search"]',
+                    onEnter: () => {
+                        setActiveTab('curriculum');
+                        setDiagnosticTarget(null);
+                    },
+                    title: {
+                        sv: '4. Sök begrepp & testa uppgifter',
+                        en: '4. Search Concepts & Preview Tasks'
+                    },
+                    description: {
+                        sv: 'Sök efter valfritt matematiskt begrepp eller välj ett område nedan för att förhandsgranska uppgifter och nivåbeskrivningar.',
+                        en: 'Search for any math concept or pick a topic below to preview sample problems and level descriptions.'
+                    }
+                }
+            ];
+        }
+
+        // 2. STUDENT IN CURATED UNIT WALKTHROUGH
+        if (isCuratedUnit) {
+            return [
+                {
+                    selector: '[data-tour="dash-unit-banner"]',
+                    onEnter: () => setDiagnosticTarget(null),
+                    title: {
+                        sv: '1. Din studieplan & framsteg',
+                        en: '1. Your Study Plan & Progress'
+                    },
+                    description: {
+                        sv: 'Här ser du hur många steg du har klarat i området. Du kan också byta område, öppna instruktionerna eller träna extra i Test Lab.',
+                        en: 'Track how many steps you have completed in this unit. You can also switch units, view instructions, or do extra practice in Test Lab.'
+                    }
+                },
+                {
+                    selector: '[data-tour="dash-unit-parts"]',
+                    onEnter: () => setDiagnosticTarget(null),
+                    title: {
+                        sv: '2. Arbeta igenom delarna i ordning',
+                        en: '2. Work Through Parts in Sequence'
+                    },
+                    description: {
+                        sv: 'Klicka på en del för att öppna den. Börja med eventuella genomgångar, öva sedan nivå för nivå och avsluta med delprovet!',
+                        en: 'Click a part to expand it. Start with any walkthroughs, practice level by level, and finish with the checkpoint quiz!'
+                    }
+                },
+                {
+                    selector: '[data-tour="dash-concept-search"]',
+                    onEnter: () => setDiagnosticTarget(null),
+                    title: {
+                        sv: '3. Sök begrepp & använd hjälpmedel',
+                        en: '3. Search Concepts & Use Tools'
+                    },
+                    description: {
+                        sv: 'Kör du fast eller vill repetera något? Sök direkt här uppe eller öppna Digitala laborationer, Multiplikationstabeller och Timer.',
+                        en: 'Need a refresher? Search any concept right here or open Digital Manipulatives, Times Tables, and the Timer.'
+                    }
+                }
+            ];
+        }
+
+        // 3. STUDENT IN FREE PLAY WALKTHROUGH
+        return [
+            {
+                selector: '[data-tour="dash-concept-search"]',
+                onEnter: () => setDiagnosticTarget(null),
+                title: {
+                    sv: '1. Sök efter valfritt matteområde',
+                    en: '1. Search Any Math Concept'
+                },
+                description: {
+                    sv: 'Skriv ett begrepp i sökrutan (t.ex. ekvationer, bråk eller procent) eller använd snabbverktygen för laborationer, tabeller och timer.',
+                    en: 'Type any concept in the search bar (e.g. equations, fractions, or percent) or use the quick tools for manipulatives, tables, and timer.'
+                }
+            },
+            {
+                selector: '[data-tour="dash-category-strip"]',
+                onEnter: () => setDiagnosticTarget(null),
+                title: {
+                    sv: '2. Välj huvudområde',
+                    en: '2. Pick a Math Domain'
+                },
+                description: {
+                    sv: 'Bläddra mellan Aritmetik, Algebra, Geometri och Statistik & Sannolikhet.',
+                    en: 'Browse across Arithmetic, Algebra, Geometry, and Statistics & Probability.'
+                }
+            },
+            {
+                selector: '[data-tour="dash-topic-grid"]',
+                onEnter: () => setDiagnosticTarget(null),
+                title: {
+                    sv: '3. Välj nivå & börja öva',
+                    en: '3. Choose a Level & Start Practicing'
+                },
+                description: {
+                    sv: 'Klicka på "Välj nivå" på ett kort för att se exempel på uppgifter, använd "Hitta rätt nivå..." om du är osäker, och klicka sedan på "Börja öva"!',
+                    en: 'Click "Select level" on any card to see sample tasks, use "Find the right level..." if unsure, and hit "Start practicing"!'
+                }
+            }
+        ];
+    }, [isEducator, isCuratedUnit]);
 
     const storageKeyProgress = useMemo(
         () => getUnitProgressStorageKey(profile, activeBucket),
@@ -190,11 +345,6 @@ const Dashboard = ({
     const nextUnfinishedStep = useMemo(() => {
         return allUnitSteps.find(step => !checkIsStepCompleted(step, completedStepIds)) || null;
     }, [allUnitSteps, completedStepIds]);
-
-    const handleCloseDashboardTutorial = () => {
-        localStorage.setItem(storageKey, 'true');
-        setShowDashboardTutorial(false);
-    };
 
     useEffect(() => {
         fetchActiveSession();
@@ -317,7 +467,6 @@ const Dashboard = ({
 
     const activeCategoryData = CATEGORIES[expandedCategory];
     const themeColorString = activeCategoryData?.color || 'emerald';
-    const isEducator = ['teacher', 'super_admin'].includes(userRole);
 
     return (
         <div className="layout-wrapper relative z-10 animate-in fade-in pb-12">
@@ -332,7 +481,7 @@ const Dashboard = ({
                 {isEducator && (
                     <aside className="w-full flex flex-col gap-3.5">
                         {/* Teacher Identity & Class Code Card */}
-                        <div className="card p-4 flex flex-col gap-3">
+                        <div data-tour="dash-educator-profile" className="card p-4 flex flex-col gap-3">
                             <div className="flex items-center gap-3">
                                 <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center text-white shrink-0">
                                     <Users size={18} />
@@ -391,7 +540,7 @@ const Dashboard = ({
                         </div>
 
                         {/* Teacher Tools — Primary CTA + Quiet Neutral Studio Controls */}
-                        <div className="flex flex-col gap-2">
+                        <div data-tour="dash-educator-tools" className="flex flex-col gap-2">
                             <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider px-1">
                                 {t.tools_section}
                             </span>
@@ -604,7 +753,10 @@ const Dashboard = ({
                     {/* Educator Top Navigation Tabs & Changelog Pill */}
                     {isEducator && (
                         <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
-                            <div className="inline-flex bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1">
+                            <div
+                                data-tour="dash-educator-tabs"
+                                className="inline-flex bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1"
+                            >
                                 <button 
                                     type="button"
                                     onClick={() => setActiveTab('curriculum')} 
@@ -671,24 +823,39 @@ const Dashboard = ({
                         <div className="flex flex-col space-y-3.5 animate-in fade-in duration-200">
                             
                             {/* Unified Spotlight Search, Student Tools & Diagnostic Workspace */}
-                            <ConceptMapDashboard
-                                lang={lang}
-                                diagnosticTarget={diagnosticTarget}
-                                onSetDiagnosticTarget={setDiagnosticTarget}
-                                onSelect={onSelect}
-                                onStart={onStart}
-                                studentTools={!isEducator ? {
-                                    onFractionLabOpen,
-                                    onTimesTableOpen,
-                                    timerSettings,
-                                    toggleTimer,
-                                    resetTimer
-                                } : null}
-                            />
+                            <div data-tour="dash-concept-search" className="relative">
+                                <ConceptMapDashboard
+                                    lang={lang}
+                                    diagnosticTarget={diagnosticTarget}
+                                    onSetDiagnosticTarget={setDiagnosticTarget}
+                                    onSelect={onSelect}
+                                    onStart={onStart}
+                                    studentTools={!isEducator ? {
+                                        onFractionLabOpen,
+                                        onTimesTableOpen,
+                                        timerSettings,
+                                        toggleTimer,
+                                        resetTimer
+                                    } : null}
+                                />
+
+                                {!isEducator && !diagnosticTarget && (
+                                    <div className="mt-2 sm:mt-0 sm:absolute sm:top-3 sm:right-3 z-20 flex justify-end pointer-events-none">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowDashboardTutorial(true)}
+                                            className="pointer-events-auto px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] border border-[var(--border-main)] hover:border-amber-500 text-xs font-bold text-[var(--text-main)] inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                                        >
+                                            <HelpCircle size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                                            <span>{lang === 'sv' ? 'Guide' : 'Guide'}</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Below Search Deck */}
                             {!diagnosticTarget && (
-                                userRole === 'student' && activeBucket && activeBucket !== 'FREE_PLAY' ? (
+                                isCuratedUnit ? (
                                     /* Curated Bucket Roadmap */
                                     <div className="space-y-4">
                                         {progressPercentage === 100 && (
@@ -721,16 +888,18 @@ const Dashboard = ({
                                             </div>
                                         )}
 
-                                        <UnitStudyGuideBanner
-                                            bucket={activeBucket}
-                                            completedStepIds={completedStepIds}
-                                            lang={lang}
-                                            onChangeUnit={onBackToGateway}
-                                            onOpenTestLab={onLabOpen}
-                                        />
+                                        <div data-tour="dash-unit-banner">
+                                            <UnitStudyGuideBanner
+                                                bucket={activeBucket}
+                                                completedStepIds={completedStepIds}
+                                                lang={lang}
+                                                onChangeUnit={onBackToGateway}
+                                                onOpenTestLab={onLabOpen}
+                                            />
+                                        </div>
 
                                         {/* Parts Sequence */}
-                                        <div className="space-y-3">
+                                        <div data-tour="dash-unit-parts" className="space-y-3">
                                             {curatedParts.map((part, pIdx) => {
                                                 const partSteps = part.steps || [];
                                                 const partCompletedCount = partSteps.filter(s => checkIsStepCompleted(s, completedStepIds)).length;
@@ -1141,7 +1310,10 @@ const Dashboard = ({
                                     /* Category Tabs & Topic Grid (Free Play / Teacher) */
                                     <>
                                         {/* Category Filter Strip */}
-                                        <div className="flex gap-1.5 overflow-x-auto custom-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+                                        <div
+                                            data-tour="dash-category-strip"
+                                            className="flex gap-1.5 overflow-x-auto custom-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"
+                                        >
                                             {Object.entries(CATEGORIES).map(([catKey, category]) => {
                                                 const isActive = expandedCategory === catKey;
                                                 const themeColorStr = category.color || 'emerald';
@@ -1166,7 +1338,7 @@ const Dashboard = ({
                                         </div>
 
                                         {/* Topic Cards Grid */}
-                                        <div className={`theme-${themeColorString}`}>
+                                        <div data-tour="dash-topic-grid" className={`theme-${themeColorString}`}>
                                             {openDropdownTopicId && (
                                                 <div 
                                                     className="fixed inset-0 z-20" 
@@ -1287,7 +1459,6 @@ const Dashboard = ({
                                                                                             : 'hover:bg-[var(--bg-surface)]'
                                                                                     }`}
                                                                                 >
-                                                                                    {/* TOP ROW: Level Badge + Level Title/Description (Guaranteed visible & unblocked) */}
                                                                                     <div className="flex items-center gap-2 w-full">
                                                                                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono shrink-0 ${
                                                                                             isRowSelected
@@ -1301,7 +1472,6 @@ const Dashboard = ({
                                                                                         </span>
                                                                                     </div>
 
-                                                                                    {/* BOTTOM ROW: Example text / math descriptor from CONTENT_MAP moved underneath */}
                                                                                     {mathExample && (
                                                                                         <div className="text-[11px] font-medium text-[var(--text-muted)] line-clamp-1 pl-1 flex items-center gap-1">
                                                                                             <span className="opacity-60 text-[10px]">Ex:</span>
@@ -1431,11 +1601,11 @@ const Dashboard = ({
                 {/* ========================================================= */}
                 {activeTab === 'curriculum' && (
                     <div className={`fixed bottom-6 right-6 flex justify-end pointer-events-none z-30 transition-all duration-300 ${
-                        (!diagnosticTarget && (selectedTopic || (activeBucket && activeBucket !== 'FREE_PLAY' && nextUnfinishedStep))) 
+                        (!diagnosticTarget && (selectedTopic || (isCuratedUnit && nextUnfinishedStep))) 
                             ? 'translate-y-0 opacity-100' 
                             : 'translate-y-16 opacity-0'
                     }`}>
-                        {activeBucket && activeBucket !== 'FREE_PLAY' && nextUnfinishedStep && !hasUserManuallySelected ? (
+                        {isCuratedUnit && nextUnfinishedStep && !hasUserManuallySelected ? (
                             <button 
                                 type="button"
                                 onClick={() => {
@@ -1534,12 +1704,14 @@ const Dashboard = ({
                 )}
             </div>
 
-            <DashboardTutorialModal
+            {/* INTERACTIVE ROLE- & MODE-AWARE SPOTLIGHT WALKTHROUGH TOUR */}
+            <SpotlightTour
+                steps={dashboardTourSteps}
                 isOpen={showDashboardTutorial}
                 onClose={handleCloseDashboardTutorial}
                 lang={lang}
-                userRole={userRole}
             />
+
             <CapacityModal 
                 visible={showCapacityModal}
                 onClose={() => setShowCapacityModal(false)}

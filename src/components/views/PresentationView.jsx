@@ -1,11 +1,11 @@
 // src/components/views/PresentationView.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
     X, ChevronLeft, ChevronRight, ChevronDown, Monitor, PanelLeftClose, 
     PanelLeftOpen, ZoomIn, ZoomOut, Layers, FileText, List, Plus,
     RefreshCw, Presentation, FileQuestion, Save, Download, Trash2, 
     MessageSquare, Copy, GripVertical, Menu, FolderOpen, BookmarkPlus, UploadCloud,
-    Gamepad2
+    Gamepad2, HelpCircle
 } from 'lucide-react';
 
 import VisualRenderer from '../visuals/VisualRenderer';
@@ -17,8 +17,7 @@ import MyCoachModal from '../modals/MyCoachModal';
 import PreferencesToggle from '../ui/PreferencesToggle';
 import LiveLaunchModal from '../modals/LiveLaunchModal';
 import WhiteboardDrawer from '../whiteboard/WhiteboardDrawer';
-import { HelpCircle } from 'lucide-react';
-import PresentationTutorialModal from '../modals/PresentationTutorialModal';
+import SpotlightTour from '../shared/SpotlightTour';
 import { getToolDefinition } from '../whiteboard/tools/registry';
 import SheetLibraryModal from '../modals/SheetLibraryModal';
 import SaveToUnitModal from '../modals/SaveToUnitModal';
@@ -59,9 +58,7 @@ export default function PresentationView({
     const [teacherId, setTeacherId] = useState(null);
 
     const storageKey = `has_seen_presentation_guide`;
-    const [showTutorial, setShowTutorial] = useState(() => {
-        return !localStorage.getItem(storageKey);
-    });
+    const [showTutorial, setShowTutorial] = useState(false);
 
     const [isDirty, setIsDirty] = useState(false);
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
@@ -95,6 +92,14 @@ export default function PresentationView({
             if (data?.user) setTeacherId(data.user.id);
         });
     }, []);
+
+    // Auto-open interactive spotlight tour on first visit
+    useEffect(() => {
+        if (!localStorage.getItem(storageKey)) {
+            const timer = setTimeout(() => setShowTutorial(true), 350);
+            return () => clearTimeout(timer);
+        }
+    }, [storageKey]);
 
     const handleCloseTutorial = () => {
         localStorage.setItem(storageKey, 'true');
@@ -220,6 +225,68 @@ export default function PresentationView({
     // --- ACTIVITY / GAME STATES ---
     const [showActivityHub, setShowActivityHub] = useState(false);
     const [activeGameConfig, setActiveGameConfig] = useState(null);
+
+    // Interactive Spotlight Tour Steps
+    const presentationTourSteps = useMemo(() => [
+        {
+            selector: '[data-tour="pres-sidebar"]',
+            onEnter: () => setIsLeftCollapsed(false),
+            title: {
+                sv: '1. Slides, uppgifter & diskussionsfrågor',
+                en: '1. Slides, Questions & Discussion Prompts'
+            },
+            description: {
+                sv: 'Skapa nya slides, hämta matteuppgifter via "Uppgift" eller lägg till öppna textfrågor. Under "Uppgifter" kan du även fördela 1 uppgift per slide med ett klick.',
+                en: 'Create new slides, summon math problems via "Math", or add open prompts. Under "Questions", distribute 1 question per slide in a single click.'
+            }
+        },
+        {
+            selector: '[data-tour="pres-stage"]',
+            onEnter: () => setViewMode('list'),
+            title: {
+                sv: '2. Interaktiv 16:9-tavla & verktygslådor',
+                en: '2. Interactive 16:9 Stage & Tool Drawers'
+            },
+            description: {
+                sv: 'Rita, skriv och dra ut laborativa verktyg (algebrabrickor, bråkmodeller, 2D/3D-figurer och koordinatsystem) från verktygslisten längst ned.',
+                en: 'Draw, annotate, and spawn manipulatives (algebra tiles, fraction bars, 2D/3D shapes, and coordinate axes) from the bottom toolbar.'
+            }
+        },
+        {
+            selector: '[data-tour="pres-clues-panel"]',
+            onEnter: () => setIsRightCollapsed(false),
+            title: {
+                sv: '3. Lösningssteg, Coach & Facit',
+                en: '3. Solution Steps, Coach & Answer Key'
+            },
+            description: {
+                sv: 'Visa steg-för-steg-ledtrådar, öppna Coach-läget på stora skärmen eller infoga lösningsrutor direkt på sliden under genomgången.',
+                en: 'Reveal step-by-step clues, launch Coach mode on the main stage, or push dynamic solution boxes onto the slide during instruction.'
+            }
+        },
+        {
+            selector: '[data-tour="pres-file-menu"]',
+            title: {
+                sv: '4. Arkiv, teman & spara i modul',
+                en: '4. File Menu, Themes & Save to Unit'
+            },
+            description: {
+                sv: 'Under Arkiv kan du spara presentationen i molnet, byta färgtema eller lägga in den som en genomgång i en planering/modul.',
+                en: 'Open File to save your deck to the cloud, switch presentation themes, or attach it as a walkthrough inside a curriculum unit.'
+            }
+        },
+        {
+            selector: '[data-tour="pres-launch-actions"]',
+            title: {
+                sv: '5. Presentera i helskärm eller Gå Live',
+                en: '5. Present Fullscreen or Go Live'
+            },
+            description: {
+                sv: 'Klicka "Presentera" (tangent P) för helskärm, eller "Gå Live" så eleverna ansluter med klasskod och ritar sina svar i realtid (sparas i 7 dagar).',
+                en: 'Click "Present" (key P) for fullscreen, or "Go Live" so students join via class code and submit live boards (stored for 7 days).'
+            }
+        }
+    ], []);
 
     const currentPinnedIds = JSON.stringify(slides[activeSlideIndex]?.activeIds || []);
     useEffect(() => {
@@ -759,7 +826,7 @@ export default function PresentationView({
                 
                 {/* 1. LEFT SIDE: Title & File Menu */}
                 <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                    <div className="relative">
+                    <div data-tour="pres-file-menu" className="relative">
                         <button 
                             type="button"
                             onClick={() => setIsFileMenuOpen(!isFileMenuOpen)} 
@@ -911,26 +978,28 @@ export default function PresentationView({
                         <Gamepad2 size={15} />
                     </button>
                     
-                    <button 
-                        type="button"
-                        onClick={togglePresentMode}
-                        className="px-3 py-2 rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-[0.98] font-bold text-xs uppercase tracking-wider"
-                        title={lang === 'sv' ? "Starta helskärmspresentation (Tangent: P)" : "Present Fullscreen (Key: P)"}
-                    >
-                        <Presentation size={15} />
-                        <span className="hidden sm:inline">{lang === 'sv' ? "Presentera" : "Present"}</span>
-                    </button>
+                    <div data-tour="pres-launch-actions" className="flex items-center gap-2">
+                        <button 
+                            type="button"
+                            onClick={togglePresentMode}
+                            className="px-3 py-2 rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-[0.98] font-bold text-xs uppercase tracking-wider"
+                            title={lang === 'sv' ? "Starta helskärmspresentation (Tangent: P)" : "Present Fullscreen (Key: P)"}
+                        >
+                            <Presentation size={15} />
+                            <span className="hidden sm:inline">{lang === 'sv' ? "Presentera" : "Present"}</span>
+                        </button>
 
-                    <button 
-                        type="button"
-                        onClick={handleGoLive}
-                        className="px-3 py-2 rounded-xl text-white bg-rose-600 hover:bg-rose-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-[0.98] font-bold text-xs uppercase tracking-wider"
-                    >
-                        <Monitor size={14} />
-                        <span className="hidden sm:inline">
-                            {lang === 'sv' ? "Gå Live" : "Go Live"}
-                        </span>
-                    </button>
+                        <button 
+                            type="button"
+                            onClick={handleGoLive}
+                            className="px-3 py-2 rounded-xl text-white bg-rose-600 hover:bg-rose-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-[0.98] font-bold text-xs uppercase tracking-wider"
+                        >
+                            <Monitor size={14} />
+                            <span className="hidden sm:inline">
+                                {lang === 'sv' ? "Gå Live" : "Go Live"}
+                            </span>
+                        </button>
+                    </div>
 
                     <button 
                         type="button"
@@ -948,7 +1017,10 @@ export default function PresentationView({
                 style={{ gridTemplateColumns: `${isLeftCollapsed ? '72px' : '288px'} 1fr ${isRightCollapsed ? '64px' : '320px'}` }}
             >
                 {/* COLUMN 1: COLLAPSIBLE WORKSPACE SELECTION PICKER */}
-                <div className={`whiteboard-protect bg-[var(--bg-card)] border-r border-[var(--border-main)] text-[var(--text-main)] overflow-y-auto custom-scrollbar flex flex-col transition-all duration-300 select-none shrink-0 z-10 min-w-0 ${isLeftCollapsed ? 'w-[72px] items-center' : 'w-[288px]'}`}>
+                <div
+                    data-tour="pres-sidebar"
+                    className={`whiteboard-protect bg-[var(--bg-card)] border-r border-[var(--border-main)] text-[var(--text-main)] overflow-y-auto custom-scrollbar flex flex-col transition-all duration-300 select-none shrink-0 z-10 min-w-0 ${isLeftCollapsed ? 'w-[72px] items-center' : 'w-[288px]'}`}
+                >
                     
                     <div className={`flex items-center justify-between p-3 border-b border-[var(--border-main)] w-full mb-3 ${isLeftCollapsed ? 'flex-col gap-2' : ''}`}>
                         {!isLeftCollapsed && <span className="font-bold text-xs text-[var(--text-muted)] uppercase tracking-wider pl-2">Verktyg</span>}
@@ -1225,7 +1297,10 @@ export default function PresentationView({
                 </div>
 
                 {/* COLUMN 2: WORKSPACE CANVAS INTERACTION SHELF */}
-                <main className="relative overflow-hidden h-full w-full flex flex-col items-center justify-center bg-[var(--bg-canvas)] transition-colors duration-300 p-6">
+                <main
+                    data-tour="pres-stage"
+                    className="relative overflow-hidden h-full w-full flex flex-col items-center justify-center bg-[var(--bg-canvas)] transition-colors duration-300 p-6"
+                >
                     
                     {/* Floating Navigation Header */}
                     <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
@@ -1454,6 +1529,7 @@ export default function PresentationView({
 
                 {/* COLUMN 3: SOLUTIONS & COMPACT ANSWER KEY DRAWER PANEL */}
                 <div 
+                    data-tour="pres-clues-panel"
                     className={`whiteboard-protect bg-[var(--bg-card)] border-l border-[var(--border-main)] text-[var(--text-main)] flex flex-col shrink-0 select-none h-full transition-all duration-300 relative min-h-0 overflow-hidden ${
                         isRightCollapsed ? 'w-16 p-2 items-center justify-start pt-4' : 'w-80 p-6 gap-6'
                     }`}
@@ -1715,11 +1791,12 @@ export default function PresentationView({
                 }}
             />
             
-            {/* PRESENTATION GUIDE MODAL */}
-            <PresentationTutorialModal 
-                isOpen={showTutorial} 
-                onClose={handleCloseTutorial} 
-                lang={lang} 
+            {/* INTERACTIVE SPOTLIGHT WALKTHROUGH TOUR */}
+            <SpotlightTour
+                steps={presentationTourSteps}
+                isOpen={showTutorial}
+                onClose={handleCloseTutorial}
+                lang={lang}
             />
             
             {/* NAMING & SAVE CHOICE MODAL */}

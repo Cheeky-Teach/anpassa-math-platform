@@ -1,3 +1,4 @@
+// src/components/views/QuestionStudio.jsx
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   ChevronLeft, Plus, Trash2, Send, Layers, Search, Zap, 
@@ -13,7 +14,7 @@ import VisualRenderer from '../visuals/VisualRenderer.jsx';
 import PresentationView from '../views/PresentationView.jsx';
 import { syncBatchProgress } from '../../lib/progressSync';
 import LiveLaunchModal from '../modals/LiveLaunchModal';
-import StudioTutorialModal from '../modals/StudioTutorialModal.jsx';
+import SpotlightTour from '../shared/SpotlightTour';
 import SheetLibraryModal from '../modals/SheetLibraryModal';
 import { liveCreateRoom } from '../live/core/liveCreateRoom.js';
 
@@ -325,11 +326,80 @@ export default function QuestionStudio({
       }
   };
 
-  const [showTutorial, setShowTutorial] = useState(() => !localStorage.getItem('has_seen_studio_guide'));
+  // Interactive Spotlight Walkthrough Tour
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  useEffect(() => {
+      if (setupMode && !showPresentation && !activeActivity && !localStorage.getItem('has_seen_studio_guide')) {
+          const timer = setTimeout(() => setShowTutorial(true), 350);
+          return () => clearTimeout(timer);
+      }
+  }, [setupMode, showPresentation, activeActivity]);
+
   const handleCloseTutorial = () => {
       localStorage.setItem('has_seen_studio_guide', 'true');
       setShowTutorial(false);
-  }; 
+  };
+
+  const studioTourSteps = useMemo(() => [
+      {
+          selector: '[data-tour="studio-pane-1"]',
+          onEnter: () => setIsPane1Collapsed(false),
+          title: {
+              sv: '1. Välj ämnesområde',
+              en: '1. Choose a Math Topic'
+          },
+          description: {
+              sv: 'Bläddra i kursplanen eller sök i rutan högst upp (t.ex. Bråk, Procent, Algebra eller Geometri) för att ladda tillgängliga uppgiftstyper.',
+              en: 'Browse the curriculum or use the search bar at the top (e.g., Fractions, Percent, Algebra, or Geometry) to load available question variations.'
+          }
+      },
+      {
+          selector: '[data-tour="studio-pane-2"]',
+          title: {
+              sv: '2. Välj nivå, textuppgifter & antal',
+              en: '2. Pick Level, Word Problems & Quantity'
+          },
+          description: {
+              sv: 'Välj svårighetsnivå (1–10), slå på "Problemlösning" för textuppgifter, justera antal med + / - och klicka "Lägg till".',
+              en: 'Select difficulty (Levels 1–10), toggle "Word Problems" for contextual stories, adjust quantity with + / -, and click "Add".'
+          }
+      },
+      {
+          selector: '[data-tour="studio-pane-3"]',
+          title: {
+              sv: '3. Förhandsgranska & forma sidan',
+              en: '3. Preview & Customize Layout'
+          },
+          description: {
+              sv: 'Se ett live-exempel direkt i "Studio", eller växla till "Layout / Grid" för att se det verkliga A4-bladet, lägga till rutad arbetsyta, slumpa tal eller göra om till löst exempel.',
+              en: 'Inspect a live example in "Studio", or switch to "Layout / Grid" to preview the real A4 sheet, add squared grid space, shuffle numbers, or convert cards into worked examples.'
+          }
+      },
+      {
+          selector: '[data-tour="studio-pane-4"]',
+          onEnter: () => setIsPane4Collapsed(false),
+          title: {
+              sv: '4. Valda frågor & automatiskt facit',
+              en: '4. Selected Queue & Answer Key'
+          },
+          description: {
+              sv: 'Dra och släpp för att ändra ordning, ta bort enstaka uppgifter eller aktivera automatiskt facit (bara svar eller steg-för-steg) längst ned.',
+              en: 'Drag and drop to reorder questions, delete individual items, or enable an automatic answer key (compact answers or step-by-step) at the bottom.'
+          }
+      },
+      {
+          selector: '[data-tour="studio-launch-actions"]',
+          title: {
+              sv: '5. Kör Live, Presentera eller Skriv ut',
+              en: '5. Host Live, Present, or Print'
+          },
+          description: {
+              sv: 'Klicka "Live" för att låta eleverna svara i realtid med klasskod (sparas i 7 dagar), "Presentera" för tavlan, eller "Skriv ut / Grid" för PDF.',
+              en: 'Click "Live" for real-time student responses via class code (stored for 7 days), "Present" for smartboard slides, or "Print / Grid" for PDF.'
+          }
+      }
+  ], []);
 
   const handleDragStartUnified = (e, index) => {
     setDraggedIdx(index);
@@ -890,43 +960,45 @@ export default function QuestionStudio({
 
                 <div className="h-5 w-px bg-[var(--border-main)] mx-0.5" />
 
-                <button 
-                    type="button"
-                    onClick={handleLaunchLive} 
-                    disabled={packet.length === 0} 
-                    className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-35 cursor-pointer"
-                >
-                    <Send size={13}/> <span>{t.live_btn}</span>
-                </button>
-
-                <button 
-                    type="button"
-                    onClick={() => setShowPresentation(true)} 
-                    disabled={packet.length === 0} 
-                    className="px-3.5 py-1.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-[var(--text-main)] rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-35 cursor-pointer"
-                >
-                    <Monitor size={13} className="text-amber-600 dark:text-amber-400" /> <span>{t.present}</span>
-                </button>
-
-                {isDoNowMode ? (
+                <div data-tour="studio-launch-actions" className="flex items-center gap-2">
                     <button 
                         type="button"
-                        onClick={handleLaunchGrid} 
+                        onClick={handleLaunchLive} 
                         disabled={packet.length === 0} 
-                        className="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-35 cursor-pointer shadow-2xs"
+                        className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-35 cursor-pointer"
                     >
-                        <Grid3X3 size={13}/> <span>{t.create_donow}</span>
+                        <Send size={13}/> <span>{t.live_btn}</span>
                     </button>
-                ) : (
+
                     <button 
                         type="button"
-                        onClick={handleLaunchPrint} 
+                        onClick={() => setShowPresentation(true)} 
                         disabled={packet.length === 0} 
-                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-35 cursor-pointer shadow-2xs"
+                        className="px-3.5 py-1.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-[var(--text-main)] rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-35 cursor-pointer"
                     >
-                        <Printer size={13}/> <span>{t.publish}</span>
+                        <Monitor size={13} className="text-amber-600 dark:text-amber-400" /> <span>{t.present}</span>
                     </button>
-                )}
+
+                    {isDoNowMode ? (
+                        <button 
+                            type="button"
+                            onClick={handleLaunchGrid} 
+                            disabled={packet.length === 0} 
+                            className="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-35 cursor-pointer shadow-2xs"
+                        >
+                            <Grid3X3 size={13}/> <span>{t.create_donow}</span>
+                        </button>
+                    ) : (
+                        <button 
+                            type="button"
+                            onClick={handleLaunchPrint} 
+                            disabled={packet.length === 0} 
+                            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-35 cursor-pointer shadow-2xs"
+                        >
+                            <Printer size={13}/> <span>{t.publish}</span>
+                        </button>
+                    )}
+                </div>
 
                 <button 
                     type="button"
@@ -941,7 +1013,10 @@ export default function QuestionStudio({
 
       <div className="flex flex-1 overflow-hidden relative z-10 min-h-0">
         {/* PANE 1: Curriculum Topics */}
-        <div className={`bg-[var(--bg-card)] border-r border-[var(--border-main)] flex flex-col shrink-0 transition-all duration-200 ${isPane1Collapsed ? 'w-14' : 'w-56'}`}>
+        <div
+            data-tour="studio-pane-1"
+            className={`bg-[var(--bg-card)] border-r border-[var(--border-main)] flex flex-col shrink-0 transition-all duration-200 ${isPane1Collapsed ? 'w-14' : 'w-56'}`}
+        >
           <div className={`px-3 py-2.5 border-b border-[var(--border-main)] flex items-center ${isPane1Collapsed ? 'justify-center' : 'justify-between'}`}>
               {!isPane1Collapsed && (
                   <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] pl-1">
@@ -1007,7 +1082,10 @@ export default function QuestionStudio({
         </div>
 
         {/* PANE 2: Variations */}
-        <div className="w-[296px] bg-[var(--bg-surface)]/60 border-r border-[var(--border-main)] flex flex-col shrink-0 min-h-0 h-full">
+        <div
+            data-tour="studio-pane-2"
+            className="w-[296px] bg-[var(--bg-surface)]/60 border-r border-[var(--border-main)] flex flex-col shrink-0 min-h-0 h-full"
+        >
             <div className="p-3 border-b border-[var(--border-main)] bg-[var(--bg-card)] shrink-0 space-y-2">
                 <h1 className="text-sm font-extrabold text-[var(--text-main)] truncate leading-snug">
                     {currentTopic?.name[lang] || currentTopic?.name.en || currentTopic?.name.sv}
@@ -1150,7 +1228,10 @@ export default function QuestionStudio({
         </div>
 
         {/* PANE 3: Drafting-Table Workspace */}
-        <div className="flex-1 flex flex-col overflow-hidden relative drafting-desk-bg min-h-0 h-full">
+        <div
+            data-tour="studio-pane-3"
+            className="flex-1 flex flex-col overflow-hidden relative drafting-desk-bg min-h-0 h-full"
+        >
             {/* Pane 3 Subheader */}
             <div className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-5 py-2 flex items-center justify-between shrink-0 z-40 min-h-[52px]">
                 <div className="inline-flex bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1">
@@ -1515,7 +1596,7 @@ export default function QuestionStudio({
                                                     <GripVertical size={13} />
                                                 </div>
                                                 
-                                                {/* Single-Row Labeled Drafting Toolbar (Zero wrap, never covers math) */}
+                                                {/* Single-Row Labeled Drafting Toolbar */}
                                                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex justify-center opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto z-30 transition-opacity duration-150">
                                                     <div className="bg-white shadow-lg rounded-xl px-2 py-1 flex items-center gap-1 border border-stone-300 whitespace-nowrap">
                                                         {setupMode === 'worksheet' && (
@@ -1593,7 +1674,7 @@ export default function QuestionStudio({
                                                             <span>{lang === 'sv' ? 'Slumpa' : 'Shuffle'}</span>
                                                         </button>
 
-                                                        {/* Shuffle Story (shown when multiple word-problem stories exist) */}
+                                                        {/* Shuffle Story */}
                                                         {item.resolvedData?.renderData?.availableStories && item.resolvedData.renderData.availableStories.length > 1 && (
                                                             <button
                                                                 type="button"
@@ -1613,7 +1694,7 @@ export default function QuestionStudio({
                                                             </button>
                                                         )}
 
-                                                        {/* Explicit Labeled "Example" / "Exempel" Toggle */}
+                                                        {/* Worked Example Toggle */}
                                                         <button 
                                                             type="button"
                                                             onClick={(e) => { 
@@ -1714,7 +1795,10 @@ export default function QuestionStudio({
         </div>
 
         {/* PANE 4: Selected Questions Queue */}
-        <div className={`bg-[var(--bg-card)] border-l border-[var(--border-main)] flex flex-col shrink-0 transition-all duration-200 min-h-0 h-full ${isPane4Collapsed ? 'w-14' : 'w-72'}`}>
+        <div
+            data-tour="studio-pane-4"
+            className={`bg-[var(--bg-card)] border-l border-[var(--border-main)] flex flex-col shrink-0 transition-all duration-200 min-h-0 h-full ${isPane4Collapsed ? 'w-14' : 'w-72'}`}
+        >
           <div className={`px-3 py-2.5 border-b border-[var(--border-main)] flex items-center ${isPane4Collapsed ? 'justify-center' : 'justify-between'} bg-[var(--bg-surface)]/60`}>
               {!isPane4Collapsed && (
                 <div className="flex items-center gap-2 pl-1">
@@ -1832,7 +1916,7 @@ export default function QuestionStudio({
         </div>
       </div>
       
-      {/* MODALS */}
+      {/* MODALS & SPOTLIGHT TOUR */}
       <LiveLaunchModal
           isOpen={showLiveModal}
           onClose={() => setShowLiveModal(false)}
@@ -1846,7 +1930,8 @@ export default function QuestionStudio({
           initialSettings={liveSettings}
       />
 
-      <StudioTutorialModal
+      <SpotlightTour
+          steps={studioTourSteps}
           isOpen={showTutorial}
           onClose={handleCloseTutorial}
           lang={lang}

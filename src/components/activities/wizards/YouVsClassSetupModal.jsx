@@ -1,14 +1,14 @@
 // src/components/activities/wizards/YouVsClassSetupModal.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
-    X, Play, Plus, Trash2, Layers, Calculator, LayoutGrid, Loader2, Minus,
+    X, Play, Trash2, Layers, Calculator, LayoutGrid, Loader2, Minus, Plus,
     HelpCircle
 } from 'lucide-react';
 import SkillGraphExplorer from '../../shared/SkillGraphExplorer';
 import { SKILL_GRAPH, getPrerequisiteChain } from '../../../constants/skillGraph';
 import { generateDistractors, normalizeQuestionOptions } from '../../../lib/distractorGenerator';
 import { extractDecodedAnswer } from '../../live/core/liveAnswerUtils';
-import YouVsClassHelpModal from '../shared/YouVsClassHelpModal';
+import SpotlightTour from '../../shared/SpotlightTour';
 
 export default function YouVsClassSetupModal({
     isOpen,
@@ -22,7 +22,7 @@ export default function YouVsClassSetupModal({
             step1: "1. Utforska nivåer, exempel & förkunskaper",
             step2: "2. Valda målområden & stegprogression",
             selected_list: "Målområden",
-            ladder_mode_label: "Stegprogression (ZPD)",
+            ladder_mode_label: "Progression",
             mode_prereq_current: "Förkunskaper + Mål",
             mode_current_only: "Endast Målnivå",
             mode_current_next: "Mål + Nästa steg",
@@ -42,7 +42,7 @@ export default function YouVsClassSetupModal({
             step1: "1. Explore Levels, Examples & Prerequisites",
             step2: "2. Selected Targets & Progression",
             selected_list: "Targets",
-            ladder_mode_label: "Ladder Progression (ZPD)",
+            ladder_mode_label: "Progression",
             mode_prereq_current: "Prereqs + Target",
             mode_current_only: "Target Only",
             mode_current_next: "Target + Next",
@@ -60,7 +60,22 @@ export default function YouVsClassSetupModal({
     }[lang] || {};
 
     const [focusedTarget, setFocusedTarget] = useState(null);
+
+    // Interactive Spotlight Tour State
+    const storageKey = 'has_seen_you_vs_class_setup_guide';
     const [showHelpModal, setShowHelpModal] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && !localStorage.getItem(storageKey)) {
+            const timer = setTimeout(() => setShowHelpModal(true), 350);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
+    const handleCloseTour = () => {
+        localStorage.setItem(storageKey, 'true');
+        setShowHelpModal(false);
+    };
 
     const [selectedTargets, setSelectedTargets] = useState([]);
 
@@ -69,6 +84,53 @@ export default function YouVsClassSetupModal({
     const [inputMode, setInputMode] = useState('multiple_choice');
     const [baselinePoints, setBaselinePoints] = useState(500);
     const [isBuilding, setIsBuilding] = useState(false);
+
+    const youVsClassTourSteps = useMemo(() => [
+        {
+            selector: '[data-tour="yvc-explorer"]',
+            title: {
+                sv: '1. Välj målområde & nivå i kunskapskartan',
+                en: '1. Pick Target Topic & Level in Concept Map'
+            },
+            description: {
+                sv: 'Sök eller bläddra fram ett matematikområde till vänster, se exempeluppgifter och förkunskaper i mitten, och klicka för att lägga till som målområde.',
+                en: 'Search or browse a math topic on the left, inspect sample problems and prerequisites in the center, and add it as a target.'
+            }
+        },
+        {
+            selector: '[data-tour="yvc-ladder"]',
+            title: {
+                sv: '2. Ställ in stegprogression',
+                en: '2. Configure Ladder Progression'
+            },
+            description: {
+                sv: 'Välj hur frågestegen ska byggas — t.ex. "Förkunskaper + Mål" för en stegvis klättring upp till målnivån, eller "Hela kedjan" från grund till fördjupning.',
+                en: 'Choose how the question ladder builds — e.g. "Prereqs + Target" for a scaffolded climb up to your goal, or "Full Climb" from basics to challenge.'
+            }
+        },
+        {
+            selector: '[data-tour="yvc-rules"]',
+            title: {
+                sv: '3. Välj svarsformat, rundor & startpoäng',
+                en: '3. Set Answer Format, Rounds & Baseline Points'
+            },
+            description: {
+                sv: 'Välj mellan 4 svarsalternativ (A–D) eller exakt knappsats, antal rundor (4–12) samt startpoäng för utmanaren och klassen (mobben).',
+                en: 'Pick between 4 multiple-choice options (A–D) or exact keypad input, round count (4–12), and starting baseline points for the challenger and mob.'
+            }
+        },
+        {
+            selector: '[data-tour="yvc-launch"]',
+            title: {
+                sv: '4. Starta duellen (1 vs 100)',
+                en: '4. Launch the Duel (1 vs 100)'
+            },
+            description: {
+                sv: 'När du har valt minst ett målområde klickar du på "Starta Aktivitet". Eleverna ansluter med rumskoden och du slumpar fram en utmanare till Heta Stolen!',
+                en: 'Once you have picked at least one target, click "Launch Activity". Students join via room PIN and you spin to pick a challenger for the Hot Seat!'
+            }
+        }
+    ], []);
 
     const selectedNodeIds = useMemo(() => {
         return new Set(selectedTargets.map(item => `${item.topicId}:${item.level}`));
@@ -267,28 +329,33 @@ export default function YouVsClassSetupModal({
                         </span>
                         <h2 className="text-sm sm:text-base font-extrabold tracking-tight">{t.title}</h2>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => setShowHelpModal(true)}
-                        className="p-1.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer"
-                        title={lang === 'sv' ? "Hjälp & Spelregler" : "Help & Rules"}
-                    >
-                        <HelpCircle size={18} />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="p-1.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer"
-                    >
-                        <X size={18} />
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            onClick={() => setShowHelpModal(true)}
+                            className="p-1.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer"
+                            title={lang === 'sv' ? "Hjälp & Spelregler" : "Help & Rules"}
+                        >
+                            <HelpCircle size={18} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="p-1.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
                 </header>
 
                 {/* 3-PANE HORIZONTAL COCKPIT (ZERO VERTICAL PAGE SCROLL) */}
                 <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 overflow-y-auto lg:overflow-hidden bg-[var(--bg-canvas)]">
                     
                     {/* LEFT & CENTER PANES (8 Cols): Step 1 — Explorer Stage + Prereqs/Next Steps */}
-                    <div className="lg:col-span-8 p-4 flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r border-[var(--border-main)]">
+                    <div
+                        data-tour="yvc-explorer"
+                        className="lg:col-span-8 p-4 flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r border-[var(--border-main)]"
+                    >
                         <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-2 shrink-0 block">
                             {t.step1}
                         </span>
@@ -312,7 +379,7 @@ export default function YouVsClassSetupModal({
                         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 pr-0.5">
                             
                             {/* STEP 2: SELECTED TARGETS & ZPD LADDER */}
-                            <div className="space-y-2.5">
+                            <div data-tour="yvc-ladder" className="space-y-2.5">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                                         {t.step2}
@@ -376,7 +443,7 @@ export default function YouVsClassSetupModal({
                             </div>
 
                             {/* STEP 3: GAME RULES & ROUND COUNT */}
-                            <div className="space-y-2.5">
+                            <div data-tour="yvc-rules" className="space-y-2.5">
                                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
                                     {t.step3}
                                 </span>
@@ -487,6 +554,7 @@ export default function YouVsClassSetupModal({
                             </button>
 
                             <button
+                                data-tour="yvc-launch"
                                 type="button"
                                 disabled={isBuilding || selectedTargets.length === 0}
                                 onClick={handleLaunch}
@@ -498,9 +566,12 @@ export default function YouVsClassSetupModal({
                         </div>
                     </div>
                 </div>
-                <YouVsClassHelpModal
+
+                {/* INTERACTIVE SPOTLIGHT WALKTHROUGH TOUR */}
+                <SpotlightTour
+                    steps={youVsClassTourSteps}
                     isOpen={showHelpModal}
-                    onClose={() => setShowHelpModal(false)}
+                    onClose={handleCloseTour}
                     lang={lang}
                 />
             </div>

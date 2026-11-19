@@ -16,7 +16,6 @@ import { generateDistractors } from '../../../lib/distractorGenerator';
 import { extractDecodedAnswer, evaluateAnswer } from '../../live/core/liveAnswerUtils.js';
 import { universalRegenerateQuestion, saveActivityToLibrary } from '../../live/core/activityQuestionUtils.js';
 import { useActivityEngineSession } from '../hooks/useActivityEngineSession.js';
-import YouVsClassHelpModal from '../shared/YouVsClassHelpModal';
 
 // Sanitizes mixed Swedish/English prose containing un-delimited LaTeX commands
 const formatMixedMathText = (rawText) => {
@@ -2504,12 +2503,6 @@ export default function YouVsClassEngine({
                     </div>
                 </div>
             )}
-
-            <YouVsClassHelpModal
-                isOpen={showHelpModal}
-                onClose={() => setShowHelpModal(false)}
-                lang={lang}
-            />
 
             {isSummonerOpen && (
                 <QuestionSummoner

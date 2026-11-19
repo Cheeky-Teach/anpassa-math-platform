@@ -1,12 +1,12 @@
 // src/components/activities/wizards/CategoryClashSetupModal.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
     X, Grid, Trophy, Shuffle, Calculator, Type,
-    Play, Info, HelpCircle, ArrowRight, Layers, Sliders, Users
+    Play, Info, HelpCircle, ArrowRight, Layers, Sliders
 } from 'lucide-react';
 import { SKILL_BUCKETS, isTopicWordProblemReady } from '../../../constants/skillBuckets.js';
 import { extractSeedsFromPacket } from '../../../hooks/useGameQuestionPool.js';
-import CategoryClashHelpModal from '../shared/CategoryClashHelpModal.jsx';
+import SpotlightTour from '../../shared/SpotlightTour';
 
 export default function CategoryClashSetupModal({
     isOpen,
@@ -19,7 +19,22 @@ export default function CategoryClashSetupModal({
 }) {
     const userRole = String(profile?.role || '').toLowerCase();
     const isTeacher = userRole === 'teacher' || userRole === 'super_admin';
+
+    // Interactive Spotlight Tour State
+    const storageKey = 'has_seen_category_clash_setup_guide';
     const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && !localStorage.getItem(storageKey)) {
+            const timer = setTimeout(() => setIsHelpOpen(true), 350);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
+    const handleCloseTour = () => {
+        localStorage.setItem(storageKey, 'true');
+        setIsHelpOpen(false);
+    };
 
     const activeBoardData = savedBoard?.packet || (sourcePacket?.dimensions ? sourcePacket : null);
     const existingDimensions = activeBoardData?.dimensions || { columns: 4, rows: 4 };
@@ -130,6 +145,54 @@ export default function CategoryClashSetupModal({
         }
         return ['equations', 'fraction_arith', 'percent', 'geometry', 'statistics', 'pythagoras'];
     });
+
+    // Spotlight Tour Steps
+    const clashTourSteps = useMemo(() => [
+        {
+            selector: '[data-tour="clash-dimensions"]',
+            title: {
+                sv: '1. Välj storlek på spelplanen',
+                en: '1. Choose Board Dimensions'
+            },
+            description: {
+                sv: 'Ställ in 3–6 kolumner (ämnen) och 3–5 rader (poängnivåer). Ju fler rader, desto fler steg i svårighetstrappan.',
+                en: 'Set 3–6 columns (topics) and 3–5 rows (point tiers). More rows create a finer difficulty progression.'
+            }
+        },
+        {
+            selector: '[data-tour="clash-categories"]',
+            title: {
+                sv: '2. Ämnen, nivåspann & Tal/Text',
+                en: '2. Topics, Level Ranges & Math/Story'
+            },
+            description: {
+                sv: 'Välj ämne och nivåspann (Från–Till) per kolumn så fördelas svårigheten automatiskt. Växla mellan "Tal" (formel) och "Text" (vardagsproblem), eller klicka på (i) för att se vad varje nivå innehåller.',
+                en: 'Pick a topic and level range (From–To) per column for automatic difficulty scaling. Toggle "Math" vs "Story" per column, or click (i) to inspect level details.'
+            }
+        },
+        {
+            selector: '[data-tour="clash-settings"]',
+            title: {
+                sv: '3. Poängskala & Solo eller Lagspel',
+                en: '3. Point Scale & Solo or Team Play'
+            },
+            description: {
+                sv: 'Välj poängvalörer (t.ex. 100–500 p) och om eleverna ska tävla individuellt (Solo) eller samla poäng tillsammans i 2–4 lag.',
+                en: 'Choose point values (e.g., 100–500 pts) and whether students compete individually (Solo) or together in 2–4 teams.'
+            }
+        },
+        {
+            selector: '[data-tour="clash-launch"]',
+            title: {
+                sv: '4. Öppna spelplanen & granska',
+                en: '4. Open Game Board & Curate'
+            },
+            description: {
+                sv: 'Klicka på "Öppna Spelplan" för att bygga brädet. Där kan du granska enskilda brickor, slumpa nya siffror och starta live med en 6-siffrig PIN!',
+                en: 'Click "Open Game Board" to generate the board. You can inspect individual tiles, re-roll numbers, and launch live with a 6-digit PIN!'
+            }
+        }
+    ], []);
 
     const t = {
         sv: {
@@ -354,8 +417,8 @@ export default function CategoryClashSetupModal({
                         </div>
                     </div>
 
-                    {/* SECTION 1: Grid Dimensions (Sky Blue Accent) */}
-                    <div className="space-y-2.5">
+                    {/* SECTION 1: Grid Dimensions */}
+                    <div data-tour="clash-dimensions" className="space-y-2.5">
                         <div className="flex items-center gap-2">
                             <Sliders size={15} className="text-sky-600 dark:text-sky-400" />
                             <h3 className="text-xs font-extrabold uppercase tracking-wider text-sky-700 dark:text-sky-400">
@@ -414,8 +477,8 @@ export default function CategoryClashSetupModal({
                         </div>
                     </div>
 
-                    {/* SECTION 2: Categories & Difficulty Selector (Emerald Green Accent) */}
-                    <div className="space-y-2.5">
+                    {/* SECTION 2: Categories & Difficulty Selector */}
+                    <div data-tour="clash-categories" className="space-y-2.5">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Layers size={15} className="text-emerald-600 dark:text-emerald-400" />
@@ -605,8 +668,8 @@ export default function CategoryClashSetupModal({
                         </div>
                     </div>
 
-                    {/* SECTION 3: Point Scale & Teams (Amber & Indigo Accent) */}
-                    <div className="space-y-2.5">
+                    {/* SECTION 3: Point Scale & Teams */}
+                    <div data-tour="clash-settings" className="space-y-2.5">
                         <div className="flex items-center gap-2">
                             <Trophy size={15} className="text-amber-600 dark:text-amber-400" />
                             <h3 className="text-xs font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400">
@@ -689,6 +752,7 @@ export default function CategoryClashSetupModal({
                         </button>
 
                         <button
+                            data-tour="clash-launch"
                             type="button"
                             onClick={handleDoLaunch}
                             className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-2xs active:scale-[0.98] transition-all cursor-pointer"
@@ -773,9 +837,12 @@ export default function CategoryClashSetupModal({
                     </div>
                 )}
             </div>
-            <CategoryClashHelpModal
+
+            {/* INTERACTIVE SPOTLIGHT WALKTHROUGH TOUR */}
+            <SpotlightTour
+                steps={clashTourSteps}
                 isOpen={isHelpOpen}
-                onClose={() => setIsHelpOpen(false)}
+                onClose={handleCloseTour}
                 lang={lang}
             />
         </div>

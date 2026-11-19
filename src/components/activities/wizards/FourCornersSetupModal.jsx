@@ -1,11 +1,12 @@
 // src/components/activities/wizards/FourCornersSetupModal.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
-    X, FileText, Zap, Loader2, Search, Layers, Play
+    X, FileText, Zap, Loader2, Search, Layers, Play, HelpCircle
 } from 'lucide-react';
 import { useLibrary } from '../../../hooks/useLibrary';
 import { generateDistractors, normalizeQuestionOptions } from '../../../lib/distractorGenerator';
 import { extractDecodedAnswer } from '../../live/core/liveAnswerUtils';
+import SpotlightTour from '../../shared/SpotlightTour';
 
 export default function FourCornersSetupModal({
     isOpen,
@@ -17,6 +18,22 @@ export default function FourCornersSetupModal({
 }) {
     const userRole = String(profile?.role || '').toLowerCase();
     const isTeacher = userRole === 'teacher' || userRole === 'super_admin';
+
+    // Interactive Spotlight Tour State
+    const storageKey = 'has_seen_four_corners_setup_guide';
+    const [isTourOpen, setIsTourOpen] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && !localStorage.getItem(storageKey)) {
+            const timer = setTimeout(() => setIsTourOpen(true), 350);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
+    const handleCloseTour = () => {
+        localStorage.setItem(storageKey, 'true');
+        setIsTourOpen(false);
+    };
 
     const t = {
         sv: {
@@ -49,7 +66,8 @@ export default function FourCornersSetupModal({
             preparing: "Förbereder frågor...",
             current_active_material: "Aktivt Material (Nuvarande)",
             current_resource: "Nuvarande material",
-            loading_files: "Laddar dina filer..."
+            loading_files: "Laddar dina filer...",
+            guide_tooltip: "Instruktioner & Guide"
         },
         en: {
             title: "Configure 4 Corners",
@@ -81,7 +99,8 @@ export default function FourCornersSetupModal({
             preparing: "Preparing questions...",
             current_active_material: "Active Resource (Current)",
             current_resource: "Current resource",
-            loading_files: "Loading your files..."
+            loading_files: "Loading your files...",
+            guide_tooltip: "Instructions & Guide"
         }
     }[lang] || {};
 
@@ -103,6 +122,53 @@ export default function FourCornersSetupModal({
     const [timerSeconds, setTimerSeconds] = useState(30);
     const [scoringMode, setScoringMode] = useState('solo');
     const [isGenerating, setIsGenerating] = useState(false);
+
+    const fourCornersTourSteps = useMemo(() => [
+        {
+            selector: '[data-tour="4c-start-mode"]',
+            title: {
+                sv: '1. Välj källa för dina frågor',
+                en: '1. Choose Your Question Source'
+            },
+            description: {
+                sv: 'Importera uppgifter direkt från ett sparat arbetsblad eller presentation (där 4 svarsalternativ skapas automatiskt), eller välj Snabbstart för att skapa egna frågor under spelets gång.',
+                en: 'Import questions from a saved worksheet or board (4 answer corners are generated automatically), or pick Quickstart to summon/create prompts live.'
+            }
+        },
+        {
+            selector: '[data-tour="4c-rounds"]',
+            title: {
+                sv: '2. Ställ in antal omgångar',
+                en: '2. Set Number of Rounds'
+            },
+            description: {
+                sv: 'Välj hur många frågor eller rundor som ska ingå i omgången (5–25 st).',
+                en: 'Choose how many questions or rounds to include in the session (5–25 rounds).'
+            }
+        },
+        {
+            selector: '[data-tour="4c-timer-scoring"]',
+            title: {
+                sv: '3. Svarstid & poängsystem',
+                en: '3. Time Limit & Scoring Mode'
+            },
+            description: {
+                sv: 'Bestäm om eleverna har en nedräkning per fråga eller om du styr tempot själv, samt om ni kör formativt utan poäng eller samlar solo-poäng.',
+                en: 'Decide whether students have a per-question countdown or teacher-paced control, and choose formative (no scores) or solo points.'
+            }
+        },
+        {
+            selector: '[data-tour="4c-launch"]',
+            title: {
+                sv: '4. Öppna och granska omgången',
+                en: '4. Open & Curate Your Round'
+            },
+            description: {
+                sv: 'Klicka på "Öppna Omgång" för att förhandsgranska alla 4 hörn-alternativen, justera svarsalternativ och bjuda in eleverna!',
+                en: 'Click "Open Activity" to review all 4 corner choices, tweak options, and invite your students!'
+            }
+        }
+    ], []);
 
     const eligibleSheets = useMemo(() => {
         return (savedSheets || []).filter(sheet => {
@@ -269,20 +335,36 @@ export default function FourCornersSetupModal({
                         </div>
                         <h2 className="text-base font-black tracking-tight text-inherit">{t.title}</h2>
                     </div>
-                    <button 
-                        onClick={onClose} 
-                        className="p-2 rounded-xl transition-colors cursor-pointer hover:bg-rose-500 hover:text-white"
-                        style={{ color: 'var(--text-muted)' }}
-                    >
-                        <X size={20} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setIsTourOpen(true)}
+                            className="p-2 rounded-xl border transition-colors cursor-pointer hover:border-indigo-500"
+                            style={{
+                                backgroundColor: 'var(--bg-card)',
+                                borderColor: 'var(--border-main)',
+                                color: 'var(--text-muted)'
+                            }}
+                            title={t.guide_tooltip}
+                        >
+                            <HelpCircle size={18} />
+                        </button>
+                        <button 
+                            type="button"
+                            onClick={onClose} 
+                            className="p-2 rounded-xl transition-colors cursor-pointer hover:bg-rose-500 hover:text-white"
+                            style={{ color: 'var(--text-muted)' }}
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
                 </header>
 
                 {/* Body */}
                 <div className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
                     
                     {/* 1. START METHOD */}
-                    <div>
+                    <div data-tour="4c-start-mode">
                         <label className="text-[11px] font-black uppercase tracking-wider block mb-2.5" style={{ color: 'var(--text-muted)' }}>
                             {t.start_mode_label}
                         </label>
@@ -477,7 +559,7 @@ export default function FourCornersSetupModal({
                     </div>
 
                     {/* 2. ROUND COUNT */}
-                    <div>
+                    <div data-tour="4c-rounds">
                         <label className="text-[11px] font-black uppercase tracking-wider block mb-2" style={{ color: 'var(--text-muted)' }}>
                             {t.rounds_label}
                         </label>
@@ -522,7 +604,7 @@ export default function FourCornersSetupModal({
                     </div>
 
                     {/* 3. DEFAULT TIMER & SCORING */}
-                    <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div data-tour="4c-timer-scoring" className="grid grid-cols-2 gap-3 pt-1">
                         <div>
                             <label className="text-[10px] font-black uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>
                                 {t.time_label}
@@ -584,6 +666,7 @@ export default function FourCornersSetupModal({
                     </button>
 
                     <button
+                        data-tour="4c-launch"
                         type="button"
                         disabled={isGenerating || (startMode === 'library' && !loadedSheet)}
                         onClick={() => handleLaunch()}
@@ -594,6 +677,14 @@ export default function FourCornersSetupModal({
                     </button>
                 </footer>
             </div>
+
+            {/* INTERACTIVE SPOTLIGHT WALKTHROUGH TOUR */}
+            <SpotlightTour
+                steps={fourCornersTourSteps}
+                isOpen={isTourOpen}
+                onClose={handleCloseTour}
+                lang={lang}
+            />
         </div>
     );
 }
