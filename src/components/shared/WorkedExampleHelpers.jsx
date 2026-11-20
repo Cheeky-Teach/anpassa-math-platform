@@ -1,12 +1,22 @@
 // src/components/shared/WorkedExampleHelpers.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GripHorizontal, Plus, Minus, Eye, EyeOff, RotateCcw } from 'lucide-react';
+import {
+    Eye,
+    EyeOff,
+    Minus,
+    Plus,
+    GripHorizontal,
+    RotateCcw,
+    Pencil,
+    Check,
+    X
+} from 'lucide-react';
 import MathDisplay from './MathDisplay';
 import VisualRenderer from '../visuals/VisualRenderer';
 import { compileAnchoredStory } from '../../core/utils/storyCompiler';
 
-export const SIZE_STEPS = ['xs', 'sm', 'md', 'lg', 'xl', '2xl'];
+export const SIZE_STEPS = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'];
 
 export const PROMPT_TEXT_SIZE_MAP = {
     xs: 'text-[10px]',
@@ -14,7 +24,8 @@ export const PROMPT_TEXT_SIZE_MAP = {
     md: 'text-xs',
     lg: 'text-sm',
     xl: 'text-base',
-    '2xl': 'text-lg sm:text-xl'
+    '2xl': 'text-lg sm:text-xl',
+    '3xl': 'text-xl sm:text-2xl'
 };
 
 export const PROMPT_LATEX_SIZE_MAP = {
@@ -23,7 +34,8 @@ export const PROMPT_LATEX_SIZE_MAP = {
     md: 'text-base',
     lg: 'text-lg',
     xl: 'text-2xl',
-    '2xl': 'text-2xl sm:text-3xl'
+    '2xl': 'text-2xl sm:text-3xl',
+    '3xl': 'text-3xl sm:text-4xl'
 };
 
 export const STEP_TEXT_SIZE_MAP = {
@@ -32,7 +44,8 @@ export const STEP_TEXT_SIZE_MAP = {
     md: 'text-[11px]',
     lg: 'text-xs',
     xl: 'text-sm',
-    '2xl': 'text-base sm:text-lg'
+    '2xl': 'text-base sm:text-lg',
+    '3xl': 'text-lg sm:text-xl'
 };
 
 export const STEP_LATEX_SIZE_MAP = {
@@ -41,7 +54,8 @@ export const STEP_LATEX_SIZE_MAP = {
     md: 'text-xs',
     lg: 'text-sm',
     xl: 'text-lg',
-    '2xl': 'text-xl sm:text-2xl'
+    '2xl': 'text-xl sm:text-2xl',
+    '3xl': 'text-2xl sm:text-3xl'
 };
 
 export function stepSize(current = 'sm', delta = 1) {
@@ -174,7 +188,11 @@ export function FloatingPartMenu({
         <div
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-            className="print:hidden absolute -top-9 left-0 z-40 flex items-center gap-1 px-1.5 py-1 rounded-lg bg-slate-900 text-white shadow-lg border border-slate-700 text-[10px] font-bold whitespace-nowrap"
+            style={{
+                transform: 'scale(var(--slot-inv-scale, 1))',
+                transformOrigin: 'top left'
+            }}
+            className="print:hidden absolute top-full mt-1 left-0 z-40 flex items-center gap-1 px-1.5 py-1 rounded-lg bg-slate-900 text-white shadow-lg border border-slate-700 text-[10px] font-bold whitespace-nowrap"
         >
             {onDecrease && (
                 <button
@@ -381,6 +399,24 @@ export function PrintWriteBlank({
     );
 }
 
+function renderCompactOptions(options = []) {
+    return (
+        <div className="grid grid-cols-2 gap-1.5 pt-1">
+            {options.map((opt, idx) => (
+                <div
+                    key={`opt-${idx}`}
+                    className="px-2 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-slate-800 flex items-center gap-1.5"
+                >
+                    <span className="font-mono font-bold text-slate-400">
+                        {String.fromCharCode(65 + idx)}.
+                    </span>
+                    <MathDisplay content={String(opt)} />
+                </div>
+            ))}
+        </div>
+    );
+}
+
 export function PromptSection({
     item,
     rd,
@@ -388,7 +424,7 @@ export function PromptSection({
     isEditable,
     showPromptText,
     showPromptLatex,
-    showPromptOptions = true,
+    showPromptOptions,
     promptTextClass,
     promptLatexClass,
     curPromptTextSize,
@@ -397,68 +433,157 @@ export function PromptSection({
     setOpenMenuKey,
     onUpdatePart
 }) {
-    const rawOptions = rd?.options || rd?.choices || rd?.alternatives || item?.options;
-    const hasOptions = Array.isArray(rawOptions) && rawOptions.length > 0;
+    const [editingPrompt, setEditingPrompt] = useState(false);
+
+    const compiledStory =
+        item?.selectedStoryIndex !== null &&
+        item?.selectedStoryIndex !== undefined &&
+        Array.isArray(rd?.availableStories)
+            ? compileAnchoredStory(rd, item.selectedStoryIndex, lang)
+            : null;
+
+    const description =
+        compiledStory?.description ||
+        rd?.description ||
+        rd?.text ||
+        item?.promptText ||
+        '';
+
+    const [promptDraft, setPromptDraft] = useState(description);
+
+    useEffect(() => {
+        if (!editingPrompt) setPromptDraft(description);
+    }, [description, editingPrompt]);
+
+    const commitPromptEdit = () => {
+        setEditingPrompt(false);
+        if (promptDraft !== description) {
+            onUpdatePart?.('editPromptText', promptDraft);
+        }
+    };
 
     return (
-        <div className="space-y-1.5">
-            <div className="text-[8px] font-black uppercase tracking-widest text-amber-900/60">
-                {lang === 'sv' ? 'Uppgift' : 'Problem'}
-            </div>
-
-            {(showPromptText || isEditable) && (
-                <div
-                    onClick={(e) => {
-                        if (!isEditable) return;
-                        e.stopPropagation();
-                        setOpenMenuKey((prev) => (prev === 'promptText' ? null : 'promptText'));
-                    }}
-                    className={`relative rounded-lg transition-colors ${
-                        isEditable ? 'hover:bg-amber-100/60 cursor-pointer px-1 -mx-1' : ''
-                    } ${!showPromptText ? 'border border-dashed border-amber-300 px-1.5 py-0.5 opacity-60' : ''}`}
-                >
-                    {isEditable && openMenuKey === 'promptText' && (
-                        <FloatingPartMenu
-                            onDecrease={() => onUpdatePart('promptTextSize', stepSize(curPromptTextSize, -1))}
-                            onIncrease={() => onUpdatePart('promptTextSize', stepSize(curPromptTextSize, 1))}
-                            onToggleHide={() => onUpdatePart('showPromptText', !showPromptText)}
-                            isHidden={!showPromptText}
-                            hideLabel={lang === 'sv' ? 'Dölj' : 'Hide'}
-                            showLabel={lang === 'sv' ? 'Visa' : 'Show'}
-                            onClose={() => setOpenMenuKey(null)}
-                        />
-                    )}
-                    {showPromptText ? (
-                        <div className={`${promptTextClass} font-bold leading-snug text-slate-900`}>
-                            <MathDisplay content={compileAnchoredStory(item, lang) || rd?.description || item.name} />
+        <div className="space-y-2">
+            {(description || !showPromptText) && (showPromptText || isEditable) && (
+                <div className="relative group/part">
+                    {editingPrompt && isEditable ? (
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="space-y-1.5 bg-white p-2 rounded-lg border-2 border-emerald-500 shadow-sm"
+                        >
+                            <textarea
+                                autoFocus
+                                rows={2}
+                                value={promptDraft}
+                                onChange={(e) => setPromptDraft(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        commitPromptEdit();
+                                    } else if (e.key === 'Escape') {
+                                        setEditingPrompt(false);
+                                        setPromptDraft(description);
+                                    }
+                                }}
+                                className="w-full text-xs font-semibold text-slate-900 bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none focus:border-emerald-600 resize-y"
+                            />
+                            <div className="flex justify-end gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setEditingPrompt(false);
+                                        setPromptDraft(description);
+                                    }}
+                                    className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
+                                >
+                                    {lang === 'sv' ? 'Avbryt' : 'Cancel'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={commitPromptEdit}
+                                    className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"
+                                >
+                                    {lang === 'sv' ? 'Spara' : 'Apply'}
+                                </button>
+                            </div>
                         </div>
                     ) : (
-                        <span className="print:hidden text-[9px] italic text-amber-900/70">
-                            {lang === 'sv' ? 'Uppgiftstext dold' : 'Problem text hidden'}
-                        </span>
+                        <>
+                            {isEditable && openMenuKey === 'promptText' && (
+                                <FloatingPartMenu
+                                    onDecrease={() =>
+                                        onUpdatePart('promptTextSize', stepSize(curPromptTextSize, -1))
+                                    }
+                                    onIncrease={() =>
+                                        onUpdatePart('promptTextSize', stepSize(curPromptTextSize, 1))
+                                    }
+                                    onToggleHide={() => onUpdatePart('showPromptText', !showPromptText)}
+                                    isHidden={!showPromptText}
+                                    hideLabel={lang === 'sv' ? 'Dölj' : 'Hide'}
+                                    showLabel={lang === 'sv' ? 'Visa' : 'Show'}
+                                    extraActions={
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setOpenMenuKey(null);
+                                                setPromptDraft(description);
+                                                setEditingPrompt(true);
+                                            }}
+                                            className="px-1.5 py-0.5 rounded hover:bg-slate-700 flex items-center gap-1 cursor-pointer"
+                                            title={lang === 'sv' ? 'Redigera text' : 'Edit text'}
+                                        >
+                                            <Pencil size={10} />
+                                            <span>{lang === 'sv' ? 'Ändra' : 'Edit'}</span>
+                                        </button>
+                                    }
+                                    onClose={() => setOpenMenuKey(null)}
+                                />
+                            )}
+
+                            <div
+                                onClick={(e) => {
+                                    if (!isEditable) return;
+                                    e.stopPropagation();
+                                    setOpenMenuKey((prev) => (prev === 'promptText' ? null : 'promptText'));
+                                }}
+                                onDoubleClick={(e) => {
+                                    if (!isEditable) return;
+                                    e.stopPropagation();
+                                    setOpenMenuKey(null);
+                                    setPromptDraft(description);
+                                    setEditingPrompt(true);
+                                }}
+                                className={`rounded-lg transition-all ${
+                                    isEditable
+                                        ? 'cursor-pointer hover:ring-2 hover:ring-amber-400 px-1.5 py-0.5 -mx-1.5'
+                                        : ''
+                                }`}
+                            >
+                                {showPromptText ? (
+                                    <div className={`${promptTextClass} font-semibold text-slate-800 leading-snug`}>
+                                        <MathDisplay content={description} />
+                                    </div>
+                                ) : (
+                                    <div className="print:hidden text-[11px] font-mono italic text-slate-400 border border-dashed border-slate-300 rounded-lg px-2.5 py-1 bg-slate-50/70">
+                                        {lang === 'sv' ? 'Text dold (klicka för att visa)' : 'Text hidden (click to restore)'}
+                                    </div>
+                                )}
+                            </div>
+                        </>
                     )}
                 </div>
             )}
 
             {rd?.latex && !rd?.geometry && (showPromptLatex || isEditable) && (
-                <div
-                    onClick={(e) => {
-                        if (!isEditable) return;
-                        e.stopPropagation();
-                        setOpenMenuKey((prev) => (prev === 'promptLatex' ? null : 'promptLatex'));
-                    }}
-                    className={`relative rounded-lg ${
-                        isEditable ? 'cursor-pointer hover:ring-2 hover:ring-amber-400' : ''
-                    } ${
-                        showPromptLatex
-                            ? `py-1.5 px-2.5 bg-white/90 border border-amber-200/80 text-center font-serif ${promptLatexClass} font-bold text-slate-950 shadow-xs overflow-x-auto`
-                            : 'print:hidden py-1 px-2 border border-dashed border-amber-300 text-center opacity-60'
-                    }`}
-                >
+                <div className="relative group/part">
                     {isEditable && openMenuKey === 'promptLatex' && (
                         <FloatingPartMenu
-                            onDecrease={() => onUpdatePart('promptLatexSize', stepSize(curPromptLatexSize, -1))}
-                            onIncrease={() => onUpdatePart('promptLatexSize', stepSize(curPromptLatexSize, 1))}
+                            onDecrease={() =>
+                                onUpdatePart('promptLatexSize', stepSize(curPromptLatexSize, -1))
+                            }
+                            onIncrease={() =>
+                                onUpdatePart('promptLatexSize', stepSize(curPromptLatexSize, 1))
+                            }
                             onToggleHide={() => onUpdatePart('showPromptLatex', !showPromptLatex)}
                             isHidden={!showPromptLatex}
                             hideLabel={lang === 'sv' ? 'Dölj' : 'Hide'}
@@ -466,31 +591,34 @@ export function PromptSection({
                             onClose={() => setOpenMenuKey(null)}
                         />
                     )}
-                    {showPromptLatex ? (
-                        <MathDisplay content={`$$${rd.latex}$$`} />
-                    ) : (
-                        <span className="text-[9px] italic text-amber-900/70">
-                            {lang === 'sv' ? 'Formel dold' : 'Math hidden'}
-                        </span>
-                    )}
+
+                    <div
+                        onClick={(e) => {
+                            if (!isEditable) return;
+                            e.stopPropagation();
+                            setOpenMenuKey((prev) => (prev === 'promptLatex' ? null : 'promptLatex'));
+                        }}
+                        className={`rounded-xl transition-all ${
+                            isEditable ? 'cursor-pointer hover:ring-2 hover:ring-amber-400' : ''
+                        }`}
+                    >
+                        {showPromptLatex ? (
+                            <div
+                                className={`bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-2xs text-center font-serif ${promptLatexClass} font-bold text-slate-950 overflow-x-auto`}
+                            >
+                                <MathDisplay content={`$$${rd.latex}$$`} />
+                            </div>
+                        ) : (
+                            <div className="print:hidden text-[11px] font-mono italic text-slate-400 border border-dashed border-slate-300 rounded-xl px-2.5 py-1.5 text-center bg-slate-50/70">
+                                {lang === 'sv' ? 'Formel dold (klicka för att visa)' : 'Equation hidden (click to restore)'}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 
-            {hasOptions && (showPromptOptions || isEditable) && (
-                <div
-                    onClick={(e) => {
-                        if (!isEditable) return;
-                        e.stopPropagation();
-                        setOpenMenuKey((prev) => (prev === 'promptOptions' ? null : 'promptOptions'));
-                    }}
-                    className={`relative rounded-lg ${
-                        isEditable ? 'cursor-pointer hover:ring-2 hover:ring-amber-400' : ''
-                    } ${
-                        !showPromptOptions
-                            ? 'print:hidden py-1 px-2 border border-dashed border-amber-300 text-center opacity-60'
-                            : ''
-                    }`}
-                >
+            {rd?.options && rd.options.length > 0 && (showPromptOptions || isEditable) && (
+                <div className="relative group/part">
                     {isEditable && openMenuKey === 'promptOptions' && (
                         <FloatingPartMenu
                             onToggleHide={() => onUpdatePart('showPromptOptions', !showPromptOptions)}
@@ -501,35 +629,22 @@ export function PromptSection({
                         />
                     )}
 
-                    {showPromptOptions ? (
-                        <div className="grid grid-cols-2 gap-1 pt-0.5">
-                            {rawOptions.map((opt, optIdx) => {
-                                const label = String.fromCharCode(65 + optIdx);
-                                const optContent =
-                                    typeof opt === 'object' && opt !== null
-                                        ? opt[lang] || opt.text || opt.label || opt.latex || ''
-                                        : String(opt);
-
-                                return (
-                                    <div
-                                        key={`opt-${optIdx}`}
-                                        className={`flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/90 border border-amber-200/80 ${promptTextClass} text-slate-900`}
-                                    >
-                                        <span className="font-mono font-black text-[9px] text-amber-800 shrink-0">
-                                            {label}.
-                                        </span>
-                                        <div className="min-w-0 truncate">
-                                            <MathDisplay content={optContent} />
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <span className="text-[9px] italic text-amber-900/70">
-                            {lang === 'sv' ? 'Svarsalternativ dolda' : 'Choices hidden'}
-                        </span>
-                    )}
+                    <div
+                        onClick={(e) => {
+                            if (!isEditable) return;
+                            e.stopPropagation();
+                            setOpenMenuKey((prev) => (prev === 'promptOptions' ? null : 'promptOptions'));
+                        }}
+                        className={isEditable ? 'cursor-pointer hover:ring-2 hover:ring-amber-400 rounded-lg' : ''}
+                    >
+                        {showPromptOptions ? (
+                            renderCompactOptions(rd.options)
+                        ) : (
+                            <div className="print:hidden text-[11px] font-mono italic text-slate-400 border border-dashed border-slate-300 rounded-lg px-2.5 py-1 text-center bg-slate-50/70">
+                                {lang === 'sv' ? 'Alternativ dolda' : 'Options hidden'}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
@@ -667,7 +782,7 @@ export function VisualSection({
     );
 }
 
-const STEP_TRANSITION = {
+const ROW_ENTER_TRANSITION = {
     type: 'spring',
     stiffness: 420,
     damping: 32,
@@ -680,241 +795,483 @@ const CONTENT_REVEAL_TRANSITION = {
 };
 
 export function ClueRowsSection({
-    clues,
-    lang,
-    isEditable,
-    spaciousWriting,
-    blankStyle,
-    showStepText,
-    showStepLatex,
-    stepTextClass,
-    stepLatexClass,
-    curStepTextSize,
-    curStepLatexSize,
+    clues = [],
+    lang = 'sv',
+    isEditable = false,
+    spaciousWriting = false,
+    blankStyle = 'line',
+    showStepText = true,
+    showStepLatex = true,
+    stepTextClass = 'text-[10px]',
+    stepLatexClass = 'text-[11px]',
+    curStepTextSize = 'sm',
+    curStepLatexSize = 'sm',
     solutionColStyle,
-    solutionColClass,
-    blankHeights,
-    onBlankHeightChange,
-    openMenuKey,
-    setOpenMenuKey,
-    onUpdatePart
+    solutionColClass = 'w-44',
+    blankHeights = {},
+    onBlankHeightChange = null,
+    openMenuKey = null,
+    setOpenMenuKey = null,
+    onUpdatePart = null
 }) {
+    const [editingField, setEditingField] = useState(null); // { idx, kind: 'text' | 'latex', value: string }
+
+    const commitStepEdit = () => {
+        if (!editingField) return;
+        const { idx, kind, value } = editingField;
+        setEditingField(null);
+        if (kind === 'text') {
+            onUpdatePart?.('editClueText', { idx, text: value });
+        } else if (kind === 'latex') {
+            onUpdatePart?.('editClueLatex', { idx, latex: value });
+        }
+    };
+
     return (
-        <div className={`w-full min-w-0 flex flex-col justify-start ${spaciousWriting ? 'space-y-2.5' : 'space-y-1.5'}`}>
-            <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-widest text-amber-900/60 pb-0.5 border-b border-amber-200/60">
-                <span>{lang === 'sv' ? 'Steg / Förklaring' : 'Steps / Explanation'}</span>
-                <span style={solutionColStyle} className={`${solutionColClass} shrink-0 text-center`}>
-                    {lang === 'sv' ? 'Lösning' : 'Solution'}
+        <div className="flex-1 min-w-0 flex flex-col">
+            <div className="relative flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-900/80">
+                    {lang === 'sv' ? 'Lösning steg-för-steg' : 'Step-by-Step Solution'}
                 </span>
+
+                {isEditable && (
+                    <div
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            transform: 'scale(var(--slot-inv-scale, 1))',
+                            transformOrigin: 'top right'
+                        }}
+                        className="print:hidden flex items-center gap-1.5 z-20"
+                    >
+                        <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-slate-900 text-white text-[9px] font-mono font-bold shadow-2xs">
+                            <span className="text-slate-300 pr-0.5">Text</span>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    onUpdatePart?.('stepTextSize', stepSize(curStepTextSize, -1))
+                                }
+                                disabled={SIZE_STEPS.indexOf(curStepTextSize) <= 0}
+                                className="p-0.5 rounded hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
+                                title={lang === 'sv' ? 'Mindre stegtext' : 'Smaller step text'}
+                            >
+                                <Minus size={10} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    onUpdatePart?.('stepTextSize', stepSize(curStepTextSize, 1))
+                                }
+                                disabled={SIZE_STEPS.indexOf(curStepTextSize) >= SIZE_STEPS.length - 1}
+                                className="p-0.5 rounded hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
+                                title={lang === 'sv' ? 'Större stegtext' : 'Larger step text'}
+                            >
+                                <Plus size={10} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onUpdatePart?.('showStepText', !showStepText)}
+                                className="p-0.5 rounded hover:bg-slate-700 cursor-pointer"
+                                title={showStepText ? (lang === 'sv' ? 'Dölj' : 'Hide') : (lang === 'sv' ? 'Visa' : 'Show')}
+                            >
+                                {showStepText ? (
+                                    <Eye size={10} className="text-amber-300" />
+                                ) : (
+                                    <EyeOff size={10} className="text-emerald-400" />
+                                )}
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-slate-900 text-white text-[9px] font-mono font-bold shadow-2xs">
+                            <span className="text-slate-300 pr-0.5">
+                                {lang === 'sv' ? 'Svar' : 'Math'}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    onUpdatePart?.('stepLatexSize', stepSize(curStepLatexSize, -1))
+                                }
+                                disabled={SIZE_STEPS.indexOf(curStepLatexSize) <= 0}
+                                className="p-0.5 rounded hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
+                                title={lang === 'sv' ? 'Mindre formel' : 'Smaller math'}
+                            >
+                                <Minus size={10} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    onUpdatePart?.('stepLatexSize', stepSize(curStepLatexSize, 1))
+                                }
+                                disabled={SIZE_STEPS.indexOf(curStepLatexSize) >= SIZE_STEPS.length - 1}
+                                className="p-0.5 rounded hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
+                                title={lang === 'sv' ? 'Större formel' : 'Larger math'}
+                            >
+                                <Plus size={10} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onUpdatePart?.('showStepLatex', !showStepLatex)}
+                                className="p-0.5 rounded hover:bg-slate-700 cursor-pointer"
+                                title={showStepLatex ? (lang === 'sv' ? 'Dölj' : 'Hide') : (lang === 'sv' ? 'Visa' : 'Show')}
+                            >
+                                {showStepLatex ? (
+                                    <Eye size={10} className="text-amber-300" />
+                                ) : (
+                                    <EyeOff size={10} className="text-emerald-400" />
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            <AnimatePresence initial={false}>
-                {clues.map((step, idx) => {
-                    const hasBlank = step.isTextBlank || step.isLatexBlank;
-                    const textMenuKey = `step-${idx}-text`;
-                    const latexMenuKey = `step-${idx}-latex`;
+            <div className="space-y-2 flex-1 flex flex-col justify-between">
+                <AnimatePresence initial={false}>
+                    {clues.map((step, idx) => {
+                        const isTextBlank = step.isTextBlank;
+                        const isLatexBlank = step.isLatexBlank;
+                        const hasText = Boolean(step.text);
+                        const hasLatex = Boolean(step.latex);
+                        const textBlankHeight = blankHeights[`${idx}:text`];
+                        const latexBlankHeight = blankHeights[`${idx}:latex`];
 
-                    return (
-                        <motion.div
-                            key={`step-${idx}`}
-                            layout="position"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -6, transition: { duration: 0.14 } }}
-                            transition={STEP_TRANSITION}
-                            className={`flex ${hasBlank ? 'items-start' : 'items-center'} justify-between gap-2 ${
-                                spaciousWriting ? 'py-1.5' : 'py-0.5'
-                            } border-b border-amber-100/70 last:border-0`}
-                        >
-                            <div className="flex items-start gap-1.5 min-w-0 flex-1 pr-1">
-                                <span className="font-mono font-black text-[9px] text-amber-900 shrink-0 mt-0.5">
-                                    {idx + 1}.
-                                </span>
+                        const isEditingThisText = editingField?.idx === idx && editingField?.kind === 'text';
+                        const isEditingThisLatex = editingField?.idx === idx && editingField?.kind === 'latex';
 
-                                <div
-                                    onClick={(e) => {
-                                        if (!isEditable) return;
-                                        e.stopPropagation();
-                                        setOpenMenuKey((prev) => (prev === textMenuKey ? null : textMenuKey));
-                                    }}
-                                    className={`relative flex-1 min-w-0 rounded ${
-                                        isEditable ? 'cursor-pointer hover:bg-amber-100/60 px-1 -mx-1' : ''
-                                    }`}
-                                >
-                                    {isEditable && openMenuKey === textMenuKey && (
-                                        <FloatingPartMenu
-                                            onDecrease={() => onUpdatePart('stepTextSize', stepSize(curStepTextSize, -1))}
-                                            onIncrease={() => onUpdatePart('stepTextSize', stepSize(curStepTextSize, 1))}
-                                            onToggleHide={() => onUpdatePart('toggleClueBlank', { idx, field: 'blankText' })}
-                                            isHidden={step.isTextBlank}
-                                            hideLabel={lang === 'sv' ? 'Lucka' : 'Blank'}
-                                            showLabel={lang === 'sv' ? 'Visa text' : 'Show text'}
-                                            onClose={() => setOpenMenuKey(null)}
-                                        />
-                                    )}
-
-                                    <AnimatePresence mode="wait" initial={false}>
-                                        {!showStepText ? (
-                                            <motion.span
-                                                key="text-hidden"
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={CONTENT_REVEAL_TRANSITION}
-                                                className="text-[9px] italic text-slate-400"
-                                            >
-                                                {lang === 'sv' ? 'Dold' : 'Hidden'}
-                                            </motion.span>
-                                        ) : step.isTextBlank ? (
-                                            <motion.div
-                                                key="text-blank"
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={CONTENT_REVEAL_TRANSITION}
-                                            >
-                                                <PrintWriteBlank
-                                                    kind={blankStyle}
-                                                    spacious={spaciousWriting}
-                                                    multiLine={true}
-                                                    lang={lang}
-                                                    hint={lang === 'sv' ? 'Skriv förklaring' : 'Write explanation'}
-                                                    heightPx={blankHeights[`${idx}:text`] ?? null}
-                                                    onHeightChange={
-                                                        onBlankHeightChange
-                                                            ? (nextH) => onBlankHeightChange(idx, 'text', nextH)
-                                                            : null
-                                                    }
-                                                />
-                                            </motion.div>
-                                        ) : (
-                                            <motion.span
-                                                key={`text-shown-${idx}-${step.text}`}
-                                                initial={{ opacity: 0, y: 5 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={CONTENT_REVEAL_TRANSITION}
-                                                className={`block ${stepTextClass} leading-snug ${
-                                                    step.wasTextBlank
-                                                        ? 'font-extrabold text-slate-950 px-2 py-1 rounded-md border-2 border-dashed border-emerald-600/80 bg-emerald-50/40'
-                                                        : 'font-semibold text-slate-800'
-                                                }`}
-                                            >
-                                                {step.wasTextBlank && (
-                                                    <span
-                                                        className="inline-block mr-1 font-mono font-extrabold text-emerald-700"
-                                                        title={lang === 'sv' ? 'Lucka i elevversionen' : 'Blank in student version'}
-                                                    >
-                                                        *
-                                                    </span>
-                                                )}
-                                                <MathDisplay content={step.text} />
-                                            </motion.span>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
-                            </div>
-
-                            <div
-                                style={solutionColStyle}
-                                onClick={(e) => {
-                                    if (!isEditable || !step.latex) return;
-                                    e.stopPropagation();
-                                    setOpenMenuKey((prev) => (prev === latexMenuKey ? null : latexMenuKey));
-                                }}
-                                className={`relative ${solutionColClass} shrink-0 flex flex-col items-stretch justify-center rounded-md ${
-                                    spaciousWriting ? 'min-h-[38px] p-1' : 'py-0.5 px-1'
-                                } ${
-                                    step.isLatexBlank
-                                        ? 'bg-transparent'
-                                        : step.wasLatexBlank
-                                            ? 'bg-emerald-50/40 border-2 border-dashed border-emerald-600/80 shadow-xs'
-                                            : 'bg-white/90 border border-amber-200/70 shadow-xs'
-                                } ${isEditable && step.latex ? 'cursor-pointer hover:ring-2 hover:ring-amber-400' : ''}`}
+                        return (
+                            <motion.div
+                                key={`step-${idx}`}
+                                layout="position"
+                                initial={{ opacity: 0, y: 12, scale: 0.985 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                                transition={ROW_ENTER_TRANSITION}
+                                className="group/step relative flex items-stretch gap-2.5 bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs flex-1"
                             >
-                                {isEditable && openMenuKey === latexMenuKey && (
-                                    <FloatingPartMenu
-                                        onDecrease={() => onUpdatePart('stepLatexSize', stepSize(curStepLatexSize, -1))}
-                                        onIncrease={() => onUpdatePart('stepLatexSize', stepSize(curStepLatexSize, 1))}
-                                        onToggleHide={() => onUpdatePart('toggleClueBlank', { idx, field: 'blankLatex' })}
-                                        isHidden={step.isLatexBlank}
-                                        hideLabel={lang === 'sv' ? 'Lucka' : 'Blank'}
-                                        showLabel={lang === 'sv' ? 'Visa formel' : 'Show math'}
-                                        onClose={() => setOpenMenuKey(null)}
-                                    />
-                                )}
-
-                                <AnimatePresence mode="wait" initial={false}>
-                                    {!showStepLatex ? (
-                                        <motion.span
-                                            key="latex-hidden"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={CONTENT_REVEAL_TRANSITION}
-                                            className="text-[9px] italic text-slate-400 text-center"
+                                {/* Step Number Badge + Remove Whole Step Button */}
+                                <div className="relative shrink-0 mt-0.5">
+                                    <div className="w-6 h-6 rounded-full font-mono font-bold text-[11px] flex items-center justify-center border bg-amber-100 text-amber-950 border-amber-300">
+                                        {idx + 1}
+                                    </div>
+                                    {isEditable && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onUpdatePart?.('toggleHideClue', { idx });
+                                            }}
+                                            className="print:hidden opacity-0 group-hover/step:opacity-100 transition-opacity absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xs cursor-pointer"
+                                            title={lang === 'sv' ? 'Dölj detta steg från bladet' : 'Hide this step from sheet'}
                                         >
-                                            {lang === 'sv' ? 'Dold' : 'Hidden'}
-                                        </motion.span>
-                                    ) : step.isLatexBlank ? (
-                                        <motion.div
-                                            key="latex-blank"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={CONTENT_REVEAL_TRANSITION}
-                                        >
-                                            <PrintWriteBlank
-                                                kind={blankStyle}
-                                                spacious={spaciousWriting}
-                                                multiLine={false}
-                                                lang={lang}
-                                                hint={lang === 'sv' ? 'Uträkning' : 'Working'}
-                                                heightPx={blankHeights[`${idx}:latex`] ?? null}
-                                                onHeightChange={
-                                                    onBlankHeightChange
-                                                        ? (nextH) => onBlankHeightChange(idx, 'latex', nextH)
-                                                        : null
-                                                }
-                                            />
-                                        </motion.div>
-                                    ) : step.latex ? (
-                                        <motion.div
-                                            key={`latex-shown-${idx}-${step.latex}`}
-                                            initial={{ opacity: 0, y: 5, scale: 0.98 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={CONTENT_REVEAL_TRANSITION}
-                                            className={`relative font-serif ${stepLatexClass} font-bold text-slate-950 text-center py-0.5`}
-                                        >
-                                            {step.wasLatexBlank && (
-                                                <span
-                                                    className="absolute top-0 right-0.5 font-mono text-[10px] font-extrabold text-emerald-700 leading-none"
-                                                    title={lang === 'sv' ? 'Lucka i elevversionen' : 'Blank in student version'}
-                                                >
-                                                    *
-                                                </span>
-                                            )}
-                                            <MathDisplay content={`$$${step.latex}$$`} />
-                                        </motion.div>
-                                    ) : (
-                                        <motion.span
-                                            key="latex-see-text"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={CONTENT_REVEAL_TRANSITION}
-                                            className="text-[9px] italic text-slate-400 text-center"
-                                        >
-                                            {lang === 'sv' ? 'Se text' : 'See text'}
-                                        </motion.span>
+                                            <X size={9} />
+                                        </button>
                                     )}
-                                </AnimatePresence>
-                            </div>
-                        </motion.div>
-                    );
-                })}
-            </AnimatePresence>
+                                </div>
+
+                                {/* Step Explanation Text Column */}
+                                <div className="flex-1 min-w-0 flex items-start pt-1">
+                                    {!hasText ? (
+                                        <span className="text-[10px] font-mono italic text-slate-300 select-none">—</span>
+                                    ) : isEditingThisText && isEditable ? (
+                                        <div
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="w-full space-y-1 bg-slate-50 p-1.5 rounded-lg border-2 border-emerald-500"
+                                        >
+                                            <textarea
+                                                autoFocus
+                                                rows={2}
+                                                value={editingField.value}
+                                                onChange={(e) =>
+                                                    setEditingField((prev) => ({ ...prev, value: e.target.value }))
+                                                }
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        commitStepEdit();
+                                                    } else if (e.key === 'Escape') {
+                                                        setEditingField(null);
+                                                    }
+                                                }}
+                                                className="w-full text-xs font-semibold text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-emerald-600 resize-y"
+                                            />
+                                            <div className="flex justify-end gap-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEditingField(null)}
+                                                    className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700 cursor-pointer"
+                                                >
+                                                    <X size={10} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={commitStepEdit}
+                                                    className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white cursor-pointer"
+                                                >
+                                                    <Check size={10} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : showStepText ? (
+                                        <div
+                                            onClick={(e) => {
+                                                if (!isEditable) return;
+                                                e.stopPropagation();
+                                                onUpdatePart?.('toggleClueBlank', { idx, field: 'blankText' });
+                                            }}
+                                            title={
+                                                isEditable
+                                                    ? lang === 'sv'
+                                                        ? 'Klicka för skrivlucka · Hovra för att redigera eller dölja'
+                                                        : 'Click for student blank · Hover to edit or hide'
+                                                    : undefined
+                                            }
+                                            className={`group/text relative w-full h-full flex items-start rounded-lg transition-all ${
+                                                isEditable
+                                                    ? 'cursor-pointer hover:bg-amber-50/70 px-1.5 py-0.5 -mx-1.5'
+                                                    : ''
+                                            }`}
+                                        >
+                                            {isEditable && (
+                                                <div
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="print:hidden opacity-0 group-hover/text:opacity-100 transition-opacity absolute -top-3 right-0 z-20 flex items-center gap-0.5 bg-white border border-slate-300 rounded-md px-1 py-0.5 shadow-xs"
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setEditingField({ idx, kind: 'text', value: step.text || '' })
+                                                        }
+                                                        className="p-0.5 text-slate-600 hover:text-emerald-700 cursor-pointer"
+                                                        title={lang === 'sv' ? 'Redigera text' : 'Edit text'}
+                                                    >
+                                                        <Pencil size={10} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            onUpdatePart?.('toggleHideClueText', { idx })
+                                                        }
+                                                        className="p-0.5 text-slate-600 hover:text-rose-600 cursor-pointer"
+                                                        title={lang === 'sv' ? 'Dölj textdel helt' : 'Hide text completely'}
+                                                    >
+                                                        <EyeOff size={10} />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            <AnimatePresence mode="wait" initial={false}>
+                                                {isTextBlank ? (
+                                                    <motion.div
+                                                        key="text-blank"
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={{ duration: 0.14 }}
+                                                        className="w-full h-full flex items-center"
+                                                    >
+                                                        <PrintWriteBlank
+                                                            kind={blankStyle}
+                                                            spacious={spaciousWriting}
+                                                            multiLine={true}
+                                                            lang={lang}
+                                                            heightPx={textBlankHeight}
+                                                            onHeightChange={
+                                                                isEditable && onBlankHeightChange
+                                                                    ? (nextH) => onBlankHeightChange(idx, 'text', nextH)
+                                                                    : null
+                                                            }
+                                                        />
+                                                    </motion.div>
+                                                ) : (
+                                                    <motion.span
+                                                        key={`text-shown-${idx}-${step.text}`}
+                                                        initial={{ opacity: 0, y: 5 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={CONTENT_REVEAL_TRANSITION}
+                                                        className={`block ${stepTextClass} leading-snug ${
+                                                            step.wasTextBlank
+                                                                ? 'font-extrabold text-slate-950 px-2 py-1 rounded-md border-2 border-dashed border-emerald-600/80 bg-emerald-50/40'
+                                                                : 'font-semibold text-slate-800'
+                                                        }`}
+                                                    >
+                                                        {step.wasTextBlank && (
+                                                            <span
+                                                                title={lang === 'sv' ? 'Elevlucka' : 'Student blank'}
+                                                                className="inline-block mr-1 text-emerald-700 font-mono font-black"
+                                                            >
+                                                                *
+                                                            </span>
+                                                        )}
+                                                        <MathDisplay content={step.text} />
+                                                    </motion.span>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    ) : (
+                                        <span className="print:hidden text-[10px] font-mono italic text-slate-400">
+                                            {lang === 'sv' ? 'Text dold' : 'Text hidden'}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Step Solution / Equation Column */}
+                                {hasLatex && (
+                                    <div
+                                        style={solutionColStyle}
+                                        onClick={(e) => {
+                                            if (!isEditable || !showStepLatex || isEditingThisLatex) return;
+                                            e.stopPropagation();
+                                            onUpdatePart?.('toggleClueBlank', { idx, field: 'blankLatex' });
+                                        }}
+                                        title={
+                                            isEditable && showStepLatex
+                                                ? lang === 'sv'
+                                                    ? 'Klicka för skrivlucka · Hovra för att redigera eller dölja'
+                                                    : 'Click for student blank · Hover to edit or hide'
+                                                : undefined
+                                        }
+                                        className={`group/latex relative shrink-0 ${solutionColClass} rounded-lg border px-2 py-1 flex flex-col justify-center items-center transition-all ${
+                                            isLatexBlank
+                                                ? 'bg-white border-transparent'
+                                                : step.wasLatexBlank
+                                                    ? 'bg-emerald-50/40 border-2 border-dashed border-emerald-600/80'
+                                                    : 'bg-slate-50 border-slate-200/80'
+                                        } ${
+                                            isEditable && showStepLatex && !isEditingThisLatex
+                                                ? 'cursor-pointer hover:border-amber-400 hover:bg-amber-50/50'
+                                                : ''
+                                        }`}
+                                    >
+                                        {isEditable && !isEditingThisLatex && (
+                                            <div
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="print:hidden opacity-0 group-hover/latex:opacity-100 transition-opacity absolute -top-3 right-0 z-20 flex items-center gap-0.5 bg-white border border-slate-300 rounded-md px-1 py-0.5 shadow-xs"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setEditingField({ idx, kind: 'latex', value: step.latex || '' })
+                                                    }
+                                                    className="p-0.5 text-slate-600 hover:text-emerald-700 cursor-pointer"
+                                                    title={lang === 'sv' ? 'Redigera formel (LaTeX)' : 'Edit equation (LaTeX)'}
+                                                >
+                                                    <Pencil size={10} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        onUpdatePart?.('toggleHideClueLatex', { idx })
+                                                    }
+                                                    className="p-0.5 text-slate-600 hover:text-rose-600 cursor-pointer"
+                                                    title={lang === 'sv' ? 'Dölj svarsruta helt' : 'Hide solution box completely'}
+                                                >
+                                                    <EyeOff size={10} />
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {isEditingThisLatex && isEditable ? (
+                                            <div
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="w-full space-y-1 bg-white p-1 rounded border-2 border-emerald-500"
+                                            >
+                                                <input
+                                                    type="text"
+                                                    autoFocus
+                                                    value={editingField.value}
+                                                    onChange={(e) =>
+                                                        setEditingField((prev) => ({ ...prev, value: e.target.value }))
+                                                    }
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            commitStepEdit();
+                                                        } else if (e.key === 'Escape') {
+                                                            setEditingField(null);
+                                                        }
+                                                    }}
+                                                    className="w-full font-mono text-[11px] text-slate-900 bg-slate-50 border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:border-emerald-600"
+                                                />
+                                                {editingField.value && (
+                                                    <div className="text-center font-serif text-xs text-slate-700 py-0.5 overflow-x-auto">
+                                                        <MathDisplay content={`$$${editingField.value}$$`} />
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-end gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setEditingField(null)}
+                                                        className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700 cursor-pointer"
+                                                    >
+                                                        <X size={10} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={commitStepEdit}
+                                                        className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white cursor-pointer"
+                                                    >
+                                                        <Check size={10} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : showStepLatex ? (
+                                            <AnimatePresence mode="wait" initial={false}>
+                                                {isLatexBlank ? (
+                                                    <motion.div
+                                                        key="latex-blank"
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={{ duration: 0.14 }}
+                                                        className="w-full h-full flex items-center"
+                                                    >
+                                                        <PrintWriteBlank
+                                                            kind={blankStyle}
+                                                            spacious={spaciousWriting}
+                                                            multiLine={false}
+                                                            lang={lang}
+                                                            heightPx={latexBlankHeight}
+                                                            onHeightChange={
+                                                                isEditable && onBlankHeightChange
+                                                                    ? (nextH) => onBlankHeightChange(idx, 'latex', nextH)
+                                                                    : null
+                                                            }
+                                                        />
+                                                    </motion.div>
+                                                ) : (
+                                                    <motion.div
+                                                        key={`latex-shown-${idx}-${step.latex}`}
+                                                        initial={{ opacity: 0, y: 5, scale: 0.98 }}
+                                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={CONTENT_REVEAL_TRANSITION}
+                                                        className={`relative font-serif ${stepLatexClass} font-bold text-slate-950 text-center py-0.5`}
+                                                    >
+                                                        {step.wasLatexBlank && (
+                                                            <span
+                                                                title={lang === 'sv' ? 'Elevlucka' : 'Student blank'}
+                                                                className="mr-1 text-emerald-700 font-mono font-black text-xs align-top"
+                                                            >
+                                                                *
+                                                            </span>
+                                                        )}
+                                                        <MathDisplay content={`$$${step.latex}$$`} />
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        ) : (
+                                            <span className="print:hidden text-[10px] font-mono italic text-slate-400">
+                                                {lang === 'sv' ? 'Svar dolt' : 'Hidden'}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                            </motion.div>
+                        );
+                    })}
+                </AnimatePresence>
+            </div>
         </div>
     );
 }
