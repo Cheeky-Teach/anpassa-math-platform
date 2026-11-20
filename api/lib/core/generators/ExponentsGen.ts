@@ -136,7 +136,7 @@ export class ExponentsGen {
                 token: this.toBase64(ansValue), variationKey: v, type: 'concept',
                 clues: [
                     { 
-                        text: lang === 'sv' ? (isZero ? "Kom ihåg den enklaste regeln: Vilket tal som helst upphöjt till 0 blir ALLTID exakt 1." : "Remember the easiest rule: Any number raised to the power of 0 ALWAYS equals exactly 1.") : (isZero ? "Remember the rule: Any number raised to the power of 0 ALWAYS equals exactly 1." : "Remember the rule: Any number raised to the power of 1 is just that exact same number unchanged."), 
+                        text: lang === 'sv' ? (isZero ? "Kom ihåg regeln: Vilket tal som helst upphöjt till 0 blir ALLTID exakt 1." : "Kom ihåg regeln: Vilket tal som helst upphöjt till 1 blir alltid samma tal.") : (isZero ? "Remember the rule: Any number raised to the power of 0 ALWAYS equals exactly 1." : "Remember the rule: Any number raised to the power of 1 is just that exact same number unchanged."), 
                         latex: isZero ? `\\mathbf{x^0 = 1}` : `\\mathbf{x^1 = x}` 
                     },
                     { 

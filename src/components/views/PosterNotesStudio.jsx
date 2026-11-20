@@ -159,8 +159,16 @@ function normalizeSummonedToExample(rawItem, index = 0) {
     variationKey: rawItem?.variationKey || '',
     name: rawItem?.name || rd?.title || `Exempel ${index + 1}`,
     title: rawItem?.name || rd?.title || `Exempel ${index + 1}`,
-    promptText: rd?.description || rawItem?.text || '',
-    promptLatex: rd?.latex || '',
+    promptText:
+      rawItem?.promptText ||
+      rd?.description ||
+      rawItem?.text ||
+      '',
+    promptLatex:
+      rawItem?.promptLatex ||
+      rd?.latex ||
+      rawItem?.latex ||
+      '',
     clues,
     overrides: null,
     rawItem
@@ -172,10 +180,15 @@ function parseExamplesFromPacket(packet) {
     const list = Array.isArray(packet.examples)
       ? packet.examples
       : Object.values(packet.examples);
-    return list.map((ex, idx) => ({
-      ...normalizeSummonedToExample(ex, idx),
-      overrides: ex.overrides || null
-    }));
+    return list.map((ex, idx) => {
+      const normalized = normalizeSummonedToExample(ex, idx);
+      return {
+        ...normalized,
+        promptText: ex.promptText || normalized.promptText,
+        promptLatex: ex.promptLatex || normalized.promptLatex,
+        overrides: ex.overrides || null
+      };
+    });
   }
   return [];
 }
@@ -1055,8 +1068,8 @@ export default function PosterNotesStudio({
         renderData: {
           ...baseRenderData,
           ...(baseRaw.renderData || {}),
-          description: example.promptText ?? baseRenderData.description ?? '',
-          latex: example.promptLatex ?? baseRenderData.latex ?? ''
+          description: example.promptText || baseRenderData.description || '',
+          latex: example.promptLatex || baseRenderData.latex || ''
         }
       }
     };
