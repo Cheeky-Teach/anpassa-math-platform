@@ -1,15 +1,17 @@
 // src/components/views/PosterNotesStudio.jsx
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Printer,
   Monitor,
   Plus,
   Trash2,
   LayoutGrid,
   Save,
+  Copy,
   X,
   RotateCcw,
   RefreshCcw,
@@ -18,7 +20,9 @@ import {
   SlidersHorizontal,
   Columns,
   HelpCircle,
-  Sparkles
+  Sparkles,
+  GraduationCap,
+  KeyRound
 } from 'lucide-react';
 import QuestionSummoner from './QuestionSummoner';
 import WorkedExampleCard from '../shared/WorkedExampleCard.jsx';
@@ -109,7 +113,7 @@ const DEFAULT_CARD_LAYOUT = {
   visualOffsetY: 0
 };
 
-const TUTORIAL_STORAGE_KEY = 'anpassa_poster_notes_tour_seen_v1';
+const TUTORIAL_STORAGE_KEY = 'anpassa_poster_notes_tour_seen_v2';
 
 const TUTORIAL_STEPS = [
   {
@@ -140,22 +144,13 @@ const TUTORIAL_STEPS = [
       'Click any text, equation, or figure directly on the sheet to turn it into a student fill-in blank, adjust typography, or drag blank heights.'
   },
   {
-    target: 'watermark-controls',
-    titleSv: '4. Vattenstämpel för utskrift',
-    titleEn: '4. Print Watermark',
-    bodySv:
-      'Lägg till kurskod, klass eller skolans namn som diskret sidfot eller diagonal stämpel över varje utskriftsblad (anpassas automatiskt för A5-häften).',
-    bodyEn:
-      'Add a course code, class name, or school attribution as a subtle footer or diagonal stamp across every printed sheet (auto-split for A5 booklets).'
-  },
-  {
     target: 'projector-print-actions',
-    titleSv: '5. Projektorläge & utskrift',
-    titleEn: '5. Projector Mode & Printing',
+    titleSv: '4. Elev/Facit, projektor & utskrift',
+    titleEn: '4. Student/Teacher Key, Projector & Print',
     bodySv:
-      'Starta projektorläget för att gå igenom luckor eller steg i turordning på tavlan (1 eller 2 kort åt gången), eller skriv ut arket direkt.',
+      'Växla mellan Elevversion och Facit (där elevluckorna markeras med *), starta projektorläget på tavlan eller skriv ut direkt.',
     bodyEn:
-      'Launch Projector Mode to step through blanks or clues sequentially on the board (1 or 2 cards at a time), or print directly.'
+      'Switch between Student and Teacher Key (highlighting student blanks with *), launch Projector Mode on the board, or print directly.'
   }
 ];
 
@@ -400,7 +395,6 @@ function SpotlightTutorialOverlay({ steps, currentStep, onNext, onPrev, onClose,
         Math.max(16, targetRect.left)
       );
     } else {
-      // Target is tall (e.g. sheet stage): dock card cleanly at top-right of stage
       popoverTop = 76;
       popoverLeft = Math.max(16, window.innerWidth - cardWidth - 28);
     }
@@ -408,7 +402,6 @@ function SpotlightTutorialOverlay({ steps, currentStep, onNext, onPrev, onClose,
 
   return (
     <div className="fixed inset-0 z-40 print:hidden">
-      {/* Clickable backdrop when target isn't found */}
       {!targetRect && (
         <div
           onClick={onClose}
@@ -416,7 +409,6 @@ function SpotlightTutorialOverlay({ steps, currentStep, onNext, onPrev, onClose,
         />
       )}
 
-      {/* Spotlight cutout ring */}
       {targetRect && (
         <motion.div
           initial={false}
@@ -434,7 +426,6 @@ function SpotlightTutorialOverlay({ steps, currentStep, onNext, onPrev, onClose,
         />
       )}
 
-      {/* Tutorial instruction card */}
       <motion.div
         key={`tour-card-${currentStep}`}
         initial={{ opacity: 0, y: 8 }}
@@ -531,6 +522,16 @@ export default function PosterNotesStudio({
     initialTitle || (lang === 'sv' ? 'Affischer & Anteckningar' : 'Posters & Notes')
   );
 
+  // Save menu + pending "Save as New Copy" state
+  const [isSaveMenuOpen, setIsSaveMenuOpen] = useState(false);
+  const [pendingCopySave, setPendingCopySave] = useState(false);
+  const saveMenuRef = useRef(null);
+
+  // Student vs Teacher Key toggle ('student' | 'teacher')
+  const [printVariant, setPrintVariant] = useState(
+    initialConfig?.printVariant || 'student'
+  );
+
   const [paperFormat, setPaperFormat] = useState(initialConfig?.paperFormat || 'A4_PORTRAIT');
   const [layoutPreset, setLayoutPreset] = useState(initialConfig?.layoutPreset || '1-up');
   const [twoUpDirection, setTwoUpDirection] = useState(
@@ -539,10 +540,6 @@ export default function PosterNotesStudio({
   const [themeId, setThemeId] = useState(initialConfig?.themeId || defaultThemeId);
   const [blankStyle, setBlankStyle] = useState(initialConfig?.blankStyle || 'line');
   const [writingSpace, setWritingSpace] = useState(initialConfig?.writingSpace || 'standard');
-
-  const [showBrandWatermark, setShowBrandWatermark] = useState(
-    initialConfig?.showBrandWatermark ?? true
-  );
 
   const [blankHeightsByExample, setBlankHeightsByExample] = useState(
     initialConfig?.blankHeightsByExample || {}
@@ -588,7 +585,7 @@ export default function PosterNotesStudio({
         setIsTutorialOpen(true);
       }
     } catch {
-      // Ignore storage access errors in restricted environments
+      // Ignore storage access errors
     }
   }, []);
 
@@ -605,6 +602,18 @@ export default function PosterNotesStudio({
     setTutorialStepIndex(0);
     setIsTutorialOpen(true);
   };
+
+  // Close save dropdown on outside pointerdown
+  useEffect(() => {
+    if (!isSaveMenuOpen) return;
+    const handleOutside = (e) => {
+      if (saveMenuRef.current && !saveMenuRef.current.contains(e.target)) {
+        setIsSaveMenuOpen(false);
+      }
+    };
+    window.addEventListener('pointerdown', handleOutside);
+    return () => window.removeEventListener('pointerdown', handleOutside);
+  }, [isSaveMenuOpen]);
 
   // Projector state (sequential reading order + 1 or 2 cards per slide)
   const [isProjectorOpen, setIsProjectorOpen] = useState(false);
@@ -671,7 +680,7 @@ export default function PosterNotesStudio({
       themeId,
       blankStyle,
       writingSpace,
-      showBrandWatermark,
+      printVariant,
       blankHeightsByExample,
       projectorPacingMode,
       projectorCardsPerSlide
@@ -683,7 +692,7 @@ export default function PosterNotesStudio({
       themeId,
       blankStyle,
       writingSpace,
-      showBrandWatermark,
+      printVariant,
       blankHeightsByExample,
       projectorPacingMode,
       projectorCardsPerSlide
@@ -707,6 +716,28 @@ export default function PosterNotesStudio({
       auto_topics: [...new Set(examples.map((ex) => ex.topicId).filter(Boolean))]
     })
   });
+
+  // Trigger save on the next render after detaching sheetId for "Save as Copy"
+  useEffect(() => {
+    if (!pendingCopySave || sheetId !== null) return;
+    setPendingCopySave(false);
+    triggerSave();
+  }, [pendingCopySave, sheetId, triggerSave]);
+
+  const handleSaveOverwrite = () => {
+    setIsSaveMenuOpen(false);
+    triggerSave();
+  };
+
+  const handleSaveAsCopy = () => {
+    setIsSaveMenuOpen(false);
+    const copySuffix = lang === 'sv' ? ' (kopia)' : ' (Copy)';
+    setTitle((prev) =>
+      prev.endsWith(copySuffix) ? prev : `${prev.trim() || 'Untitled'}${copySuffix}`
+    );
+    setSheetId(null);
+    setPendingCopySave(true);
+  };
 
   const activeTheme = PRESENTATION_THEMES?.[themeId] || PRESENTATION_THEMES?.[defaultThemeId] || {};
   const activePaper = PAPER_SPECS[paperFormat] || PAPER_SPECS.A4_PORTRAIT;
@@ -1095,6 +1126,8 @@ export default function PosterNotesStudio({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isProjectorOpen, handleProjectorNext, handleProjectorPrev]);
 
+  const isTeacherKey = printVariant === 'teacher';
+
   const buildWorkedCardItem = (example, { isProjector = false } = {}) => {
     const baseRaw = example.rawItem || {};
     const baseResolved = baseRaw.resolvedData || {};
@@ -1107,7 +1140,22 @@ export default function PosterNotesStudio({
       const originalText = clue[lang] || clue.text || clue.sv || clue.en || '';
       const originalLatex = clue.latex || null;
 
-      if (!isProjector || projectorPacingMode === 'all_shown') {
+      if (!isProjector && isTeacherKey) {
+        // Teacher Key: force all clues visible, but highlight items that are blanked in Student mode
+        const wasTextBlanked = Boolean(clue.blankText) && Boolean(originalText);
+        const wasLatexBlanked = Boolean(clue.blankLatex) && Boolean(originalLatex);
+
+        mappedClues.push({
+          text: originalText,
+          sv: originalText,
+          en: originalText,
+          latex: originalLatex,
+          _blankText: false,
+          _blankLatex: false,
+          _wasTextBlank: wasTextBlanked,
+          _wasLatexBlank: wasLatexBlanked
+        });
+      } else if (!isProjector || projectorPacingMode === 'all_shown') {
         const isTextBlanked = Boolean(clue.blankText) && Boolean(originalText);
         const isLatexBlanked = Boolean(clue.blankLatex) && Boolean(originalLatex);
 
@@ -1585,9 +1633,7 @@ export default function PosterNotesStudio({
     );
   };
 
-  const renderSheetWatermark = () => {
-    if (!showBrandWatermark) return null;
-
+  const renderBrandAttribution = () => {
     if (layoutPreset === 'A5_BOOKLET') {
       return (
         <div
@@ -1677,15 +1723,71 @@ export default function PosterNotesStudio({
             className="bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-lg px-3 py-1.5 text-sm font-bold outline-none focus:border-emerald-600 max-w-xs w-full"
           />
 
-          <button
-            type="button"
-            onClick={() => triggerSave()}
-            disabled={isSaving}
-            className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-40"
-          >
-            <Save size={13} className="text-emerald-600" />
-            <span>{lang === 'sv' ? 'Spara' : 'Save'}</span>
-          </button>
+          {/* Save Split / Choice Control */}
+          <div ref={saveMenuRef} className="relative shrink-0">
+            {sheetId ? (
+              <button
+                type="button"
+                onClick={() => setIsSaveMenuOpen((prev) => !prev)}
+                disabled={isSaving}
+                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+              >
+                <Save size={13} className="text-emerald-600" />
+                <span>{lang === 'sv' ? 'Spara' : 'Save'}</span>
+                <ChevronDown size={12} className="text-[var(--text-muted)]" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSaveOverwrite}
+                disabled={isSaving}
+                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+              >
+                <Save size={13} className="text-emerald-600" />
+                <span>{lang === 'sv' ? 'Spara' : 'Save'}</span>
+              </button>
+            )}
+
+            {isSaveMenuOpen && sheetId && (
+              <div className="absolute left-0 top-full mt-1.5 w-60 rounded-xl bg-[var(--bg-card)] border border-[var(--border-strong)] shadow-xl p-1.5 z-50 space-y-1">
+                <button
+                  type="button"
+                  onClick={handleSaveOverwrite}
+                  className="w-full px-3 py-2 rounded-lg text-left hover:bg-[var(--bg-surface)] transition-colors flex items-start gap-2.5 cursor-pointer"
+                >
+                  <Save size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-[var(--text-main)]">
+                      {lang === 'sv' ? 'Spara ändringar' : 'Save changes'}
+                    </div>
+                    <div className="text-[11px] text-[var(--text-muted)] leading-snug">
+                      {lang === 'sv'
+                        ? 'Skriv över originalfilen'
+                        : 'Overwrite the original file'}
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveAsCopy}
+                  className="w-full px-3 py-2 rounded-lg text-left hover:bg-[var(--bg-surface)] transition-colors flex items-start gap-2.5 cursor-pointer"
+                >
+                  <Copy size={14} className="text-sky-600 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-[var(--text-main)]">
+                      {lang === 'sv' ? 'Spara som ny kopia' : 'Save as new copy'}
+                    </div>
+                    <div className="text-[11px] text-[var(--text-muted)] leading-snug">
+                      {lang === 'sv'
+                        ? 'Behåll originalet orört'
+                        : 'Keep original untouched'}
+                    </div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -1712,6 +1814,42 @@ export default function PosterNotesStudio({
           </button>
 
           <div data-tour="projector-print-actions" className="flex items-center gap-2">
+            {/* Student / Teacher Key Version Switch */}
+            <div
+              className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] p-0.5 rounded-xl"
+              title={
+                lang === 'sv'
+                  ? 'Växla mellan elevblad med luckor och facit med alla steg'
+                  : 'Switch between student blanks and teacher key with all steps'
+              }
+            >
+              <button
+                type="button"
+                onClick={() => setPrintVariant('student')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                  !isTeacherKey
+                    ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                <GraduationCap size={13} />
+                <span>{lang === 'sv' ? 'Elev' : 'Student'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPrintVariant('teacher')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                  isTeacherKey
+                    ? 'bg-emerald-600 text-white'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                <KeyRound size={13} />
+                <span>{lang === 'sv' ? 'Facit' : 'Teacher Key'}</span>
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => openProjectorAt(activePageIndex)}
@@ -1727,7 +1865,15 @@ export default function PosterNotesStudio({
               className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-xs font-bold flex items-center gap-1.5 cursor-pointer"
             >
               <Printer size={14} />
-              <span>{lang === 'sv' ? 'Skriv ut' : 'Print'}</span>
+              <span>
+                {isTeacherKey
+                  ? lang === 'sv'
+                    ? 'Skriv ut facit'
+                    : 'Print Key'
+                  : lang === 'sv'
+                    ? 'Skriv ut'
+                    : 'Print'}
+              </span>
             </button>
           </div>
         </div>
@@ -1735,7 +1881,7 @@ export default function PosterNotesStudio({
 
       {/* Main Content */}
       <div className="poster-studio-body flex-1 flex overflow-hidden min-h-0">
-        {/* Left Sidebar: Sheet, Layout, Watermark & Blank Format Settings */}
+        {/* Left Sidebar: Sheet, Layout & Blank Format Settings */}
         <aside className="w-64 bg-[var(--bg-card)] border-r border-[var(--border-main)] p-4 space-y-4 overflow-y-auto shrink-0 print:hidden">
           <div data-tour="layout-controls" className="space-y-3">
             <div>
@@ -1910,6 +2056,11 @@ export default function PosterNotesStudio({
                 <div className="flex items-center justify-between border-b-2 border-stone-900 pb-2 mb-3">
                   <div className="flex items-center gap-2">
                     <h2 className="text-base font-extrabold tracking-tight">{title}</h2>
+                    {isTeacherKey && (
+                      <span className="px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-600 text-emerald-800 font-mono text-xs font-bold">
+                        {lang === 'sv' ? 'FACIT · * = elevlucka' : 'TEACHER KEY · * = student blank'}
+                      </span>
+                    )}
                     <span className="print:hidden text-xs font-mono px-1.5 py-0.5 rounded-lg bg-[var(--bg-surface)] text-[var(--text-muted)]">
                       {lang === 'sv'
                         ? LAYOUT_PRESETS[layoutPreset]?.sv
@@ -1924,7 +2075,7 @@ export default function PosterNotesStudio({
                 {renderPageContent(pg)}
               </div>
 
-              {renderSheetWatermark()}
+              {renderBrandAttribution()}
             </div>
           ))}
         </main>

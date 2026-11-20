@@ -59,14 +59,18 @@ export function normalizeClues(rawClues = [], lang = 'sv') {
                 text: c[lang] || c.text || '',
                 latex: c.latex || null,
                 isTextBlank: Boolean(c._blankText ?? c.blankText),
-                isLatexBlank: Boolean(c._blankLatex ?? c.blankLatex)
+                isLatexBlank: Boolean(c._blankLatex ?? c.blankLatex),
+                wasTextBlank: Boolean(c._wasTextBlank),
+                wasLatexBlank: Boolean(c._wasLatexBlank)
             };
         }
         return {
             text: String(c),
             latex: null,
             isTextBlank: false,
-            isLatexBlank: false
+            isLatexBlank: false,
+            wasTextBlank: false,
+            wasLatexBlank: false
         };
     });
 }
@@ -790,8 +794,20 @@ export function ClueRowsSection({
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0 }}
                                                 transition={CONTENT_REVEAL_TRANSITION}
-                                                className={`block ${stepTextClass} font-semibold text-slate-800 leading-snug`}
+                                                className={`block ${stepTextClass} leading-snug ${
+                                                    step.wasTextBlank
+                                                        ? 'font-extrabold text-slate-950 px-2 py-1 rounded-md border-2 border-dashed border-emerald-600/80 bg-emerald-50/40'
+                                                        : 'font-semibold text-slate-800'
+                                                }`}
                                             >
+                                                {step.wasTextBlank && (
+                                                    <span
+                                                        className="inline-block mr-1 font-mono font-extrabold text-emerald-700"
+                                                        title={lang === 'sv' ? 'Lucka i elevversionen' : 'Blank in student version'}
+                                                    >
+                                                        *
+                                                    </span>
+                                                )}
                                                 <MathDisplay content={step.text} />
                                             </motion.span>
                                         )}
@@ -811,7 +827,9 @@ export function ClueRowsSection({
                                 } ${
                                     step.isLatexBlank
                                         ? 'bg-transparent'
-                                        : 'bg-white/90 border border-amber-200/70 shadow-xs'
+                                        : step.wasLatexBlank
+                                            ? 'bg-emerald-50/40 border-2 border-dashed border-emerald-600/80 shadow-xs'
+                                            : 'bg-white/90 border border-amber-200/70 shadow-xs'
                                 } ${isEditable && step.latex ? 'cursor-pointer hover:ring-2 hover:ring-amber-400' : ''}`}
                             >
                                 {isEditable && openMenuKey === latexMenuKey && (
@@ -867,8 +885,16 @@ export function ClueRowsSection({
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                             exit={{ opacity: 0 }}
                                             transition={CONTENT_REVEAL_TRANSITION}
-                                            className={`font-serif ${stepLatexClass} font-bold text-slate-950 text-center py-0.5`}
+                                            className={`relative font-serif ${stepLatexClass} font-bold text-slate-950 text-center py-0.5`}
                                         >
+                                            {step.wasLatexBlank && (
+                                                <span
+                                                    className="absolute top-0 right-0.5 font-mono text-[10px] font-extrabold text-emerald-700 leading-none"
+                                                    title={lang === 'sv' ? 'Lucka i elevversionen' : 'Blank in student version'}
+                                                >
+                                                    *
+                                                </span>
+                                            )}
                                             <MathDisplay content={`$$${step.latex}$$`} />
                                         </motion.div>
                                     ) : (
