@@ -18,6 +18,7 @@ import TimesTable from './components/views/TimesTable';
 import TestLabView from './components/views/TestLabView';
 import PresentationView from './components/views/PresentationView';
 import ManipulativeSandboxView from './components/views/ManipulativeSandboxView';
+import PosterNotesStudio from './components/views/PosterNotesStudio';
 
 // Modals
 import AboutModal from './components/modals/AboutModal';
@@ -195,6 +196,86 @@ function App() {
     const [answerKeyStyle, setAnswerKeyStyle] = useState('compact');
     const [timerSettings, setTimerSettings] = useState({ duration: 0, remaining: 0, isActive: false });
 
+    // --- 7b. POSTER & GUIDED NOTES STATE ---
+    const [posterNotesState, setPosterNotesState] = useState({
+        sheetId: null,
+        title: '',
+        packet: null,
+        config: null
+    });
+
+    const handleOpenPosterNotes = (sheet = null) => {
+        if (sheet) {
+            const isPosterPacket = sheet.packet && !Array.isArray(sheet.packet) && sheet.packet.examples;
+            setPosterNotesState({
+                sheetId: sheet.id || null,
+                title: sheet.title || '',
+                packet: isPosterPacket ? sheet.packet : null,
+                config: sheet.config || null
+            });
+        } else {
+            setPosterNotesState({
+                sheetId: null,
+                title: '',
+                packet: null,
+                config: null
+            });
+        }
+        setView('poster_notes');
+    };
+
+    const handleOpenLibrarySheet = (sheet) => {
+        if (!sheet) return;
+
+        if (sheet.type === 'poster_notes') {
+            handleOpenPosterNotes(sheet);
+            return;
+        }
+
+        if (sheet.type?.startsWith('activity')) {
+            const actDef = getActivityDefinition(sheet.type);
+            if (actDef) {
+                const questions = Array.isArray(sheet.packet)
+                    ? sheet.packet
+                    : (sheet.packet?.tiles || sheet.packet?.livePacket || []);
+                setActiveActivity({
+                    key: actDef.key,
+                    savedBoard: sheet,
+                    sourcePacket: questions,
+                    config: { initialQuestions: questions }
+                });
+            }
+            return;
+        }
+
+        if (sheet.type === 'board') {
+            const boardPacket = Array.isArray(sheet.packet)
+                ? sheet.packet
+                : (sheet.packet?.livePacket || []);
+            setSavedPacket(boardPacket);
+            setSheetTitle(sheet.title || (lang === 'sv' ? 'Presentationstavla' : 'Presentation Board'));
+            setView('presentation');
+            return;
+        }
+
+        const safePacket = Array.isArray(sheet.packet)
+            ? sheet.packet
+            : Array.isArray(sheet.packet?.tiles)
+                ? sheet.packet.tiles
+                : [];
+
+        setSavedPacket(safePacket);
+        setSheetTitle(sheet.title || '');
+        setStudioMode(sheet.type || 'worksheet');
+        if (sheet.config?.includeAnswerKey !== undefined) {
+            setIncludeAnswerKey(sheet.config.includeAnswerKey);
+        }
+        if (sheet.config?.answerKeyStyle !== undefined) {
+            setAnswerKeyStyle(sheet.config.answerKeyStyle);
+        }
+        setView('question_studio');
+    };
+
     // --- 8. BROWSER & FOCUS CONTEXT ---
     const [isFocused, setIsFocused] = useState(true);
 
@@ -364,6 +445,8 @@ function App() {
             // 3. Standard deep-linking logic
             if (path === 'lab') {
                 setView('practice_lab');
+            } else if (path === 'poster_notes') {
+                setView(currentView => currentView === 'poster_notes' ? 'poster_notes' : 'dashboard');
             } else if (path) {
                 setView(path);
             }
@@ -1071,7 +1154,7 @@ function App() {
                 !activeActivity && 
                 view !== 'teacher_live' && 
                 view !== 'live_session' && (
-                    <header className="sticky top-2 z-40 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
+                    <header className="sticky top-2 z-10 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
                         <div className="max-w-[1400px] mx-auto w-full px-3 sm:px-5 py-0 flex flex-row items-center justify-between relative">
                             <div className="flex-1 flex justify-start">
                                 {view === 'practice' || view === 'times_table' ? (
@@ -1215,7 +1298,20 @@ function App() {
                                     onStart={startPractice}
                                     onStartCheckpoint={handleLaunchUnitStep}
                                     ui={ui} 
-                                    onStudioOpen={() => setView('question_studio')} 
+                                    onStudioOpen={(mode = null) => {
+                                        if (mode === 'board') {
+                                            setSavedPacket([]);
+                                            setSheetTitle(lang === 'sv' ? 'Presentationstavla' : 'Presentation Board');
+                                            setView('presentation');
+                                            return;
+                                        }
+                                        setStudioMode(mode);
+                                        if (!mode) {
+                                            setSavedPacket([]);
+                                            setSheetTitle("");
+                                        }
+                                        setView('question_studio');
+                                    }}
                                     onLabOpen={() => setView('practice_lab')}
                                     onProfileOpen={() => setView('profile')} 
                                     onTimesTableOpen={() => setView('times_table')}
@@ -1235,6 +1331,8 @@ function App() {
                                     onLgrOpen={() => setLgrOpen(true)}
                                     onAboutOpen={() => setAboutOpen(true)}
                                     onContentOpen={() => setContentOpen(true)}
+                                    onOpenPosterNotes={handleOpenPosterNotes}
+                                    onOpenLibrarySheet={handleOpenLibrarySheet}
                                     timerSettings={timerSettings} 
                                     toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} 
                                     resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} 
@@ -1251,6 +1349,21 @@ function App() {
                         lang={lang} 
                         onClose={() => setView('dashboard')} 
                     />
+                ) : view === 'poster_notes' ? (
+                    <ResponsiveWrapper forceConstrain={true}>
+                        <PosterNotesStudio
+                            profile={profile}
+                            lang={lang}
+                            initialSheetId={posterNotesState.sheetId}
+                            initialTitle={posterNotesState.title}
+                            initialPacket={posterNotesState.packet}
+                            initialConfig={posterNotesState.config}
+                            onClose={() => {
+                                setPosterNotesState({ sheetId: null, title: '', packet: null, config: null });
+                                setView('dashboard');
+                            }}
+                        />
+                    </ResponsiveWrapper>
                 ) : view === 'sandbox' ? (
                     <ManipulativeSandboxView 
                         labType={sandboxLab}
@@ -1291,7 +1404,7 @@ function App() {
                             profile={profile} ui={ui} lang={lang} initialPacket={savedPacket} setInitialPacket={setSavedPacket} 
                             sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} studioMode={studioMode} setStudioMode={setStudioMode} 
                             includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey} answerKeyStyle={answerKeyStyle} 
-                            setAnswerKeyStyle={setAnswerKeyStyle} onClose={() => setView('dashboard')} 
+                            setAnswerKeyStyle={setAnswerKeyStyle} onClose={() => setView('dashboard')} onOpenPosterNotes={handleOpenPosterNotes}
                             onWorksheetGenerate={(p) => { 
                                 setSavedPacket(p); 
                                 setView('print');

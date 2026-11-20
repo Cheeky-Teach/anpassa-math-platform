@@ -126,6 +126,7 @@ export default function QuestionStudio({
     onDoNowGenerate, 
     onWorksheetGenerate, 
     onClose, 
+    onOpenPosterNotes,
     ui, 
     lang = 'sv', 
     initialPacket, 
@@ -788,6 +789,10 @@ export default function QuestionStudio({
                   showCreationActions={true}
                   onCreateActivity={() => setShowActivityHub(true)}
                   onCreateNew={(type) => {
+                      if (type === 'poster_notes') {
+                          onOpenPosterNotes?.(null);
+                          return;
+                      }
                       if (type === 'board') {
                           setActiveBoardSheet(null);
                           setPacket([]);
@@ -802,6 +807,10 @@ export default function QuestionStudio({
                       }
                   }}
                   onSelectSheet={(sheet) => {
+                      if (sheet.type === 'poster_notes') {
+                          onOpenPosterNotes?.(sheet);
+                          return;
+                      }
                       if (sheet.type?.startsWith('activity')) {
                           const actDef = getActivityDefinition(sheet.type);
                           if (actDef) {

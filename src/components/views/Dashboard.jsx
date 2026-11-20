@@ -19,6 +19,9 @@ import SpotlightTour from '../shared/SpotlightTour';
 import CapacityModal from '../modals/CapacityModal';
 import InstructionSlideModal from '../modals/InstructionSlideModal';
 import ConceptMapDashboard from './ConceptMapDashboard';
+import SheetLibraryModal from '../modals/SheetLibraryModal';
+import ActivityHubModal from '../activities/modals/ActivityHubModal';
+import { getActivityDefinition } from '../activities/registry/activityRegistry';
 import UnitStudyGuideBanner from '../shared/UnitStudyGuideBanner';
 import {
     getTopicDisplayName as getTopicName,
@@ -74,7 +77,7 @@ const Dashboard = ({
     timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen, onStartCheckpoint,
     onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, onLabOpen, onFractionLabOpen,
     onTimesTableOpen, onRelaunch, onViewReport, onEdit, activeBucket, onBackToGateway,
-    onStartUnitStep,
+    onStartUnitStep, onOpenPosterNotes, onOpenLibrarySheet,
     userRole = 'teacher'
 }) => {
     const [expandedCategory, setExpandedCategory] = useState('arithmetic');
@@ -91,6 +94,9 @@ const Dashboard = ({
     const [partPreviewQuestion, setPartPreviewQuestion] = useState(null);
     const [isFetchingPartPreview, setIsFetchingPartPreview] = useState(false);
     const [diagnosticTarget, setDiagnosticTarget] = useState(null);
+    const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
+    const [showActivityHub, setShowActivityHub] = useState(false);
+    const [activeSetupModal, setActiveSetupModal] = useState(null);
 
     const fetchPartStepSample = async (topicId, level, variationKey = null) => {
         if (!topicId) {
@@ -548,7 +554,7 @@ const Dashboard = ({
                             {/* Primary Action: Question Studio */}
                             <button 
                                 type="button"
-                                onClick={onStudioOpen} 
+                                onClick={() => setIsLibraryModalOpen(true)}
                                 className="group flex items-center gap-3 p-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl transition-all shadow-sm active:scale-[0.98] text-left w-full cursor-pointer"
                             >
                                 <div className="w-9 h-9 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
@@ -1744,6 +1750,97 @@ const Dashboard = ({
                     }
                 }}
             />
+
+            <SheetLibraryModal
+                isOpen={isLibraryModalOpen && !activeSetupModal}
+                profile={profile}
+                lang={lang}
+                onClose={() => setIsLibraryModalOpen(false)}
+                showCreationActions={true}
+                onCreateActivity={() => {
+                    setIsLibraryModalOpen(false);
+                    setShowActivityHub(true);
+                }}
+                onCreateNew={(type) => {
+                    setIsLibraryModalOpen(false);
+                    if (type === 'poster_notes') {
+                        onOpenPosterNotes?.(null);
+                    } else {
+                        onStudioOpen?.(type);
+                    }
+                }}
+                onSelectSheet={(sheet) => {
+                    setIsLibraryModalOpen(false);
+                    if (typeof onOpenLibrarySheet === 'function') {
+                        onOpenLibrarySheet(sheet);
+                        return;
+                    }
+                    if (sheet.type === 'poster_notes') {
+                        onOpenPosterNotes?.(sheet);
+                    } else if (sheet.type?.startsWith('activity')) {
+                        const actDef = getActivityDefinition(sheet.type);
+                        if (actDef) {
+                            const questions = Array.isArray(sheet.packet)
+                                ? sheet.packet
+                                : (sheet.packet?.tiles || sheet.packet?.livePacket || []);
+                            setActiveSetupModal({
+                                key: actDef.key,
+                                savedBoard: sheet,
+                                sourcePacket: questions
+                            });
+                        }
+                    } else {
+                        onEdit?.(sheet);
+                    }
+                }}
+            />
+
+            <ActivityHubModal
+                isOpen={showActivityHub}
+                onClose={() => setShowActivityHub(false)}
+                sourcePacket={[]}
+                profile={profile}
+                lang={lang}
+                onLaunchActivity={(gameKey, config) => {
+                    setShowActivityHub(false);
+                    onRelaunch?.({
+                        title: config?.title,
+                        mode: `activity_${gameKey}`,
+                        active_question_data: {
+                            mode: `activity_${gameKey}`,
+                            packet: config?.initialQuestions || config?.tiles || []
+                        }
+                    });
+                }}
+            />
+
+            {activeSetupModal && (() => {
+                const def = getActivityDefinition(activeSetupModal.key);
+                if (!def?.SetupModal) return null;
+                const WizardModal = def.SetupModal;
+                return (
+                    <WizardModal
+                        isOpen={true}
+                        onClose={() => setActiveSetupModal(null)}
+                        sourcePacket={activeSetupModal.sourcePacket || []}
+                        savedBoard={activeSetupModal.savedBoard || null}
+                        profile={profile}
+                        lang={lang}
+                        onLaunch={(config) => {
+                            setActiveSetupModal(null);
+                            onRelaunch?.({
+                                title: activeSetupModal.savedBoard?.title || config?.title,
+                                mode: `activity_${activeSetupModal.key}`,
+                                active_worksheet_id: activeSetupModal.savedBoard?.id,
+                                active_question_data: {
+                                    mode: `activity_${activeSetupModal.key}`,
+                                    packet: config?.initialQuestions || config?.tiles || activeSetupModal.sourcePacket || []
+                                }
+                            });
+                        }}
+                    />
+                );
+            })()}
         </div>
     );
 };

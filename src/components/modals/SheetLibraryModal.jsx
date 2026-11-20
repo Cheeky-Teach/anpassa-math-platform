@@ -199,6 +199,12 @@ export default function SheetLibraryModal({
                 icon: <Grid3X3 size={size} /> 
             };
         }
+        if (cleanType === 'poster_notes') {
+            return { 
+                bg: 'bg-[var(--bg-surface)] border border-[var(--border-strong)] text-purple-700 dark:text-purple-400', 
+                icon: <FileText size={size} /> 
+            };
+        }
         return { 
             bg: 'bg-[var(--bg-surface)] border border-[var(--border-strong)] text-emerald-600 dark:text-emerald-400', 
             icon: <FileText size={size} /> 
@@ -389,6 +395,14 @@ export default function SheetLibraryModal({
                                         >
                                             <Monitor size={14} className="text-amber-600 dark:text-amber-400" /> <span>{lang === 'sv' ? "Ny Presentation" : "New Presentation"}</span>
                                         </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => onCreateNew('poster_notes')}
+                                            className="w-full py-2 px-3 bg-[var(--bg-card)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-strong)] hover:border-purple-600 rounded-xl font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer"
+                                        >
+                                            <FileText size={14} className="text-purple-600 dark:text-purple-400" />
+                                            <span>{lang === 'sv' ? "Affischer & Anteckningar" : "Posters & Notes"}</span>
+                                        </button>
                                         {onCreateActivity && (
                                             <button 
                                                 type="button"
@@ -509,6 +523,7 @@ export default function SheetLibraryModal({
                                         { id: 'board', label: lang === 'sv' ? 'Presentation' : 'Board', icon: Monitor },
                                         { id: 'worksheet', label: lang === 'sv' ? 'Arbetsblad' : 'Sheet', icon: FileText },
                                         { id: 'donow', label: 'Grid', icon: Grid3X3 },
+                                        { id: 'poster_notes', label: lang === 'sv' ? 'Affischer & Anteckningar' : 'Posters & Notes', icon: FileText },
                                         { id: 'activity', label: lang === 'sv' ? 'Spel' : 'Games', icon: Gamepad2 }
                                     ].map(tab => (
                                         <button
