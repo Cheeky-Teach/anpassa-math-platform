@@ -1,17 +1,15 @@
 // src/components/views/PosterNotesStudio.jsx
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   Printer,
   Monitor,
   Plus,
   Trash2,
   LayoutGrid,
   Save,
-  Copy,
   X,
   RotateCcw,
   RefreshCcw,
@@ -20,7 +18,6 @@ import {
   SlidersHorizontal,
   Columns,
   HelpCircle,
-  Sparkles,
   GraduationCap,
   KeyRound
 } from 'lucide-react';
@@ -28,6 +25,8 @@ import QuestionSummoner from './QuestionSummoner';
 import WorkedExampleCard from '../shared/WorkedExampleCard.jsx';
 import { PRESENTATION_THEMES } from '../../constants/presentationThemes';
 import { useSheetSaver } from '../../hooks/useSheetSaver';
+import SaveChoiceModal from '../modals/SaveChoiceModal';
+import SpotlightTour from '../shared/SpotlightTour';
 import PreferencesToggle from '../ui/PreferencesToggle.jsx';
 
 const PAPER_SPECS = {
@@ -115,45 +114,6 @@ const DEFAULT_CARD_LAYOUT = {
 
 const TUTORIAL_STORAGE_KEY = 'anpassa_poster_notes_tour_seen_v2';
 
-const TUTORIAL_STEPS = [
-  {
-    target: 'summon-btn',
-    titleSv: '1. Hämta genomgångsexempel',
-    titleEn: '1. Summon Worked Examples',
-    bodySv:
-      'Klicka här för att välja matematiska moment och lägga till färdiga genomgångskort med steg-för-steg-lösningar.',
-    bodyEn:
-      'Click here to pick math topics and add worked example cards complete with step-by-step solutions.'
-  },
-  {
-    target: 'layout-controls',
-    titleSv: '2. Välj bladlayout & pappersformat',
-    titleEn: '2. Choose Sheet Layout & Paper',
-    bodySv:
-      'Växla mellan affisch (1 per blad), 2 per blad (ovanpå varandra eller sida vid sida), 4-rutnät, anteckningsflöde eller dubbelsidigt A5-häfte.',
-    bodyEn:
-      'Switch between poster (1 per sheet), 2 per sheet (top/bottom or side-by-side), 4-grid, notes flow, or saddle-stitch A5 booklet spreads.'
-  },
-  {
-    target: 'sheet-stage',
-    titleSv: '3. Klicka på kortdelar för att skapa luckor',
-    titleEn: '3. Click Card Parts to Create Blanks',
-    bodySv:
-      'Klicka på valfri text, formel eller figur direkt på arket för att göra den till en skrivlucka för eleverna, ändra textstorlek eller dra i skrivluckans höjd.',
-    bodyEn:
-      'Click any text, equation, or figure directly on the sheet to turn it into a student fill-in blank, adjust typography, or drag blank heights.'
-  },
-  {
-    target: 'projector-print-actions',
-    titleSv: '4. Elev/Facit, projektor & utskrift',
-    titleEn: '4. Student/Teacher Key, Projector & Print',
-    bodySv:
-      'Växla mellan Elevversion och Facit (där elevluckorna markeras med *), starta projektorläget på tavlan eller skriv ut direkt.',
-    bodyEn:
-      'Switch between Student and Teacher Key (highlighting student blanks with *), launch Projector Mode on the board, or print directly.'
-  }
-];
-
 function normalizeSummonedToExample(rawItem, index = 0) {
   const rd =
     rawItem?.resolvedData?.renderData ||
@@ -205,6 +165,19 @@ function normalizeSummonedToExample(rawItem, index = 0) {
     overrides: null,
     rawItem
   };
+}
+
+function parseExamplesFromPacket(packet) {
+  if (packet?.examples && typeof packet.examples === 'object') {
+    const list = Array.isArray(packet.examples)
+      ? packet.examples
+      : Object.values(packet.examples);
+    return list.map((ex, idx) => ({
+      ...normalizeSummonedToExample(ex, idx),
+      overrides: ex.overrides || null
+    }));
+  }
+  return [];
 }
 
 function imposeA5BookletSpreads(examplesList) {
@@ -319,192 +292,6 @@ function buildPagesFromExamples(examplesList, layoutPreset = '1-up') {
   return pages;
 }
 
-function SpotlightTutorialOverlay({ steps, currentStep, onNext, onPrev, onClose, lang = 'sv' }) {
-  const [targetRect, setTargetRect] = useState(null);
-  const step = steps[currentStep];
-
-  useEffect(() => {
-    if (!step) return;
-
-    const updateSpotlight = () => {
-      const el = document.querySelector(`[data-tour="${step.target}"]`);
-      if (!el) {
-        setTargetRect(null);
-        return;
-      }
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-      const rect = el.getBoundingClientRect();
-      const pad = 8;
-      setTargetRect({
-        top: Math.max(8, rect.top - pad),
-        left: Math.max(8, rect.left - pad),
-        width: Math.min(window.innerWidth - 16, rect.width + pad * 2),
-        height: Math.min(window.innerHeight - 16, rect.height + pad * 2)
-      });
-    };
-
-    updateSpotlight();
-    const timer = setTimeout(updateSpotlight, 180);
-    window.addEventListener('resize', updateSpotlight);
-    window.addEventListener('scroll', updateSpotlight, true);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', updateSpotlight);
-      window.removeEventListener('scroll', updateSpotlight, true);
-    };
-  }, [step, currentStep]);
-
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      } else if (e.key === 'ArrowRight' || e.key === 'Enter') {
-        e.preventDefault();
-        if (currentStep < steps.length - 1) onNext();
-        else onClose();
-      } else if (e.key === 'ArrowLeft' && currentStep > 0) {
-        e.preventDefault();
-        onPrev();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [currentStep, steps.length, onNext, onPrev, onClose]);
-
-  if (!step) return null;
-
-  const isLast = currentStep === steps.length - 1;
-  const cardWidth = 340;
-  let popoverTop = window.innerHeight / 2 - 110;
-  let popoverLeft = window.innerWidth / 2 - cardWidth / 2;
-
-  if (targetRect) {
-    const spaceBelow = window.innerHeight - (targetRect.top + targetRect.height);
-    if (spaceBelow >= 210) {
-      popoverTop = targetRect.top + targetRect.height + 12;
-      popoverLeft = Math.min(
-        window.innerWidth - cardWidth - 16,
-        Math.max(16, targetRect.left)
-      );
-    } else if (targetRect.top >= 210) {
-      popoverTop = Math.max(16, targetRect.top - 196);
-      popoverLeft = Math.min(
-        window.innerWidth - cardWidth - 16,
-        Math.max(16, targetRect.left)
-      );
-    } else {
-      popoverTop = 76;
-      popoverLeft = Math.max(16, window.innerWidth - cardWidth - 28);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-40 print:hidden">
-      {!targetRect && (
-        <div
-          onClick={onClose}
-          className="fixed inset-0 bg-stone-950/65 transition-opacity"
-        />
-      )}
-
-      {targetRect && (
-        <motion.div
-          initial={false}
-          animate={{
-            top: targetRect.top,
-            left: targetRect.left,
-            width: targetRect.width,
-            height: targetRect.height
-          }}
-          transition={{ type: 'spring', stiffness: 360, damping: 32 }}
-          style={{
-            boxShadow: '0 0 0 9999px rgba(17, 19, 21, 0.68)'
-          }}
-          className="fixed rounded-2xl ring-2 ring-emerald-500 pointer-events-none z-[41]"
-        />
-      )}
-
-      <motion.div
-        key={`tour-card-${currentStep}`}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.18 }}
-        style={{
-          top: `${popoverTop}px`,
-          left: `${popoverLeft}px`,
-          width: `${cardWidth}px`
-        }}
-        className="fixed z-[42] rounded-2xl bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-strong)] shadow-2xl p-4 space-y-3"
-      >
-        <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[var(--brand-bg)] border border-[var(--brand-border)] text-[var(--brand-text)] font-mono text-xs font-bold">
-            <Sparkles size={12} />
-            <span>
-              {currentStep + 1} / {steps.length}
-            </span>
-          </span>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] cursor-pointer"
-            title={lang === 'sv' ? 'Stäng guide (Esc)' : 'Close guide (Esc)'}
-          >
-            <X size={14} />
-          </button>
-        </div>
-
-        <div className="space-y-1">
-          <h3 className="text-sm font-extrabold tracking-tight">
-            {lang === 'sv' ? step.titleSv : step.titleEn}
-          </h3>
-          <p className="text-xs leading-relaxed text-[var(--text-muted)]">
-            {lang === 'sv' ? step.bodySv : step.bodyEn}
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between pt-2 border-t border-[var(--border-main)]">
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
-          >
-            {lang === 'sv' ? 'Hoppa över' : 'Skip tour'}
-          </button>
-
-          <div className="flex items-center gap-1.5">
-            {currentStep > 0 && (
-              <button
-                type="button"
-                onClick={onPrev}
-                className="px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-main)] text-xs font-bold cursor-pointer"
-              >
-                {lang === 'sv' ? 'Föregående' : 'Back'}
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={isLast ? onClose : onNext}
-              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
-            >
-              {isLast
-                ? lang === 'sv'
-                  ? 'Klar'
-                  : 'Done'
-                : lang === 'sv'
-                  ? 'Nästa'
-                  : 'Next'}
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
 export default function PosterNotesStudio({
   profile,
   lang = 'sv',
@@ -521,11 +308,6 @@ export default function PosterNotesStudio({
   const [title, setTitle] = useState(
     initialTitle || (lang === 'sv' ? 'Affischer & Anteckningar' : 'Posters & Notes')
   );
-
-  // Save menu + pending "Save as New Copy" state
-  const [isSaveMenuOpen, setIsSaveMenuOpen] = useState(false);
-  const [pendingCopySave, setPendingCopySave] = useState(false);
-  const saveMenuRef = useRef(null);
 
   // Student vs Teacher Key toggle ('student' | 'teacher')
   const [printVariant, setPrintVariant] = useState(
@@ -545,18 +327,10 @@ export default function PosterNotesStudio({
     initialConfig?.blankHeightsByExample || {}
   );
 
-  const initialExamples = useMemo(() => {
-    if (initialPacket?.examples && typeof initialPacket.examples === 'object') {
-      const list = Array.isArray(initialPacket.examples)
-        ? initialPacket.examples
-        : Object.values(initialPacket.examples);
-      return list.map((ex, idx) => ({
-        ...normalizeSummonedToExample(ex, idx),
-        overrides: ex.overrides || null
-      }));
-    }
-    return [];
-  }, [initialPacket]);
+  const initialExamples = useMemo(
+    () => parseExamplesFromPacket(initialPacket),
+    [initialPacket]
+  );
 
   const [examples, setExamples] = useState(initialExamples);
   const [activeMenuExampleId, setActiveMenuExampleId] = useState(null);
@@ -574,15 +348,46 @@ export default function PosterNotesStudio({
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [isSummonerOpen, setIsSummonerOpen] = useState(false);
 
-  // Spotlight tutorial state
-  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
-  const [tutorialStepIndex, setTutorialStepIndex] = useState(0);
+  // Sync incoming saved sheet props if opened without remounting
+  useEffect(() => {
+    setSheetId(initialSheetId ?? null);
+  }, [initialSheetId]);
+
+  useEffect(() => {
+    if (initialTitle) setTitle(initialTitle);
+  }, [initialTitle]);
+
+  useEffect(() => {
+    if (!initialPacket) return;
+    const parsed = parseExamplesFromPacket(initialPacket);
+    setExamples(parsed);
+    if (Array.isArray(initialPacket.pages) && initialPacket.pages.length > 0) {
+      setPages(initialPacket.pages);
+    }
+  }, [initialPacket]);
+
+  useEffect(() => {
+    if (!initialConfig) return;
+    if (initialConfig.paperFormat) setPaperFormat(initialConfig.paperFormat);
+    if (initialConfig.layoutPreset) setLayoutPreset(initialConfig.layoutPreset);
+    if (initialConfig.twoUpDirection) setTwoUpDirection(initialConfig.twoUpDirection);
+    if (initialConfig.themeId) setThemeId(initialConfig.themeId);
+    if (initialConfig.blankStyle) setBlankStyle(initialConfig.blankStyle);
+    if (initialConfig.writingSpace) setWritingSpace(initialConfig.writingSpace);
+    if (initialConfig.printVariant) setPrintVariant(initialConfig.printVariant);
+    if (initialConfig.blankHeightsByExample) {
+      setBlankHeightsByExample(initialConfig.blankHeightsByExample);
+    }
+  }, [initialConfig]);
+
+  // Spotlight tutorial state (uses shared SpotlightTour component)
+  const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
     try {
-      const seen = window.localStorage.getItem(TUTORIAL_STORAGE_KEY);
-      if (!seen) {
-        setIsTutorialOpen(true);
+      if (!window.localStorage.getItem(TUTORIAL_STORAGE_KEY)) {
+        const timer = setTimeout(() => setShowTutorial(true), 350);
+        return () => clearTimeout(timer);
       }
     } catch {
       // Ignore storage access errors
@@ -590,30 +395,63 @@ export default function PosterNotesStudio({
   }, []);
 
   const handleCloseTutorial = useCallback(() => {
-    setIsTutorialOpen(false);
     try {
-      window.localStorage.setItem(TUTORIAL_STORAGE_KEY, '1');
+      window.localStorage.setItem(TUTORIAL_STORAGE_KEY, 'true');
     } catch {
       // Ignore storage access errors
     }
+    setShowTutorial(false);
   }, []);
 
-  const handleOpenTutorial = () => {
-    setTutorialStepIndex(0);
-    setIsTutorialOpen(true);
-  };
-
-  // Close save dropdown on outside pointerdown
-  useEffect(() => {
-    if (!isSaveMenuOpen) return;
-    const handleOutside = (e) => {
-      if (saveMenuRef.current && !saveMenuRef.current.contains(e.target)) {
-        setIsSaveMenuOpen(false);
+  const studioTourSteps = useMemo(
+    () => [
+      {
+        selector: '[data-tour="summon-btn"]',
+        title: {
+          sv: '1. Hämta genomgångsexempel',
+          en: '1. Summon Worked Examples'
+        },
+        description: {
+          sv: 'Klicka här för att välja matematiska moment och lägga till färdiga genomgångskort med steg-för-steg-lösningar.',
+          en: 'Click here to pick math topics and add worked example cards complete with step-by-step solutions.'
+        }
+      },
+      {
+        selector: '[data-tour="layout-controls"]',
+        title: {
+          sv: '2. Välj bladlayout & pappersformat',
+          en: '2. Choose Sheet Layout & Paper'
+        },
+        description: {
+          sv: 'Växla mellan affisch (1 per blad), 2 per blad (ovanpå varandra eller sida vid sida), 4-rutnät, anteckningsflöde eller dubbelsidigt A5-häfte.',
+          en: 'Switch between poster (1 per sheet), 2 per sheet (top/bottom or side-by-side), 4-grid, notes flow, or saddle-stitch A5 booklet spreads.'
+        }
+      },
+      {
+        selector: '[data-tour="sheet-stage"]',
+        title: {
+          sv: '3. Klicka på kortdelar för att skapa luckor',
+          en: '3. Click Card Parts to Create Blanks'
+        },
+        description: {
+          sv: 'Klicka på valfri text, formel eller figur direkt på arket för att göra den till en skrivlucka för eleverna, ändra textstorlek eller dra i skrivluckans höjd.',
+          en: 'Click any text, equation, or figure directly on the sheet to turn it into a student fill-in blank, adjust typography, or drag blank heights.'
+        }
+      },
+      {
+        selector: '[data-tour="projector-print-actions"]',
+        title: {
+          sv: '4. Elev/Facit, projektor & utskrift',
+          en: '4. Student/Teacher Key, Projector & Print'
+        },
+        description: {
+          sv: 'Växla mellan Elevversion och Facit (där elevluckorna markeras med *), starta projektorläget på tavlan eller skriv ut direkt.',
+          en: 'Switch between Student and Teacher Key (highlighting student blanks with *), launch Projector Mode on the board, or print directly.'
+        }
       }
-    };
-    window.addEventListener('pointerdown', handleOutside);
-    return () => window.removeEventListener('pointerdown', handleOutside);
-  }, [isSaveMenuOpen]);
+    ],
+    []
+  );
 
   // Projector state (sequential reading order + 1 or 2 cards per slide)
   const [isProjectorOpen, setIsProjectorOpen] = useState(false);
@@ -699,7 +537,13 @@ export default function PosterNotesStudio({
     ]
   );
 
-  const { isSaving, triggerSave } = useSheetSaver({
+  const {
+    isSaving,
+    showSaveChoiceModal,
+    setShowSaveChoiceModal,
+    executeSave,
+    triggerSave
+  } = useSheetSaver({
     sheetId,
     setSheetId,
     title,
@@ -716,28 +560,6 @@ export default function PosterNotesStudio({
       auto_topics: [...new Set(examples.map((ex) => ex.topicId).filter(Boolean))]
     })
   });
-
-  // Trigger save on the next render after detaching sheetId for "Save as Copy"
-  useEffect(() => {
-    if (!pendingCopySave || sheetId !== null) return;
-    setPendingCopySave(false);
-    triggerSave();
-  }, [pendingCopySave, sheetId, triggerSave]);
-
-  const handleSaveOverwrite = () => {
-    setIsSaveMenuOpen(false);
-    triggerSave();
-  };
-
-  const handleSaveAsCopy = () => {
-    setIsSaveMenuOpen(false);
-    const copySuffix = lang === 'sv' ? ' (kopia)' : ' (Copy)';
-    setTitle((prev) =>
-      prev.endsWith(copySuffix) ? prev : `${prev.trim() || 'Untitled'}${copySuffix}`
-    );
-    setSheetId(null);
-    setPendingCopySave(true);
-  };
 
   const activeTheme = PRESENTATION_THEMES?.[themeId] || PRESENTATION_THEMES?.[defaultThemeId] || {};
   const activePaper = PAPER_SPECS[paperFormat] || PAPER_SPECS.A4_PORTRAIT;
@@ -991,15 +813,30 @@ export default function PosterNotesStudio({
         id: example.id,
         topicId: example.topicId,
         variationKey: example.variationKey,
+        clues: freshData.clues || freshData.resolvedData?.clues || [],
+        renderData: freshData.renderData || freshData,
         resolvedData: freshData
       };
       const refreshed = normalizeSummonedToExample(mergedRaw, 0);
+
+      // Preserve any blank toggles the teacher set on the previous clues
+      const preservedClues = refreshed.clues.map((newClue, cIdx) => {
+        const oldClue = example.clues?.[cIdx];
+        if (!oldClue) return newClue;
+        return {
+          ...newClue,
+          blankText: Boolean(oldClue.blankText),
+          blankLatex: Boolean(oldClue.blankLatex),
+          blankVisual: Boolean(oldClue.blankVisual)
+        };
+      });
 
       setExamples((prev) =>
         prev.map((ex) =>
           ex.id === example.id
             ? {
                 ...refreshed,
+                clues: preservedClues,
                 id: example.id,
                 title: example.title || refreshed.title,
                 overrides: example.overrides
@@ -1007,6 +844,7 @@ export default function PosterNotesStudio({
             : ex
         )
       );
+      
     } catch (err) {
       console.error('Failed to regenerate example:', err);
     } finally {
@@ -1141,7 +979,6 @@ export default function PosterNotesStudio({
       const originalLatex = clue.latex || null;
 
       if (!isProjector && isTeacherKey) {
-        // Teacher Key: force all clues visible, but highlight items that are blanked in Student mode
         const wasTextBlanked = Boolean(clue.blankText) && Boolean(originalText);
         const wasLatexBlanked = Boolean(clue.blankLatex) && Boolean(originalLatex);
 
@@ -1723,77 +1560,21 @@ export default function PosterNotesStudio({
             className="bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-lg px-3 py-1.5 text-sm font-bold outline-none focus:border-emerald-600 max-w-xs w-full"
           />
 
-          {/* Save Split / Choice Control */}
-          <div ref={saveMenuRef} className="relative shrink-0">
-            {sheetId ? (
-              <button
-                type="button"
-                onClick={() => setIsSaveMenuOpen((prev) => !prev)}
-                disabled={isSaving}
-                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
-              >
-                <Save size={13} className="text-emerald-600" />
-                <span>{lang === 'sv' ? 'Spara' : 'Save'}</span>
-                <ChevronDown size={12} className="text-[var(--text-muted)]" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSaveOverwrite}
-                disabled={isSaving}
-                className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
-              >
-                <Save size={13} className="text-emerald-600" />
-                <span>{lang === 'sv' ? 'Spara' : 'Save'}</span>
-              </button>
-            )}
-
-            {isSaveMenuOpen && sheetId && (
-              <div className="absolute left-0 top-full mt-1.5 w-60 rounded-xl bg-[var(--bg-card)] border border-[var(--border-strong)] shadow-xl p-1.5 z-50 space-y-1">
-                <button
-                  type="button"
-                  onClick={handleSaveOverwrite}
-                  className="w-full px-3 py-2 rounded-lg text-left hover:bg-[var(--bg-surface)] transition-colors flex items-start gap-2.5 cursor-pointer"
-                >
-                  <Save size={14} className="text-emerald-600 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-[var(--text-main)]">
-                      {lang === 'sv' ? 'Spara ändringar' : 'Save changes'}
-                    </div>
-                    <div className="text-[11px] text-[var(--text-muted)] leading-snug">
-                      {lang === 'sv'
-                        ? 'Skriv över originalfilen'
-                        : 'Overwrite the original file'}
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSaveAsCopy}
-                  className="w-full px-3 py-2 rounded-lg text-left hover:bg-[var(--bg-surface)] transition-colors flex items-start gap-2.5 cursor-pointer"
-                >
-                  <Copy size={14} className="text-sky-600 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-[var(--text-main)]">
-                      {lang === 'sv' ? 'Spara som ny kopia' : 'Save as new copy'}
-                    </div>
-                    <div className="text-[11px] text-[var(--text-muted)] leading-snug">
-                      {lang === 'sv'
-                        ? 'Behåll originalet orört'
-                        : 'Keep original untouched'}
-                    </div>
-                  </div>
-                </button>
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => triggerSave()}
+            disabled={isSaving}
+            className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-strong)] text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-40"
+          >
+            <Save size={13} className="text-emerald-600" />
+            <span>{lang === 'sv' ? 'Spara' : 'Save'}</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            onClick={handleOpenTutorial}
+            onClick={() => setShowTutorial(true)}
             className="px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-main)] text-xs font-bold flex items-center gap-1 cursor-pointer"
             title={lang === 'sv' ? 'Visa snabbguide' : 'Show quick tour'}
           >
@@ -2081,19 +1862,32 @@ export default function PosterNotesStudio({
         </main>
       </div>
 
-      {/* Spotlight Walkthrough Tutorial */}
-      {isTutorialOpen && !isProjectorOpen && !isSummonerOpen && (
-        <SpotlightTutorialOverlay
-          steps={TUTORIAL_STEPS}
-          currentStep={tutorialStepIndex}
-          onNext={() =>
-            setTutorialStepIndex((prev) => Math.min(TUTORIAL_STEPS.length - 1, prev + 1))
-          }
-          onPrev={() => setTutorialStepIndex((prev) => Math.max(0, prev - 1))}
-          onClose={handleCloseTutorial}
-          lang={lang}
-        />
-      )}
+      {/* Shared Spotlight Walkthrough Tutorial */}
+      <SpotlightTour
+        steps={studioTourSteps}
+        isOpen={showTutorial && !isProjectorOpen && !isSummonerOpen}
+        onClose={handleCloseTutorial}
+        lang={lang}
+      />
+
+      {/* Save Overwrite vs. Save as Copy Modal (identical to QuestionStudio) */}
+      <SaveChoiceModal
+        isOpen={showSaveChoiceModal}
+        onClose={() => setShowSaveChoiceModal(false)}
+        onOverwrite={async () => {
+          setShowSaveChoiceModal(false);
+          await executeSave({ forceNewCopy: false, silent: false });
+        }}
+        onSaveAsCopy={async () => {
+          setShowSaveChoiceModal(false);
+          await executeSave({ forceNewCopy: true, silent: false });
+        }}
+        lang={lang}
+        itemTypeLabel={{
+          sv: 'affisch / anteckningar',
+          en: 'poster / notes'
+        }}
+      />
 
       {/* Question Summoner Modal */}
       {isSummonerOpen && (

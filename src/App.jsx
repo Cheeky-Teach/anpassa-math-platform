@@ -1354,10 +1354,10 @@ function App() {
                         <PosterNotesStudio
                             profile={profile}
                             lang={lang}
-                            initialSheetId={posterNotesState.sheetId}
-                            initialTitle={posterNotesState.title}
-                            initialPacket={posterNotesState.packet}
-                            initialConfig={posterNotesState.config}
+                            initialSheetId={posterNotesState.sheetId || null}
+                            initialTitle={posterNotesState.title || ''}
+                            initialPacket={posterNotesState.packet || null}
+                            initialConfig={posterNotesState.config || null}
                             onClose={() => {
                                 setPosterNotesState({ sheetId: null, title: '', packet: null, config: null });
                                 setView('dashboard');

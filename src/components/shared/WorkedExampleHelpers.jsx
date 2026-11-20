@@ -789,7 +789,7 @@ export function ClueRowsSection({
                                             </motion.div>
                                         ) : (
                                             <motion.span
-                                                key="text-shown"
+                                                key={`text-shown-${idx}-${step.text}`}
                                                 initial={{ opacity: 0, y: 5 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0 }}
@@ -880,7 +880,7 @@ export function ClueRowsSection({
                                         </motion.div>
                                     ) : step.latex ? (
                                         <motion.div
-                                            key="latex-shown"
+                                            key={`latex-shown-${idx}-${step.latex}`}
                                             initial={{ opacity: 0, y: 5, scale: 0.98 }}
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                             exit={{ opacity: 0 }}
