@@ -23,15 +23,27 @@
 - **Never reset or force-merge.** If the user has other uncommitted changes, leave them alone.
 - **Check branch before starting:** Run `git branch --show-current`. If it's `main`, stop and tell the user to create a feature branch.
 
+## Testing Strategy
+- **Test as you go, not retroactively.** Every new feature or logic change gets at least one test. Don't backfill the entire existing codebase.
+- **Priority order:**
+  1. `src/core/generators/` — pure math logic, highest value. If a generator breaks, content breaks.
+  2. `src/core/rules/`, `src/lib/` — business logic (pacing, progression, state transitions)
+  3. `src/components/` — only for components with complex state or props contracts
+- **Test quality bar:** A test must assert a specific input produces a specific output. No `expect(result).toBeDefined()` or `expect(true).toBe(true)`. If a test can pass with broken logic, it's worthless.
+- **When modifying existing logic:** Add a test for the specific behavior you changed, not just "it doesn't crash."
+- **Run tests alongside build:** `npm run build && npm run test:run` before committing.
+- **Test location:** Co-locate with the code being tested. `src/core/generators/FractionArithGen.test.ts` next to `FractionArithGen.ts`.
+
 ## Workflow
 1. Run `git branch --show-current`. If on `main`, stop.
 2. Read `docs/agent-log/CURRENT_PLAN.md` for the active task.
 3. Inspect only the target files listed in the plan.
 4. Apply minimal, surgical edits.
-5. Run `npm run build`. If it fails, fix the error — do not proceed.
-6. Commit: `git add <changed-files>` then `git commit -m "agent: <description>"`.
-7. Append results to `docs/agent-log/TEST_RUNS.md`.
-8. Update `docs/agent-log/CHANGELOG_AGENT.md` and check off the task.
+5. Run `npm run build && npm run test:run`. If either fails, fix before proceeding.
+6. If the change touches `src/core/` logic, add or update a test.
+7. Commit: `git add <changed-files>` then `git commit -m "agent: <description>"`.
+8. Append results to `docs/agent-log/TEST_RUNS.md` (include test output).
+9. Update `docs/agent-log/CHANGELOG_AGENT.md` and check off the task.
 
 ## Session Handoff Protocol
 - **One session = one bounded task.** Rotate sessions at ~50K tokens to keep responses fast.
@@ -40,7 +52,8 @@
 - **Never leave uncommitted work.** If the session ends mid-task, commit the partial state with a `WIP:` prefix so the next session can resume.
 
 ## Project Context
-- `project_context.txt` contains a full project snapshot (from 2026-02-17). Use it for architecture overview, but always verify against actual current files before editing — it may be stale.
+- The agent has full filesystem access. Read files on demand rather than relying on pre-cached snapshots.
+- `project_context.txt` is a stale snapshot from 2026-02-17 — do not use it as source of truth.
 
 ## Known Risks (see `docs/agent-log/BACKLOG_AND_RISKS.md` for details)
 - Print pagination quirks in PosterNotesStudio
