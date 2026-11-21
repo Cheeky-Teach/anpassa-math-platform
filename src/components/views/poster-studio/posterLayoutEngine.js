@@ -41,6 +41,18 @@ export const PAPER_SPECS = {
   }
 };
 
+export const POSTER_CANVAS_MULTIPLIER = 1.25;
+
+export function getEffectivePaperSpec(paperFormat, isPosterMode = false) {
+  const base = PAPER_SPECS[paperFormat] || PAPER_SPECS.A4_PORTRAIT;
+  if (!isPosterMode) return base;
+  return {
+    ...base,
+    widthPx: Math.round(base.widthPx * POSTER_CANVAS_MULTIPLIER),
+    heightPx: Math.round(base.heightPx * POSTER_CANVAS_MULTIPLIER)
+  };
+}
+
 export const LAYOUT_PRESETS = {
   '1-up': {
     perPage: 1,

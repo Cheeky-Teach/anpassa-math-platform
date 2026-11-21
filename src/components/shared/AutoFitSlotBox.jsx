@@ -3,15 +3,12 @@ import React, { useState, useEffect, useRef } from 'react';
 
 export const SHEET_PADDING_PX = 38; // ~10mm at 96 DPI
 
-/**
- * Measures the natural height of a card inside a strict allotted slot height.
- * Uses a hysteresis deadband + rAF guard to prevent ResizeObserver width-unwrapping
- * oscillation loops when `width: 100% / fitScale` causes text to unwrap onto fewer lines.
- */
 export function AutoFitSlotBox({
   maxHeightPx,
-  minScale = 0.52,
+  minScale = 0.55,
   disabled = false,
+  preserveWidth = false,
+  recalcKey = null,
   className = '',
   children
 }) {
@@ -20,7 +17,6 @@ export function AutoFitSlotBox({
   const contentRef = useRef(null);
   const [fitScale, setFitScale] = useState(1);
 
-  // Track last scale and canonical unscaled height to break feedback loops
   const stateRef = useRef({
     scale: 1,
     lastUnscaledH: 0,
@@ -44,11 +40,9 @@ export function AutoFitSlotBox({
       const currentH = Math.max(el.scrollHeight, contentEl.scrollHeight);
       if (!currentH) return;
 
-      // Estimate what the unscaled height would be at scale = 1
       const estimatedUnscaledH =
         curScale < 1 ? currentH / Math.sqrt(curScale) : currentH;
 
-      // If content barely changed (< 6px) and not forced, keep current scale to prevent jitter
       if (
         !force &&
         stateRef.current.lastUnscaledH > 0 &&
@@ -77,17 +71,26 @@ export function AutoFitSlotBox({
       }
     };
 
-    // Initial measurement + delayed settle passes for KaTeX, web fonts & Framer Motion entrance
     stateRef.current.lastUnscaledH = 0;
     recalc(true);
 
     let cancelled = false;
+    const raf1 = requestAnimationFrame(() => {
+      if (!cancelled) {
+        requestAnimationFrame(() => {
+          if (!cancelled) recalc(true);
+        });
+      }
+    });
     const t1 = setTimeout(() => {
       if (!cancelled) recalc(true);
     }, 120);
     const t2 = setTimeout(() => {
       if (!cancelled) recalc(true);
     }, 400);
+    const t3 = setTimeout(() => {
+      if (!cancelled) recalc(true);
+    }, 800);
 
     if (document.fonts?.ready) {
       document.fonts.ready.then(() => {
@@ -97,46 +100,61 @@ export function AutoFitSlotBox({
 
     const ro = new ResizeObserver(() => {
       if (stateRef.current.rafId) cancelAnimationFrame(stateRef.current.rafId);
-      stateRef.current.rafId = requestAnimationFrame(() => recalc(false));
+      stateRef.current.rafId = requestAnimationFrame(() => recalc(true));
     });
 
     ro.observe(contentEl);
+    Array.from(contentEl.children).forEach((child) => ro.observe(child));
+
     return () => {
       cancelled = true;
+      cancelAnimationFrame(raf1);
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(t3);
       ro.disconnect();
       if (stateRef.current.rafId) cancelAnimationFrame(stateRef.current.rafId);
     };
-  }, [maxHeightPx, minScale, disabled]);
+  }, [maxHeightPx, minScale, disabled, preserveWidth, recalcKey]);
 
   if (disabled || !maxHeightPx) {
-    return <div className={`w-full ${className}`}>{children}</div>;
+    return <div className={`w-full min-w-0 ${className}`}>{children}</div>;
   }
+
+  const measureStyle =
+    fitScale < 1
+      ? {
+          width: `${(100 / fitScale).toFixed(3)}%`,
+          transform: `scale(${fitScale})`,
+          transformOrigin: 'top left',
+          '--slot-inv-scale': (1 / fitScale).toFixed(4)
+        }
+      : {
+          width: '100%',
+          '--slot-inv-scale': 1
+        };
 
   return (
     <div
       ref={outerRef}
       style={{ height: `${Math.floor(maxHeightPx)}px` }}
-      className={`relative w-full overflow-hidden ${className}`}
+      className={`relative w-full min-w-0 overflow-hidden ${
+        preserveWidth ? 'print:!h-full' : ''
+      } ${className}`}
     >
       <div
         ref={measureRef}
-        style={
-          fitScale < 1
-            ? {
-                width: `${(100 / fitScale).toFixed(3)}%`,
-                transform: `scale(${fitScale})`,
-                transformOrigin: 'top left',
-                '--slot-inv-scale': (1 / fitScale).toFixed(4)
-              }
-            : {
-                width: '100%',
-                '--slot-inv-scale': 1
-              }
-        }
+        style={measureStyle}
+        className={`min-w-0 ${
+          preserveWidth || fitScale >= 1 ? 'h-full flex flex-col' : ''
+        }`}
       >
-        <div ref={contentRef} className="w-full">
+        <div
+          ref={contentRef}
+          className={`w-full min-w-0 ${
+            preserveWidth || fitScale >= 1 ? 'flex-1 flex flex-col min-h-0' : ''
+          }`}
+        >
           {children}
         </div>
       </div>
@@ -153,10 +171,6 @@ export function AutoFitSlotBox({
   );
 }
 
-/**
- * Canonical 96-DPI paper artboard wrapped in a scaled layout-box sizer
- * so multi-page scrolling works cleanly without clipping Sheet 2+.
- */
 export function SheetArtboard({
   idx,
   totalPages,
@@ -189,7 +203,7 @@ export function SheetArtboard({
           '--sheet-w-mm': `${activePaper.widthMm}mm`,
           '--sheet-h-mm': `${activePaper.heightMm}mm`
         }}
-        className={`poster-sheet-artboard whiteboard-protect bg-white text-stone-900 shadow-xl print:shadow-none border print:border-0 flex flex-col justify-between gap-2 relative overflow-hidden break-after-page last:break-after-auto ${
+        className={`poster-sheet-artboard whiteboard-protect bg-white text-stone-900 shadow-xl print:shadow-none border print:border-0 flex flex-col justify-between gap-2 relative overflow-hidden ${
           isActive
             ? 'ring-2 ring-sky-600/60 print:ring-0 border-stone-300'
             : 'border-stone-200'

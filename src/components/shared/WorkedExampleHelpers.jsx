@@ -15,8 +15,9 @@ import {
 import MathDisplay from './MathDisplay';
 import VisualRenderer from '../visuals/VisualRenderer';
 import { compileAnchoredStory } from '../../core/utils/storyCompiler';
+import { resolveCardTheme } from './posterThemes';
 
-export const SIZE_STEPS = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'];
+export const SIZE_STEPS = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl'];
 
 export const PROMPT_TEXT_SIZE_MAP = {
     xs: 'text-[10px]',
@@ -24,8 +25,12 @@ export const PROMPT_TEXT_SIZE_MAP = {
     md: 'text-xs',
     lg: 'text-sm',
     xl: 'text-base',
-    '2xl': 'text-lg sm:text-xl',
-    '3xl': 'text-xl sm:text-2xl'
+    '2xl': 'text-xl',
+    '3xl': 'text-2xl',
+    '4xl': 'text-3xl',
+    '5xl': 'text-4xl',
+    '6xl': 'text-5xl',
+    '7xl': 'text-6xl'
 };
 
 export const PROMPT_LATEX_SIZE_MAP = {
@@ -34,8 +39,12 @@ export const PROMPT_LATEX_SIZE_MAP = {
     md: 'text-base',
     lg: 'text-lg',
     xl: 'text-2xl',
-    '2xl': 'text-2xl sm:text-3xl',
-    '3xl': 'text-3xl sm:text-4xl'
+    '2xl': 'text-3xl',
+    '3xl': 'text-4xl',
+    '4xl': 'text-5xl',
+    '5xl': 'text-6xl',
+    '6xl': 'text-7xl',
+    '7xl': 'text-8xl'
 };
 
 export const STEP_TEXT_SIZE_MAP = {
@@ -44,8 +53,12 @@ export const STEP_TEXT_SIZE_MAP = {
     md: 'text-[11px]',
     lg: 'text-xs',
     xl: 'text-sm',
-    '2xl': 'text-base sm:text-lg',
-    '3xl': 'text-lg sm:text-xl'
+    '2xl': 'text-lg',
+    '3xl': 'text-xl',
+    '4xl': 'text-2xl',
+    '5xl': 'text-3xl',
+    '6xl': 'text-4xl',
+    '7xl': 'text-5xl'
 };
 
 export const STEP_LATEX_SIZE_MAP = {
@@ -54,8 +67,12 @@ export const STEP_LATEX_SIZE_MAP = {
     md: 'text-xs',
     lg: 'text-sm',
     xl: 'text-lg',
-    '2xl': 'text-xl sm:text-2xl',
-    '3xl': 'text-2xl sm:text-3xl'
+    '2xl': 'text-2xl',
+    '3xl': 'text-3xl',
+    '4xl': 'text-4xl',
+    '5xl': 'text-5xl',
+    '6xl': 'text-6xl',
+    '7xl': 'text-7xl'
 };
 
 export function stepSize(current = 'sm', delta = 1) {
@@ -812,7 +829,8 @@ export function ClueRowsSection({
     onBlankHeightChange = null,
     openMenuKey = null,
     setOpenMenuKey = null,
-    onUpdatePart = null
+    onUpdatePart = null,
+    cardTheme = null
 }) {
     const [editingField, setEditingField] = useState(null); // { idx, kind: 'text' | 'latex', value: string }
 
@@ -950,7 +968,12 @@ export function ClueRowsSection({
                             >
                                 {/* Step Number Badge + Remove Whole Step Button */}
                                 <div className="relative shrink-0 mt-0.5">
-                                    <div className="w-6 h-6 rounded-full font-mono font-bold text-[11px] flex items-center justify-center border bg-amber-100 text-amber-950 border-amber-300">
+                                    <div
+                                        className={`w-6 h-6 rounded-full font-mono font-bold text-[11px] flex items-center justify-center border ${
+                                            cardTheme?.stepCircleClass ||
+                                            'bg-amber-100 text-amber-950 border-amber-300'
+                                        }`}
+                                    >
                                         {idx + 1}
                                     </div>
                                     {isEditable && (
@@ -1118,7 +1141,10 @@ export function ClueRowsSection({
                                 {/* Step Solution / Equation Column */}
                                 {hasLatex && (
                                     <div
-                                        style={solutionColStyle}
+                                        style={{
+                                            ...(solutionColStyle || {}),
+                                            maxWidth: '45%'
+                                        }}
                                         onClick={(e) => {
                                             if (!isEditable || !showStepLatex || isEditingThisLatex) return;
                                             e.stopPropagation();
@@ -1246,7 +1272,7 @@ export function ClueRowsSection({
                                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                                         exit={{ opacity: 0 }}
                                                         transition={CONTENT_REVEAL_TRANSITION}
-                                                        className={`relative font-serif ${stepLatexClass} font-bold text-slate-950 text-center py-0.5`}
+                                                        className={`relative w-full min-w-0 overflow-x-auto font-serif ${stepLatexClass} font-bold text-slate-950 text-center py-0.5`}
                                                     >
                                                         {step.wasLatexBlank && (
                                                             <span
@@ -1281,7 +1307,7 @@ export function StackedCardBody(props) {
     const showVisualBox = hasVisual && (showVisual || isEditable);
 
     return (
-        <div className="flex flex-col gap-2.5 w-full">
+        <div className="flex-1 min-h-0 flex flex-col gap-2.5 w-full">
             <div className="flex flex-row items-start justify-between gap-3 pb-2 border-b border-amber-200/80">
                 <div className={showVisualBox ? 'flex-1 min-w-0' : 'w-full'}>
                     <PromptSection {...props} />

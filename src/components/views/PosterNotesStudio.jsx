@@ -11,7 +11,10 @@ import {
   HelpCircle,
   GraduationCap,
   KeyRound,
-  Maximize2
+  Maximize2,
+  FileText,
+  Presentation,
+  Lightbulb
 } from 'lucide-react';
 import QuestionSummoner from './QuestionSummoner';
 import { PRESENTATION_THEMES } from '../../constants/presentationThemes';
@@ -26,11 +29,18 @@ import {
 import WorkedExampleSlotControls from '../shared/WorkedExampleSlotControls';
 import { AutoFitSlotBox, SheetArtboard } from '../shared/AutoFitSlotBox';
 import {
+  POSTER_LAYOUTS,
+  THEME_SKINS,
+  COLOR_PALETTES
+} from '../shared/posterThemes';
+import {
   PAPER_SPECS,
   LAYOUT_PRESETS,
+  getEffectivePaperSpec,
   computeSlotMaxHeightPx,
   parseExamplesFromPacket,
-  buildPagesFromExamples
+  buildPagesFromExamples,
+  buildProjectorSlides
 } from './poster-studio/posterLayoutEngine';
 import PosterProjectorModal from './poster-studio/PosterProjectorModal';
 
@@ -52,6 +62,13 @@ export default function PosterNotesStudio({
   const [title, setTitle] = useState(
     initialTitle || (lang === 'sv' ? 'Affischer & Anteckningar' : 'Posters & Notes')
   );
+  const [documentMode, setDocumentMode] = useState(initialConfig?.documentMode || 'handout');
+  const [posterLayout, setPosterLayout] = useState(
+    initialConfig?.posterLayout || 'hero-banner'
+  );
+  const [themeSkin, setThemeSkin] = useState(initialConfig?.themeSkin || 'classic');
+  const [colorPalette, setColorPalette] = useState(initialConfig?.colorPalette || 'amber');
+
   const [printVariant, setPrintVariant] = useState(initialConfig?.printVariant || 'student');
   const [paperFormat, setPaperFormat] = useState(initialConfig?.paperFormat || 'A4_PORTRAIT');
   const [layoutPreset, setLayoutPreset] = useState(initialConfig?.layoutPreset || '1-up');
@@ -91,17 +108,25 @@ export default function PosterNotesStudio({
     initialConfig?.projectorPacingMode || 'guided_blanks'
   );
 
+  const isPosterMode = documentMode === 'poster';
+  const effectiveLayoutPreset = isPosterMode ? '1-up' : layoutPreset;
+
   const activeTheme = PRESENTATION_THEMES?.[themeId] || PRESENTATION_THEMES?.[defaultThemeId] || {};
-  const activePaper = PAPER_SPECS[paperFormat] || PAPER_SPECS.A4_PORTRAIT;
+  const activePaper = getEffectivePaperSpec(paperFormat, isPosterMode);
+  const isLandscape = paperFormat.endsWith('_LANDSCAPE');
+  const printZoom = Number(
+    ((activePaper.widthMm * 3.7795275591) / activePaper.widthPx).toFixed(5)
+  );
   const isTeacherKey = printVariant === 'teacher';
   const isNarrowColumnLayout =
-    layoutPreset === 'A5_BOOKLET' ||
-    (layoutPreset === '2-up' && twoUpDirection === 'horizontal');
+    !isPosterMode &&
+    (layoutPreset === 'A5_BOOKLET' ||
+      (layoutPreset === '2-up' && twoUpDirection === 'horizontal'));
 
-  // Deterministic pagination: automatically pushes overflow sequences onto new pages
+  // Deterministic pagination: 1 card per sheet in Poster mode, preset-driven in Handout mode
   const pages = useMemo(
-    () => buildPagesFromExamples(examples, layoutPreset),
-    [examples, layoutPreset]
+    () => buildPagesFromExamples(examples, effectiveLayoutPreset),
+    [examples, effectiveLayoutPreset]
   );
 
   useEffect(() => {
@@ -111,8 +136,8 @@ export default function PosterNotesStudio({
   }, [pages.length, activePageIndex]);
 
   const slotMaxHeightPx = useMemo(
-    () => computeSlotMaxHeightPx(activePaper, layoutPreset, twoUpDirection),
-    [activePaper, layoutPreset, twoUpDirection]
+    () => computeSlotMaxHeightPx(activePaper, effectiveLayoutPreset, twoUpDirection),
+    [activePaper, effectiveLayoutPreset, twoUpDirection]
   );
 
   // Auto-calculate Fit-to-Desk zoom
@@ -149,6 +174,10 @@ export default function PosterNotesStudio({
 
   useEffect(() => {
     if (!initialConfig) return;
+    if (initialConfig.documentMode) setDocumentMode(initialConfig.documentMode);
+    if (initialConfig.posterLayout) setPosterLayout(initialConfig.posterLayout);
+    if (initialConfig.themeSkin) setThemeSkin(initialConfig.themeSkin);
+    if (initialConfig.colorPalette) setColorPalette(initialConfig.colorPalette);
     if (initialConfig.paperFormat) setPaperFormat(initialConfig.paperFormat);
     if (initialConfig.layoutPreset) setLayoutPreset(initialConfig.layoutPreset);
     if (initialConfig.twoUpDirection) setTwoUpDirection(initialConfig.twoUpDirection);
@@ -193,18 +222,18 @@ export default function PosterNotesStudio({
       },
       {
         selector: '[data-tour="layout-controls"]',
-        title: { sv: '2. Välj bladlayout & pappersformat', en: '2. Choose Sheet Layout & Paper' },
+        title: { sv: '2. Välj bladlayout, stil & färg', en: '2. Choose Sheet Layout, Style & Color' },
         description: {
-          sv: 'Växla mellan affisch (1 per blad), 2 per blad, 4-rutnät, anteckningsflöde eller dubbelsidigt A5-häfte.',
-          en: 'Switch between poster (1 per sheet), 2 per sheet, 4-grid, notes flow, or A5 booklet spreads.'
+          sv: 'Växla mellan Anteckningar och Affisch (1 per A4/A3), och välj tema, färgpalett och layout.',
+          en: 'Switch between Handout and Poster (1 per A4/A3), and customize theme skin, color palette, and layout.'
         }
       },
       {
         selector: '[data-tour="sheet-stage"]',
-        title: { sv: '3. Klicka på kortdelar för att skapa luckor', en: '3. Click Card Parts to Create Blanks' },
+        title: { sv: '3. Klicka på kortdelar för att redigera', en: '3. Click Card Parts to Edit' },
         description: {
-          sv: 'Klicka på text eller formel direkt på arket för att skapa skrivluckor och dra i skrivhöjden—kortet skalas automatiskt för att passa bladet.',
-          en: 'Click any text or equation on the sheet to create blanks and drag writing height—the card auto-scales to fit its slot.'
+          sv: 'Skapa skrivluckor på anteckningar eller klicka på "Gör affisch" på valfritt kort för en klassrumsaffisch.',
+          en: 'Create blanks on handouts or click "Posterize" on any card to design a classroom wall poster.'
         }
       },
       {
@@ -251,6 +280,10 @@ export default function PosterNotesStudio({
       packet: { schemaVersion: 1, examples, pages },
       config: {
         schemaVersion: 1,
+        documentMode,
+        posterLayout,
+        themeSkin,
+        colorPalette,
         paperFormat,
         layoutPreset,
         twoUpDirection,
@@ -273,6 +306,43 @@ export default function PosterNotesStudio({
     });
     return map;
   }, [examples]);
+
+  // Active card on the current poster page (for the sidebar Callout toggle)
+  const activePosterExample = useMemo(() => {
+    if (!isPosterMode) return null;
+    const currentPg = pages[activePageIndex];
+    const firstId = (currentPg?.slotExampleIds || []).find(Boolean);
+    return firstId ? examplesById[firstId] || null : null;
+  }, [isPosterMode, pages, activePageIndex, examplesById]);
+
+  const handleSwitchDocumentMode = (nextMode) => {
+    setDocumentMode(nextMode);
+    if (nextMode === 'poster') {
+      if (themeSkin === 'classic' && colorPalette === 'amber') {
+        setThemeSkin('modern-clean');
+        setColorPalette('emerald');
+      }
+      setZoomMode('fit');
+    }
+  };
+
+  const handlePosterizeCard = (targetExample) => {
+    if (!targetExample) return;
+    const targetIdx = examples.findIndex((ex) => ex.id === targetExample.id);
+    setDocumentMode('poster');
+    if (themeSkin === 'classic' && colorPalette === 'amber') {
+      setThemeSkin('modern-clean');
+      setColorPalette('emerald');
+    }
+    setZoomMode('fit');
+    if (targetIdx >= 0) {
+      setActivePageIndex(targetIdx);
+      requestAnimationFrame(() => {
+        const node = deskContainerRef.current?.querySelector(`[data-sheet-index="${targetIdx}"]`);
+        node?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  };
 
   const handleSelectLayoutPreset = (nextPreset) => {
     setLayoutPreset(nextPreset);
@@ -382,7 +452,6 @@ export default function PosterNotesStudio({
       };
       const refreshed = normalizeSummonedToExample(mergedRaw, 0);
 
-      // Preserve guided-note structure (blanks & hidden parts) while resetting custom text edits
       const preservedClues = refreshed.clues.map((newClue, cIdx) => {
         const oldClue = example.clues?.[cIdx];
         if (!oldClue) return newClue;
@@ -457,12 +526,16 @@ export default function PosterNotesStudio({
 
   const renderSlot = (exId, { compact = false } = {}) => {
     const example = exId ? examplesById[exId] : null;
-    return (
-      <AutoFitSlotBox maxHeightPx={slotMaxHeightPx} disabled={!example}>
-        <WorkedExampleSlotControls
+    const slotContent = (
+      <WorkedExampleSlotControls
           example={example}
           lang={lang}
           isTeacherKey={isTeacherKey}
+          isPosterMode={isPosterMode}
+          posterLayout={posterLayout}
+          isLandscape={isLandscape}
+          themeSkin={themeSkin}
+          colorPalette={colorPalette}
           compact={compact}
           defaultStacked={isNarrowColumnLayout}
           writingSpace={writingSpace}
@@ -489,6 +562,7 @@ export default function PosterNotesStudio({
           }
           isRegenerating={Boolean(example && regeneratingId === example.id)}
           onRegenerate={handleRegenerateExample}
+          onPosterizeCard={!isPosterMode ? handlePosterizeCard : null}
           onUpdatePart={
             example
               ? (action, payload) =>
@@ -570,12 +644,43 @@ export default function PosterNotesStudio({
               : null
           }
         />
-      </AutoFitSlotBox>
     );
+
+    if (isPosterMode) {
+        return (
+          <div className="w-full h-full flex-1 flex flex-col min-h-0">
+            {slotContent}
+          </div>
+        );
+      }
+
+      const slotRecalcKey = example
+        ? `${example.id}_${layoutPreset}_${paperFormat}_${writingSpace}_${JSON.stringify(
+            example.overrides || {}
+          )}`
+        : 'empty';
+
+      return (
+        <AutoFitSlotBox
+          maxHeightPx={slotMaxHeightPx}
+          disabled={!example}
+          recalcKey={slotRecalcKey}
+        >
+          {slotContent}
+        </AutoFitSlotBox>
+      );
   };
 
   const renderPageContent = (pg) => {
     const slots = pg.slotExampleIds || [];
+
+    if (isPosterMode) {
+      return (
+        <div className="flex-1 flex flex-col min-h-0">
+          {renderSlot(slots[0] || null, { compact: false })}
+        </div>
+      );
+    }
 
     if (layoutPreset === '4-up') {
       return (
@@ -591,10 +696,12 @@ export default function PosterNotesStudio({
 
     if (layoutPreset === 'A5_BOOKLET') {
       return (
-        <div className="grid grid-cols-2 gap-6 items-stretch flex-1 relative">
-          <div className="pr-3 border-r-2 border-dashed border-[var(--border-strong)] flex flex-col justify-between">
-            <div className="flex-1">{renderSlot(slots[0] || null, { compact: true })}</div>
-            <div className="flex items-center justify-between text-xs font-mono font-bold text-[var(--text-muted)] mt-1">
+        <div className="grid grid-cols-2 gap-6 items-stretch flex-1 min-h-0 relative">
+          <div className="min-w-0 pr-3 border-r-2 border-dashed border-[var(--border-strong)] flex flex-col justify-between">
+            <div className="flex-1 flex flex-col min-h-0">
+              {renderSlot(slots[0] || null, { compact: true })}
+            </div>
+            <div className="flex items-center justify-between text-xs font-mono font-bold text-[var(--text-muted)] mt-1 shrink-0">
               <span>{lang === 'sv' ? `Sida ${pg.leftA5Number ?? 2}` : `Page ${pg.leftA5Number ?? 2}`}</span>
               <span className="print:hidden text-[10px]">
                 {lang === 'sv'
@@ -604,9 +711,11 @@ export default function PosterNotesStudio({
             </div>
           </div>
 
-          <div className="pl-1 flex flex-col justify-between">
-            <div className="flex-1">{renderSlot(slots[1] || null, { compact: true })}</div>
-            <div className="text-xs font-mono font-bold text-[var(--text-muted)] mt-1 text-right">
+          <div className="min-w-0 pl-1 flex flex-col justify-between">
+            <div className="flex-1 flex flex-col min-h-0">
+              {renderSlot(slots[1] || null, { compact: true })}
+            </div>
+            <div className="text-xs font-mono font-bold text-[var(--text-muted)] mt-1 text-right shrink-0">
               {lang === 'sv' ? `Sida ${pg.rightA5Number ?? 1}` : `Page ${pg.rightA5Number ?? 1}`}
             </div>
           </div>
@@ -670,47 +779,60 @@ export default function PosterNotesStudio({
             margin: 0 !important;
             padding: 0 !important;
             background: white !important;
+            width: 100% !important;
             height: auto !important;
             overflow: visible !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           .poster-studio-root,
-          .poster-studio-root * {
-            visibility: visible !important;
-          }
-          .poster-studio-root,
-          .poster-studio-body {
+          .poster-studio-body,
+          .poster-studio-desk,
+          .poster-studio-main {
             position: static !important;
             inset: auto !important;
             display: block !important;
+            width: 100% !important;
             height: auto !important;
             min-height: 0 !important;
+            max-height: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
             overflow: visible !important;
             background: white !important;
           }
           .poster-sheet-sizer {
-            width: var(--sheet-w-mm) !important;
-            height: var(--sheet-h-mm) !important;
+            width: 100% !important;
+            height: ${activePaper.heightMm}mm !important;
             margin: 0 !important;
             padding: 0 !important;
-            display: block !important;
-            break-after: page;
-            page-break-after: always;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
-          .poster-sheet-sizer:last-child {
-            break-after: auto;
-            page-break-after: auto;
+          .poster-sheet-sizer + .poster-sheet-sizer {
+            break-before: page !important;
+            page-break-before: always !important;
           }
           .poster-sheet-artboard {
+            position: static !important;
             transform: none !important;
+            zoom: 1 !important;
             width: 100% !important;
             height: 100% !important;
-            padding: 10mm !important;
+            flex: 1 1 auto !important;
+            padding: ${isPosterMode ? '48px' : '10mm'} !important;
+            box-sizing: border-box !important;
             box-shadow: none !important;
             border: none !important;
+            border-radius: 0 !important;
           }
         }
       `}</style>
-
+      
       {/* Top Studio Bar */}
       <header className="relative z-50 px-4 sm:px-6 py-2.5 bg-[var(--bg-card)] border-b border-[var(--border-main)] flex items-center justify-between gap-3 shrink-0 print:hidden">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -743,6 +865,35 @@ export default function PosterNotesStudio({
             <Save size={13} className="text-emerald-600" />
             <span>{lang === 'sv' ? 'Spara' : 'Save'}</span>
           </button>
+
+          {/* Handout vs. Classroom Poster Mode Switch */}
+          <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] p-0.5 rounded-xl shrink-0">
+            <button
+              type="button"
+              onClick={() => handleSwitchDocumentMode('handout')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
+                !isPosterMode
+                  ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+              }`}
+            >
+              <FileText size={13} className={!isPosterMode ? 'text-emerald-600' : ''} />
+              <span>{lang === 'sv' ? 'Anteckningar' : 'Notes'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSwitchDocumentMode('poster')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
+                isPosterMode
+                  ? 'bg-indigo-600 text-white shadow-2xs'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+              }`}
+            >
+              <Presentation size={13} />
+              <span>{lang === 'sv' ? 'Affisch' : 'Poster'}</span>
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -769,40 +920,42 @@ export default function PosterNotesStudio({
           </button>
 
           <div data-tour="projector-print-actions" className="flex items-center gap-2">
-            <div
-              className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] p-0.5 rounded-xl"
-              title={
-                lang === 'sv'
-                  ? 'Växla mellan elevblad med luckor och facit med alla steg'
-                  : 'Switch between student blanks and teacher key with all steps'
-              }
-            >
-              <button
-                type="button"
-                onClick={() => setPrintVariant('student')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
-                  !isTeacherKey
-                    ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                }`}
+            {!isPosterMode && (
+              <div
+                className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] p-0.5 rounded-xl"
+                title={
+                  lang === 'sv'
+                    ? 'Växla mellan elevblad med luckor och facit med alla steg'
+                    : 'Switch between student blanks and teacher key with all steps'
+                }
               >
-                <GraduationCap size={13} />
-                <span>{lang === 'sv' ? 'Elev' : 'Student'}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setPrintVariant('student')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                    !isTeacherKey
+                      ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                  }`}
+                >
+                  <GraduationCap size={13} />
+                  <span>{lang === 'sv' ? 'Elev' : 'Student'}</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setPrintVariant('teacher')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
-                  isTeacherKey
-                    ? 'bg-emerald-600 text-white'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                }`}
-              >
-                <KeyRound size={13} />
-                <span>{lang === 'sv' ? 'Facit' : 'Teacher Key'}</span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setPrintVariant('teacher')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                    isTeacherKey
+                      ? 'bg-emerald-600 text-white'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                  }`}
+                >
+                  <KeyRound size={13} />
+                  <span>{lang === 'sv' ? 'Facit' : 'Teacher Key'}</span>
+                </button>
+              </div>
+            )}
 
             <button
               type="button"
@@ -820,13 +973,17 @@ export default function PosterNotesStudio({
             >
               <Printer size={14} />
               <span>
-                {isTeacherKey
+                {isPosterMode
                   ? lang === 'sv'
-                    ? 'Skriv ut facit'
-                    : 'Print Key'
-                  : lang === 'sv'
-                    ? 'Skriv ut'
-                    : 'Print'}
+                    ? 'Skriv ut affisch'
+                    : 'Print Poster'
+                  : isTeacherKey
+                    ? lang === 'sv'
+                      ? 'Skriv ut facit'
+                      : 'Print Key'
+                    : lang === 'sv'
+                      ? 'Skriv ut'
+                      : 'Print'}
               </span>
             </button>
           </div>
@@ -855,144 +1012,256 @@ export default function PosterNotesStudio({
               </select>
             </div>
 
+            {isPosterMode ? (
+              <div>
+                <label className="text-xs font-bold tracking-wider text-[var(--text-muted)] block mb-1.5">
+                  {lang === 'sv' ? 'Affischdesign (1 kort / blad)' : 'Poster Layout (1 / sheet)'}
+                </label>
+                <div className="grid grid-cols-1 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+                  {POSTER_LAYOUTS.map((pl) => (
+                    <button
+                      key={pl.id}
+                      type="button"
+                      onClick={() => setPosterLayout(pl.id)}
+                      className={`px-2.5 py-1.5 rounded-lg text-left cursor-pointer transition-colors ${
+                        posterLayout === pl.id
+                          ? 'bg-indigo-600 text-white'
+                          : 'text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)]'
+                      }`}
+                    >
+                      <div className="text-xs font-bold">
+                        {lang === 'sv' ? pl.sv : pl.en}
+                      </div>
+                      <div
+                        className={`text-[10px] ${
+                          posterLayout === pl.id ? 'text-indigo-100' : 'text-[var(--text-muted)]'
+                        }`}
+                      >
+                        {lang === 'sv' ? pl.descSv : pl.descEn}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="text-xs font-bold tracking-wider text-[var(--text-muted)] block mb-1.5">
+                  {lang === 'sv' ? 'Bladlayout' : 'Sheet Layout'}
+                </label>
+                <div className="grid grid-cols-1 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+                  {Object.entries(LAYOUT_PRESETS).map(([presetKey, spec]) => (
+                    <button
+                      key={presetKey}
+                      type="button"
+                      onClick={() => handleSelectLayoutPreset(presetKey)}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold text-left cursor-pointer transition-colors ${
+                        layoutPreset === presetKey
+                          ? 'bg-emerald-600 text-white'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                      }`}
+                    >
+                      {lang === 'sv' ? spec.sv : spec.en}
+                    </button>
+                  ))}
+                </div>
+
+                {layoutPreset === '2-up' && (
+                  <div className="mt-2.5">
+                    <span className="text-xs font-bold tracking-wider text-[var(--text-muted)] block mb-1">
+                      {lang === 'sv' ? 'Placering (2 per blad)' : '2-up Arrangement'}
+                    </span>
+                    <div className="grid grid-cols-2 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+                      {[
+                        { id: 'vertical', sv: 'Ovanpå varandra', en: 'Top / Bottom' },
+                        { id: 'horizontal', sv: 'Sida vid sida', en: 'Side by Side' }
+                      ].map((dir) => (
+                        <button
+                          key={dir.id}
+                          type="button"
+                          onClick={() => {
+                            setTwoUpDirection(dir.id);
+                            if (dir.id === 'horizontal' && paperFormat === 'A4_PORTRAIT') {
+                              setPaperFormat('A4_LANDSCAPE');
+                            } else if (dir.id === 'vertical' && paperFormat === 'A4_LANDSCAPE') {
+                              setPaperFormat('A4_PORTRAIT');
+                            }
+                          }}
+                          className={`py-1 px-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+                            twoUpDirection === dir.id
+                              ? 'bg-[var(--bg-card)] text-[var(--brand-text)]'
+                              : 'text-[var(--text-muted)]'
+                          }`}
+                        >
+                          {lang === 'sv' ? dir.sv : dir.en}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Shared Card Skin & Color Palette (Works in BOTH Handout and Poster modes) */}
+          <div className="pt-3 border-t border-[var(--border-main)] space-y-2.5">
             <div>
               <label className="text-xs font-bold tracking-wider text-[var(--text-muted)] block mb-1.5">
-                {lang === 'sv' ? 'Bladlayout' : 'Sheet Layout'}
+                {lang === 'sv' ? 'Kortstil (Design)' : 'Card Skin'}
               </label>
-              <div className="grid grid-cols-1 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
-                {Object.entries(LAYOUT_PRESETS).map(([presetKey, spec]) => (
+              <div className="grid grid-cols-2 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+                {THEME_SKINS.map((skin) => (
                   <button
-                    key={presetKey}
+                    key={skin.id}
                     type="button"
-                    onClick={() => handleSelectLayoutPreset(presetKey)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold text-left cursor-pointer transition-colors ${
-                      layoutPreset === presetKey
-                        ? 'bg-emerald-600 text-white'
+                    onClick={() => setThemeSkin(skin.id)}
+                    className={`px-2 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors truncate ${
+                      themeSkin === skin.id
+                        ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                     }`}
                   >
-                    {lang === 'sv' ? spec.sv : spec.en}
+                    {lang === 'sv' ? skin.sv : skin.en}
                   </button>
                 ))}
               </div>
+            </div>
 
-              {layoutPreset === '2-up' && (
-                <div className="mt-2.5">
-                  <span className="text-xs font-bold tracking-wider text-[var(--text-muted)] block mb-1">
-                    {lang === 'sv' ? 'Placering (2 per blad)' : '2-up Arrangement'}
-                  </span>
-                  <div className="grid grid-cols-2 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
-                    {[
-                      { id: 'vertical', sv: 'Ovanpå varandra', en: 'Top / Bottom' },
-                      { id: 'horizontal', sv: 'Sida vid sida', en: 'Side by Side' }
-                    ].map((dir) => (
+            {themeSkin !== 'ink-saver' && (
+              <div>
+                <label className="text-xs font-bold tracking-wider text-[var(--text-muted)] block mb-1.5">
+                  {lang === 'sv' ? 'Färgpalett' : 'Color Palette'}
+                </label>
+                <div className="flex items-center gap-1.5">
+                  {COLOR_PALETTES.map((pal) => (
+                    <button
+                      key={pal.id}
+                      type="button"
+                      onClick={() => setColorPalette(pal.id)}
+                      title={lang === 'sv' ? pal.sv : pal.en}
+                      className={`w-7 h-7 rounded-full ${pal.swatch} cursor-pointer transition-transform flex items-center justify-center ${
+                        colorPalette === pal.id
+                          ? 'ring-2 ring-offset-2 ring-slate-900 scale-110'
+                          : 'opacity-80 hover:opacity-100'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Poster Callout Box Toggles (Per Poster) OR Handout Writing Space Controls */}
+          {isPosterMode ? (
+            examples.length > 0 && (
+              <div className="pt-3 border-t border-[var(--border-main)] space-y-2">
+                <label className="text-xs font-bold tracking-wider text-[var(--text-muted)] block">
+                  {lang === 'sv' ? 'Kom ihåg-ruta per affisch' : 'Callout Box per Poster'}
+                </label>
+                <div className="space-y-1.5">
+                  {examples.map((ex, pIdx) => {
+                    const enabled = Boolean(ex.overrides?.callout?.enabled);
+                    return (
                       <button
-                        key={dir.id}
+                        key={`callout-toggle-${ex.id}`}
                         type="button"
                         onClick={() => {
-                          setTwoUpDirection(dir.id);
-                          if (dir.id === 'horizontal' && paperFormat === 'A4_PORTRAIT') {
-                            setPaperFormat('A4_LANDSCAPE');
-                          } else if (dir.id === 'vertical' && paperFormat === 'A4_LANDSCAPE') {
-                            setPaperFormat('A4_PORTRAIT');
-                          }
+                          setActivePageIndex(pIdx);
+                          setExamples((prev) =>
+                            prev.map((item) =>
+                              item.id === ex.id
+                                ? applyCardPartAction(item, 'editCallout', {
+                                    enabled: !enabled
+                                  })
+                                : item
+                            )
+                          );
                         }}
-                        className={`py-1 px-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
-                          twoUpDirection === dir.id
-                            ? 'bg-[var(--bg-card)] text-[var(--brand-text)]'
-                            : 'text-[var(--text-muted)]'
+                        className={`w-full px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border cursor-pointer transition-colors ${
+                          enabled
+                            ? 'bg-amber-50 border-amber-400 text-amber-950'
+                            : 'bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)]'
                         }`}
                       >
-                        {lang === 'sv' ? dir.sv : dir.en}
+                        <span className="flex items-center gap-1.5 min-w-0">
+                          <Lightbulb
+                            size={12}
+                            className={enabled ? 'text-amber-600 shrink-0' : 'text-slate-400 shrink-0'}
+                          />
+                          <span className="truncate">
+                            {pIdx + 1}. {ex.title}
+                          </span>
+                        </span>
+                        <span className="font-mono text-[10px] uppercase shrink-0">
+                          {enabled ? (lang === 'sv' ? 'På' : 'On') : (lang === 'sv' ? 'Av' : 'Off')}
+                        </span>
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            )
+          ) : (
+            <div className="pt-3 border-t border-[var(--border-main)] space-y-2.5">
+              <div>
+                <span className="text-xs font-bold tracking-wider text-[var(--text-muted)] block mb-1">
+                  {lang === 'sv' ? 'Skrivutrymme (handstil)' : 'Handwriting Space'}
+                </span>
+                <div className="grid grid-cols-2 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+                  {[
+                    { id: 'standard', sv: 'Standard', en: 'Standard' },
+                    { id: 'generous', sv: 'Rymligt', en: 'Generous' }
+                  ].map((ws) => (
+                    <button
+                      key={ws.id}
+                      type="button"
+                      onClick={() => setWritingSpace(ws.id)}
+                      className={`py-1 rounded-lg text-xs font-bold cursor-pointer ${
+                        writingSpace === ws.id
+                          ? 'bg-[var(--bg-card)] text-[var(--brand-text)]'
+                          : 'text-[var(--text-muted)]'
+                      }`}
+                    >
+                      {lang === 'sv' ? ws.sv : ws.en}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          {themeKeys.length > 0 && (
-            <div>
-              <label className="text-xs font-bold tracking-wider text-[var(--text-muted)] block mb-1.5">
-                {lang === 'sv' ? 'Stiltema' : 'Visual Theme'}
-              </label>
-              <select
-                value={themeId}
-                onChange={(e) => setThemeId(e.target.value)}
-                className="w-full bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-lg px-3 py-2 text-xs font-bold outline-none"
-              >
-                {themeKeys.map((key) => (
-                  <option key={key} value={key}>
-                    {PRESENTATION_THEMES[key]?.name?.[lang] ||
-                      PRESENTATION_THEMES[key]?.name?.sv ||
-                      key}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <span className="text-xs font-bold tracking-wider text-[var(--text-muted)] block mb-1">
+                  {lang === 'sv' ? 'Typ av skrivlucka' : 'Blank Style'}
+                </span>
+                <div className="grid grid-cols-3 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+                  {[
+                    { id: 'line', sv: 'Linje', en: 'Line' },
+                    { id: 'box', sv: 'Ruta', en: 'Box' },
+                    { id: 'dotted', sv: 'Prick', en: 'Dotted' }
+                  ].map((st) => (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => setBlankStyle(st.id)}
+                      className={`py-1 rounded-lg text-xs font-bold cursor-pointer ${
+                        blankStyle === st.id
+                          ? 'bg-[var(--bg-card)] text-[var(--brand-text)]'
+                          : 'text-[var(--text-muted)]'
+                      }`}
+                    >
+                      {lang === 'sv' ? st.sv : st.en}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
-
-          <div className="pt-3 border-t border-[var(--border-main)] space-y-2.5">
-            <div>
-              <span className="text-xs font-bold tracking-wider text-[var(--text-muted)] block mb-1">
-                {lang === 'sv' ? 'Skrivutrymme (handstil)' : 'Handwriting Space'}
-              </span>
-              <div className="grid grid-cols-2 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
-                {[
-                  { id: 'standard', sv: 'Standard', en: 'Standard' },
-                  { id: 'generous', sv: 'Rymligt', en: 'Generous' }
-                ].map((ws) => (
-                  <button
-                    key={ws.id}
-                    type="button"
-                    onClick={() => setWritingSpace(ws.id)}
-                    className={`py-1 rounded-lg text-xs font-bold cursor-pointer ${
-                      writingSpace === ws.id
-                        ? 'bg-[var(--bg-card)] text-[var(--brand-text)]'
-                        : 'text-[var(--text-muted)]'
-                    }`}
-                  >
-                    {lang === 'sv' ? ws.sv : ws.en}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <span className="text-xs font-bold tracking-wider text-[var(--text-muted)] block mb-1">
-                {lang === 'sv' ? 'Typ av skrivlucka' : 'Blank Style'}
-              </span>
-              <div className="grid grid-cols-3 gap-1 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
-                {[
-                  { id: 'line', sv: 'Linje', en: 'Line' },
-                  { id: 'box', sv: 'Ruta', en: 'Box' },
-                  { id: 'dotted', sv: 'Prick', en: 'Dotted' }
-                ].map((st) => (
-                  <button
-                    key={st.id}
-                    type="button"
-                    onClick={() => setBlankStyle(st.id)}
-                    className={`py-1 rounded-lg text-xs font-bold cursor-pointer ${
-                      blankStyle === st.id
-                        ? 'bg-[var(--bg-card)] text-[var(--brand-text)]'
-                        : 'text-[var(--text-muted)]'
-                    }`}
-                  >
-                    {lang === 'sv' ? st.sv : st.en}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
         </aside>
 
         {/* Center Canva-Style Drafting Desk Stage */}
-        <div className="flex-1 flex flex-col relative overflow-hidden min-h-0">
+        <div className="poster-studio-desk flex-1 flex flex-col relative overflow-hidden min-h-0">
           <main
             ref={deskContainerRef}
             data-tour="sheet-stage"
-            className="flex-1 overflow-auto p-10 pb-20 print:p-0 print:overflow-visible flex flex-col items-center gap-10 print:gap-0 drafting-desk-bg"
+            className="poster-studio-main flex-1 overflow-auto p-10 pb-20 print:p-0 print:overflow-visible flex flex-col items-center gap-10 print:gap-0 drafting-desk-bg"
           >
             {pages.map((pg, idx) => (
               <SheetArtboard
@@ -1006,26 +1275,29 @@ export default function PosterNotesStudio({
                 lang={lang}
               >
                 <div className="flex-1 flex flex-col min-h-0">
-                  <div className="flex items-center justify-between border-b-2 border-stone-900 pb-2 mb-3 shrink-0">
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base font-extrabold tracking-tight">{title}</h2>
-                      {isTeacherKey && (
-                        <span className="px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-600 text-emerald-800 font-mono text-xs font-bold">
+                  {/* Handout Sheet Header (Automatically hidden in Poster Mode) */}
+                  {!isPosterMode && (
+                    <div className="flex items-center justify-between border-b-2 border-stone-900 pb-2 mb-3 shrink-0">
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base font-extrabold tracking-tight">{title}</h2>
+                        {isTeacherKey && (
+                          <span className="px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-600 text-emerald-800 font-mono text-xs font-bold">
+                            {lang === 'sv'
+                              ? 'FACIT · * = elevlucka'
+                              : 'TEACHER KEY · * = student blank'}
+                          </span>
+                        )}
+                        <span className="print:hidden text-xs font-mono px-1.5 py-0.5 rounded-lg bg-[var(--bg-surface)] text-[var(--text-muted)]">
                           {lang === 'sv'
-                            ? 'FACIT · * = elevlucka'
-                            : 'TEACHER KEY · * = student blank'}
+                            ? LAYOUT_PRESETS[layoutPreset]?.sv
+                            : LAYOUT_PRESETS[layoutPreset]?.en}
                         </span>
-                      )}
-                      <span className="print:hidden text-xs font-mono px-1.5 py-0.5 rounded-lg bg-[var(--bg-surface)] text-[var(--text-muted)]">
-                        {lang === 'sv'
-                          ? LAYOUT_PRESETS[layoutPreset]?.sv
-                          : LAYOUT_PRESETS[layoutPreset]?.en}
+                      </div>
+                      <span className="print:hidden text-xs font-mono font-bold text-[var(--text-muted)]">
+                        {idx + 1} / {pages.length}
                       </span>
                     </div>
-                    <span className="print:hidden text-xs font-mono font-bold text-[var(--text-muted)]">
-                      {idx + 1} / {pages.length}
-                    </span>
-                  </div>
+                  )}
 
                   {renderPageContent(pg)}
                 </div>

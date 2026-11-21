@@ -1,10 +1,19 @@
 // src/components/shared/WorkedExampleSlotControls.jsx
 import React from 'react';
 import {
-  Trash2, LayoutGrid, X, RefreshCcw, Shuffle, GripVertical,
-  SlidersHorizontal, Columns, Eye
+  Trash2,
+  LayoutGrid,
+  X,
+  RefreshCcw,
+  Shuffle,
+  GripVertical,
+  SlidersHorizontal,
+  Columns,
+  Eye,
+  Presentation
 } from 'lucide-react';
 import WorkedExampleCard from './WorkedExampleCard.jsx';
+import PosterCardRenderer from './PosterCardRenderer.jsx';
 import {
   DEFAULT_CARD_LAYOUT,
   buildWorkedCardItem,
@@ -16,6 +25,11 @@ export default function WorkedExampleSlotControls({
   lang = 'sv',
   isTeacherKey = false,
   isProjector = false,
+  isPosterMode = false,
+  posterLayout = 'classic',
+  isLandscape = false,
+  themeSkin = 'classic',
+  colorPalette = 'amber',
   textZoom = 1.1,
   projectorPacingMode = 'guided_blanks',
   revealStepCount = 0,
@@ -31,6 +45,7 @@ export default function WorkedExampleSlotControls({
   onToggleMenu = null,
   isRegenerating = false,
   onRegenerate = null,
+  onPosterizeCard = null,
   onUpdatePart = null,
   onUpdateOverride = null,
   onResetOverrides = null,
@@ -54,12 +69,16 @@ export default function WorkedExampleSlotControls({
     lang,
     isTeacherKey,
     isProjector,
+    isPosterMode,
     projectorPacingMode,
     revealStepCount
   });
 
   const displayOptions = getDisplayOptionsForExample(example, {
     isProjector,
+    isPosterMode,
+    themeSkin,
+    colorPalette,
     textZoom,
     compact,
     defaultStacked,
@@ -77,6 +96,8 @@ export default function WorkedExampleSlotControls({
   const curLeftPct = exLayout.leftWidthPct ?? DEFAULT_CARD_LAYOUT.leftWidthPct;
   const curSolPx = exLayout.solutionWidthPx ?? DEFAULT_CARD_LAYOUT.solutionWidthPx;
   const isCurrentlyStacked = exLayout.stacked ?? defaultStacked;
+  const showColumnControls = !isPosterMode || posterLayout === 'classic';
+
   const hiddenCount = (example.clues || []).reduce(
     (sum, c) => sum + (c.hidden ? 1 : (c.hideText ? 1 : 0) + (c.hideLatex ? 1 : 0)),
     0
@@ -85,12 +106,18 @@ export default function WorkedExampleSlotControls({
   return (
     <div
       {...(draggableProps?.containerProps || {})}
-      className={`relative group rounded-2xl transition-all ${cardClass} ${className} ${
+      className={`relative group rounded-2xl transition-all h-full flex flex-col ${cardClass} ${className} ${
         draggableProps?.isDragging ? 'opacity-40' : ''
       }`}
     >
       {!isProjector && (
-        <div className="flex items-center justify-between gap-2 mb-1 px-1 print:hidden">
+        <div
+          className={`flex items-center justify-between gap-2 px-1 print:hidden shrink-0 ${
+            isPosterMode
+              ? 'absolute -top-7 left-0 right-0 z-30'
+              : 'mb-1'
+          }`}
+        >
           <div className="flex items-center gap-1 min-w-0">
             {draggableProps?.onHandlePointerDown && (
               <span
@@ -106,7 +133,13 @@ export default function WorkedExampleSlotControls({
             </span>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div
+            style={{
+              transform: 'scale(var(--slot-inv-scale, 1))',
+              transformOrigin: 'top right'
+            }}
+            className="flex items-center gap-1 shrink-0 z-20"
+          >
             {example.topicId && example.variationKey && onRegenerate && (
               <button
                 type="button"
@@ -137,7 +170,26 @@ export default function WorkedExampleSlotControls({
               </button>
             )}
 
-            {onUpdatePart && (
+            {!isPosterMode && onPosterizeCard && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPosterizeCard(example);
+                }}
+                className="px-2 py-0.5 text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                title={
+                  lang === 'sv'
+                    ? 'Öppna detta exempel som klassrumsaffisch'
+                    : 'Open this example as a classroom poster'
+                }
+              >
+                <Presentation size={11} />
+                <span>{lang === 'sv' ? 'Gör affisch' : 'Posterize'}</span>
+              </button>
+            )}
+
+            {showColumnControls && onUpdatePart && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -167,7 +219,7 @@ export default function WorkedExampleSlotControls({
               </button>
             )}
 
-            {onToggleMenu && (
+            {showColumnControls && onToggleMenu && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -219,10 +271,15 @@ export default function WorkedExampleSlotControls({
         </div>
       )}
 
-      {!isProjector && isMenuOpen && onUpdateOverride && (
+      {!isProjector && showColumnControls && isMenuOpen && onUpdateOverride && (
         <div
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
+          style={{
+            width: 'calc(100% / var(--slot-inv-scale, 1))',
+            transform: 'scale(var(--slot-inv-scale, 1))',
+            transformOrigin: 'top left'
+          }}
           className="mb-2 p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-strong)] shadow-lg text-[var(--text-main)] space-y-2.5 print:hidden z-30 relative"
         >
           <div className="flex items-center justify-between text-xs font-bold">
@@ -294,13 +351,28 @@ export default function WorkedExampleSlotControls({
         </div>
       )}
 
-      <WorkedExampleCard
-        item={cardItem}
-        lang={lang}
-        isPrintMode={isProjector}
-        displayOptions={displayOptions}
-        onUpdatePart={!isProjector ? onUpdatePart : null}
-      />
+      {isPosterMode ? (
+        <div className="flex-1 min-h-0 flex flex-col">
+          <PosterCardRenderer
+            item={cardItem}
+            lang={lang}
+            posterLayout={posterLayout}
+            isLandscape={isLandscape}
+            displayOptions={displayOptions}
+            onUpdatePart={!isProjector ? onUpdatePart : null}
+          />
+        </div>
+      ) : (
+        <div className="flex-1 min-h-0 flex flex-col">
+          <WorkedExampleCard
+            item={cardItem}
+            lang={lang}
+            isPrintMode={isProjector}
+            displayOptions={displayOptions}
+            onUpdatePart={!isProjector ? onUpdatePart : null}
+          />
+        </div>
+      )}
     </div>
   );
 }

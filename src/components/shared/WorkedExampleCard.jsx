@@ -14,6 +14,7 @@ import {
     ClueRowsSection,
     StackedCardBody
 } from './WorkedExampleHelpers.jsx';
+import { resolveCardTheme } from './posterThemes';
 
 export default function WorkedExampleCard({
     item,
@@ -75,18 +76,24 @@ export default function WorkedExampleCard({
     const stepTextClass = STEP_TEXT_SIZE_MAP[curStepTextSize] || 'text-[10px]';
     const stepLatexClass = STEP_LATEX_SIZE_MAP[curStepLatexSize] || 'text-[11px]';
 
-    const solutionColStyle = opts.solutionWidthPx
-        ? { width: `${Number(opts.solutionWidthPx)}px` }
-        : undefined;
-    const solutionColClass = opts.solutionWidthPx
-        ? ''
-        : compact
-            ? 'w-32'
-            : spaciousWriting
-                ? 'w-52'
-                : 'w-44';
-
     const stacked = Boolean(opts.stacked);
+    const solutionColStyle = opts.solutionWidthPx
+        ? {
+            width: `${Number(opts.solutionWidthPx)}px`,
+            maxWidth: stacked ? '55%' : '48%'
+          }
+        : {
+            maxWidth: stacked ? '55%' : '48%'
+          };
+    const solutionColClass = opts.solutionWidthPx
+        ? 'min-w-0'
+        : compact
+            ? 'w-32 min-w-0'
+            : spaciousWriting
+                ? 'w-52 min-w-0'
+                : 'w-44 min-w-0';
+
+    const cardTheme = resolveCardTheme(opts.themeSkin || 'classic', opts.colorPalette || 'amber');
     const rd = item.resolvedData?.renderData || item.resolvedData || item.renderData || {};
     const hasVisual = hasRenderableVisual(rd);
     const clues = normalizeClues(item.clues || item.resolvedData?.clues || [], lang);
@@ -127,22 +134,24 @@ export default function WorkedExampleCard({
         onBlankHeightChange,
         openMenuKey,
         setOpenMenuKey,
-        onUpdatePart
+        onUpdatePart,
+        cardTheme
     };
 
     return (
         <MotionConfig reducedMotion={isPrintMode ? 'always' : 'user'}>
             <div
                 onClick={() => isEditable && setOpenMenuKey(null)}
-                className={`whiteboard-protect worked-example-container w-full rounded-xl border-2 border-amber-400 bg-amber-50/20 ${
+                style={cardTheme.containerStyle}
+                className={`whiteboard-protect worked-example-container w-full h-full flex flex-col ${cardTheme.containerClass} ${
                     compact ? 'p-2' : spaciousWriting ? 'p-3.5 sm:p-4' : 'p-2.5 sm:p-3'
                 } text-slate-900 break-inside-avoid select-none relative overflow-visible m-0`}
             >
-                <div className="flex items-center gap-2 border-b border-amber-300 pb-1.5 mb-2.5">
-                    <span className={`px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black ${isPrintMode && !compact ? 'text-xs' : 'text-[9px]'} uppercase tracking-wider shrink-0`}>
+                <div className={`flex items-center gap-2 ${cardTheme.headerDivider} pb-1.5 mb-2.5 shrink-0`}>
+                    <span className={`px-2 py-0.5 ${cardTheme.badgeClass} font-black ${isPrintMode && !compact ? 'text-xs' : 'text-[9px]'} uppercase tracking-wider shrink-0`}>
                         {labelBadge}
                     </span>
-                    <span className={`${isPrintMode && !compact ? 'text-sm' : 'text-[10px]'} font-black uppercase tracking-wider text-amber-950 truncate`}>
+                    <span className={`${isPrintMode && !compact ? 'text-sm' : 'text-[10px]'} font-black uppercase tracking-wider ${cardTheme.titleText} truncate`}>
                         {item.name}
                     </span>
                 </div>
@@ -150,7 +159,7 @@ export default function WorkedExampleCard({
                 {stacked ? (
                     <StackedCardBody {...sharedProps} />
                 ) : (
-                    <div className={`worked-example-grid flex flex-row items-stretch ${compact ? 'gap-2' : 'gap-3'} w-full`}>
+                    <div className={`worked-example-grid flex-1 min-h-0 flex flex-row items-stretch ${compact ? 'gap-2' : 'gap-3'} w-full`}>
                         <div
                             style={{ width: `${leftWidthPct}%` }}
                             className={`shrink-0 flex flex-col justify-between ${compact ? 'pr-1.5' : 'pr-2'} border-r border-amber-200`}

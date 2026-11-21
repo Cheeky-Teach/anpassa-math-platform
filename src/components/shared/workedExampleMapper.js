@@ -194,6 +194,20 @@ export function applyCardPartAction(example, action, payload) {
     };
   }
 
+  if (action === 'editCallout' && payload !== undefined) {
+    return {
+      ...example,
+      hasCustomEdits: true,
+      overrides: {
+        ...(example.overrides || {}),
+        callout: {
+          ...(example.overrides?.callout || {}),
+          ...(typeof payload === 'object' ? payload : { text: String(payload) })
+        }
+      }
+    };
+  }
+
   if (action === 'visualOffset' && payload) {
     return {
       ...example,
@@ -272,6 +286,7 @@ export function buildWorkedCardItem(
     lang = 'sv',
     isTeacherKey = false,
     isProjector = false,
+    isPosterMode = false,
     projectorPacingMode = 'guided_blanks',
     revealStepCount = 0
   } = {}
@@ -294,7 +309,16 @@ export function buildWorkedCardItem(
     // If both parts of a step were hidden, omit the empty step row
     if (!originalText && !originalLatex) continue;
 
-    if (!isProjector && isTeacherKey) {
+    if (isPosterMode) {
+      mappedClues.push({
+        text: originalText,
+        sv: originalText,
+        en: originalText,
+        latex: originalLatex,
+        _blankText: false,
+        _blankLatex: false
+      });
+    } else if (!isProjector && isTeacherKey) {
       const wasTextBlanked = Boolean(clue.blankText) && Boolean(originalText);
       const wasLatexBlanked = Boolean(clue.blankLatex) && Boolean(originalLatex);
 
@@ -391,6 +415,9 @@ export function getDisplayOptionsForExample(
   example,
   {
     isProjector = false,
+    isPosterMode = false,
+    themeSkin = 'classic',
+    colorPalette = 'amber',
     textZoom = 1.1,
     compact = false,
     defaultStacked = false,
@@ -418,20 +445,27 @@ export function getDisplayOptionsForExample(
     ? Math.max(300, exLayout.solutionWidthPx ?? DEFAULT_CARD_LAYOUT.solutionWidthPx)
     : projectorTwoUp
       ? Math.max(220, exLayout.solutionWidthPx ?? DEFAULT_CARD_LAYOUT.solutionWidthPx)
-      : (exLayout.solutionWidthPx ?? DEFAULT_CARD_LAYOUT.solutionWidthPx);
+      : isPosterMode
+        ? Math.max(240, exLayout.solutionWidthPx ?? DEFAULT_CARD_LAYOUT.solutionWidthPx)
+        : (exLayout.solutionWidthPx ?? DEFAULT_CARD_LAYOUT.solutionWidthPx);
 
   return {
-    compact: isProjector ? false : (compact || isStacked),
+    compact: isProjector || isPosterMode ? false : (compact || isStacked),
     stacked: isStacked,
     writingSpace,
     blankStyle,
+    themeSkin,
+    colorPalette,
+    callout: example.overrides?.callout || null,
     leftWidthPct: exLayout.leftWidthPct ?? DEFAULT_CARD_LAYOUT.leftWidthPct,
     solutionWidthPx: isProjector ? Math.round(baseSolPx * effectiveZoom) : baseSolPx,
     visualZoom: projectorSingle
       ? Math.max(1.2, (exLayout.visualZoom ?? DEFAULT_CARD_LAYOUT.visualZoom) * effectiveZoom)
       : projectorTwoUp
         ? Math.max(1.05, (exLayout.visualZoom ?? DEFAULT_CARD_LAYOUT.visualZoom) * effectiveZoom)
-        : (exLayout.visualZoom ?? DEFAULT_CARD_LAYOUT.visualZoom),
+        : isPosterMode
+          ? Math.max(1.25, exLayout.visualZoom ?? DEFAULT_CARD_LAYOUT.visualZoom)
+          : (exLayout.visualZoom ?? DEFAULT_CARD_LAYOUT.visualZoom),
     visualOffsetX: exLayout.visualOffsetX ?? DEFAULT_CARD_LAYOUT.visualOffsetX,
     visualOffsetY: exLayout.visualOffsetY ?? DEFAULT_CARD_LAYOUT.visualOffsetY,
     showPromptText: exVis.showPromptText ?? DEFAULT_VISIBILITY.showPromptText,
@@ -440,11 +474,19 @@ export function getDisplayOptionsForExample(
     showVisual: exVis.showVisual ?? DEFAULT_VISIBILITY.showVisual,
     showStepText: exVis.showStepText ?? DEFAULT_VISIBILITY.showStepText,
     showStepLatex: exVis.showStepLatex ?? DEFAULT_VISIBILITY.showStepLatex,
-    promptTextSize: isProjector ? projTier : (exTypo.promptTextSize ?? DEFAULT_TYPOGRAPHY.promptTextSize),
-    promptLatexSize: isProjector ? projTier : (exTypo.promptLatexSize ?? DEFAULT_TYPOGRAPHY.promptLatexSize),
-    stepTextSize: isProjector ? projTier : (exTypo.stepTextSize ?? DEFAULT_TYPOGRAPHY.stepTextSize),
-    stepLatexSize: isProjector ? projTier : (exTypo.stepLatexSize ?? DEFAULT_TYPOGRAPHY.stepLatexSize),
+    promptTextSize: isProjector
+      ? projTier
+      : (exTypo.promptTextSize ?? (isPosterMode ? '2xl' : DEFAULT_TYPOGRAPHY.promptTextSize)),
+    promptLatexSize: isProjector
+      ? projTier
+      : (exTypo.promptLatexSize ?? (isPosterMode ? '3xl' : DEFAULT_TYPOGRAPHY.promptLatexSize)),
+    stepTextSize: isProjector
+      ? projTier
+      : (exTypo.stepTextSize ?? (isPosterMode ? '2xl' : DEFAULT_TYPOGRAPHY.stepTextSize)),
+    stepLatexSize: isProjector
+      ? projTier
+      : (exTypo.stepLatexSize ?? (isPosterMode ? '3xl' : DEFAULT_TYPOGRAPHY.stepLatexSize)),
     blankHeights,
-    onBlankHeightChange: !isProjector ? onBlankHeightChange : null
+    onBlankHeightChange: !isProjector && !isPosterMode ? onBlankHeightChange : null
   };
 }
