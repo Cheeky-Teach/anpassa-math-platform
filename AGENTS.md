@@ -25,10 +25,10 @@
 
 ## Testing Strategy
 - **Test as you go, not retroactively.** Every new feature or logic change gets at least one test. Don't backfill the entire existing codebase.
-- **Priority order:**
-  1. `src/core/generators/` — pure math logic, highest value. If a generator breaks, content breaks.
-  2. `src/core/rules/`, `src/lib/` — business logic (pacing, progression, state transitions)
-  3. `src/components/` — only for components with complex state or props contracts
+- **Priority order (by risk × volume):**
+  1. `src/components/` (156 files) — the bulk of the app. Test components with complex state, layout logic, or print/presentation behavior.
+  2. `src/core/generators/` (11 files) — pure math logic. Small but critical: if a generator breaks, content breaks.
+  3. `src/hooks/`, `src/lib/` — shared state and business logic (pacing, progression).
 - **Test quality bar:** A test must assert a specific input produces a specific output. No `expect(result).toBeDefined()` or `expect(true).toBe(true)`. If a test can pass with broken logic, it's worthless.
 - **When modifying existing logic:** Add a test for the specific behavior you changed, not just "it doesn't crash."
 - **Run tests alongside build:** `npm run build && npm run test:run` before committing.
@@ -40,7 +40,7 @@
 3. Inspect only the target files listed in the plan.
 4. Apply minimal, surgical edits.
 5. Run `npm run build && npm run test:run`. If either fails, fix before proceeding.
-6. If the change touches `src/core/` logic, add or update a test.
+6. If the change touches component logic, generators, or hooks, add or update a test.
 7. Commit: `git add <changed-files>` then `git commit -m "agent: <description>"`.
 8. Append results to `docs/agent-log/TEST_RUNS.md` (include test output).
 9. Update `docs/agent-log/CHANGELOG_AGENT.md` and check off the task.
@@ -53,7 +53,6 @@
 
 ## Project Context
 - The agent has full filesystem access. Read files on demand rather than relying on pre-cached snapshots.
-- `project_context.txt` is a stale snapshot from 2026-02-17 — do not use it as source of truth.
 
 ## Known Risks (see `docs/agent-log/BACKLOG_AND_RISKS.md` for details)
 - Print pagination quirks in PosterNotesStudio
