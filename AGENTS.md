@@ -33,6 +33,12 @@
 7. Append results to `docs/agent-log/TEST_RUNS.md`.
 8. Update `docs/agent-log/CHANGELOG_AGENT.md` and check off the task.
 
+## Session Handoff Protocol
+- **One session = one bounded task.** Rotate sessions at ~50K tokens to keep responses fast.
+- **Before ending a session:** Commit all work, update `CURRENT_PLAN.md` with what's done and what's next (exact step, target files, acceptance criteria), update `TEST_RUNS.md` and `CHANGELOG_AGENT.md`.
+- **When starting a new session:** Read `AGENTS.md` and `docs/agent-log/CURRENT_PLAN.md`. Execute the next unchecked step from the plan.
+- **Never leave uncommitted work.** If the session ends mid-task, commit the partial state with a `WIP:` prefix so the next session can resume.
+
 ## Project Context
 - `project_context.txt` contains a full project snapshot (from 2026-02-17). Use it for architecture overview, but always verify against actual current files before editing — it may be stale.
 
