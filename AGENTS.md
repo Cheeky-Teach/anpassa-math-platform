@@ -15,6 +15,7 @@
 5. **Pointer events:** KaTeX and SVG icon paths trap mouse events. Add `pointer-events-none` to non-interactive children inside clickable containers.
 6. **Theme tokens:** Route colors through `PRESENTATION_THEMES` tokens (`cardBg`, `textMain`, `textMuted`, `mathText`). No hardcoded `bg-white` / `text-slate-800` on dynamic components.
 7. **Localization:** Dual-language (`sv` / `en`), defaulting to Swedish.
+8. **Ponytail mode:** Follow the Ponytail skill (`C:/Users/cmeji/.lmstudio/skills/ponytail-main/skills/ponytail/SKILL.md`) when planning, writing, and reviewing code — smallest complete change, reuse over new code, deletion over addition. Skip unrequested features and name them in one line. Never cut validation, error handling, security, or accessibility; non-trivial logic still gets one small test.
 
 ## Git Discipline
 - **Never work on `main`.** The user creates a `bionic/<feature>` branch before each session.
