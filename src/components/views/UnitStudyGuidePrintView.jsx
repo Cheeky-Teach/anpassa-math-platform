@@ -49,7 +49,7 @@ const PrintMathDisplay = ({ content, className = "" }) => {
                     { left: '\\[', right: '\\]', display: true }
                 ],
                 throwOnError: false,
-                trust: true
+                trust: false
             });
         }
     }, [content]);

@@ -50,7 +50,7 @@ const MathDisplay = ({ content, className = "" }) => {
                     { left: '$', right: '$', display: false }
                 ],
                 throwOnError: false,
-                trust: true
+                trust: false
             });
         }
     }, [formattedContent]);

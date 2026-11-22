@@ -25,7 +25,7 @@ const CoachMathDisplay = ({ content, className = "" }) => {
                     { left: '$', right: '$', display: false }
                 ],
                 throwOnError: false,
-                trust: true
+                trust: false
             });
         }
     }, [content]);

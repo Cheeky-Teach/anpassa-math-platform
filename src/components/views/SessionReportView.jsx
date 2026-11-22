@@ -13,7 +13,7 @@ const MathDisplay = ({ content, className = "" }) => {
                     { left: '$$', right: '$$', display: true },
                     { left: '$', right: '$', display: false }
                 ],
-                throwOnError: false, trust: true
+                throwOnError: false, trust: false
             });
         }
     }, [content]);

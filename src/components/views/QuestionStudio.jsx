@@ -42,7 +42,7 @@ const MathDisplay = ({ content, className = "", style = {} }) => {
                         { left: '\\(', right: '\\)', display: false },
                         { left: '\\[', right: '\\]', display: true }
                     ],
-                    throwOnError: false, trust: true
+                    throwOnError: false, trust: false
                 });
             }
         };
