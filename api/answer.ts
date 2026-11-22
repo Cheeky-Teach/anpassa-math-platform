@@ -17,17 +17,28 @@ const getSupabase = () => {
     return createClient(url, key);
 };
 
-const ALLOWED_ORIGINS = new Set([
-    'https://anpassa.app',
-    'https://www.anpassa.app',
-    'http://localhost:5173',
-    'http://localhost:3000'
+const EXACT_ORIGINS = new Set([
+  'https://anpassa.app',
+  'https://www.anpassa.app',
+  'http://localhost:5173',
+  'http://localhost:3000'
 ]);
+
+function isAllowedOrigin(origin: string): boolean {
+  if (!origin) return false;
+  if (EXACT_ORIGINS.has(origin)) return true;
+  try {
+    const url = new URL(origin);
+    return url.protocol === 'https:' && url.hostname.endsWith('.vercel.app');
+  } catch {
+    return false;
+  }
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 1. Standard Security & CORS Headers
     const origin = req.headers.origin || '';
-    if (ALLOWED_ORIGINS.has(origin)) {
+    if (isAllowedOrigin(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
     }
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
