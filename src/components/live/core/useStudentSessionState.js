@@ -116,23 +116,108 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
     }, [packet]);
 
     // 🟢 4. Rehydration Effect
+    const applyRoomSnapshot = useCallback((updated) => {
+        if (!updated || !session?.id) return;
+
+        setLiveSession(prev => ({ ...prev, ...updated }));
+
+        const currentAlias = studentAliasRef.current;
+        const currentLang = langRef.current;
+
+        if (updated?.status === 'closed' || updated?.status === 'archived') {
+            setRoomActive(false);
+            return;
+        }
+
+        if ((updated?.kicked_students || []).includes(currentAlias)) {
+            alert(currentLang === 'sv' ? "Du har blivit borttagen från sessionen." : "You were removed from the session.");
+            if (onBackRef.current) onBackRef.current();
+            return;
+        }
+
+        const incomingSettings = extractEffectiveSettings(updated);
+        if (Object.keys(incomingSettings).length > 0) {
+            setLiveSettings(incomingSettings);
+        }
+
+        const incomingRaw = updated?.active_question_data?.livePacket || updated?.active_question_data?.packet;
+        if (incomingRaw) {
+            const incomingPacket = normalizePacket(incomingRaw);
+            let hasChanges = false;
+            const changedIndices = [];
+            const newLocalPacket = [...localPacketRef.current];
+
+            incomingPacket.forEach((newItem, idx) => {
+                const oldItem = newLocalPacket[idx];
+                if (oldItem && newItem.regenVersion && newItem.regenVersion !== oldItem.regenVersion) {
+                    hasChanges = true;
+                    changedIndices.push(idx);
+                    newLocalPacket[idx] = { ...newItem, originalIndex: idx };
+                } else if (!oldItem) {
+                    newLocalPacket[idx] = { ...newItem, originalIndex: idx };
+                    hasChanges = true;
+                }
+            });
+
+            if (hasChanges) {
+                setLocalPacket(newLocalPacket);
+                setAnswers(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
+                setScratchpad(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
+                setCanvasElements(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
+                setCompleted(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
+            }
+        }
+
+        if (updated?.current_slide_index !== null && updated?.current_slide_index !== undefined) {
+            const newSlideIdx = parseInt(updated.current_slide_index, 10);
+            setActiveSlideIndex(newSlideIdx);
+            if (isPresentationModeRef.current) setCurrentIndex(newSlideIdx);
+        }
+
+        const isTeacherPacing = settingsRef.current?.pacing === 'teacher';
+        if (updated?.current_question_index !== null && updated?.current_question_index !== undefined) {
+            const newTeacherIndex = parseInt(updated.current_question_index, 10);
+            const prevIndex = currentIndexRef.current;
+            const currentCompleted = completedRef.current;
+            const currentPacket = localPacketRef.current;
+
+            if (isTeacherPacing && newTeacherIndex > prevIndex && !currentCompleted[prevIndex] && currentPacket[prevIndex]) {
+                const timeoutAnswer = "[TIMEOUT]";
+                supabase.from('responses').insert([{
+                    room_id: session.id,
+                    student_alias: (currentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25),
+                    question_index: currentPacket[prevIndex].originalIndex,
+                    answer: timeoutAnswer,
+                    is_correct: false,
+                    is_manually_corrected: false
+                }]).then(() => {
+                    setAnswers(prev => ({ ...prev, [prevIndex]: timeoutAnswer }));
+                    setCompleted(prev => ({ ...prev, [prevIndex]: 'wrong' }));
+                });
+            }
+
+            if (isTeacherPacing || isPresentationModeRef.current) {
+                setCurrentIndex(newTeacherIndex);
+            }
+        }
+    }, [session?.id]);
+
+    // 🟢 4. Rehydration Effect (via SECURITY DEFINER RPC)
     useEffect(() => {
         if (!session?.id || !studentAlias) return;
 
         const initialize = async () => {
             try {
-                const { data: roomData } = await supabase
-                    .from('rooms')
-                    .select('*')
-                    .eq('id', session.id)
-                    .maybeSingle();
+                const { data: rpcRooms } = await supabase
+                    .rpc('get_room_state_by_id', { p_room_id: session.id });
+                const roomData = Array.isArray(rpcRooms) ? rpcRooms[0] : rpcRooms;
 
                 if (roomData) {
-                    if (roomData.status === 'closed') {
+                    if (roomData.status === 'closed' || roomData.status === 'archived') {
                         setRoomActive(false);
                         return;
                     }
-                    setLiveSession(roomData);
+                    setLiveSession(prev => ({ ...prev, ...roomData }));
                     const freshSettings = extractEffectiveSettings(roomData);
                     setLiveSettings(freshSettings);
                 }
@@ -203,7 +288,7 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
         initialize();
     }, [session?.id, studentAlias]);
 
-    // 🟢 5. Master Realtime Sync + Fallback Polling
+    // 🟢 5. Master Realtime Broadcast + SECURITY DEFINER RPC Sync
     useEffect(() => {
         if (!session?.id) return;
 
@@ -211,104 +296,6 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
         const channelName = `student_realtime_${session.id.slice(0, 8)}_${studentAlias || 'anon'}_${Math.random().toString(36).substring(7)}`;
 
         const channel = supabase.channel(channelName)
-            .on('postgres_changes', { 
-                event: 'UPDATE', 
-                schema: 'public', 
-                table: 'rooms', 
-                filter: `id=eq.${session.id}` 
-            }, (payload) => {
-                if (!isSubscribed) return;
-                const updated = payload.new;
-                
-                // 🟢 CRITICAL: Update full session so active_question_data propagates to all views!
-                setLiveSession(updated);
-
-                const currentAlias = studentAliasRef.current;
-                const currentLang = langRef.current;
-
-                // Room Closed by Teacher
-                if (updated?.status === 'closed') {
-                    setRoomActive(false);
-                    return;
-                }
-
-                // Student Kicked
-                if ((updated?.kicked_students || []).includes(currentAlias)) {
-                    alert(currentLang === 'sv' ? "Du har blivit borttagen från sessionen." : "You were removed from the session.");
-                    if (onBackRef.current) onBackRef.current();
-                    return;
-                }
-
-                // Sync Updated Settings Live
-                const incomingSettings = extractEffectiveSettings(updated);
-                if (Object.keys(incomingSettings).length > 0) {
-                    setLiveSettings(incomingSettings);
-                }
-
-                // Dynamic packet regeneration sync
-                const incomingRaw = updated?.active_question_data?.livePacket || updated?.active_question_data?.packet;
-                if (incomingRaw) {
-                    const incomingPacket = normalizePacket(incomingRaw);
-                    let hasChanges = false;
-                    const changedIndices = [];
-                    const newLocalPacket = [...localPacketRef.current];
-
-                    incomingPacket.forEach((newItem, idx) => {
-                        const oldItem = newLocalPacket[idx];
-                        if (oldItem && newItem.regenVersion && newItem.regenVersion !== oldItem.regenVersion) {
-                            hasChanges = true;
-                            changedIndices.push(idx);
-                            newLocalPacket[idx] = { ...newItem, originalIndex: idx };
-                        } else if (!oldItem) {
-                            newLocalPacket[idx] = { ...newItem, originalIndex: idx };
-                            hasChanges = true;
-                        }
-                    });
-
-                    if (hasChanges) {
-                        setLocalPacket(newLocalPacket);
-                        setAnswers(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
-                        setScratchpad(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
-                        setCanvasElements(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
-                        setCompleted(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
-                    }
-                }
-
-                // Slide Pacing
-                if (updated?.current_slide_index !== null && updated?.current_slide_index !== undefined) {
-                    const newSlideIdx = parseInt(updated.current_slide_index, 10);
-                    setActiveSlideIndex(newSlideIdx);
-                    if (isPresentationModeRef.current) setCurrentIndex(newSlideIdx);
-                }
-
-                // Teacher Question Pacing
-                const isTeacherPacing = settingsRef.current?.pacing === 'teacher';
-                if (updated?.current_question_index !== null && updated?.current_question_index !== undefined) {
-                    const newTeacherIndex = parseInt(updated.current_question_index, 10);
-                    const prevIndex = currentIndexRef.current;
-                    const currentCompleted = completedRef.current;
-                    const currentPacket = localPacketRef.current;
-
-                    if (isTeacherPacing && newTeacherIndex > prevIndex && !currentCompleted[prevIndex] && currentPacket[prevIndex]) {
-                        const timeoutAnswer = "[TIMEOUT]";
-                        supabase.from('responses').insert([{
-                            room_id: session.id,
-                            student_alias: (currentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25),
-                            question_index: currentPacket[prevIndex].originalIndex,
-                            answer: timeoutAnswer,
-                            is_correct: false,
-                            is_manually_corrected: false
-                        }]).then(() => {
-                            setAnswers(prev => ({ ...prev, [prevIndex]: timeoutAnswer }));
-                            setCompleted(prev => ({ ...prev, [prevIndex]: 'wrong' }));
-                        });
-                    }
-
-                    if (isTeacherPacing || isPresentationModeRef.current) {
-                        setCurrentIndex(newTeacherIndex);
-                    }
-                }
-            })
             .on('broadcast', { event: 'room_closed' }, () => {
                 if (isSubscribed) setRoomActive(false);
             })
@@ -317,31 +304,24 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
         const pollInterval = setInterval(async () => {
             if (!isSubscribed) return;
             try {
-                const { data, error } = await supabase
-                    .from('rooms')
-                    .select('status, active_question_data')
-                    .eq('id', session.id)
-                    .maybeSingle();
+                const { data: rpcRooms, error } = await supabase
+                    .rpc('get_room_state_by_id', { p_room_id: session.id });
+                const data = Array.isArray(rpcRooms) ? rpcRooms[0] : rpcRooms;
 
                 if (!error && data) {
-                    if (data.status === 'closed') {
-                        setRoomActive(false);
-                    } else if (data.active_question_data) {
-                        // Keep active_question_data in sync even if WebSocket dropped
-                        setLiveSession(prev => ({ ...prev, active_question_data: data.active_question_data }));
-                    }
+                    applyRoomSnapshot(data);
                 }
             } catch {
                 // Ignore transient network errors
             }
-        }, 3000);
+        }, 1500);
 
         return () => {
             isSubscribed = false;
             clearInterval(pollInterval);
             supabase.removeChannel(channel);
         };
-    }, [session?.id, studentAlias]);
+    }, [session?.id, studentAlias, applyRoomSnapshot]);
 
     // 🟢 6. Submission logic
     const submitAnswer = useCallback(async (forcedIdx = null, passedCanvas = null) => {
@@ -353,11 +333,9 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
 
         setIsSubmitting(true);
         try {
-            const { data: roomCheck, error: roomErr } = await supabase
-                .from('rooms')
-                .select('status')
-                .eq('id', session.id)
-                .maybeSingle();
+            const { data: rpcRooms, error: roomErr } = await supabase
+                .rpc('get_room_state_by_id', { p_room_id: session.id });
+            const roomCheck = Array.isArray(rpcRooms) ? rpcRooms[0] : rpcRooms;
 
             const isRoomClosed = roomErr || !roomCheck || roomCheck.status === 'closed' || roomCheck.status === 'archived';
 

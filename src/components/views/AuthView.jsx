@@ -187,18 +187,16 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
             const searchCodes = Array.from(potentialMatches);
             const studentId = getOrAssignStudentId();
 
-            // 1. LIVE MODE (Active classroom room)
+            // 1. LIVE MODE (Active classroom room via SECURITY DEFINER RPC)
             if (studentMode === 'live') {
                 if (!fullName.trim()) {
                     throw new Error(t.name_placeholder);
                 }
 
-                const { data: room, error: roomError } = await supabase
-                    .from('rooms')
-                    .select('*')
-                    .in('class_code', searchCodes)
-                    .eq('status', 'active')
-                    .maybeSingle();
+                const { data: rpcRooms, error: roomError } = await supabase
+                    .rpc('get_active_room_by_code', { search_codes: searchCodes });
+
+                const room = Array.isArray(rpcRooms) ? rpcRooms[0] : rpcRooms;
 
                 if (roomError || !room) {
                     throw new Error(t.error_code);

@@ -32,7 +32,7 @@ const MathDisplay = ({ content, className = "" }) => {
                         { left: '\\(', right: '\\)', display: false },
                         { left: '\\[', right: '\\]', display: true }
                     ],
-                    throwOnError: false, trust: true
+                    throwOnError: false, trust: false
                 });
             }
         };
@@ -285,12 +285,21 @@ function createEndlessPracticeTask() {
     const b = Math.floor(Math.random() * 12) + 3; // 3..14
     const isPlus = Math.random() > 0.4;
     const rhs = isPlus ? a * x + b : a * x - b;
+
+    const distractors = new Set([x]);
+    while (distractors.size < 4) {
+        const candidate = Math.max(1, x + (Math.floor(Math.random() * 7) - 3));
+        distractors.add(candidate);
+    }
+    const choices = Array.from(distractors).sort(() => Math.random() - 0.5);
+
     return {
         a,
         b,
         isPlus,
         rhs,
         answer: x,
+        choices,
         equationLatex: `${a}x ${isPlus ? '+' : '-'} ${b} = ${rhs}`,
         step1Latex: `${a}x = ${rhs} ${isPlus ? '-' : '+'} ${b} = ${a * x}`,
         step2Latex: `x = \\frac{${a * x}}{${a}} = ${x}`
@@ -1002,35 +1011,53 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                                         </div>
                                     </div>
 
-                                    {/* Student Answer Input + Hints */}
-                                    <form onSubmit={handleCheckPractice} className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 max-w-md mx-auto">
-                                        <input
-                                            type="text"
-                                            value={studentInput}
-                                            onChange={(e) => {
-                                                setStudentInput(e.target.value);
-                                                if (practiceFeedback) setPracticeFeedback(null);
-                                            }}
-                                            placeholder={t.sp_placeholder}
-                                            className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-300 focus:border-emerald-600 bg-white text-center font-mono font-bold text-base text-slate-900 outline-none"
-                                        />
-                                        <button
-                                            type="submit"
-                                            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs cursor-pointer inline-flex items-center justify-center gap-1.5"
-                                        >
-                                            <Check size={14} />
-                                            <span>{t.sp_check_btn}</span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setRevealedHints(h => Math.min(2, h + 1))}
-                                            disabled={revealedHints >= 2}
-                                            className="px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-40"
-                                        >
-                                            <HelpCircle size={14} />
-                                            <span>{t.sp_hint_btn} ({revealedHints}/2)</span>
-                                        </button>
-                                    </form>
+                                    {/* Multiple-Choice Student Answer Buttons + Hints */}
+                                    <div className="space-y-3 max-w-md mx-auto">
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                            {practiceTask.choices.map((choice) => {
+                                                const isSelected = Number(studentInput) === choice && practiceFeedback !== null;
+                                                const isCorrectChoice = choice === practiceTask.answer;
+                                                let btnStyle = 'bg-white hover:bg-emerald-50 border-slate-300 hover:border-emerald-500 text-slate-900';
+                                                if (isSelected && isCorrectChoice) {
+                                                    btnStyle = 'bg-emerald-600 border-emerald-700 text-white';
+                                                } else if (isSelected && !isCorrectChoice) {
+                                                    btnStyle = 'bg-rose-600 border-rose-700 text-white';
+                                                }
+
+                                                return (
+                                                    <button
+                                                        key={choice}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setStudentInput(String(choice));
+                                                            if (choice === practiceTask.answer) {
+                                                                setPracticeFeedback('correct');
+                                                                setStreakCount(s => s + 1);
+                                                            } else {
+                                                                setPracticeFeedback('wrong');
+                                                                if (revealedHints === 0) setRevealedHints(1);
+                                                            }
+                                                        }}
+                                                        className={`py-2.5 px-3 rounded-xl border-2 font-mono font-extrabold text-sm transition-all cursor-pointer ${btnStyle}`}
+                                                    >
+                                                        x = {choice}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className="flex justify-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => setRevealedHints(h => Math.min(2, h + 1))}
+                                                disabled={revealedHints >= 2}
+                                                className="px-4 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-40"
+                                            >
+                                                <HelpCircle size={14} />
+                                                <span>{t.sp_hint_btn} ({revealedHints}/2)</span>
+                                            </button>
+                                        </div>
+                                    </div>
 
                                     {/* Feedback Banner */}
                                     {practiceFeedback === 'correct' && (
