@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Users, Globe, CheckCircle2,
     Layers, ShieldCheck, Target, GraduationCap, 
@@ -98,19 +99,16 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
     const [activeStageTab, setActiveStageTab] = useState('walkthrough');
     const [testLabToggle, setTestLabToggle] = useState(false);
 
-    useEffect(() => {
-        const interval = setInterval(() => setTestLabToggle(prev => !prev), 3200);
-        return () => clearInterval(interval);
-    }, []);
-
     const [demoQuestion, setDemoQuestion] = useState(INITIAL_DEMO_QUESTION);
     const [demoElements, setDemoElements] = useState([]);
     const [demoActiveDrawer, setDemoActiveDrawer] = useState(null);
 
-    const [ghostStudents, setGhostStudents] = useState([
-        { id: 1, name: 'Anna K.', progress: 35, status: 'solving' },
-        { id: 2, name: 'Leo M.', progress: 75, status: 'correct' },
-        { id: 3, name: 'Sara J.', progress: 50, status: 'error' }
+    const [ghostStudents] = useState([
+        { id: 1, name: 'A', progress: 35, status: 'solving' },
+        { id: 2, name: 'L', progress: 75, status: 'correct' },
+        { id: 3, name: 'S', progress: 50, status: 'error' },
+        { id: 4, name: 'M', progress: 90, status: 'correct' },
+        { id: 5, name: 'J', progress: 20, status: 'solving' }
     ]);
 
     const liveInputRef = useRef(null);
@@ -126,21 +124,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
         return () => clearTimeout(timer);
     }, []);
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setGhostStudents(prev => prev.map(s => {
-                if (s.progress >= 100) return { ...s, progress: 20, status: 'solving' };
-                const jump = Math.floor(Math.random() * 14) + 6;
-                const isError = Math.random() > 0.85;
-                return {
-                    ...s,
-                    progress: Math.min(100, s.progress + jump),
-                    status: isError ? 'error' : (s.progress + jump >= 100 ? 'done' : 'correct')
-                };
-            }));
-        }, 2800);
-        return () => clearInterval(interval);
-    }, []);
+    // Ghost students are now static — no interval needed
 
     const handleDemoRegenerate = async () => {
         const r = Math.floor(Math.random() * 6) + 3;
@@ -277,22 +261,27 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
     const currentGrid = DO_NOW_SETS[gridVersion % DO_NOW_SETS.length];
 
     return (
-        <div className="min-h-screen bg-[#f9fbf7] font-sans text-slate-900 selection:bg-emerald-100 selection:text-emerald-950 overflow-x-clip flex flex-col">
+        <div className="min-h-screen bg-[var(--bg-canvas)] font-sans text-slate-900 selection:bg-emerald-100 selection:text-emerald-950 overflow-x-clip flex flex-col">
             
             {/* =========================================================================
                 UTILITY BAR (Clean, uncrowded top bar without redundant corner logo)
                 ========================================================================= */}
-            <nav className="sticky top-0 left-0 right-0 z-50 bg-[#f9fbf7]/90 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-3">
+            <nav className="sticky top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b-2 border-emerald-600/20 px-4 sm:px-8 py-3">
                 <div className="max-w-7xl mx-auto flex justify-between items-center gap-4">
-                    <span className="text-xs font-mono font-bold text-slate-500 truncate">
-                        {t.nav_meta}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center">
+                            <span className="text-white font-black text-sm">A</span>
+                        </div>
+                        <span className="text-xs font-mono font-bold text-slate-600 truncate">
+                            {t.nav_meta}
+                        </span>
+                    </div>
 
                     <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                         <button 
                             type="button"
                             onClick={() => setLang(lang === 'sv' ? 'en' : 'sv')} 
-                            className="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                         >
                             <Globe size={14} /> 
                             <span>{lang === 'sv' ? 'English' : 'Svenska'}</span>
@@ -300,7 +289,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                         <button 
                             type="button"
                             onClick={onTeacherLogin} 
-                            className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs active:scale-[0.98] whitespace-nowrap cursor-pointer"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm active:scale-[0.98] whitespace-nowrap cursor-pointer"
                         >
                             {t.btn_teacher}
                         </button>
@@ -311,34 +300,44 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             {/* =========================================================================
                 HERO SECTION: Prominent Brand Masthead + Immediate Student Entry Dock
                 ========================================================================= */}
-            <header className="pt-8 pb-14 sm:pt-12 sm:pb-20 px-4 sm:px-8 max-w-7xl mx-auto w-full">
+            <header className="pt-10 pb-14 sm:pt-16 sm:pb-20 px-4 sm:px-8 max-w-7xl mx-auto w-full">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
                     
                     {/* Left 7 Cols: Prominent Editorial Masthead + Proposition */}
-                    <div className="lg:col-span-7 space-y-5">
-                        <div className="pb-4 border-b border-slate-200 flex items-baseline justify-between gap-4">
-                            <span className="text-4xl sm:text-5xl lg:text-[3.5rem] font-black tracking-tight leading-none text-emerald-800">
+                    <motion.div 
+                        className="lg:col-span-7 space-y-5"
+                        initial={{ opacity: 0, y: 24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                        <div className="pb-4 border-b-2 border-emerald-600/30 flex items-baseline justify-between gap-4">
+                            <span className="text-5xl sm:text-6xl lg:text-[4rem] font-black tracking-tight leading-none text-emerald-700">
                                 Anpassa
                             </span>
                         </div>
                         
                         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-[1.15] text-slate-900 pt-1">
                             {t.hero_title}{' '}
-                            <span className="text-emerald-700">{t.hero_title_accent}</span>
+                            <span className="text-emerald-600">{t.hero_title_accent}</span>
                         </h1>
                         
                         <p className="text-base sm:text-lg text-slate-600 max-w-xl font-normal leading-relaxed">
                             {t.hero_subtitle}
                         </p>
-                    </div>
+                    </motion.div>
 
                     {/* Right 5 Cols: Student Login Dock (Always immediately visible above the fold) */}
-                    <div className="lg:col-span-5 space-y-3.5 w-full">
+                    <motion.div 
+                        className="lg:col-span-5 space-y-3.5 w-full"
+                        initial={{ opacity: 0, y: 24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                    >
                         
                         {/* 1. LIVE LESSON (Primary Filled CTA) */}
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 focus-within:border-emerald-600 transition-colors">
+                        <div className="bg-white p-5 rounded-2xl shadow-md border-l-4 border-emerald-500 focus-within:border-emerald-600 transition-colors">
                             <div className="flex items-center gap-3 mb-3.5">
-                                <div className="w-10 h-10 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl flex items-center justify-center shrink-0">
+                                <div className="w-10 h-10 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center shrink-0">
                                     <Users size={20} />
                                 </div>
                                 <div className="min-w-0">
@@ -355,11 +354,11 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                                     onChange={(e) => setLiveCode(e.target.value.toUpperCase())} 
                                     placeholder="KOD" 
                                     aria-label={t.path_live_h}
-                                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-[#f9fbf7] border border-slate-300 rounded-xl text-center font-mono font-bold text-base tracking-[0.2em] text-slate-900 outline-none focus:border-emerald-600 focus:bg-white transition-all uppercase placeholder:text-slate-400" 
+                                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-center font-mono font-bold text-base tracking-[0.2em] text-slate-900 outline-none focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-colors uppercase placeholder:text-slate-400" 
                                 />
                                 <button 
                                     type="submit" 
-                                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-2xs active:scale-[0.98] transition-all whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5"
+                                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm active:scale-[0.98] transition-colors whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5"
                                 >
                                     <span>{t.btn_live}</span>
                                     <ArrowRight size={14} />
@@ -368,9 +367,9 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                         </div>
 
                         {/* 2. SELF PRACTICE (Secondary Outlined CTA) */}
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 focus-within:border-amber-500 transition-colors">
+                        <div className="bg-white p-5 rounded-2xl shadow-md border-l-4 border-amber-400 focus-within:border-amber-500 transition-colors">
                             <div className="flex items-center gap-3 mb-3.5">
-                                <div className="w-10 h-10 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl flex items-center justify-center shrink-0">
+                                <div className="w-10 h-10 bg-amber-100 text-amber-800 rounded-xl flex items-center justify-center shrink-0">
                                     <GraduationCap size={20} />
                                 </div>
                                 <div className="min-w-0">
@@ -386,11 +385,11 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                                     onChange={(e) => setClassCode(e.target.value.toUpperCase())} 
                                     placeholder="KOD" 
                                     aria-label={t.path_practice_h}
-                                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-[#f9fbf7] border border-slate-300 rounded-xl text-center font-mono font-bold text-base tracking-[0.12em] text-slate-900 outline-none focus:border-amber-500 focus:bg-white transition-all uppercase placeholder:text-slate-400" 
+                                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-center font-mono font-bold text-base tracking-[0.12em] text-slate-900 outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 transition-colors uppercase placeholder:text-slate-400" 
                                 />
                                 <button 
                                     type="submit" 
-                                    className="px-5 py-2.5 bg-amber-50 hover:bg-amber-500 text-amber-900 hover:text-white border border-amber-300 hover:border-amber-500 rounded-xl font-bold text-xs active:scale-[0.98] transition-all whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5"
+                                    className="px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-amber-950 rounded-xl font-bold text-xs shadow-sm active:scale-[0.98] transition-colors whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5"
                                 >
                                     <span>{t.btn_practice}</span>
                                     <ArrowRight size={14} />
@@ -398,31 +397,43 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                             </form>
                         </div>
 
-                    </div>
+                    </motion.div>
                 </div>
             </header>
 
             {/* =========================================================================
                 BAND 1: THREE WORKSPACES (Asymmetric 3-Column Bento Grid)
                 ========================================================================= */}
-            <section className="py-16 sm:py-20 bg-white border-t border-slate-200 px-4 sm:px-8">
+            <section className="py-16 sm:py-20 bg-white border-t-2 border-emerald-600/10 px-4 sm:px-8">
                 <div className="max-w-7xl mx-auto space-y-8">
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-200 pb-5">
+                    <motion.div
+                        className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b-2 border-slate-200 pb-5"
+                        initial={{ opacity: 0, y: 16 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-80px" }}
+                        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    >
                         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
                             {t.pillars_heading}
                         </h2>
-                        <span className="text-xs font-mono font-bold text-slate-500">
+                        <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">
                             LGR22 • Åk 7–9
                         </span>
-                    </div>
+                    </motion.div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         
                         {/* COLUMN 1: Curriculum Roadmap */}
-                        <div className="bg-[#f9fbf7] rounded-2xl p-6 border border-slate-200 flex flex-col justify-between gap-6">
+                        <motion.div
+                            className="bg-slate-50 rounded-2xl p-6 border border-sky-200 border-l-4 border-l-sky-500 flex flex-col justify-between gap-6"
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-60px" }}
+                            transition={{ duration: 0.5, delay: 0, ease: [0.22, 1, 0.36, 1] }}
+                        >
                             <div className="space-y-2.5">
-                                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 border border-sky-200 flex items-center justify-center">
-                                    <Layers size={18} />
+                                <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center">
+                                    <Layers size={20} />
                                 </div>
                                 <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">{t.p1_title}</h3>
                                 <p className="text-sm text-slate-600 leading-relaxed">{t.p1_desc}</p>
@@ -442,13 +453,19 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                                     <span className="font-mono text-[11px] text-amber-700">Prov</span>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
 
                         {/* COLUMN 2: Interactive Do Now Grid */}
-                        <div className="bg-[#f9fbf7] rounded-2xl p-6 border border-slate-200 flex flex-col justify-between gap-6">
+                        <motion.div
+                            className="bg-slate-50 rounded-2xl p-6 border border-emerald-200 border-l-4 border-l-emerald-500 flex flex-col justify-between gap-6"
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-60px" }}
+                            transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                        >
                             <div className="space-y-2.5">
-                                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center">
-                                    <Printer size={18} />
+                                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                                    <Printer size={20} />
                                 </div>
                                 <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">{t.p2_title}</h3>
                                 <p className="text-sm text-slate-600 leading-relaxed">{t.p2_desc}</p>
@@ -474,13 +491,19 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                                     <span>{t.btn_shuffle}</span>
                                 </button>
                             </div>
-                        </div>
+                        </motion.div>
 
                         {/* COLUMN 3: Test Lab Variants */}
-                        <div className="bg-[#f9fbf7] rounded-2xl p-6 border border-slate-200 flex flex-col justify-between gap-6">
+                        <motion.div
+                            className="bg-slate-50 rounded-2xl p-6 border border-amber-200 border-l-4 border-l-amber-400 flex flex-col justify-between gap-6"
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-60px" }}
+                            transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                        >
                             <div className="space-y-2.5">
-                                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center">
-                                    <ShieldCheck size={18} />
+                                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                                    <ShieldCheck size={20} />
                                 </div>
                                 <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">{t.p3_title}</h3>
                                 <p className="text-sm text-slate-600 leading-relaxed">{t.p3_desc}</p>
@@ -502,20 +525,45 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                                         Elev B
                                     </div>
                                     <div className="p-2 flex items-center justify-center h-[126px] relative">
-                                        <div className={`transition-opacity duration-500 ${testLabToggle ? 'opacity-100' : 'opacity-0 absolute'}`}>
-                                            <div className="transform scale-[0.45] origin-center">
-                                                <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '7', h: '3' } } }} />
-                                            </div>
-                                        </div>
-                                        <div className={`transition-opacity duration-500 ${!testLabToggle ? 'opacity-100' : 'opacity-0 absolute'}`}>
-                                            <div className="transform scale-[0.45] origin-center">
-                                                <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '5', h: '8' } } }} />
-                                            </div>
-                                        </div>
+                                        <AnimatePresence mode="wait" initial={false}>
+                                            {testLabToggle ? (
+                                                <motion.div
+                                                    key="variant-7-3"
+                                                    initial={{ opacity: 0, scale: 0.9 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.9 }}
+                                                    transition={{ duration: 0.25 }}
+                                                >
+                                                    <div className="transform scale-[0.45] origin-center">
+                                                        <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '7', h: '3' } } }} />
+                                                    </div>
+                                                </motion.div>
+                                            ) : (
+                                                <motion.div
+                                                    key="variant-5-8"
+                                                    initial={{ opacity: 0, scale: 0.9 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.9 }}
+                                                    transition={{ duration: 0.25 }}
+                                                >
+                                                    <div className="transform scale-[0.45] origin-center">
+                                                        <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '5', h: '8' } } }} />
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setTestLabToggle(v => !v)}
+                                    className="w-full py-2 px-3 bg-white hover:bg-amber-50 text-amber-900 border border-amber-200 rounded-xl font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
+                                >
+                                    <Shuffle size={13} className="text-amber-600" />
+                                    <span>{lang === 'sv' ? 'Slumpa ny variant' : 'Shuffle variant'}</span>
+                                </button>
                             </div>
-                        </div>
+                        </motion.div>
 
                     </div>
                 </div>
@@ -543,10 +591,10 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                             <button
                                 type="button"
                                 onClick={() => setActiveStageTab('walkthrough')}
-                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                                     activeStageTab === 'walkthrough'
-                                        ? 'bg-emerald-600 text-white shadow-2xs'
-                                        : 'text-slate-400 hover:text-white'
+                                        ? 'bg-emerald-600 text-white'
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
                                 }`}
                             >
                                 <Monitor size={14} />
@@ -555,10 +603,10 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                             <button
                                 type="button"
                                 onClick={() => setActiveStageTab('whiteboard')}
-                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                                     activeStageTab === 'whiteboard'
-                                        ? 'bg-sky-600 text-white shadow-2xs'
-                                        : 'text-slate-400 hover:text-white'
+                                        ? 'bg-sky-600 text-white'
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
                                 }`}
                             >
                                 <PenTool size={14} />
@@ -569,7 +617,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
 
                     {/* Full-Width Interactive Product Viewport */}
                     {activeStageTab === 'walkthrough' ? (
-                        <div className="h-[520px] sm:h-[580px] w-full bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden flex relative">
+                        <div className="h-[520px] sm:h-[580px] w-full bg-white text-slate-900 rounded-2xl shadow-2xl border-2 border-emerald-600/30 overflow-hidden flex relative">
                             <InstructionSlideCard 
                                 question={demoQuestion} 
                                 lang={lang} 
@@ -582,13 +630,13 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                                 <button 
                                     type="button"
                                     onClick={() => setDemoActiveDrawer(prev => prev ? null : 'fractions')}
-                                    className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs transition-all cursor-pointer inline-flex items-center gap-2 whitespace-nowrap"
+                                    className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-2 whitespace-nowrap"
                                 >
                                     <PenTool size={14} />
                                     <span>{t.btn_tools}</span>
                                 </button>
                             </div>
-                            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-700 h-[480px] sm:h-[540px] relative flex">
+                            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl border-2 border-sky-600/30 h-[480px] sm:h-[540px] relative flex">
                                 <InteractiveCanvas 
                                     elements={demoElements} 
                                     setElements={setDemoElements}
@@ -630,8 +678,8 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                     </div>
 
                     <div className="lg:col-span-7">
-                        <div className="bg-[#f9fbf7] rounded-2xl p-5 sm:p-6 border border-slate-200 space-y-3">
-                            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+                        <div className="bg-slate-50 rounded-2xl p-5 sm:p-6 border border-rose-200 border-l-4 border-l-rose-500 space-y-3">
+                            <div className="flex justify-between items-center pb-3 border-b-2 border-rose-100">
                                 <span className="font-bold text-slate-900 text-xs font-mono">{t.live_status}</span>
                                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-200">
                                     <span className="w-1.5 h-1.5 rounded-full bg-rose-600" /> Live
@@ -648,7 +696,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                                     </div>
                                     <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden relative border border-slate-200">
                                         <div 
-                                            className={`absolute top-0 left-0 h-full transition-all duration-700 ease-out
+                                            className={`absolute top-0 left-0 h-full transition-[width] duration-700 ease-out
                                                 ${student.status === 'error' ? 'bg-rose-500' : student.status === 'done' ? 'bg-emerald-600' : 'bg-amber-500'}`}
                                             style={{ width: `${student.progress}%` }}
                                         />
@@ -671,9 +719,9 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             {/* =========================================================================
                 FOOTER & TEACHER CTA
                 ========================================================================= */}
-            <footer className="bg-[#f9fbf7] border-t border-slate-200 py-14 px-4 sm:px-8 text-slate-900">
+            <footer className="bg-slate-50 border-t-2 border-emerald-600/10 py-14 px-4 sm:px-8 text-slate-900">
                 <div className="max-w-7xl mx-auto flex flex-col gap-10">
-                    <div className="bg-white rounded-2xl p-6 sm:p-10 border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div className="bg-white rounded-2xl p-6 sm:p-10 border border-emerald-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                         <div className="space-y-1.5 max-w-xl">
                             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
                                 {t.footer_title}
@@ -685,7 +733,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                         <button 
                             type="button"
                             onClick={onTeacherLogin} 
-                            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition-all shadow-2xs active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
+                            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition-colors active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
                         >
                             <span>{t.btn_teacher}</span>
                             <ArrowRight size={15} />
