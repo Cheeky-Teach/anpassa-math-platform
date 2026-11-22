@@ -17,9 +17,19 @@ const getSupabase = () => {
     return createClient(url, key);
 };
 
+const ALLOWED_ORIGINS = new Set([
+    'https://anpassa.app',
+    'https://www.anpassa.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+]);
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 1. Standard Security & CORS Headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin || '';
+    if (ALLOWED_ORIGINS.has(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -140,7 +150,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         
         // 3. Calculate Practice Progress (Required for App.jsx)
-        let newStreak = isCorrect ? streak + 1 : 0;
+        const safeStreak = Math.max(0, Math.min(1000, Number(streak) || 0));
+        let newStreak = isCorrect ? safeStreak + 1 : 0;
         let levelUp = isCorrect && newStreak > 0 && newStreak % 8 === 0;
 
         // 4. THE HYBRID LOGIC: Only attempt DB connection if roomId exists

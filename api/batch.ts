@@ -107,10 +107,20 @@ function getTopicVariations(topicKey: string): any[] {
   return [];
 }
 
+const ALLOWED_ORIGINS = new Set([
+  'https://anpassa.app',
+  'https://www.anpassa.app',
+  'http://localhost:5173',
+  'http://localhost:3000'
+]);
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // 1. CORS & Preflight
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin || '';
+  if (ALLOWED_ORIGINS.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader(
     'Access-Control-Allow-Headers',
@@ -137,10 +147,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const { requests } = body; 
+    const { requests } = body || {};
 
     if (!requests || !Array.isArray(requests)) {
       return res.status(400).json({ error: 'Missing or invalid "requests" array in payload' });
+    }
+
+    if (requests.length > 60) {
+      return res.status(400).json({ error: 'Batch size exceeds limit (max 60).' });
     }
 
     const questions: any[] = [];
