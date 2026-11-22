@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /teacher_live
+Disallow: /live_session
+Disallow: /profile
+
+Sitemap: https://anpassa.app/sitemap.xml
