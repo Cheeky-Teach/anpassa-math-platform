@@ -1154,7 +1154,7 @@ function App() {
                 !activeActivity && 
                 view !== 'teacher_live' && 
                 view !== 'live_session' && (
-                    <header className="sticky top-2 z-10 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
+                    <header className="sticky top-2 z-40 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
                         <div className="max-w-[1400px] mx-auto w-full px-3 sm:px-5 py-0 flex flex-row items-center justify-between relative">
                             <div className="flex-1 flex justify-start">
                                 {view === 'practice' || view === 'times_table' ? (
