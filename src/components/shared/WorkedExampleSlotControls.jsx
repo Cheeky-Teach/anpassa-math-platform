@@ -115,7 +115,7 @@ export default function WorkedExampleSlotControls({
           className={`flex items-center justify-between gap-2 px-1 print:hidden shrink-0 ${
             isPosterMode
               ? 'absolute -top-7 left-0 right-0 z-30'
-              : 'mb-1'
+              : 'absolute -top-6 left-0 right-0 z-30 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity bg-[var(--bg-card)]/95 backdrop-blur-xs rounded-lg border border-[var(--border-main)] shadow-xs py-0.5'
           }`}
         >
           <div className="flex items-center gap-1 min-w-0">

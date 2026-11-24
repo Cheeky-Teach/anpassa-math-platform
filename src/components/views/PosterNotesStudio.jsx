@@ -654,6 +654,11 @@ export default function PosterNotesStudio({
         );
       }
 
+      const hasCustomTypography = Boolean(
+        example?.overrides?.typography &&
+        Object.keys(example.overrides.typography).length > 0
+      );
+
       const slotRecalcKey = example
         ? `${example.id}_${layoutPreset}_${paperFormat}_${writingSpace}_${JSON.stringify(
             example.overrides || {}
@@ -663,7 +668,7 @@ export default function PosterNotesStudio({
       return (
         <AutoFitSlotBox
           maxHeightPx={slotMaxHeightPx}
-          disabled={!example}
+          disabled={!example || hasCustomTypography}
           recalcKey={slotRecalcKey}
         >
           {slotContent}
@@ -775,13 +780,17 @@ export default function PosterNotesStudio({
             size: ${activePaper.pageCss};
             margin: 0;
           }
-          html, body {
+          html, body, #root,
+          *:has(.poster-studio-root) {
             margin: 0 !important;
             padding: 0 !important;
             background: white !important;
             width: 100% !important;
             height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
             overflow: visible !important;
+            display: block !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
@@ -802,29 +811,29 @@ export default function PosterNotesStudio({
             background: white !important;
           }
           .poster-sheet-sizer {
-            width: 100% !important;
+            position: relative !important;
+            display: block !important;
+            width: ${activePaper.widthMm}mm !important;
             height: ${activePaper.heightMm}mm !important;
             margin: 0 !important;
             padding: 0 !important;
-            display: flex !important;
-            flex-direction: column !important;
             overflow: hidden !important;
             box-sizing: border-box !important;
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
+            break-after: page !important;
+            page-break-after: always !important;
           }
-          .poster-sheet-sizer + .poster-sheet-sizer {
-            break-before: page !important;
-            page-break-before: always !important;
+          .poster-sheet-sizer:last-child {
+            break-after: auto !important;
+            page-break-after: auto !important;
           }
           .poster-sheet-artboard {
             position: static !important;
-            transform: none !important;
+            width: ${activePaper.widthPx}px !important;
+            height: ${activePaper.heightPx}px !important;
+            transform: scale(${printZoom}) !important;
+            transform-origin: top left !important;
             zoom: 1 !important;
-            width: 100% !important;
-            height: 100% !important;
-            flex: 1 1 auto !important;
-            padding: ${isPosterMode ? '48px' : '10mm'} !important;
+            padding: 38px !important;
             box-sizing: border-box !important;
             box-shadow: none !important;
             border: none !important;

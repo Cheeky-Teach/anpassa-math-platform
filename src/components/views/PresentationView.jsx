@@ -794,7 +794,7 @@ export default function PresentationView({
         const handleKeyDown = (e) => {
             if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
 
-            if (e.key === 'p' || e.key === 'P') {
+            if (e.key === 'F11' || e.key === 'F11') {
                 togglePresentMode();
             } else if (e.key === 'Escape' && isPresenting) {
                 setIsPresenting(false);
