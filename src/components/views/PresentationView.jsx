@@ -205,7 +205,7 @@ export default function PresentationView({
     const [isRightCollapsed, setIsRightCollapsed] = useState(true);
     const [showLiveModal, setShowLiveModal] = useState(false);
     
-    const [globalZoom, setGlobalZoom] = useState(initialSettings?.globalZoom || 1.6);
+    const [globalZoom, setGlobalZoom] = useState(initialSettings?.globalZoom || 2);
     const [viewMode, setViewMode] = useState(initialSettings?.viewMode || 'list'); 
     const [bgType, setBgType] = useState(initialSettings?.bgType || 'blank');
     const [clueViewMode, setClueViewMode] = useState('steps');
@@ -926,17 +926,25 @@ export default function PresentationView({
 
                     <div className="w-px h-5 bg-[var(--border-main)]" />
 
-                    <div className="flex items-center bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1 shadow-inner">
-                        <button type="button" onClick={() => setGlobalZoom(prev => Math.max(0.5, prev - 0.1))} className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] cursor-pointer transition-colors" title="Zoom Out">
-                            <ZoomOut size={14} />
-                        </button>
+                    <button
+                        type="button"
+                        onClick={() => setGlobalZoom(prev => Math.max(0.8, Number((prev - 0.2).toFixed(2))))}
+                        className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] cursor-pointer transition-colors"
+                        title="Zoom Out"
+                    >
+                        <ZoomOut size={14} />
+                    </button>
                         <span className="text-xs font-bold font-mono tracking-wider text-[var(--text-main)] px-2 min-w-[45px] text-center select-none">
-                            {Math.round(globalZoom * 100)}%
+                        {Math.round(globalZoom * 100)}%
                         </span>
-                        <button type="button" onClick={() => setGlobalZoom(prev => Math.min(2.5, prev + 0.1))} className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] cursor-pointer transition-colors" title="Zoom In">
-                            <ZoomIn size={14} />
-                        </button>
-                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setGlobalZoom(prev => Math.min(4.0, Number((prev + 0.2).toFixed(2))))}
+                        className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] cursor-pointer transition-colors"
+                        title="Zoom In"
+                    >
+                        <ZoomIn size={14} />
+                    </button>
                 </div>
 
                 {/* 3. RIGHT SIDE: Core Actions */}
@@ -1503,7 +1511,7 @@ export default function PresentationView({
                                 interactiveCanvasProps={{
                                     key: `presenter_canvas_${slides[activeSlideIndex]?.id}`,
                                     forceActive: true,
-                                    isOverlay: slides[activeSlideIndex]?.layout === 'instruction_template',
+                                    isOverlay: true,
                                     setElements: updateCurrentSlideElements,
                                     onToggleBg: () => setBgType(prev => prev === 'blank' ? 'grid' : 'blank'),
                                     clueProgress,
@@ -2037,6 +2045,26 @@ export default function PresentationView({
                             className="p-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
                         >
                             <ChevronRight size={18} />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setGlobalZoom(prev => Math.max(0.8, Number((prev - 0.2).toFixed(2))))}
+                            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] cursor-pointer transition-colors"
+                            title="Zoom Out"
+                            >
+                                <ZoomOut size={14} />
+                            </button>
+                            <span className="text-xs font-bold font-mono tracking-wider text-[var(--text-main)] px-2 min-w-[45px] text-center select-none">
+                                {Math.round(globalZoom * 100)}%
+                            </span>
+                            <button
+                            type="button"
+                            onClick={() => setGlobalZoom(prev => Math.min(4.0, Number((prev + 0.2).toFixed(2))))}
+                            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] cursor-pointer transition-colors"
+                            title="Zoom In"
+                            >
+                                <ZoomIn size={14} />
                         </button>
 
                         <div className="w-px h-5 bg-[var(--border-strong)] mx-1" />

@@ -144,7 +144,7 @@ export default function WorkedExampleCard({
                 onClick={() => isEditable && setOpenMenuKey(null)}
                 style={cardTheme.containerStyle}
                 className={`whiteboard-protect worked-example-container w-full h-full flex flex-col ${cardTheme.containerClass} ${
-                    compact ? 'p-2' : spaciousWriting ? 'p-3.5 sm:p-4' : 'p-2.5 sm:p-3'
+                    compact ? 'p-2' : spaciousWriting ? 'p-4' : 'p-3'
                 } text-slate-900 break-inside-avoid select-none relative overflow-visible m-0`}
             >
                 <div className={`flex items-center gap-2 ${cardTheme.headerDivider} pb-1.5 mb-2.5 shrink-0`}>

@@ -87,7 +87,7 @@ function InteractiveCanvas({
 
     const isDrawingTool = activeTool !== 'select';
     const shouldInterceptEvents = !isOverlay || isDrawingTool;
-    const elementPointerClass = (!isOverlay || isDrawingTool || selectedIds.length > 0) ? 'pointer-events-auto' : 'pointer-events-none';
+    const elementPointerClass = 'pointer-events-auto';
 
     const dragCoordRef = useRef({ x: 0, y: 0 });
     const selectionBoxRef = useRef(null);
@@ -999,7 +999,7 @@ function InteractiveCanvas({
 
     return (
         <div className="relative w-full h-full overflow-hidden pointer-events-none">
-            <svg 
+            <svg
                 ref={svgRef}
                 viewBox={`0 0 ${resolution.w} ${resolution.h}`}
                 preserveAspectRatio="xMidYMid meet"
@@ -1011,9 +1011,9 @@ function InteractiveCanvas({
                     activeTool === 'eraser' ? 'cursor-cell' :
                     activeTool === 'select' ? 'cursor-default' : 'cursor-crosshair'
                 }`}
-                onPointerDown={readOnly || !shouldInterceptEvents ? undefined : handlePointerDown}
-                onPointerMove={readOnly || !shouldInterceptEvents ? undefined : handlePointerMove}
-                onPointerUp={readOnly || !shouldInterceptEvents ? undefined : handlePointerUp}
+                onPointerDown={readOnly ? undefined : handlePointerDown}
+                onPointerMove={readOnly ? undefined : handlePointerMove}
+                onPointerUp={readOnly ? undefined : handlePointerUp}
             >
                 {/* Multi-Selection Group Outline + Floating Single Action Bar */}
                 {selectedIds.length > 1 && (() => {

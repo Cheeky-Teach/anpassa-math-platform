@@ -44,7 +44,7 @@ export const GraphCanvas = ({ data, width: customWidth, height: customHeight }) 
         ctx.textBaseline = 'middle';
 
         // 2. Draw Grid Lines
-        ctx.strokeStyle = '#e2e8f0';
+        ctx.strokeStyle = '#bfbfbf';
         ctx.lineWidth = 1;
 
         // Vertical grid lines
@@ -69,8 +69,8 @@ export const GraphCanvas = ({ data, width: customWidth, height: customHeight }) 
         const originX = Math.max(padLeft, Math.min(padLeft + plotW, toX(0)));
         const originY = Math.max(padTop, Math.min(padTop + plotH, toY(0)));
 
-        ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
 
         // Y-axis
         ctx.beginPath();
@@ -85,7 +85,7 @@ export const GraphCanvas = ({ data, width: customWidth, height: customHeight }) 
         ctx.stroke();
 
         // 4. Draw Numeric Ticks & Text Labels
-        ctx.fillStyle = '#64748b';
+        ctx.fillStyle = '#000000';
         ctx.textAlign = 'center';
 
         // X numbers
@@ -127,7 +127,7 @@ export const GraphCanvas = ({ data, width: customWidth, height: customHeight }) 
             ctx.translate(10, padTop + plotH / 2);
             ctx.rotate(-Math.PI / 2);
             ctx.textAlign = 'center';
-            ctx.fillStyle = '#334155';
+            ctx.fillStyle = '#000000';
             ctx.font = 'bold 10px Inter, sans-serif';
             ctx.fillText(data.yLabel, 0, 0);
             ctx.restore();

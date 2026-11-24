@@ -56,6 +56,12 @@ export default function SlideRenderer({
 
                                 const alignClass = q.align === 'start' ? 'items-start' : q.align === 'end' ? 'items-end' : 'items-center';
                                 const textAlignClass = q.align === 'start' ? 'text-left' : q.align === 'end' ? 'text-right' : 'text-center';
+                                const visualAlignClass =
+                                    q.align === 'start'
+                                        ? 'justify-start origin-top-left'
+                                        : q.align === 'end'
+                                            ? 'justify-end origin-top-right'
+                                            : 'justify-center origin-top';
 
                                 return (
                                     <div 
@@ -151,7 +157,7 @@ export default function SlideRenderer({
                                             {q.showVisual !== false && rd && (
                                                 <div 
                                                     onClick={(e) => { e.stopPropagation(); onSpotlight(rd); }}
-                                                    className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 w-full max-w-xl px-4 ${sizeClasses.visualClass}`}
+                                                    className={`w-full max-w-xl px-4 flex ${visualAlignClass} transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 ${sizeClasses.visualClass}`}
                                                 >
                                                     <VisualRenderer 
                                                         data={rd} 

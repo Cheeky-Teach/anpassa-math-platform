@@ -78,10 +78,10 @@ export default function PosterCardRenderer({
   const curStepTextSize = opts.stepTextSize || '2xl';
   const curStepLatexSize = opts.stepLatexSize || '3xl';
 
-  const promptTextClass = PROMPT_TEXT_SIZE_MAP[curPromptTextSize] || 'text-lg sm:text-xl';
-  const promptLatexClass = PROMPT_LATEX_SIZE_MAP[curPromptLatexSize] || 'text-3xl sm:text-4xl';
-  const stepTextClass = STEP_TEXT_SIZE_MAP[curStepTextSize] || 'text-base sm:text-lg';
-  const stepLatexClass = STEP_LATEX_SIZE_MAP[curStepLatexSize] || 'text-2xl sm:text-3xl';
+  const promptTextClass = PROMPT_TEXT_SIZE_MAP[curPromptTextSize] || 'text-xl';
+  const promptLatexClass = PROMPT_LATEX_SIZE_MAP[curPromptLatexSize] || 'text-4xl';
+  const stepTextClass = STEP_TEXT_SIZE_MAP[curStepTextSize] || 'text-lg';
+  const stepLatexClass = STEP_LATEX_SIZE_MAP[curStepLatexSize] || 'text-3xl';
 
   const callout = opts.callout || {};
   const showCallout = Boolean(callout.enabled);
@@ -316,7 +316,7 @@ export default function PosterCardRenderer({
                   </span>
                 )}
               </div>
-              <div className="text-sm sm:text-base font-bold leading-snug text-slate-900">
+              <div className="text-base font-bold leading-snug text-slate-900">
                 <MathDisplay content={calloutText} />
               </div>
             </div>
@@ -439,7 +439,7 @@ export default function PosterCardRenderer({
         <div className="relative shrink-0" style={{ backgroundColor: upperWaveBg }}>
           <div className="px-7 pt-6 pb-8 flex items-start justify-between gap-4 text-white">
             <div>
-              <h3 className="text-2xl sm:text-3xl font-black tracking-tight drop-shadow-2xs">
+              <h3 className="text-3xl font-black tracking-tight drop-shadow-2xs">
                 {item.name}
               </h3>
             </div>
@@ -464,7 +464,7 @@ export default function PosterCardRenderer({
           }`}
         >
           {/* Crisp White Floating Problem Card */}
-          <div className="p-4 rounded-2xl bg-white border-2 border-slate-900/15 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-white border-2 border-slate-900/15 shadow-sm flex flex-row items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
               <PromptSection {...sharedPromptProps} />
             </div>
@@ -545,7 +545,7 @@ export default function PosterCardRenderer({
               <span className="text-[10px] font-mono font-black uppercase tracking-widest text-white/75 block">
                 {lang === 'sv' ? 'GENOMGÅNG' : 'WORKED EXAMPLE'}
               </span>
-              <h3 className="text-xl sm:text-2xl font-black tracking-tight">{item.name}</h3>
+              <h3 className="text-2xl font-black tracking-tight">{item.name}</h3>
             </div>
           </div>
           {renderPosterTypographyBar()}
@@ -652,7 +652,7 @@ export default function PosterCardRenderer({
           </div>
 
           <div
-            className="p-4 rounded-2xl border-2 flex flex-col sm:flex-row items-center justify-between gap-4"
+            className="p-4 rounded-2xl border-2 flex flex-row items-center justify-between gap-4"
             style={{
               backgroundColor: isInkSaver ? '#f8fafc' : `${pal.lightHex}55`,
               borderColor: isInkSaver ? '#0f172a' : pal.hexPrimary
@@ -731,7 +731,7 @@ export default function PosterCardRenderer({
         </div>
 
         {/* Crisp White Floating Problem Card */}
-        <div className="p-4 rounded-2xl bg-white border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-4 rounded-2xl bg-white border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex flex-row items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
             <PromptSection {...sharedPromptProps} />
           </div>
@@ -794,9 +794,9 @@ export default function PosterCardRenderer({
     <div
       onClick={() => isEditable && setOpenMenuKey(null)}
       style={{ backgroundColor: editorialMatBg }}
-      className="whiteboard-protect w-full p-4 sm:p-5 rounded-3xl flex flex-col"
+      className="whiteboard-protect w-full p-5 rounded-3xl flex flex-col"
     >
-      <div className="w-full h-full rounded-2xl bg-white p-6 sm:p-7 flex flex-col justify-between gap-5 shadow-xl">
+      <div className="w-full h-full rounded-2xl bg-white p-7 flex flex-col justify-between gap-5 shadow-xl">
         <div className="border-b-4 border-slate-900 pb-3 flex items-end justify-between gap-4">
           <div>
             <span
@@ -812,7 +812,7 @@ export default function PosterCardRenderer({
           {renderPosterTypographyBar()}
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start justify-between gap-6 pb-4 border-b border-slate-300">
+        <div className="flex flex-row items-start justify-between gap-6 pb-4 border-b border-slate-300">
           <div className="flex-1 min-w-0">
             <PromptSection {...sharedPromptProps} />
           </div>

@@ -1314,7 +1314,7 @@ export function StackedCardBody(props) {
                 </div>
 
                 {showVisualBox && (
-                    <VisualSection {...props} className="w-28 sm:w-40 lg:w-48 shrink-0 min-h-[104px]" />
+                    <VisualSection {...props} className="w-40 shrink-0 min-h-[104px]" />
                 )}
             </div>
 
