@@ -512,7 +512,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
 
             footer_title: "Redo att använda Anpassa i ditt klassrum?",
             footer_sub: "Logga in som lärare för att skapa Guided Notes, planeringar, arbetsblad och live-rum — eller ange din elevkod högst upp.",
-            footer_motto: "Anpassa Math Platform — LGR22 • Digitalt & Utskrift"
+            footer_motto: "Anpassa Math Platform • Digitalt & Analogt"
         },
         en: {
             nav_meta: "Mathematics Studio • Teachers & Students",
