@@ -40,7 +40,7 @@ export default function PresentationView({
     initialSettings }) {
     
     // --- MASTER SLIDE & TAB STATE ---
-    const [sidebarTab, setSidebarTab] = useState('questions'); 
+    const [sidebarTab, setSidebarTab] = useState(initialSlides?.length ? 'slides' : 'questions');
     const [slides, setSlides] = useState(initialSlides || [{ id: `slide_${Date.now()}`, elements: [], scrollX: 0, scrollY: 0, title: 'Slide 1', activeIds: [] }]);
     const [activeSlideIndex, setActiveSlideIndex] = useState(0);
     const [editingSlideIndex, setEditingSlideIndex] = useState(null);
@@ -197,7 +197,9 @@ export default function PresentationView({
     const [isSaving, setIsSaving] = useState(false);
     const [localTitle, setLocalTitle] = useState(sheetTitle || (lang === 'sv' ? "Min Presentation" : "My Presentation"));
 
-    const [activeIds, setActiveIds] = useState([]);
+    const [activeIds, setActiveIds] = useState(
+        initialSlides?.[0]?.activeIds || []
+    );
     const [clueProgress, setClueProgress] = useState({});
     const [presentationIndex, setPresentationIndex] = useState(0);
 
@@ -1858,13 +1860,18 @@ export default function PresentationView({
                 filterType="board"
                 lang={lang}
                 onSelectSheet={(sheet) => {
-                    if (sheet.packet?.slides) setSlides(sheet.packet.slides);
+                    if (sheet.packet?.slides) {
+                        setSlides(sheet.packet.slides);
+                        setActiveSlideIndex(0);
+                        setSidebarTab('slides');
+                        setActiveIds(sheet.packet.slides[0]?.activeIds || []);
+                    }
                     if (sheet.packet?.livePacket) setLivePacket(sheet.packet.livePacket);
                     if (sheet.title) setLocalTitle(sheet.title);
                     if (sheet.id) setBoardId(sheet.id);
                     if (sheet.packet?.settings?.theme || sheet.theme) {
                         setPresentationTheme(sheet.packet?.settings?.theme || sheet.theme);
-                    };
+                    }
                     setShowLibraryModal(false);
                 }}
             />

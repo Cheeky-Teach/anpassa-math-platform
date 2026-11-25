@@ -190,6 +190,9 @@ function App() {
 
     // --- 7. STUDIO & PRINT STATE ---
     const [savedPacket, setSavedPacket] = useState([]); 
+    const [editingSheetId, setEditingSheetId] = useState(null);
+    const [savedSlides, setSavedSlides] = useState(null);
+    const [savedBoardSettings, setSavedBoardSettings] = useState(null); 
     const [sheetTitle, setSheetTitle] = useState("");
     const [studioMode, setStudioMode] = useState(null);
     const [includeAnswerKey, setIncludeAnswerKey] = useState(true);
@@ -252,7 +255,10 @@ function App() {
             const boardPacket = Array.isArray(sheet.packet)
                 ? sheet.packet
                 : (sheet.packet?.livePacket || []);
+            setEditingSheetId(sheet.id || null);
             setSavedPacket(boardPacket);
+            setSavedSlides(sheet.packet?.slides || null);
+            setSavedBoardSettings(sheet.packet?.settings || null);
             setSheetTitle(sheet.title || (lang === 'sv' ? 'Presentationstavla' : 'Presentation Board'));
             setView('presentation');
             return;
@@ -264,6 +270,7 @@ function App() {
                 ? sheet.packet.tiles
                 : [];
 
+        setEditingSheetId(sheet.id || null);
         setSavedPacket(safePacket);
         setSheetTitle(sheet.title || '');
         setStudioMode(sheet.type || 'worksheet');
@@ -1000,6 +1007,7 @@ function App() {
 
     const handleEditArchivedPacket = (archivedRoom) => {
         if (!archivedRoom?.active_question_data?.packet) return;
+        setEditingSheetId(null);
         setSavedPacket(archivedRoom.active_question_data.packet);
         setSheetTitle(archivedRoom.title || "Kopia av " + archivedRoom.class_code);
         const mode = archivedRoom.active_question_data.mode || 'worksheet';
@@ -1224,7 +1232,7 @@ function App() {
                             savedBoard={activeActivity.savedBoard || null}
                             sourcePacket={activeActivity.sourcePacket || []}
                             session={activeActivity.session || null}
-                            isLiveHost={true}
+                            isLiveHost={Boolean(activeActivity.isLiveHost && activeActivity.session?.id)}
                             profile={profile}
                             onClose={() => {
                                 setActiveActivity(null);
@@ -1299,7 +1307,11 @@ function App() {
                                     onStartCheckpoint={handleLaunchUnitStep}
                                     ui={ui} 
                                     onStudioOpen={(mode = null) => {
+                                        setEditingSheetId(null);
                                         if (mode === 'board') {
+                                            setEditingSheetId(null);
+                                            setSavedSlides(null);
+                                            setSavedBoardSettings(null);
                                             setSavedPacket([]);
                                             setSheetTitle(lang === 'sv' ? 'Presentationstavla' : 'Presentation Board');
                                             setView('presentation');
@@ -1320,6 +1332,9 @@ function App() {
                                         setView('sandbox');
                                     }}
                                     onWhiteboardOpen={() => {
+                                        setEditingSheetId(null);
+                                        setSavedSlides(null);
+                                        setSavedBoardSettings(null);
                                         setSavedPacket([]); 
                                         setSheetTitle(lang === 'sv' ? 'Presentationstavla' : 'Presentation Board');
                                         setView('presentation');
@@ -1345,9 +1360,17 @@ function App() {
                 ) : view === 'presentation' ? ( 
                     <PresentationView 
                         packet={savedPacket} 
+                        initialSlides={savedSlides}
+                        initialSettings={savedBoardSettings}
+                        boardId={editingSheetId}
                         sheetTitle={sheetTitle} 
                         lang={lang} 
-                        onClose={() => setView('dashboard')} 
+                        onClose={() => {
+                            setEditingSheetId(null);
+                            setSavedSlides(null);
+                            setSavedBoardSettings(null);
+                            setView('dashboard');
+                        }} 
                     />
                 ) : view === 'poster_notes' ? (
                     <ResponsiveWrapper forceConstrain={true}>
@@ -1401,10 +1424,15 @@ function App() {
                 ) : view === 'question_studio' ? (
                     <ResponsiveWrapper forceConstrain={true}>
                         <QuestionStudio 
-                            profile={profile} ui={ui} lang={lang} initialPacket={savedPacket} setInitialPacket={setSavedPacket} 
+                            profile={profile} ui={ui} lang={lang} initialSheetId={editingSheetId} initialPacket={savedPacket} setInitialPacket={setSavedPacket} 
                             sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} studioMode={studioMode} setStudioMode={setStudioMode} 
                             includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey} answerKeyStyle={answerKeyStyle} 
-                            setAnswerKeyStyle={setAnswerKeyStyle} onClose={() => setView('dashboard')} onOpenPosterNotes={handleOpenPosterNotes}
+                            setAnswerKeyStyle={setAnswerKeyStyle} 
+                            onClose={() => {
+                                setEditingSheetId(null);
+                                setView('dashboard');
+                            }} 
+                            onOpenPosterNotes={handleOpenPosterNotes}
                             onWorksheetGenerate={(p) => { 
                                 setSavedPacket(p); 
                                 setView('print');

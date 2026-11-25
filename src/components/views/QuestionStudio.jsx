@@ -123,6 +123,7 @@ const compileAnchoredStory = (item, lang = 'sv', includeLatex = false) => {
 
 export default function QuestionStudio({ 
     profile,
+    initialSheetId = null,
     onDoNowGenerate, 
     onWorksheetGenerate, 
     onClose, 
@@ -189,8 +190,14 @@ export default function QuestionStudio({
   const [isPane1Collapsed, setIsPane1Collapsed] = useState(false); 
   const [isPane4Collapsed, setIsPane4Collapsed] = useState(false);
   const [setupMode, setSetupMode] = useState(studioMode); 
-  const [activeSheetId, setActiveSheetId] = useState(null); 
   const [activeBoardSheet, setActiveBoardSheet] = useState(null);
+  const [activeSheetId, setActiveSheetId] = useState(initialSheetId); 
+
+  useEffect(() => {
+      if (initialSheetId !== undefined) {
+          setActiveSheetId(initialSheetId);
+      }
+  }, [initialSheetId]);
 
   const [canvasMode, setCanvasMode] = useState('studio'); 
   const [globalLatexSize, setGlobalLatexSize] = useState('md');
