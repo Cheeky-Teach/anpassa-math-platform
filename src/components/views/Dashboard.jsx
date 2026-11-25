@@ -1806,9 +1806,18 @@ const Dashboard = ({
                     onRelaunch?.({
                         title: config?.title,
                         mode: `activity_${gameKey}`,
+                        initialConfig: config,
                         active_question_data: {
                             mode: `activity_${gameKey}`,
-                            packet: config?.initialQuestions || config?.tiles || []
+                            packet: config?.initialQuestions || config?.tiles || [],
+                            teams: config?.teams || [],
+                            settings: {
+                                ...(config?.settings || {}),
+                                ...(config?.dimensions ? { dimensions: config.dimensions } : {}),
+                                ...(config?.pointScale ? { pointScale: config.pointScale } : {}),
+                                ...(config?.categories ? { categories: config.categories } : {}),
+                                ...(config?.teams ? { teams: config.teams } : {})
+                            }
                         }
                     });
                 }}
@@ -1832,9 +1841,19 @@ const Dashboard = ({
                                 title: activeSetupModal.savedBoard?.title || config?.title,
                                 mode: `activity_${activeSetupModal.key}`,
                                 active_worksheet_id: activeSetupModal.savedBoard?.id,
+                                initialConfig: config,
+                                savedBoard: activeSetupModal.savedBoard || null,
                                 active_question_data: {
                                     mode: `activity_${activeSetupModal.key}`,
-                                    packet: config?.initialQuestions || config?.tiles || activeSetupModal.sourcePacket || []
+                                    packet: config?.initialQuestions || config?.tiles || activeSetupModal.sourcePacket || [],
+                                    teams: config?.teams || activeSetupModal.savedBoard?.config?.teams || [],
+                                    settings: {
+                                        ...(config?.settings || {}),
+                                        ...(config?.dimensions ? { dimensions: config.dimensions } : {}),
+                                        ...(config?.pointScale ? { pointScale: config.pointScale } : {}),
+                                        ...(config?.categories ? { categories: config.categories } : {}),
+                                        ...(config?.teams ? { teams: config.teams } : {})
+                                    }
                                 }
                             });
                         }}

@@ -1069,7 +1069,7 @@ export default function CategoryClashEngine({
 </header>
 
             {/* Live Lobby Banner */}
-            {isLive && mode === 'curate' && (
+            {isLive && Boolean(roomId && classCode) && mode === 'curate' && (
                 <div className="bg-amber-500/10 border-b border-amber-500/30 px-6 py-2 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2 text-amber-600 dark:text-amber-300 text-xs font-bold">
                         <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />

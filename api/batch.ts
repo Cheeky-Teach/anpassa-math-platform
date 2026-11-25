@@ -69,6 +69,18 @@ const TopicMap: Record<string, any> = {
   'volume': VolumeGen,
   'unit_conversion': UnitConversionGen,
 
+  'fractions': FractionArithGen,
+  'equation': LinearEquationGen,
+  'percentages': PercentGen,
+  'pattern': PatternsGen,
+  'graph': LinearGraphGenerator,
+  'linear_graph': LinearGraphGenerator,
+  'geometry_cat': GeometryGenerator,
+  'geom': GeometryGenerator,
+  'angle': AnglesGen,
+  'stats': StatisticsGen,
+  'data': StatisticsGen,
+
   // Data
   'statistics': StatisticsGen,
   'probability': ProbabilityGen

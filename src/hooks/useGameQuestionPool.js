@@ -146,18 +146,15 @@ export function useGameQuestionPool({ lang = 'sv' } = {}) {
                             let healedQuestion = await fetchSingleQuestion({
                                 topic: originalReq.topic,
                                 level: originalReq.level,
-                                wordProblem: true,
-                                lang
-                            });
+                                wordProblem: originalReq.wordProblem
+                            }, lang);
 
-                            // Fallback to pure math if story generation fails
                             if (isTileEmpty(healedQuestion)) {
                                 healedQuestion = await fetchSingleQuestion({
                                     topic: originalReq.topic,
                                     level: originalReq.level,
-                                    wordProblem: false,
-                                    lang
-                                });
+                                    wordProblem: false
+                                }, lang);
                                 healedQuestion.showLatex = true;
                             }
 
@@ -168,7 +165,7 @@ export function useGameQuestionPool({ lang = 'sv' } = {}) {
                                 level: originalReq.level,
                                 minLevel: originalReq.minLevel,
                                 maxLevel: originalReq.maxLevel,
-                                wordProblem: wordProblems
+                                wordProblem: originalReq.wordProblem
                             };
                         } catch (err) {
                             console.error(`Auto-heal failed for ${slotId}:`, err);

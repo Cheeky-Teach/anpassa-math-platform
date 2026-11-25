@@ -204,31 +204,21 @@ export default function FourCornersSetupModal({
                 const rawList = loadedSheet.questions;
 
                 if (importStrategy === 'exact') {
-                    preparedQuestions = rawList.slice(0, questionCount).map((raw, idx) => {
+                    const exactRounds = rawList.slice(0, questionCount).map((raw, idx) => {
                         const rd = raw.renderData || raw.resolvedData?.renderData || raw.data?.renderData || raw || {};
                         const resolved = raw.resolvedData || raw;
-                        
-                        const answer = extractDecodedAnswer(resolved) || 
-                                       extractDecodedAnswer(rd) || 
-                                       raw.answer || 
-                                       rd.answer || 
-                                       '';
-
+                        const answer = extractDecodedAnswer(resolved) || extractDecodedAnswer(rd) || raw.answer || rd.answer || '';
                         const rawExistingOptions = rd.options || raw.options || resolved.options;
-                        
-                        // Four Corners requires strictly 4 options. If fewer than 4 exist, force generateDistractors
-                        let options = [];
-                        if (Array.isArray(rawExistingOptions) && rawExistingOptions.length === 4) {
-                            options = normalizeQuestionOptions(rawExistingOptions, answer);
-                        } else {
-                            options = generateDistractors({
+
+                        const options = (Array.isArray(rawExistingOptions) && rawExistingOptions.length === 4)
+                            ? normalizeQuestionOptions(rawExistingOptions, answer)
+                            : generateDistractors({
                                 correctAnswer: answer,
                                 topicId: raw.topicId || resolved.topicId || rd.topicId || '',
                                 renderData: { ...rd, options: null },
                                 resolvedData: resolved,
-                                raw: raw
+                                raw
                             });
-                        }
 
                         return {
                             id: raw.id || crypto.randomUUID(),
@@ -241,55 +231,43 @@ export default function FourCornersSetupModal({
                             responseSpec: { type: 'single_choice', answer, options }
                         };
                     });
-                } else {
-                    // Strategy: reroll_domain
-                    const seeds = rawList.map(q => ({
-                        topicId: q.topicId || q.resolvedData?.topicId || q.renderData?.topicId || 'basic_arithmetic',
-                        variationKey: q.variationKey || q.resolvedData?.variationKey || null
-                    }));
-                    const effectiveSeeds = seeds.length > 0 ? seeds : [{ topicId: 'basic_arithmetic' }];
 
-                    const promises = Array.from({ length: questionCount }).map(async (_, idx) => {
-                        const seed = effectiveSeeds[idx % effectiveSeeds.length];
-                        const url = `/api/question?topic=${seed.topicId}${seed.variationKey ? `&variation=${seed.variationKey}` : ''}&lang=${lang}`;
-                        try {
+                    // Top up remaining rounds if user asked for more than the sheet contains
+                    const remaining = questionCount - exactRounds.length;
+                    if (remaining > 0) {
+                        const seeds = rawList.map(q => ({
+                            topicId: q.topicId || q.resolvedData?.topicId || q.renderData?.topicId || 'basic_arithmetic',
+                            variationKey: q.variationKey || q.resolvedData?.variationKey || null
+                        }));
+                        const extraPromises = Array.from({ length: remaining }).map(async (_, i) => {
+                            const seed = seeds[i % seeds.length];
+                            const url = `/api/question?topic=${seed.topicId}${seed.variationKey ? `&variation=${seed.variationKey}` : ''}&lang=${lang}`;
                             const res = await fetch(url);
+                            if (!res.ok) return null;
                             const data = await res.json();
                             const rd = data.renderData || {};
                             const answer = extractDecodedAnswer(data) || extractDecodedAnswer(rd) || data.answer || rd.answer || '';
-                            
                             const rawExistingOptions = data.options || rd.options;
-
-                            // Ensure all 4 corners exist
-                            let options = [];
-                            if (Array.isArray(rawExistingOptions) && rawExistingOptions.length === 4) {
-                                options = normalizeQuestionOptions(rawExistingOptions, answer);
-                            } else {
-                                options = generateDistractors({
-                                    correctAnswer: answer,
-                                    topicId: seed.topicId,
-                                    renderData: { ...rd, options: null },
-                                    raw: data
-                                });
-                            }
+                            const options = (Array.isArray(rawExistingOptions) && rawExistingOptions.length === 4)
+                                ? normalizeQuestionOptions(rawExistingOptions, answer)
+                                : generateDistractors({ correctAnswer: answer, topicId: seed.topicId, renderData: { ...rd, options: null }, raw: data });
 
                             return {
                                 id: crypto.randomUUID(),
-                                roundIndex: idx + 1,
-                                name: `${lang === 'sv' ? 'Runda' : 'Round'} ${idx + 1}`,
+                                roundIndex: exactRounds.length + i + 1,
+                                name: `${lang === 'sv' ? 'Runda' : 'Round'} ${exactRounds.length + i + 1}`,
                                 topicId: seed.topicId,
-                                variationKey: seed.variationKey || data.variationKey,
-                                source: 'generator_reroll',
+                                variationKey: seed.variationKey || data.variationKey || null,
+                                source: 'generator_topup',
                                 renderData: { ...rd, options, answer },
                                 responseSpec: { type: 'single_choice', answer, options }
                             };
-                        } catch (e) {
-                            console.error("[FourCornersSetupModal] Reroll failed for question index", idx, e);
-                            return null;
-                        }
-                    });
-                    const res = await Promise.all(promises);
-                    preparedQuestions = res.filter(Boolean);
+                        });
+                        const extras = (await Promise.all(extraPromises)).filter(Boolean);
+                        preparedQuestions = [...exactRounds, ...extras];
+                    } else {
+                        preparedQuestions = exactRounds;
+                    }
                 }
             }
 

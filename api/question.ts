@@ -252,7 +252,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
             },
             token: questionData.token,
             clues: questionData.clues,
-            level: questionData.level || level,
+            level: questionData.level || safeLevel,
+            variationKey: questionData.variationKey || (variation ? String(variation) : null),
             metadata: {
                 ...(questionData.metadata || {}),
                 levelSupportsWordProblems: topicSupportsWordProblems || questionData.metadata?.levelSupportsWordProblems || false
