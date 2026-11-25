@@ -15,8 +15,8 @@ import SlideViewerCore from '../shared/SlideViewerCore';
 import { LEVEL_DESCRIPTIONS, CATEGORIES } from '../../constants/localization';
 import {
     ChevronLeft, Trophy, Zap, Clock, CheckCircle2, XCircle,
-    HelpCircle, MinusCircle, ChevronRight, BarChart3, ChevronDown,
-    Lock, Play, Compass, ArrowRight, ArrowLeft
+    HelpCircle, MinusCircle, ChevronRight, ChevronDown,
+    Lock, Play, ArrowRight, ArrowLeft, Flame
 } from 'lucide-react';
 import { isLevelWordProblemReady } from '../../constants/skillBuckets.js';
 import { syncProgress } from '../../lib/progressSync';
@@ -29,15 +29,13 @@ import {
     checkIsStepCompleted
 } from '../../core/utils/unitProgressUtils';
 
-
 import '../../styles/theme.css';
 
 // =========================================================================
 // INTERNAL SUB-COMPONENT: PRACTICE CONTEXT HEADER
 // =========================================================================
 function PracticeContextHeader({
-    lang, uiState, activeBucket, isDetourActive, onLevelSelect, onBackToRoadmap,
-    LEVEL_DESCRIPTIONS
+    lang, uiState, activeBucket, isDetourActive, onLevelSelect, LEVEL_DESCRIPTIONS
 }) {
     const [isLevelMenuOpen, setIsLevelMenuOpen] = useState(false);
 
@@ -48,7 +46,7 @@ function PracticeContextHeader({
         const category = CATEGORIES[catKey] || CATEGORIES.arithmetic;
         const topicData = category.topics.find(t => t.id === uiState.topic);
         return {
-            color: category.color || 'indigo',
+            color: category.color || 'emerald',
             categoryLabel: category.label[lang] || category.label.sv,
             topicLabel: topicData?.label?.[lang] || topicData?.label?.sv || uiState.topic
         };
@@ -67,146 +65,133 @@ function PracticeContextHeader({
     const isCuratedUnit = Boolean(activeBucket && activeBucket !== 'FREE_PLAY');
 
     return (
-        <div className="space-y-3 mb-4">
-            <div className="card p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-10 h-10 rounded-[var(--radius-btn)] bg-[var(--brand-bg)] text-[var(--brand-text)] border border-[var(--brand-border)] flex items-center justify-center shrink-0 shadow-2xs">
-                        <Compass size={20} />
+        <div className="space-y-2.5 mb-3.5 xl:mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-0.5">
+                <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)]">
+                        <span className="text-[var(--brand-text)] font-semibold">
+                            {categoryContext.categoryLabel}
+                        </span>
+                        <span className="opacity-50">·</span>
+                        <span className="truncate">{categoryContext.topicLabel}</span>
                     </div>
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--brand-text)]">
-                                {categoryContext.categoryLabel}
-                            </span>
-                            <span className="text-[10px] text-[var(--text-muted)]">•</span>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                                {categoryContext.topicLabel}
-                            </span>
-                        </div>
 
-                        {isCuratedUnit ? (
-                            <h2 className="text-base sm:text-lg font-black text-[var(--text-main)] truncate leading-snug">
-                                {lang === 'sv' ? `Nivå ${uiState.level}` : `Level ${uiState.level}`} — {currentLevelDesc}
-                            </h2>
-                        ) : (
-                            <div className="relative inline-block mt-0.5">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsLevelMenuOpen(!isLevelMenuOpen)}
-                                    className="group mt-1 px-3.5 py-1.5 rounded-[var(--radius-btn)] bg-[var(--brand-bg)] hover:bg-[var(--brand-solid)] border border-[var(--brand-border)] hover:border-[var(--brand-solid)] text-[var(--brand-text)] hover:text-white transition-all flex items-center gap-2.5 cursor-pointer shadow-2xs text-left"
-                                    title={lang === 'sv' ? 'Klicka för att byta nivå' : 'Click to change level'}
-                                >
-                                    <span className="font-black text-xs sm:text-sm uppercase tracking-tight">
-                                        {lang === 'sv' ? `Nivå ${uiState.level}` : `Level ${uiState.level}`} — {currentLevelDesc}
-                                    </span>
-                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-[var(--bg-card)] text-[var(--brand-text)] group-hover:bg-white group-hover:text-[var(--brand-solid)] text-[10px] font-black uppercase tracking-wider shrink-0 transition-colors shadow-2xs">
-                                        <span>{lang === 'sv' ? 'Byt nivå' : 'Change'}</span>
-                                        <ChevronDown size={12} className={`transition-transform shrink-0 ${isLevelMenuOpen ? 'rotate-180' : ''}`} />
-                                    </span>
-                                </button>
-
-                                <AnimatePresence>
-                                    {isLevelMenuOpen && (
-                                        <>
-                                            <div className="fixed inset-0 z-20" onClick={() => setIsLevelMenuOpen(false)} />
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 6 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: 4 }}
-                                                className="absolute left-0 top-full mt-2 z-30 w-80 bg-[var(--bg-card)] border-2 border-[var(--brand-solid)] rounded-[var(--radius-card)] shadow-2xl max-h-80 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)]"
-                                            >
-                                                {availableLevels.map(lvl => {
-                                                    const isSelected = uiState.level === lvl;
-                                                    const descObj = LEVEL_DESCRIPTIONS[uiState.topic]?.[lvl];
-                                                    const dText = typeof descObj === 'object' ? (descObj[lang] || descObj.sv) : descObj;
-
-                                                    return (
-                                                        <button
-                                                            key={lvl}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                onLevelSelect(lvl);
-                                                                setIsLevelMenuOpen(false);
-                                                            }}
-                                                            className={`w-full text-left p-3 transition-colors cursor-pointer flex items-center justify-between gap-2 ${
-                                                                isSelected ? 'bg-[var(--brand-bg)]' : 'hover:bg-[var(--bg-surface)]'
-                                                            }`}
-                                                        >
-                                                            <div className="flex items-center gap-2.5 min-w-0">
-                                                                <span className={`px-2 py-0.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider shrink-0 ${
-                                                                    isSelected ? 'bg-[var(--brand-solid)] text-white' : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
-                                                                }`}>
-                                                                    {lang === 'sv' ? `Nivå ${lvl}` : `Lvl ${lvl}`}
-                                                                </span>
-                                                                <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                                                                    {dText}
-                                                                </span>
-                                                            </div>
-                                                            {isSelected && <CheckCircle2 size={14} className="text-[var(--brand-text)] shrink-0" />}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </motion.div>
-                                        </>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     {isCuratedUnit ? (
-                        <button
-                            type="button"
-                            onClick={onBackToRoadmap}
-                            className="px-4 py-2 rounded-[var(--radius-btn)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-strong)] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
-                        >
-                            <ChevronLeft size={15} />
-                            <span>{lang === 'sv' ? 'Områdesöversikt' : 'Unit Overview'}</span>
-                        </button>
+                        <h2 className="text-lg sm:text-xl font-bold text-[var(--text-main)] tracking-tight truncate mt-0.5">
+                            <span className="font-mono">{lang === 'sv' ? `Nivå ${uiState.level}` : `Level ${uiState.level}`}</span>
+                            {currentLevelDesc ? ` — ${currentLevelDesc}` : ''}
+                        </h2>
                     ) : (
-                        <div className="flex items-center gap-2">
+                        <div className="relative inline-block mt-1">
                             <button
                                 type="button"
-                                disabled={uiState.level <= 1}
-                                onClick={() => onLevelSelect(uiState.level - 1)}
-                                className="px-3.5 py-2 rounded-[var(--radius-btn)] bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wider transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
-                                title={lang === 'sv' ? 'Byt till en enklare nivå' : 'Switch to easier level'}
+                                onClick={() => setIsLevelMenuOpen(!isLevelMenuOpen)}
+                                className="group inline-flex items-center gap-2.5 text-left text-lg sm:text-xl font-bold text-[var(--text-main)] hover:text-[var(--role-primary-text)] transition-colors cursor-pointer"
+                                title={lang === 'sv' ? 'Klicka för att byta nivå' : 'Click to change level'}
                             >
-                                <ArrowLeft size={13} />
-                                <span>{lang === 'sv' ? 'För svårt?' : 'Too hard?'}</span>
+                                <span className="px-2.5 py-0.5 rounded-md bg-[var(--role-primary-soft)] border border-[var(--brand-border)] text-[var(--role-primary-text)] font-mono text-xs sm:text-sm font-bold shrink-0">
+                                    {lang === 'sv' ? `Nivå ${uiState.level}` : `Lvl ${uiState.level}`}
+                                </span>
+                                {currentLevelDesc && (
+                                    <span className="truncate">{currentLevelDesc}</span>
+                                )}
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[var(--bg-surface)] group-hover:bg-[var(--role-primary-soft)] text-[var(--text-muted)] group-hover:text-[var(--role-primary-text)] transition-colors shrink-0">
+                                    <ChevronDown size={14} className={`transition-transform ${isLevelMenuOpen ? 'rotate-180' : ''}`} />
+                                </span>
                             </button>
 
-                            <button
-                                type="button"
-                                disabled={uiState.level >= availableLevels.length}
-                                onClick={() => onLevelSelect(uiState.level + 1)}
-                                className="px-3.5 py-2 rounded-[var(--radius-btn)] bg-amber-500 hover:bg-amber-600 text-white text-xs font-black uppercase tracking-wider transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
-                                title={lang === 'sv' ? 'Byt till en svårare nivå' : 'Switch to harder level'}
-                            >
-                                <span>{lang === 'sv' ? 'För lätt?' : 'Too easy?'}</span>
-                                <ArrowRight size={13} />
-                            </button>
+                            <AnimatePresence>
+                                {isLevelMenuOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-20" onClick={() => setIsLevelMenuOpen(false)} />
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 6 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: 4 }}
+                                            className="absolute left-0 top-full mt-2 z-30 w-80 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl shadow-xl max-h-80 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-subtle)]"
+                                        >
+                                            {availableLevels.map(lvl => {
+                                                const isSelected = uiState.level === lvl;
+                                                const descObj = LEVEL_DESCRIPTIONS[uiState.topic]?.[lvl];
+                                                const dText = typeof descObj === 'object' ? (descObj[lang] || descObj.sv) : descObj;
+
+                                                return (
+                                                    <button
+                                                        key={lvl}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            onLevelSelect(lvl);
+                                                            setIsLevelMenuOpen(false);
+                                                        }}
+                                                        className={`w-full text-left px-3.5 py-2.5 transition-colors cursor-pointer flex items-center justify-between gap-2.5 ${
+                                                            isSelected ? 'bg-[var(--brand-bg)]' : 'hover:bg-[var(--bg-surface)]'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center gap-2.5 min-w-0">
+                                                            <span className={`px-2 py-0.5 rounded-lg text-xs font-mono font-bold shrink-0 ${
+                                                                isSelected
+                                                                    ? 'bg-[var(--brand-solid)] text-white'
+                                                                    : 'bg-[var(--bg-surface)] text-[var(--text-muted)]'
+                                                            }`}>
+                                                                {lang === 'sv' ? `Nivå ${lvl}` : `Lvl ${lvl}`}
+                                                            </span>
+                                                            <span className="text-xs font-semibold text-[var(--text-main)] truncate">
+                                                                {dText}
+                                                            </span>
+                                                        </div>
+                                                        {isSelected && <CheckCircle2 size={14} className="text-[var(--brand-text)] shrink-0" />}
+                                                    </button>
+                                                );
+                                            })}
+                                        </motion.div>
+                                    </>
+                                )}
+                            </AnimatePresence>
                         </div>
                     )}
                 </div>
+
+                {!isCuratedUnit && (
+                    <div className="inline-flex items-center bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-1 gap-1 shrink-0 self-start sm:self-auto">
+                        <button
+                            type="button"
+                            disabled={uiState.level <= 1}
+                            onClick={() => onLevelSelect(uiState.level - 1)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5"
+                            title={lang === 'sv' ? 'Byt till en enklare nivå' : 'Switch to easier level'}
+                        >
+                            <ArrowLeft size={13} />
+                            <span>{lang === 'sv' ? 'För svårt?' : 'Too hard?'}</span>
+                        </button>
+
+                        <div className="w-px h-4 bg-[var(--border-main)]" />
+
+                        <button
+                            type="button"
+                            disabled={uiState.level >= availableLevels.length}
+                            onClick={() => onLevelSelect(uiState.level + 1)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5"
+                            title={lang === 'sv' ? 'Byt till en svårare nivå' : 'Switch to harder level'}
+                        >
+                            <span>{lang === 'sv' ? 'För lätt?' : 'Too easy?'}</span>
+                            <ArrowRight size={13} />
+                        </button>
+                    </div>
+                )}
             </div>
 
             <AnimatePresence>
                 {isDetourActive && (
                     <motion.div
-                        initial={{ opacity: 0, y: -8 }}
+                        initial={{ opacity: 0, y: -6 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500 rounded-[var(--radius-card)] px-4 py-3 flex items-center justify-between gap-3 shadow-sm"
+                        className="callout callout-warning flex items-center gap-2.5 text-xs font-semibold"
                     >
-                        <div className="flex items-center gap-2.5 text-xs font-bold text-amber-950 dark:text-amber-100">
-                            <Zap className="text-amber-600 fill-amber-600 animate-pulse shrink-0" size={18} />
-                            <span>
-                                {lang === 'sv' ? 'Uppvärmning (Detour) för att stärka grunderna.' : 'Warm-up practice to reinforce fundamentals.'}
-                            </span>
-                        </div>
+                        <Zap className="text-amber-600 dark:text-amber-400 shrink-0" size={16} />
+                        <span>
+                            {lang === 'sv' ? 'Uppvärmning för att stärka grunderna.' : 'Warm-up practice to reinforce fundamentals.'}
+                        </span>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -236,72 +221,63 @@ function PracticeSidebar({
     const getPct = (val) => (total > 0 ? (val / total) * 100 : 0);
 
     return (
-        <aside className="practice-sidebar space-y-4">
-            <div className="card p-5 space-y-4 border border-[var(--border-main)]">
+        <aside className="practice-sidebar">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl divide-y divide-[var(--border-subtle)] overflow-hidden">
+
+                {/* 1. Timer (if active) */}
                 {timerSettings.isActive && (
-                    <div className={`p-3.5 rounded-[var(--radius-btn)] flex items-center justify-between transition-colors border ${
+                    <div className={`px-5 py-4 flex items-center justify-between ${
                         timerSettings.remaining < 60
-                            ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 text-rose-600 dark:text-rose-300'
-                            : 'bg-[var(--bg-surface)] border-[var(--border-main)] text-[var(--text-main)]'
+                            ? 'bg-rose-50/70 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300'
+                            : 'text-[var(--text-main)]'
                     }`}>
-                        <div className="flex items-center gap-2.5">
-                            <Clock size={18} className={timerSettings.remaining < 60 ? 'animate-pulse text-rose-500' : 'text-emerald-600'} />
-                            <span className="font-black uppercase tracking-widest text-[11px]">
-                                {lang === 'sv' ? 'Tid kvar' : 'Time left'}
-                            </span>
+                        <div className="flex items-center gap-2 text-xs font-semibold">
+                            <Clock size={15} className={timerSettings.remaining < 60 ? 'animate-pulse text-rose-600 dark:text-rose-400' : 'text-[var(--text-muted)]'} />
+                            <span>{lang === 'sv' ? 'Tid kvar' : 'Time left'}</span>
                         </div>
-                        <span className="text-xl font-black font-mono tracking-tighter">
+                        <span className="text-base font-bold font-mono">
                             {formatTime(timerSettings.remaining)}
                         </span>
                     </div>
                 )}
 
-                <div className={`p-3.5 rounded-[var(--radius-card)] relative overflow-hidden transition-all duration-300 border ${
-                    !isCurrentLevelWordProblemReady
-                        ? 'bg-[var(--bg-surface)] border-[var(--border-subtle)] opacity-70'
-                        : useWordProblems
-                            ? 'bg-[var(--brand-bg)] border-[var(--brand-border)] text-[var(--brand-text)]'
-                            : 'bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-main)]'
-                }`}>
-                    {!isCurrentLevelWordProblemReady ? (
-                        <button disabled className="w-full flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] text-[var(--text-muted)] cursor-not-allowed">
-                            <Lock size={14} />
-                            {lang === 'sv' ? 'Textuppgifter ej tillgängliga' : 'Word problems not available'}
+                {/* 2. Word Problems Inline Switch */}
+                <div className={`px-5 py-4 flex items-center justify-between gap-3 ${!isCurrentLevelWordProblemReady ? 'opacity-50' : ''}`}>
+                    <div className="min-w-0">
+                        <span className="text-xs font-semibold text-[var(--text-main)] block truncate">
+                            {lang === 'sv' ? 'Problemlösning' : 'Word Problems'}
+                        </span>
+                        <span className="text-[11px] text-[var(--text-muted)] block truncate mt-0.5">
+                            {isCurrentLevelWordProblemReady
+                                ? (lang === 'sv' ? 'Träna med textuppgifter' : 'Practice with word context')
+                                : (lang === 'sv' ? 'Ej tillgängligt på denna nivå' : 'Not available on this level')}
+                        </span>
+                    </div>
+
+                    {isCurrentLevelWordProblemReady ? (
+                        <button
+                            type="button"
+                            role="switch"
+                            aria-checked={useWordProblems}
+                            onClick={() => onToggleWordProblems(!useWordProblems)}
+                            className={`w-10 h-6 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
+                                useWordProblems ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'
+                            }`}
+                        >
+                            <div className={`w-5 h-5 rounded-full bg-white shadow-2xs transition-transform ${
+                                useWordProblems ? 'translate-x-4' : 'translate-x-0'
+                            }`} />
                         </button>
                     ) : (
-                        <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                                <span className="text-xs font-black uppercase tracking-wider text-[var(--text-main)] block truncate">
-                                    {lang === 'sv' ? 'Problemlösning' : 'Word Problems'}
-                                </span>
-                                <span className="text-[10px] font-semibold text-[var(--text-muted)] block truncate">
-                                    {lang === 'sv' ? 'Träna med textkontext' : 'Practice with text context'}
-                                </span>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => onToggleWordProblems(!useWordProblems)}
-                                className={`px-3 py-2 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-2xs shrink-0 ${
-                                    useWordProblems
-                                        ? 'bg-[var(--brand-solid)] text-white'
-                                        : 'bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-strong)] hover:bg-[var(--bg-surface-hover)]'
-                                }`}
-                            >
-                                {useWordProblems ? (lang === 'sv' ? 'Aktiv ✓' : 'Active ✓') : (lang === 'sv' ? 'Aktivera' : 'Enable')}
-                            </button>
-                        </div>
+                        <Lock size={14} className="text-[var(--text-muted)] shrink-0" />
                     )}
                 </div>
 
-                <div className="space-y-2 pt-1">
-                    <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-[var(--radius-btn)] bg-[var(--brand-bg)] flex items-center justify-center text-[var(--brand-text)] shrink-0">
-                            <Zap size={13} />
-                        </div>
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] italic">
-                            {cluesLabel}
-                        </h3>
-                    </div>
+                {/* 3. Clues / Hints */}
+                <div className="px-5 py-4 space-y-2.5">
+                    <h3 className="text-xs font-semibold text-[var(--text-muted)]">
+                        {cluesLabel}
+                    </h3>
                     <div className="text-xs text-[var(--text-main)] [&_*]:text-[var(--text-main)]">
                         <CluePanel
                             revealedClues={revealedClues}
@@ -312,80 +288,81 @@ function PracticeSidebar({
                         />
                     </div>
                 </div>
-            </div>
 
-            <div className="card p-5 space-y-4 border border-[var(--border-main)]">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-[var(--radius-btn)] bg-[var(--brand-bg)] flex items-center justify-center text-[var(--brand-text)] shadow-2xs">
-                            <BarChart3 size={13} />
-                        </div>
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] italic">
-                            {lang === 'sv' ? 'Session-statistik' : 'Session Stats'}
+                {/* 4. Session Metrics & Quiet Streak */}
+                <div className="px-5 py-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-semibold text-[var(--text-muted)]">
+                            {lang === 'sv' ? 'Session' : 'Session'}
                         </h3>
-                    </div>
-                    {total > 0 && (
-                        <span className="text-[10px] font-black text-[var(--brand-text)] bg-[var(--brand-bg)] px-2 py-0.5 rounded-md border border-[var(--brand-border)]">
-                            {total} {ui.stats_attempted || 'st'}
-                        </span>
-                    )}
-                </div>
-
-                <div className="w-full h-2.5 bg-[var(--bg-surface)] rounded-full overflow-hidden flex border border-[var(--border-subtle)] shadow-inner">
-                    {stats.correct > 0 && <div style={{ width: `${getPct(stats.correct)}%` }} className="bg-emerald-500 h-full transition-all duration-500" title={ui.stat_correct} />}
-                    {stats.help > 0 && <div style={{ width: `${getPct(stats.help)}%` }} className="bg-amber-400 h-full transition-all duration-500" title={ui.stat_help} />}
-                    {stats.wrong > 0 && <div style={{ width: `${getPct(stats.wrong)}%` }} className="bg-rose-500 h-full transition-all duration-500" title={ui.stat_wrong} />}
-                    {stats.skipped > 0 && <div style={{ width: `${getPct(stats.skipped)}%` }} className="bg-slate-400 h-full transition-all duration-500" title={ui.stat_skip} />}
-                </div>
-
-                <div className="bg-gradient-to-r from-orange-500 to-rose-500 p-3 rounded-[var(--radius-btn)] flex justify-between items-center text-white shadow-sm">
-                    <span className="text-[10px] font-black uppercase tracking-widest">{lang === 'sv' ? 'Streak' : 'Streak'}</span>
-                    <div className="flex items-center gap-1.5 font-black text-base">
-                        <span>{streak}</span>
-                        <span>🔥</span>
-                    </div>
-                </div>
-
-                <div className={`flex flex-col transition-all duration-300 overflow-hidden ${isHistoryExpanded ? 'flex-1' : 'h-[36px]'}`}>
-                    <button
-                        type="button"
-                        onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
-                        className="w-full flex items-center justify-between p-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] rounded-[var(--radius-btn)] transition-all border border-[var(--border-main)] group cursor-pointer text-[var(--text-main)] shrink-0"
-                    >
-                        <div className="flex items-center gap-2">
-                            <Clock size={13} className="text-[var(--text-muted)]" />
-                            <span className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest">{historyLabel}</span>
+                        <div className="flex items-center gap-3 text-xs font-mono">
+                            {total > 0 && (
+                                <span className="text-[var(--text-muted)] font-semibold">
+                                    {total} {ui.stats_attempted || 'st'}
+                                </span>
+                            )}
+                            <span className={`inline-flex items-center gap-1 font-bold ${
+                                streak > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--text-muted)]'
+                            }`}>
+                                <Flame size={13} className={streak > 0 ? 'fill-current' : ''} />
+                                {streak}
+                            </span>
                         </div>
-                        {isHistoryExpanded ? <ChevronDown size={14} className="text-[var(--text-muted)]" /> : <ChevronRight size={14} className="text-[var(--text-muted)] group-hover:translate-x-0.5 transition-transform" />}
-                    </button>
+                    </div>
 
-                    <div className="flex-1 overflow-y-auto no-scrollbar space-y-1.5 pt-2 max-h-52">
-                        {uiState.history.map((entry, idx) => {
-                            const isCorrect = entry.correct;
-                            const usedHelp = entry.clueUsed || entry.solutionUsed;
-                            const isSkipped = entry.skipped;
+                    <div className="w-full h-1.5 bg-[var(--bg-surface)] rounded-full overflow-hidden flex">
+                        {stats.correct > 0 && <div style={{ width: `${getPct(stats.correct)}%` }} className="bg-emerald-600 h-full transition-all duration-500" title={ui.stat_correct} />}
+                        {stats.help > 0 && <div style={{ width: `${getPct(stats.help)}%` }} className="bg-amber-500 h-full transition-all duration-500" title={ui.stat_help} />}
+                        {stats.wrong > 0 && <div style={{ width: `${getPct(stats.wrong)}%` }} className="bg-rose-500 h-full transition-all duration-500" title={ui.stat_wrong} />}
+                        {stats.skipped > 0 && <div style={{ width: `${getPct(stats.skipped)}%` }} className="bg-[var(--border-strong)] h-full transition-all duration-500" title={ui.stat_skip} />}
+                    </div>
 
-                            let statusColor = 'bg-rose-500';
-                            let Icon = XCircle;
-                            if (isSkipped) { statusColor = 'bg-slate-300'; Icon = MinusCircle; }
-                            else if (isCorrect && !usedHelp) { statusColor = 'bg-emerald-500'; Icon = CheckCircle2; }
-                            else if (isCorrect && usedHelp) { statusColor = 'bg-amber-400'; Icon = HelpCircle; }
+                    {/* Collapsible History */}
+                    <div className="pt-1">
+                        <button
+                            type="button"
+                            onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
+                            className="w-full flex items-center justify-between py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
+                        >
+                            <span>{historyLabel}</span>
+                            {isHistoryExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </button>
 
-                            return (
-                                <div key={idx} className="flex items-center gap-2.5 bg-[var(--bg-card)] p-2.5 rounded-[var(--radius-btn)] border border-[var(--border-main)] transition-all shadow-2xs">
-                                    <div className={`w-1 h-5 rounded-full ${statusColor} shrink-0`} />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-center mb-0.5">
-                                            <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">Lv {entry.level}</span>
-                                            <Icon size={11} className={statusColor.replace('bg-', 'text-')} />
-                                        </div>
-                                        <div className="text-xs font-bold text-[var(--text-main)] font-serif truncate">
-                                            <MathText text={entry.text} />
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        {isHistoryExpanded && (
+                            <div className="space-y-1.5 pt-2 max-h-52 overflow-y-auto no-scrollbar">
+                                {uiState.history.length === 0 ? (
+                                    <p className="text-xs text-[var(--text-muted)] py-1">
+                                        {lang === 'sv' ? 'Inga svar ännu.' : 'No answers yet.'}
+                                    </p>
+                                ) : (
+                                    uiState.history.map((entry, idx) => {
+                                        const isCorrect = entry.correct;
+                                        const usedHelp = entry.clueUsed || entry.solutionUsed;
+                                        const isSkipped = entry.skipped;
+
+                                        let iconClass = 'text-rose-500';
+                                        let Icon = XCircle;
+                                        if (isSkipped) { iconClass = 'text-[var(--text-muted)]'; Icon = MinusCircle; }
+                                        else if (isCorrect && !usedHelp) { iconClass = 'text-emerald-600 dark:text-emerald-400'; Icon = CheckCircle2; }
+                                        else if (isCorrect && usedHelp) { iconClass = 'text-amber-500'; Icon = HelpCircle; }
+
+                                        return (
+                                            <div key={idx} className="flex items-center justify-between gap-2.5 bg-[var(--bg-surface)]/70 px-3 py-2 rounded-xl">
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="text-xs font-medium text-[var(--text-main)] font-serif truncate">
+                                                        <MathText text={entry.text} />
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                    <span className="text-[10px] font-mono text-[var(--text-muted)]">Lv {entry.level}</span>
+                                                    <Icon size={13} className={iconClass} />
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -560,7 +537,7 @@ const PracticeView = ({
             CATEGORIES[key].topics.some(t => t.id === uiState.topic)
         );
         const category = CATEGORIES[catKey] || CATEGORIES.arithmetic;
-        return { color: category.color || 'indigo' };
+        return { color: category.color || 'emerald' };
     };
 
     const theme = getCategoryContext();
@@ -600,7 +577,7 @@ const PracticeView = ({
     }, [isCurrentLevelWordProblemReady, useWordProblems, setUseWordProblems]);
 
     const getSubmitLabel = () => {
-        if (feedback === 'correct') return ui.btnNext || 'Nästa ➡';
+        if (feedback === 'correct') return ui.btnNext || 'Nästa →';
         if (feedback === 'incorrect') return ui.tagWrong || 'Fel svar';
         return ui.btnCheck || 'Svara';
     };
@@ -660,35 +637,35 @@ const PracticeView = ({
     const nextStepAfterCurrent = activeUnitStep ? getNextUnitStep(allUnitSteps, activeUnitStep.id) : null;
 
     return (
-        <div className={`theme-${theme.color} layout-wrapper font-sans relative z-10 animate-in fade-in pb-10 !pt-4`}>
+        <div className={`theme-${theme.color} layout-wrapper font-sans relative z-10 animate-in fade-in pb-10 !pt-3 xl:!pt-5`}>
 
             {/* Curated Unit Step Completion Modal */}
             <AnimatePresence>
                 {isCuratedUnit && levelUpAvailable && (
-                    <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 select-none">
+                    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 select-none">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
+                            initial={{ opacity: 0, scale: 0.96 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-[var(--bg-card)] border-2 border-emerald-500 rounded-[var(--radius-card)] p-6 sm:p-8 max-w-md w-full text-center shadow-2xl"
+                            exit={{ opacity: 0, scale: 0.96 }}
+                            className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl"
                         >
-                            <div className="w-16 h-16 bg-emerald-500 text-white rounded-[var(--radius-btn)] flex items-center justify-center mx-auto mb-4 shadow-lg">
-                                <Trophy size={32} />
+                            <div className="w-14 h-14 bg-emerald-600/15 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <Trophy size={28} />
                             </div>
 
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block mb-1">
+                            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 block mb-1">
                                 {activeBucket.name}
                             </span>
-                            <h3 className="text-2xl font-black uppercase tracking-tight text-[var(--text-main)] mb-2">
+                            <h3 className="text-xl font-bold tracking-tight text-[var(--text-main)] mb-2">
                                 {lang === 'sv' ? 'Moment klart!' : 'Step Complete!'}
                             </h3>
-                            <p className="text-xs font-bold text-[var(--text-muted)] mb-6 leading-relaxed">
+                            <p className="text-xs text-[var(--text-muted)] mb-6 leading-relaxed">
                                 {lang === 'sv'
-                                    ? `Du har klarat Nivå ${uiState.level}. Bra jobbat! Fortsätt direkt till nästa steg i din planering.`
-                                    : `You have cleared Level ${uiState.level}. Great job! Continue straight to the next step in your unit.`}
+                                    ? `Du har klarat Nivå ${uiState.level}. Fortsätt direkt till nästa steg i din planering.`
+                                    : `You have cleared Level ${uiState.level}. Continue straight to the next step in your unit.`}
                             </p>
 
-                            <div className="flex flex-col gap-2.5">
+                            <div className="flex flex-col gap-2">
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -700,12 +677,12 @@ const PracticeView = ({
                                             onAdvanceUnitStep();
                                         }
                                     }}
-                                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider rounded-[var(--radius-btn)] transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl transition-colors active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     <span>
                                         {nextStepAfterCurrent
-                                            ? (lang === 'sv' ? 'Nästa steg i planeringen ➡' : 'Next Step in Unit ➡')
-                                            : (lang === 'sv' ? 'Slutför enheten ➡' : 'Finish Unit ➡')}
+                                            ? (lang === 'sv' ? 'Nästa steg i planeringen →' : 'Next Step in Unit →')
+                                            : (lang === 'sv' ? 'Slutför enheten →' : 'Finish Unit →')}
                                     </span>
                                 </button>
                                 <button
@@ -714,7 +691,7 @@ const PracticeView = ({
                                         setLevelUpAvailable(false);
                                         actions.retry(true);
                                     }}
-                                    className="w-full py-2.5 bg-transparent text-[var(--text-muted)] hover:text-[var(--text-main)] font-black text-[10px] uppercase tracking-wider transition-colors cursor-pointer"
+                                    className="w-full py-2.5 bg-transparent text-[var(--text-muted)] hover:text-[var(--text-main)] font-medium text-xs transition-colors cursor-pointer"
                                 >
                                     {lang === 'sv' ? 'Fortsätt öva denna nivå' : 'Keep practicing this level'}
                                 </button>
@@ -740,26 +717,26 @@ const PracticeView = ({
             <AnimatePresence>
                 {toast && (
                     <motion.div
-                        initial={{ opacity: 0, y: -20, x: '-50%' }}
+                        initial={{ opacity: 0, y: -16, x: '-50%' }}
                         animate={{ opacity: 1, y: 0, x: '-50%' }}
                         exit={{ opacity: 0, y: -10, x: '-50%' }}
-                        className="fixed top-24 left-1/2 z-[70] w-full max-w-md px-4"
+                        className="fixed top-20 left-1/2 z-[70] w-full max-w-md px-4"
                     >
-                        <div className={`p-4 rounded-[var(--radius-card)] shadow-xl border-2 flex items-center gap-4 bg-[var(--bg-card)] ${toast.type === 'success' ? 'border-emerald-500' : 'border-amber-500'}`}>
-                            <div className={`w-12 h-12 rounded-[var(--radius-btn)] flex items-center justify-center shrink-0 ${toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
-                                {toast.type === 'success' ? <Trophy size={24} /> : <Zap size={24} />}
+                        <div className={`p-4 rounded-2xl shadow-xl border flex items-center gap-3.5 bg-[var(--bg-card)] ${toast.type === 'success' ? 'border-emerald-500' : 'border-amber-500'}`}>
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white'}`}>
+                                {toast.type === 'success' ? <Trophy size={20} /> : <Zap size={20} />}
                             </div>
                             <div>
-                                <h4 className="font-black uppercase tracking-tight text-[var(--text-main)] leading-none">{toast.title}</h4>
-                                <p className="text-xs font-bold text-[var(--text-muted)] mt-1">{toast.message}</p>
+                                <h4 className="font-bold text-sm text-[var(--text-main)] leading-snug">{toast.title}</h4>
+                                <p className="text-xs text-[var(--text-muted)] mt-0.5">{toast.message}</p>
                             </div>
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            <div className="max-w-[1520px] mx-auto w-full px-4 sm:px-6 pt-0">
-                <div className="flex flex-col lg:flex-row gap-5 items-start">
+            <div className={`${isCuratedUnit ? 'max-w-[1440px]' : 'max-w-[1120px]'} mx-auto w-full px-4 sm:px-6 pt-0`}>
+                <div className="flex flex-col lg:flex-row gap-6 items-start">
 
                     {/* COLLAPSIBLE CURATED UNIT ROADMAP RAIL (Left) */}
                     {isCuratedUnit && (
@@ -769,7 +746,6 @@ const PracticeView = ({
                             completedStepIds={completedStepIds}
                             activeStepId={activeUnitStep?.id}
                             onSelectStep={handleSelectUnitStepFromRail}
-                            onBackToDashboard={onBackToRoadmap}
                             lang={lang}
                         />
                     )}
@@ -783,10 +759,10 @@ const PracticeView = ({
                                 activeBucket={activeBucket}
                                 isDetourActive={isDetourActive}
                                 onLevelSelect={onLevelSelect}
-                                onBackToRoadmap={onBackToRoadmap}
                                 LEVEL_DESCRIPTIONS={LEVEL_DESCRIPTIONS}
                             />
                         )}
+
                         {activeInstructionStep ? (
                             (() => {
                                 const walkthroughSlides = activeInstructionStep.slides || (activeInstructionStep.slideData ? [activeInstructionStep.slideData] : []);
@@ -799,10 +775,10 @@ const PracticeView = ({
                                         {/* Clean Inline Walkthrough Header Bar */}
                                         <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
                                             <div className="flex items-center gap-2.5 min-w-0">
-                                                <span className="px-2.5 py-1 rounded-lg bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 text-[10px] font-bold uppercase tracking-wider shrink-0">
+                                                <span className="px-2.5 py-1 rounded-lg bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 text-xs font-semibold shrink-0">
                                                     {lang === 'sv' ? 'Genomgång' : 'Walkthrough'}
                                                 </span>
-                                                <h2 className="text-sm sm:text-base font-extrabold text-[var(--text-main)] truncate">
+                                                <h2 className="text-sm sm:text-base font-bold text-[var(--text-main)] truncate">
                                                     {activeInstructionStep.sheetTitle}
                                                 </h2>
                                             </div>
@@ -811,7 +787,7 @@ const PracticeView = ({
                                                 <button
                                                     type="button"
                                                     onClick={() => handleAdvanceToNextUnitStep(activeInstructionStep.id)}
-                                                    className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-main)] text-xs font-bold transition-colors cursor-pointer"
+                                                    className="px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-semibold transition-colors cursor-pointer"
                                                 >
                                                     {lang === 'sv' ? 'Hoppa över' : 'Skip'}
                                                 </button>
@@ -822,10 +798,10 @@ const PracticeView = ({
                                                         markStepCompleteLocal(activeInstructionStep.id);
                                                         handleAdvanceToNextUnitStep(activeInstructionStep.id);
                                                     }}
-                                                    className={`px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                                    className={`px-4 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                                                         canGoNextSlide
                                                             ? 'bg-[var(--bg-surface)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
-                                                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                                                            : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                                                     }`}
                                                 >
                                                     <span>{lang === 'sv' ? 'Klar & gå vidare →' : 'Done & Continue →'}</span>
@@ -834,7 +810,7 @@ const PracticeView = ({
                                         </div>
 
                                         {/* Compact Inline Slide Stage */}
-                                        <div className="w-full h-[470px]">
+                                        <div className="w-full h-[clamp(340px,56vh,480px)]">
                                             <SlideViewerCore
                                                 slide={walkthroughSlides[activeInstructionSlideIdx]}
                                                 livePacket={activeInstructionStep.livePacket || []}
@@ -847,16 +823,16 @@ const PracticeView = ({
                                             />
                                         </div>
 
-                                        {/* Prominent Bottom Slide Pagination Bar (Multi-slide walkthroughs) */}
+                                        {/* Bottom Slide Pagination Bar (Multi-slide walkthroughs) */}
                                         {totalWalkthroughSlides > 1 && (
-                                            <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3 shadow-xs">
+                                            <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3">
                                                 <button
                                                     type="button"
                                                     disabled={!canGoPrevSlide}
                                                     onClick={() => setActiveInstructionSlideIdx(i => Math.max(0, i - 1))}
-                                                    className="px-4 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] border border-[var(--border-strong)] disabled:opacity-35 disabled:pointer-events-none text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                                                    className="px-4 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] disabled:opacity-35 disabled:pointer-events-none text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                                                 >
-                                                    <ChevronLeft size={16} />
+                                                    <ChevronLeft size={15} />
                                                     <span>{lang === 'sv' ? 'Föregående sida' : 'Previous slide'}</span>
                                                 </button>
 
@@ -867,17 +843,17 @@ const PracticeView = ({
                                                                 key={sIdx}
                                                                 type="button"
                                                                 onClick={() => setActiveInstructionSlideIdx(sIdx)}
-                                                                className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                                                                className={`h-2 rounded-full transition-all cursor-pointer ${
                                                                     sIdx === activeInstructionSlideIdx
-                                                                        ? 'w-7 bg-sky-600'
-                                                                        : 'w-2.5 bg-[var(--border-strong)] hover:opacity-80'
+                                                                        ? 'w-6 bg-sky-600'
+                                                                        : 'w-2 bg-[var(--border-strong)] hover:opacity-80'
                                                                 }`}
                                                                 title={`${lang === 'sv' ? 'Sida' : 'Slide'} ${sIdx + 1}`}
                                                             />
                                                         ))}
                                                     </div>
-                                                    <span className="text-xs font-mono font-bold text-[var(--text-muted)] px-1.5">
-                                                        {lang === 'sv' ? 'Sida' : 'Slide'} {activeInstructionSlideIdx + 1} / {totalWalkthroughSlides}
+                                                    <span className="text-xs font-mono font-semibold text-[var(--text-muted)] px-1.5">
+                                                        {activeInstructionSlideIdx + 1} / {totalWalkthroughSlides}
                                                     </span>
                                                 </div>
 
@@ -885,10 +861,10 @@ const PracticeView = ({
                                                     <button
                                                         type="button"
                                                         onClick={() => setActiveInstructionSlideIdx(i => Math.min(totalWalkthroughSlides - 1, i + 1))}
-                                                        className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                                                        className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                                                     >
                                                         <span>{lang === 'sv' ? 'Nästa sida' : 'Next slide'}</span>
-                                                        <ChevronRight size={16} />
+                                                        <ChevronRight size={15} />
                                                     </button>
                                                 ) : (
                                                     <button
@@ -897,10 +873,10 @@ const PracticeView = ({
                                                             markStepCompleteLocal(activeInstructionStep.id);
                                                             handleAdvanceToNextUnitStep(activeInstructionStep.id);
                                                         }}
-                                                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                                                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                                                     >
                                                         <span>{lang === 'sv' ? 'Klar & gå vidare' : 'Done & Continue'}</span>
-                                                        <ChevronRight size={16} />
+                                                        <ChevronRight size={15} />
                                                     </button>
                                                 )}
                                             </div>
@@ -919,55 +895,50 @@ const PracticeView = ({
                         ) : (
                             <div className="practice-twocol">
                                 <div className="practice-main">
-                                    <main className={`card p-6 sm:p-8 ${shake ? 'animate-shake' : ''} flex flex-col shadow-lg border border-[var(--border-main)] relative`}>
+                                    <main className={`bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl p-5 sm:p-6 xl:p-9 ${shake ? 'animate-shake' : ''} flex flex-col relative`}>
                                         {loading ? (
-                                            <div className="py-32 text-center flex flex-col items-center gap-4">
-                                                <div className="w-10 h-10 border-4 border-t-transparent text-[var(--brand-text)] rounded-full animate-spin border-current" />
-                                                <span className="text-xs font-black uppercase text-[var(--text-muted)] tracking-widest">Laddar...</span>
+                                            <div className="py-32 text-center flex flex-col items-center gap-3">
+                                                <div className="w-8 h-8 border-[3px] border-t-transparent text-[var(--brand-text)] rounded-full animate-spin border-current" />
+                                                <span className="text-xs font-medium text-[var(--text-muted)]">
+                                                    {lang === 'sv' ? 'Laddar uppgift...' : 'Loading question...'}
+                                                </span>
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col min-h-[380px] justify-between">
-                                                {/* Shared Question Prompt (Visual, Equation, Description) */}
+                                            <div className="flex flex-col min-h-[300px] xl:min-h-[380px] justify-between gap-4 xl:gap-6">
+                                                {/* Quiet top-right example link */}
                                                 <div className="relative">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-2 h-2 rounded-full bg-[var(--brand-solid)] animate-pulse" />
-                                                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] italic">
-                                                                Du kan det här!
-                                                            </span>
-                                                        </div>
-
-                                                        <AnimatePresence>
-                                                            {showExampleBanner && !loading && !feedback && (
-                                                                <motion.div
-                                                                    initial={{ opacity: 0, scale: 0.94, y: -4 }}
-                                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                                    exit={{ opacity: 0, scale: 0.94 }}
-                                                                    className="flex items-center gap-2 bg-[var(--bg-card)] border border-indigo-500/50 rounded-full px-3 py-1 shadow-sm"
-                                                                >
+                                                    <AnimatePresence>
+                                                        {showExampleBanner && !loading && !feedback && (
+                                                            <motion.div
+                                                                initial={{ opacity: 0 }}
+                                                                animate={{ opacity: 1 }}
+                                                                exit={{ opacity: 0 }}
+                                                                className="flex justify-end mb-2"
+                                                            >
+                                                                <div className="inline-flex items-center gap-1.5">
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => {
                                                                             setShowExampleBanner(false);
                                                                             onCoachClick();
                                                                         }}
-                                                                        className="flex items-center gap-1.5 text-[11px] font-black text-indigo-600 dark:text-indigo-400 hover:opacity-85 cursor-pointer"
+                                                                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400 hover:underline cursor-pointer"
                                                                     >
                                                                         <Play size={11} fill="currentColor" />
-                                                                        <span>{lang === 'sv' ? 'Se exempel?' : 'See example?'}</span>
+                                                                        <span>{lang === 'sv' ? 'Se exempel' : 'See example'}</span>
                                                                     </button>
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => setShowExampleBanner(false)}
-                                                                        className="text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer text-xs font-bold px-1"
-                                                                        title="Stäng"
+                                                                        className="text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer text-xs px-1"
+                                                                        title={lang === 'sv' ? 'Stäng' : 'Close'}
                                                                     >
                                                                         ×
                                                                     </button>
-                                                                </motion.div>
-                                                            )}
-                                                        </AnimatePresence>
-                                                    </div>
+                                                                </div>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
 
                                                     <QuestionPromptCard
                                                         question={question}
@@ -976,8 +947,8 @@ const PracticeView = ({
                                                     />
                                                 </div>
 
-                                                {/* Shared Response Box + Utility Actions */}
-                                                <div className="w-full max-w-2xl mx-auto flex flex-col gap-5 pt-2">
+                                                {/* Shared Response Box + Calm Secondary Actions */}
+                                                <div className="w-full max-w-2xl mx-auto flex flex-col gap-4 pt-2">
                                                     <QuestionResponseBox
                                                         question={question}
                                                         value={input}
@@ -989,32 +960,34 @@ const PracticeView = ({
                                                         submitLabel={getSubmitLabel()}
                                                     />
 
-                                                    <div className="flex items-center gap-3 pt-2">
+                                                    <div className="grid grid-cols-3 gap-2.5 pt-1">
                                                         <button
                                                             type="button"
                                                             onClick={onHintClick}
                                                             disabled={!question?.clues || revealedClues.length >= question?.clues.length}
-                                                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] bg-[var(--bg-surface)] text-amber-600 dark:text-amber-400 border border-[var(--border-main)] disabled:opacity-30 hover:bg-[var(--bg-surface-hover)] transition-all shadow-2xs cursor-pointer"
+                                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold rounded-xl bg-[var(--bg-surface)] text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] disabled:opacity-35 disabled:cursor-not-allowed transition-colors cursor-pointer"
                                                         >
-                                                            <Zap size={15} /> <span>{ui.btnHint}</span>
+                                                            <Zap size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                                                            <span>{ui.btnHint || (lang === 'sv' ? 'Ledtråd' : 'Hint')}</span>
                                                         </button>
 
                                                         <button
                                                             type="button"
                                                             onClick={onCoachClick}
-                                                            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-[var(--radius-btn)] font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] cursor-pointer shadow-sm border-b-[3px] border-purple-800"
-                                                            title={lang === 'sv' ? 'Starta tavel-repris och få hjälp' : 'Start interactive step guide'}
+                                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold rounded-xl bg-[var(--bg-surface)] text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] transition-colors cursor-pointer"
+                                                            title={lang === 'sv' ? 'Starta steg-för-steg-guide' : 'Start interactive step guide'}
                                                         >
-                                                            <HelpCircle size={15} />
-                                                            <span>{lang === 'sv' ? 'Hjälp!' : 'Help!'}</span>
+                                                            <HelpCircle size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
+                                                            <span>{lang === 'sv' ? 'Hjälp' : 'Help'}</span>
                                                         </button>
 
                                                         <button
                                                             type="button"
                                                             onClick={onSkipClick}
-                                                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-main)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)] transition-all shadow-2xs cursor-pointer"
+                                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold rounded-xl bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] transition-colors cursor-pointer"
                                                         >
-                                                            <span>{lang === 'sv' ? 'Hoppa över' : 'Skip'}</span> <ChevronRight size={15} />
+                                                            <span>{lang === 'sv' ? 'Hoppa över' : 'Skip'}</span>
+                                                            <ChevronRight size={14} className="shrink-0" />
                                                         </button>
                                                     </div>
                                                 </div>

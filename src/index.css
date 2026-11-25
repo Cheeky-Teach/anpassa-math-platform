@@ -2,10 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Inter Variable', 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  @apply bg-gray-50 text-gray-800;
+@layer base {
+  body {
+    font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--bg-canvas);
+    color: var(--text-main);
+  }
 }
 
 /* Legacy Animations */
@@ -18,22 +22,22 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Custom Scrollbar from Legacy Code */
+/* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--bg-surface, #e2e4d8);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--border-strong, #9fa493);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--text-muted, #3d473d);
 }
 
 /* Print Styles for Do Now Grid */

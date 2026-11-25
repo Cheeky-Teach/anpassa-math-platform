@@ -21,7 +21,8 @@ export default function StudentGateway({
     onSelectFreePlay,
     onLeave,
     classCode,
-    lang = 'sv'
+    lang = 'sv',
+    embedded = false
 }) {
     const activeVisibleBuckets = useMemo(() => {
         const now = new Date();
@@ -225,10 +226,11 @@ export default function StudentGateway({
     };
 
     return (
-        <div className="layout-wrapper relative z-10 animate-in fade-in pb-12">
-            <div className="pt-3 w-full max-w-[1400px] mx-auto px-4 sm:px-6 flex flex-col gap-5">
+        <div className={embedded ? "animate-in fade-in" : "layout-wrapper relative z-10 animate-in fade-in pb-12"}>
+            <div className={embedded ? "flex flex-col gap-5" : "pt-3 w-full max-w-[1400px] mx-auto px-4 sm:px-6 flex flex-col gap-5"}>
 
-                {/* 1. TOP CONTEXT & QUICK-ESCAPE BAR */}
+                {/* 1. TOP CONTEXT & QUICK-ESCAPE BAR (Standalone only) */}
+                {!embedded && (
                 <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl px-4 sm:px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
@@ -272,6 +274,7 @@ export default function StudentGateway({
                         </button>
                     </div>
                 </div>
+                )}
 
                 {/* 2. EQUAL-WEIGHT GROUP SELECTOR GRID (WHEN 2+ GROUPS EXIST) */}
                 {hasMultipleGroups && (

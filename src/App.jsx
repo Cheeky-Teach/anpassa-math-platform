@@ -54,8 +54,7 @@ const safeTrack = (eventName, data) => {
 import PreferencesToggle from './components/ui/PreferencesToggle';
 import SessionManager from './components/SessionManager';
 
-// user counter/gatekeeper and student gateway
-import StudentGateway from './components/views/StudentGateway';
+// user counter/gatekeeper
 import GhostRadioGatekeeper from './components/GhostRadioGatekeeper';
 
 // Data, Constants & Rules
@@ -650,11 +649,24 @@ function App() {
 
     const handleStudentExitLive = () => {
         setActiveRoom(null);
+        setActiveClass(null);
+        setActiveBucket(null);
+        setStudentBuckets([]);
+        setProfile(null);
         setStudentAlias('');
+        setTopic('');
+        setLevel(0);
+        setQuestion(null);
+        setStreak(0);
+        setActiveUnitStepId(null);
+        setPendingLabConfig(null);
+        setIsDetourActive(false);
+        setOriginalTask(null);
+        setTimerSettings(prev => ({ ...prev, isActive: false }));
         localStorage.removeItem('anpassa_alias');
         setView('landing'); 
     };
-
+    
     const handleStartUnitCheckpoint = (configCode, stepId) => {
         setActiveUnitStepId(stepId);
         setPendingLabConfig(configCode);
@@ -1179,12 +1191,23 @@ function App() {
                                         <div className="w-7 h-7 rounded-full bg-[var(--bg-card)] flex items-center justify-center shadow-sm border border-[var(--border-main)] group-hover:shadow-md">
                                             <ChevronLeft size={14}/>
                                         </div>
-                                        <span className="hidden sm:inline-block">{lang === 'sv' ? "Tillbaka" : "Back"}</span>
+                                        <span className="hidden sm:inline-block truncate max-w-[200px]">
+                                            {view === 'practice' && activeBucket && activeBucket !== 'FREE_PLAY'
+                                                ? (activeBucket.name || (lang === 'sv' ? 'Områdesöversikt' : 'Unit Overview'))
+                                                : (lang === 'sv' ? 'Tillbaka' : 'Back')}
+                                        </span>
                                     </button>
                                 ) : (
-                                    <h1 className="text-lg sm:text-xl font-extrabold text-[#10b981] tracking-tighter cursor-pointer uppercase italic shrink-0" onClick={goHome}>
-                                        ANPASSA
-                                    </h1> 
+                                    <div className="flex items-center gap-2.5">
+                                        <h1 className="text-lg sm:text-xl font-extrabold text-[#10b981] tracking-tighter cursor-pointer uppercase italic shrink-0" onClick={() => goHome(false)}>
+                                            ANPASSA
+                                        </h1>
+                                        {profile?.role === 'student' && activeClass?.class_code && (
+                                            <span className="px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-main)] text-[10px] font-mono font-bold tracking-widest text-[var(--text-muted)] uppercase">
+                                                {activeClass.class_code}
+                                            </span>
+                                        )}
+                                    </div>
                                 )}
                             </div>
 
@@ -1211,7 +1234,9 @@ function App() {
                                         }}
                                         className="px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-[var(--border-main)] hover:border-rose-300 text-[10px] font-bold text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 uppercase tracking-wider transition-colors cursor-pointer"
                                     >
-                                        {lang === 'sv' ? 'Logga ut' : 'Log out'}
+                                        {session
+                                            ? (lang === 'sv' ? 'Logga ut' : 'Log out')
+                                            : (lang === 'sv' ? 'Byt klass / Logga ut' : 'Switch Class / Log out')}
                                     </button>
                                 )}
                             </div>
@@ -1253,53 +1278,22 @@ function App() {
                                   )
                                 : [];
 
-                            const showGateway = isStudent && !activeBucket && (loadingBuckets || activeStudentBuckets.length > 0);
-
-                            if (showGateway) {
-                                return (
-                                    <GhostRadioGatekeeper 
-                                        classCode={activeClass?.class_code} 
-                                        lang={lang}
-                                        onDisconnect={handleStudentExitLive}
-                                    >
-                                        {loadingBuckets ? (
-                                            <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)]">
-                                                <div className="animate-spin h-10 w-10 border-4 border-emerald-600 border-t-transparent rounded-full" />
-                                            </div>
-                                        ) : (
-                                            <StudentGateway 
-                                                classCode={activeClass?.class_code}
-                                                folderOrder={activeClass?.folder_order || []}
-                                                profile={profile}
-                                                buckets={activeStudentBuckets}
-                                                onSelectFreePlay={() => {
-                                                    setActiveBucket('FREE_PLAY');
-                                                }}
-                                                onSelectBucket={(bucket) => {
-                                                    setActiveBucket(bucket);
-                                                }}
-                                                onResumeUnitStep={(bucket, step) => {
-                                                    setActiveBucket(bucket);
-                                                    handleLaunchUnitStep(step);
-                                                }}
-                                                onLeave={handleStudentExitLive}
-                                                lang={lang}
-                                            />
-                                        )}
-                                    </GhostRadioGatekeeper>
-                                );
-                            }
-
-                            const effectiveBucket = isStudent && !activeBucket ? 'FREE_PLAY' : activeBucket;
-
-                            return (
+                            const dashboardNode = (
                                 <Dashboard 
                                     profile={profile} 
                                     lang={lang} 
                                     selectedTopic={topic} 
                                     selectedLevel={level} 
                                     userRole={profile?.role || 'student'} 
-                                    activeBucket={effectiveBucket} 
+                                    activeBucket={activeBucket} 
+                                    studentBuckets={activeStudentBuckets}
+                                    loadingBuckets={loadingBuckets}
+                                    folderOrder={activeClass?.folder_order || []}
+                                    onSelectBucket={(bucket) => setActiveBucket(bucket)}
+                                    onResumeUnitStep={(bucket, step) => {
+                                        setActiveBucket(bucket);
+                                        handleLaunchUnitStep(step);
+                                    }}
                                     onBackToGateway={activeStudentBuckets.length > 0 ? () => setActiveBucket(null) : null} 
                                     onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
                                     onStartUnitStep={handleLaunchUnitStep}
@@ -1353,6 +1347,20 @@ function App() {
                                     resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} 
                                 />
                             );
+
+                            if (isStudent && activeClass?.class_code) {
+                                return (
+                                    <GhostRadioGatekeeper
+                                        classCode={activeClass.class_code}
+                                        lang={lang}
+                                        onDisconnect={handleStudentExitLive}
+                                    >
+                                        {dashboardNode}
+                                    </GhostRadioGatekeeper>
+                                );
+                            }
+
+                            return dashboardNode;
                         })()}
                     </ResponsiveWrapper>
                 ) : view === 'profile' ? (

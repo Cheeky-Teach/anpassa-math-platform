@@ -81,13 +81,28 @@ export default function QuestionResponseBox({
         return lang === 'sv' ? 'Svara' : 'Submit';
     }, [submitLabel, feedback, lang]);
 
+    const getPrimaryButtonStyle = () => {
+        if (feedback === 'incorrect') {
+            return {
+                backgroundColor: 'var(--role-attention, #cd5334)',
+                borderColor: 'var(--role-attention-text, #a43e24)',
+                color: '#ffffff'
+            };
+        }
+        return {
+            backgroundColor: 'var(--role-primary, #2d8f00)',
+            borderColor: 'var(--role-primary-hover, #247300)',
+            color: '#ffffff'
+        };
+    };
+
     // 1. Deferred / Silent Submission Banner (Checkpoints, Exam Mode, Live Sessions)
     if (feedback === 'submitted') {
         return (
             <div className={`w-full max-w-md mx-auto animate-in zoom-in-95 duration-150 ${className}`}>
-                <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex items-center justify-center gap-2.5 text-emerald-800 dark:text-emerald-200">
-                    <CheckCircle2 size={18} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-xs font-bold uppercase tracking-wider">
+                <div className="p-3.5 rounded-lg bg-[var(--role-primary-soft)] border border-[var(--brand-border)] flex items-center justify-center gap-2.5 text-[var(--role-primary-text)]">
+                    <CheckCircle2 size={17} className="shrink-0" />
+                    <span className="text-xs font-semibold">
                         {submittedMessage || (lang === 'sv' ? 'Svar mottaget' : 'Answer received')}
                     </span>
                 </div>
@@ -114,16 +129,20 @@ export default function QuestionResponseBox({
                             type="button"
                             disabled={isLocked}
                             onClick={() => handleChoiceSelect(choiceValue)}
+                            style={
+                                isSelected && !isCorrect && !isIncorrect
+                                    ? {
+                                          backgroundColor: 'var(--role-primary-soft)',
+                                          borderColor: 'var(--role-primary)'
+                                      }
+                                    : undefined
+                            }
                             className={`btn-3d w-full text-left flex items-center gap-3 cursor-pointer ${
                                 isCorrect ? 'is-correct' : isIncorrect ? 'is-wrong' : ''
-                            } ${
-                                isSelected && !isCorrect && !isIncorrect
-                                    ? 'bg-[var(--brand-bg)] border-[var(--brand-text)]'
-                                    : ''
                             }`}
                         >
                             <span
-                                className={`w-7 h-7 rounded-[var(--radius-btn)] flex items-center justify-center text-xs font-black shadow-inner shrink-0 font-mono ${
+                                className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0 font-mono ${
                                     isCorrect || isIncorrect
                                         ? 'bg-white/25 text-white'
                                         : 'bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-main)]'
@@ -150,13 +169,14 @@ export default function QuestionResponseBox({
                     disabled={isLocked}
                     rows={3}
                     placeholder={lang === 'sv' ? 'Skriv ditt svar / resonemang här...' : 'Write your answer / explanation here...'}
-                    className="w-full p-3.5 text-sm font-medium border border-[var(--border-strong)] rounded-xl outline-none focus:border-emerald-600 transition-all text-[var(--text-main)] bg-[var(--bg-surface)] resize-none shadow-inner"
+                    className="w-full p-3.5 text-sm font-medium border border-[var(--border-strong)] rounded-lg outline-none focus:border-[var(--role-primary)] transition-colors text-[var(--text-main)] bg-[var(--bg-surface)] resize-none"
                 />
                 {!hideSubmitButton && (
                     <button
                         type="submit"
                         disabled={isSubmitting || (!String(value).trim() && feedback !== 'correct')}
-                        className="btn-3d w-full justify-center text-sm uppercase tracking-wider cursor-pointer bg-[var(--brand-solid)] text-white border-[var(--brand-text)] hover:opacity-90 disabled:opacity-35 flex items-center gap-2"
+                        style={getPrimaryButtonStyle()}
+                        className="btn-3d w-full justify-center text-sm font-bold tracking-wide cursor-pointer hover:opacity-95 disabled:opacity-35 flex items-center gap-2"
                     >
                         {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Send size={15} />}
                         <span>{resolvedSubmitLabel}</span>
@@ -168,10 +188,10 @@ export default function QuestionResponseBox({
 
     // 4. Structured Math & Standard Inputs
     return (
-        <form onSubmit={handleFormSubmit} className={`w-full max-w-2xl mx-auto space-y-4 ${className}`}>
+        <form onSubmit={handleFormSubmit} className={`w-full max-w-2xl mx-auto space-y-3.5 ${className}`}>
             <div className="relative group">
                 {answerType === 'mixed_fraction' ? (
-                    <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
+                    <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-lg border border-dashed border-[var(--border-strong)]">
                         <FractionInput
                             value={value}
                             onChange={(val) => onChange?.(val)}
@@ -180,7 +200,7 @@ export default function QuestionResponseBox({
                         />
                     </div>
                 ) : answerType === 'fraction' ? (
-                    <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
+                    <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-lg border border-dashed border-[var(--border-strong)]">
                         <FractionInput
                             value={value}
                             onChange={(val) => onChange?.(sanitizeMathInput(val))}
@@ -189,7 +209,7 @@ export default function QuestionResponseBox({
                         />
                     </div>
                 ) : answerType === 'structured_power' ? (
-                    <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
+                    <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-lg border border-dashed border-[var(--border-strong)]">
                         <ExponentInput
                             value={value}
                             onChange={(val) => onChange?.(sanitizeMathInput(val))}
@@ -197,7 +217,7 @@ export default function QuestionResponseBox({
                         />
                     </div>
                 ) : answerType === 'structured_scientific' ? (
-                    <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
+                    <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-lg border border-dashed border-[var(--border-strong)]">
                         <ScientificInput
                             value={value}
                             onChange={(val) => onChange?.(sanitizeMathInput(val))}
@@ -217,21 +237,27 @@ export default function QuestionResponseBox({
                         autoFocus={autoFocus}
                         className={
                             feedback === 'incorrect'
-                                ? '!border-rose-500 !bg-rose-50 !text-rose-700'
+                                ? '!border-[var(--role-attention)] !bg-[var(--role-attention-soft)] !text-[var(--role-attention-text)]'
                                 : feedback === 'correct'
-                                    ? '!border-emerald-500 !bg-emerald-50 !text-emerald-700'
+                                    ? '!border-[var(--role-primary)] !bg-[var(--role-primary-soft)] !text-[var(--role-primary-text)]'
                                     : ''
                         }
                     />
                 )}
 
                 {feedback === 'correct' && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-[var(--bg-card)] animate-bounce">
+                    <div
+                        style={{ backgroundColor: 'var(--role-primary)' }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 text-white rounded-full flex items-center justify-center shadow-md border-2 border-[var(--bg-card)] animate-bounce"
+                    >
                         <CheckCircle2 size={16} />
                     </div>
                 )}
                 {feedback === 'incorrect' && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-[var(--bg-card)]">
+                    <div
+                        style={{ backgroundColor: 'var(--role-attention)' }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 text-white rounded-full flex items-center justify-center shadow-md border-2 border-[var(--bg-card)]"
+                    >
                         <XCircle size={16} />
                     </div>
                 )}
@@ -241,13 +267,8 @@ export default function QuestionResponseBox({
                 <button
                     type="submit"
                     disabled={isSubmitting || (!String(value).trim() && feedback !== 'correct')}
-                    className={`btn-3d w-full justify-center text-base sm:text-lg uppercase tracking-wider cursor-pointer disabled:opacity-35 flex items-center gap-2 ${
-                        feedback === 'correct'
-                            ? 'is-correct'
-                            : feedback === 'incorrect'
-                                ? 'is-wrong'
-                                : 'bg-[var(--brand-solid)] text-white border-[var(--brand-text)] hover:opacity-90'
-                    }`}
+                    style={getPrimaryButtonStyle()}
+                    className="btn-3d w-full justify-center text-base sm:text-lg font-bold tracking-wide cursor-pointer hover:opacity-95 disabled:opacity-35 flex items-center gap-2"
                 >
                     {isSubmitting && <Loader2 className="animate-spin" size={18} />}
                     <span>{resolvedSubmitLabel}</span>

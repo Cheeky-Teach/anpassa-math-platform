@@ -1,43 +1,37 @@
 /* ============================================================================
-   ANPASSA DESIGN STANDARD — "SCANDINAVIAN CLASSROOM & PRINT STUDIO"
+   ANPASSA DESIGN STANDARD — ORGANIZED COLOR & RESTRAINED GEOMETRY
    ============================================================================
    1. IDENTITY & AESTHETIC
-      - Tactile, high-density Swedish educational & print-publishing studio.
-      - Paper & Graphite surfaces over cold Tailwind slate; math is the hero.
+      - Purpose-built mathematical workspace with organized color, generous
+        whitespace, and restrained corners over excessive card nesting.
+      - Math is the hero; structure comes from hierarchy, spacing, and rules.
 
-   2. STRICT COLOR DISCIPLINE (ZERO INDIGO)
-      - NEVER use `indigo-*` or `purple-*` classes anywhere in UI chrome.
-      - Emerald (`emerald-600` / `--brand-solid`): Primary forward actions,
-        mastery states, active studio save/print CTAs.
-      - Blueprint Cobalt (`sky-600`): Interactive walkthroughs, Do Now mode,
-        diagnostic "next step" unlocks, and active selection rings.
-      - Warm Ochre (`amber-600`): Worked examples, prerequisite foundations,
-        and checkpoint quizzes.
-      - Rose (`rose-600`): Live classroom broadcast controls & destructive actions.
-      - Neutral Stone/Graphite (`--bg-card`, `--bg-surface`): All secondary
-        buttons, toolbars, and passive badges.
+   2. ORGANIZED COLOR SYSTEM (INDIA GREEN LED)
+      - India Green (#2d8f00): Signature brand, primary forward actions,
+        mastery states, active progress, and right-answer confirmation.
+      - Cerulean (#0075a2): Walkthroughs, worked examples, hints & guidance.
+      - Rosy Copper (#cd5334): Gentle correction, detours & attention states.
+      - Light Yellow (#f8fbdb): Warm paper sheet surface in light mode.
+      - Onyx (#0c120c): Primary ink in light mode; deep ground in dark mode.
 
    3. TYPOGRAPHY & NUMERIC PRECISION
-      - UI & Print: `Plus Jakarta Sans` (`font-bold` / `font-extrabold` for
-        headings; avoid `font-black italic uppercase` on body buttons/titles).
-      - Data & Codes: `JetBrains Mono` (`font-mono tabular-nums`) for class
-        codes, PINs, timers, level badges, and accuracy metrics.
-      - Math Equations: `KaTeX_Main` (`.math-content`, `.katex`).
+      - UI & Print: Inter Variable / Inter (avoid font-black italic uppercase on
+        body buttons/titles).
+      - Data & Codes: JetBrains Mono (font-mono tabular-nums) for class codes,
+        PINs, timers, level badges, and accuracy metrics.
+      - Math Equations: KaTeX_Main (.math-content, .katex).
 
-   4. ARCHITECTURAL GEOMETRY & DRAFTING-TABLE RULES
-      - Radius Scale: `rounded-lg` (badges/inputs) -> `rounded-xl` (buttons/
-        inner wells) -> `rounded-2xl` (cards/modals). Never use `rounded-[3rem]`.
-      - Borders over Shadows: Use crisp 1px `border-[var(--border-main)]`
-        structural dividers; reserve heavy shadows strictly for floating popovers.
-      - Desk vs. Sheet: Use `.drafting-desk-bg` behind `.whiteboard-protect`
-        print/board surfaces so A4 pages sit like real paper on a mat.
+   4. GEOMETRY & SURFACE PROTECTION
+      - Restrained radii: --radius-card (0.75rem / 12px) and --radius-btn
+        (0.5rem / 8px) instead of uniform heavy roundness everywhere.
+      - Preserve .whiteboard-protect and isolated slide/modal surfaces across
+        light and dark theme switches.
    ============================================================================ */
-/* src/styles/theme.css */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600;1,700&display=swap');
 
 /* GLOBAL DEFAULT FONT FOR UI & WORKSHEETS */
-body, .font-sans {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+body,
+.font-sans {
+  font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -52,12 +46,13 @@ body, .font-sans {
 .math-content,
 .katex .text,
 .katex .textrm {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .katex {
   font-family: "KaTeX_Main", "Times New Roman", Times, serif !important;
 }
+
 /* ========================================================================= */
 /* ACCESSIBLE TYPOGRAPHY FLOOR                                               */
 /* ========================================================================= */
@@ -79,108 +74,139 @@ body, .font-sans {
 }
 
 :root {
-  /* ☀️ 1. ARCHIVAL PAPER LIGHT THEME (High-Contrast Crisp Fix) */
-  --bg-canvas: #f1f1ef;        /* Deeper archival stone-grey so white cards instantly pop */
-  --bg-card: #ffffff;          /* Pure crisp white cards */
-  --bg-surface: #e6e6e2;       /* Noticeably deeper recessed control wells */
-  --bg-surface-hover: #d9d9d3; /* Clear interactive hover state */
+  /* ☀️ 1. WARM PAPER LIGHT THEME */
+  --bg-canvas: #ecece6;
+  --bg-card: #ffffff;
+  --bg-sheet: #fdfdfb; /* Calm warm paper sheet (or #f4f5e9 for a soft cream tint) */
+  --bg-surface: #e2e4d8;
+  --bg-surface-hover: #d5d8c8;
 
-  --text-main: #11100f;        /* Rich, deep dark ink */
-  --text-muted: #44403c;       /* Stone-700 for rock-solid secondary legibility */
+  --text-main: #0c120c;
+  --text-muted: #3d473d;
   --text-inverse: #ffffff;
 
-  --border-subtle: #e6e6e2;
-  --border-main: #c7c7c0;      /* Crisp structural hairline (Stone-300+ for actual edge definition) */
-  --border-strong: #a8a29e;    /* Stone-400 for bold structural lines */
+  --border-subtle: #dcded2;
+  --border-main: #c2c5b6;
+  --border-strong: #9fa493;
 
-  /* Standardized Proportions */
-  --radius-card: 1rem;         /* 16px */
-  --radius-btn: 0.75rem;       /* 12px */
-  
+  /* Restrained Geometry Tokens */
+  --radius-card: 0.75rem;
+  --radius-btn: 0.5rem;
+
   --pad-sm: 0.5rem;
   --pad-md: 1rem;
   --pad-lg: 1.5rem;
 
-  /* AMBIENT BACKGROUND WAVES (Light) */
-  --ambient-emerald: rgba(16, 185, 129, 0.18);
-  --ambient-cobalt: rgba(2, 132, 199, 0.16);
-  --ambient-amber: rgba(217, 119, 6, 0.14);
+  /* ORGANIZED COLOR ROLES — LIGHT MODE */
+  --role-primary: #2d8f00;
+  --role-primary-hover: #247300;
+  --role-primary-soft: rgba(45, 143, 0, 0.11);
+  --role-primary-text: #226b00;
 
-  /* DEFAULT BRAND: EMERALD CHALKBOARD */
-  --brand-bg: #ecfdf5;
-  --brand-border: #a7f3d0;
-  --brand-solid: #059669;      /* emerald-600 */
-  --brand-text: #047857;       /* emerald-700 */
+  --role-guide: #0075a2;
+  --role-guide-soft: rgba(0, 117, 162, 0.11);
+  --role-guide-text: #005c80;
+
+  --role-attention: #cd5334;
+  --role-attention-soft: rgba(205, 83, 52, 0.12);
+  --role-attention-text: #a43e24;
+
+  /* AMBIENT BACKGROUND WAVES (Light) */
+  --ambient-emerald: rgba(45, 143, 0, 0.14);
+  --ambient-cobalt: rgba(0, 117, 162, 0.14);
+  --ambient-amber: rgba(205, 83, 52, 0.12);
+
+  /* DEFAULT BRAND: INDIA GREEN */
+  --brand-bg: var(--role-primary-soft);
+  --brand-border: rgba(45, 143, 0, 0.28);
+  --brand-solid: var(--role-primary);
+  --brand-text: var(--role-primary-text);
 }
 
-/* 🌙 2. DEEP GRAPHITE DARK THEME (Low-glare Charcoal — Zero Blue Slate) */
+/* 🌙 2. DEEP ONYX DARK THEME */
 .dark, [data-theme="dark"] {
-  --bg-canvas: #111315;        /* deep matte graphite */
-  --bg-card: #181b1f;          /* elevated charcoal surface */
-  --bg-surface: #22262c;       /* interactive control well */
-  --bg-surface-hover: #2d323a;
+  --bg-canvas: #0c120c;
+  --bg-card: #131b13;
+  --bg-sheet: #162016;
+  --bg-surface: #1c261c;
+  --bg-surface-hover: #253225;
 
-  --text-main: #f4f4f5;        /* zinc-100 */
-  --text-muted: #a1a1aa;       /* zinc-400 */
-  --text-inverse: #111315;
+  --text-main: #f3f6ef;
+  --text-muted: #9aa79a;
+  --text-inverse: #0c120c;
 
-  --border-subtle: #1f2328;
-  --border-main: #2a2f37;
-  --border-strong: #3a414c;
+  --border-subtle: #1b241b;
+  --border-main: #273427;
+  --border-strong: #374837;
+
+  /* ORGANIZED COLOR ROLES — DARK MODE */
+  --role-primary: #2d8f00;
+  --role-primary-hover: #36aa00;
+  --role-primary-soft: rgba(45, 143, 0, 0.18);
+  --role-primary-text: #59d424;
+
+  --role-guide: #0075a2;
+  --role-guide-soft: rgba(0, 117, 162, 0.2);
+  --role-guide-text: #38bdf8;
+
+  --role-attention: #cd5334;
+  --role-attention-soft: rgba(205, 83, 52, 0.2);
+  --role-attention-text: #f07d60;
 
   /* AMBIENT BACKGROUND WAVES (Dark) */
-  --ambient-emerald: rgba(16, 185, 129, 0.14);
-  --ambient-cobalt: rgba(56, 189, 248, 0.12);
-  --ambient-amber: rgba(245, 158, 11, 0.1);
+  --ambient-emerald: rgba(45, 143, 0, 0.14);
+  --ambient-cobalt: rgba(0, 117, 162, 0.14);
+  --ambient-amber: rgba(205, 83, 52, 0.12);
 
-  --brand-bg: rgba(16, 185, 129, 0.14);
-  --brand-border: rgba(16, 185, 129, 0.32);
-  --brand-solid: #10b981;      /* emerald-500 */
-  --brand-text: #34d399;       /* emerald-400 */
+  --brand-bg: var(--role-primary-soft);
+  --brand-border: rgba(89, 212, 36, 0.3);
+  --brand-solid: var(--role-primary);
+  --brand-text: var(--role-primary-text);
 }
 
-/* 🎯 3. FOCUS THEME (For StudentLiveView & Active Practice) */
+/* 🎯 3. FOCUS THEME (Active Practice & Live Study) */
 .theme-focus {
-  --bg-canvas: #111315;
-  --text-canvas: #f4f4f5;
-  --bg-card: #181b1f;
-  --bg-surface: #22262c;
-  --bg-surface-hover: #2d323a;
-  --text-main: #f4f4f5;
-  --text-muted: #a1a1aa;
-  --border-main: #2a2f37;
-  --border-strong: #3a414c;
-  --brand-bg: rgba(16, 185, 129, 0.14);
-  --brand-border: rgba(16, 185, 129, 0.32);
-  --brand-solid: #10b981;
-  --brand-text: #34d399;
+  --bg-canvas: #0c120c;
+  --text-canvas: #f3f6ef;
+  --bg-card: #131b13;
+  --bg-sheet: #162016;
+  --bg-surface: #1c261c;
+  --bg-surface-hover: #253225;
+  --text-main: #f3f6ef;
+  --text-muted: #9aa79a;
+  --border-main: #273427;
+  --border-strong: #374837;
+  --brand-bg: var(--role-primary-soft);
+  --brand-border: rgba(89, 212, 36, 0.3);
+  --brand-solid: var(--role-primary);
+  --brand-text: var(--role-primary-text);
 }
 
-/* 🎨 4. DYNAMIC CATEGORY THEMES (Zero Indigo — Uses Blueprint Cobalt & Teal) */
+/* 🎨 4. DYNAMIC CATEGORY THEMES (Mapped to India Green, Cerulean & Rosy Copper) */
 
 /* --- LIGHT MODE (DEFAULT) --- */
-.theme-emerald { --brand-bg: #ecfdf5; --brand-border: #a7f3d0; --brand-text: #047857; --brand-solid: #059669; }
-.theme-cobalt  { --brand-bg: #f0f9ff; --brand-border: #bae6fd; --brand-text: #0369a1; --brand-solid: #0284c7; }
-.theme-indigo  { --brand-bg: #eef2ff; --brand-border: #c7d2fe; --brand-text: #4f46e5; --brand-solid: #6366f1; }
-.theme-pink    { --brand-bg: #fdf2f8; --brand-border: #fbcfe8; --brand-text: #be185d; --brand-solid: #db2777; }
-.theme-amber   { --brand-bg: #fffbeb; --brand-border: #fde68a; --brand-text: #b45309; --brand-solid: #d97706; }
-.theme-rose    { --brand-bg: #fff1f2; --brand-border: #fecdd3; --brand-text: #be123c; --brand-solid: #e11d48; }
-.theme-orange  { --brand-bg: #fff7ed; --brand-border: #fed7aa; --brand-text: #c2410c; --brand-solid: #ea580c; }
-.theme-blue    { --brand-bg: #eff6ff; --brand-border: #bfdbfe; --brand-text: #1d4ed8; --brand-solid: #2563eb; }
-.theme-purple  { --brand-bg: #f0fdfa; --brand-border: #99f6e4; --brand-text: #0f766e; --brand-solid: #0d9488; }
-.theme-cyan    { --brand-bg: #ecfeff; --brand-border: #a5f3fc; --brand-text: #0e7490; --brand-solid: #0891b2; }
+.theme-emerald { --brand-bg: var(--role-primary-soft); --brand-border: rgba(45, 143, 0, 0.3); --brand-text: var(--role-primary-text); --brand-solid: var(--role-primary); }
+.theme-cobalt  { --brand-bg: var(--role-guide-soft); --brand-border: rgba(0, 117, 162, 0.3); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
+.theme-indigo  { --brand-bg: var(--role-guide-soft); --brand-border: rgba(0, 117, 162, 0.3); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
+.theme-pink    { --brand-bg: var(--role-attention-soft); --brand-border: rgba(205, 83, 52, 0.3); --brand-text: var(--role-attention-text); --brand-solid: var(--role-attention); }
+.theme-amber   { --brand-bg: rgba(205, 83, 52, 0.11); --brand-border: rgba(205, 83, 52, 0.3); --brand-text: var(--role-attention-text); --brand-solid: #b85d19; }
+.theme-rose    { --brand-bg: var(--role-attention-soft); --brand-border: rgba(205, 83, 52, 0.3); --brand-text: var(--role-attention-text); --brand-solid: var(--role-attention); }
+.theme-orange  { --brand-bg: var(--role-attention-soft); --brand-border: rgba(205, 83, 52, 0.3); --brand-text: var(--role-attention-text); --brand-solid: var(--role-attention); }
+.theme-blue    { --brand-bg: var(--role-guide-soft); --brand-border: rgba(0, 117, 162, 0.3); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
+.theme-purple  { --brand-bg: var(--role-guide-soft); --brand-border: rgba(0, 117, 162, 0.3); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
+.theme-cyan    { --brand-bg: var(--role-guide-soft); --brand-border: rgba(0, 117, 162, 0.3); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
 
 /* --- DARK MODE OVERRIDES --- */
-.dark .theme-emerald, [data-theme="dark"] .theme-emerald { --brand-bg: rgba(16, 185, 129, 0.14); --brand-border: rgba(16, 185, 129, 0.3); --brand-text: #34d399; --brand-solid: #10b981; }
-.dark .theme-cobalt, [data-theme="dark"] .theme-cobalt   { --brand-bg: rgba(2, 132, 199, 0.16); --brand-border: rgba(56, 189, 248, 0.3); --brand-text: #38bdf8; --brand-solid: #0284c7; }
-.dark .theme-indigo, [data-theme="dark"] .theme-indigo   { --brand-bg: rgba(99, 102, 241, 0.16); --brand-border: rgba(129, 140, 248, 0.3); --brand-text: #818cf8; --brand-solid: #6366f1; }
-.dark .theme-pink, [data-theme="dark"] .theme-pink       { --brand-bg: rgba(236, 72, 153, 0.14); --brand-border: rgba(236, 72, 153, 0.3); --brand-text: #f472b6; --brand-solid: #ec4899; }
-.dark .theme-amber, [data-theme="dark"] .theme-amber     { --brand-bg: rgba(245, 158, 11, 0.14); --brand-border: rgba(245, 158, 11, 0.3); --brand-text: #fbbf24; --brand-solid: #f59e0b; }
-.dark .theme-rose, [data-theme="dark"] .theme-rose       { --brand-bg: rgba(244, 63, 94, 0.14); --brand-border: rgba(244, 63, 94, 0.3); --brand-text: #fb7185; --brand-solid: #f43f5e; }
-.dark .theme-orange, [data-theme="dark"] .theme-orange   { --brand-bg: rgba(249, 115, 22, 0.14); --brand-border: rgba(249, 115, 22, 0.3); --brand-text: #fb923c; --brand-solid: #f97316; }
-.dark .theme-blue, [data-theme="dark"] .theme-blue       { --brand-bg: rgba(59, 130, 246, 0.14); --brand-border: rgba(59, 130, 246, 0.3); --brand-text: #60a5fa; --brand-solid: #3b82f6; }
-.dark .theme-purple, [data-theme="dark"] .theme-purple   { --brand-bg: rgba(20, 184, 166, 0.14); --brand-border: rgba(20, 184, 166, 0.3); --brand-text: #2dd4bf; --brand-solid: #14b8a6; }
-.dark .theme-cyan, [data-theme="dark"] .theme-cyan       { --brand-bg: rgba(6, 182, 212, 0.14); --brand-border: rgba(6, 182, 212, 0.3); --brand-text: #22d3ee; --brand-solid: #06b6d4; }
+.dark .theme-emerald, [data-theme="dark"] .theme-emerald { --brand-bg: var(--role-primary-soft); --brand-border: rgba(89, 212, 36, 0.32); --brand-text: var(--role-primary-text); --brand-solid: var(--role-primary); }
+.dark .theme-cobalt, [data-theme="dark"] .theme-cobalt   { --brand-bg: var(--role-guide-soft); --brand-border: rgba(56, 189, 248, 0.32); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
+.dark .theme-indigo, [data-theme="dark"] .theme-indigo   { --brand-bg: var(--role-guide-soft); --brand-border: rgba(56, 189, 248, 0.32); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
+.dark .theme-pink, [data-theme="dark"] .theme-pink       { --brand-bg: var(--role-attention-soft); --brand-border: rgba(240, 125, 96, 0.32); --brand-text: var(--role-attention-text); --brand-solid: var(--role-attention); }
+.dark .theme-amber, [data-theme="dark"] .theme-amber     { --brand-bg: rgba(205, 83, 52, 0.18); --brand-border: rgba(240, 125, 96, 0.32); --brand-text: #f09260; --brand-solid: #b85d19; }
+.dark .theme-rose, [data-theme="dark"] .theme-rose       { --brand-bg: var(--role-attention-soft); --brand-border: rgba(240, 125, 96, 0.32); --brand-text: var(--role-attention-text); --brand-solid: var(--role-attention); }
+.dark .theme-orange, [data-theme="dark"] .theme-orange   { --brand-bg: var(--role-attention-soft); --brand-border: rgba(240, 125, 96, 0.32); --brand-text: var(--role-attention-text); --brand-solid: var(--role-attention); }
+.dark .theme-blue, [data-theme="dark"] .theme-blue       { --brand-bg: var(--role-guide-soft); --brand-border: rgba(56, 189, 248, 0.32); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
+.dark .theme-purple, [data-theme="dark"] .theme-purple   { --brand-bg: var(--role-guide-soft); --brand-border: rgba(56, 189, 248, 0.32); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
+.dark .theme-cyan, [data-theme="dark"] .theme-cyan       { --brand-bg: var(--role-guide-soft); --brand-border: rgba(56, 189, 248, 0.32); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
 
 /* ========================================= */
 /* 1. BASE LAYOUT & HONEYCOMB BACKGROUND     */
@@ -204,10 +230,10 @@ body {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: 
+  background-image:
     radial-gradient(circle at 100% 100%, var(--text-main) 0%, transparent 60%),
     radial-gradient(circle at 0% 0%, var(--text-main) 0%, transparent 35%);
-  opacity: 0.032; 
+  opacity: 0.03;
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
   -webkit-mask-size: 40px;
   mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
@@ -225,11 +251,11 @@ body {
 .header-glass {
   background-color: var(--bg-card) !important;
   margin: 0.5rem auto;
-  border-radius: 1rem;
+  border-radius: var(--radius-card);
   width: calc(100% - 1.5rem) !important;
   max-width: 1400px;
   border: 1px solid var(--border-main) !important;
-  box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 10px -2px rgba(12, 18, 12, 0.05);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   padding-top: 0.25rem !important;
@@ -243,8 +269,8 @@ body {
 }
 
 .dark .header-glass, [data-theme="dark"] .header-glass {
-  background-color: rgba(24, 27, 31, 0.92) !important;
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
+  background-color: rgba(19, 27, 19, 0.95) !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.45);
 }
 
 /* ========================================= */
@@ -277,37 +303,36 @@ body {
   .card-tactile:hover {
     transform: translateY(-2px);
     border-color: var(--brand-solid, var(--border-strong));
-    box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 6px 16px -4px rgba(12, 18, 12, 0.08);
   }
   .dark .card-interactive:hover,
   .dark .card-tactile:hover {
-    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.5);
   }
 }
 
 /* --- Buttons --- */
 .btn-brand {
-  background-color: var(--brand-solid, #059669);
+  background-color: var(--brand-solid, #2d8f00);
   color: #ffffff;
   border-radius: var(--radius-btn);
   padding: var(--pad-md);
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  font-weight: 700;
   transition: transform 120ms cubic-bezier(0.2, 0, 0, 1), background-color 150ms ease, opacity 150ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
 }
-.btn-brand:hover:not(:disabled) { opacity: 0.92; }
+.btn-brand:hover:not(:disabled) { background-color: var(--role-primary-hover, #247300); }
 .btn-brand:active:not(:disabled) { transform: scale(0.98); }
 .btn-brand:disabled { opacity: 0.45; cursor: not-allowed; }
 
-/* Gamified 3D Button */
+/* Tactile Control Button */
 .btn-3d {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-main);
-  border-bottom-width: 4px;
+  border-bottom-width: 3px;
   border-bottom-color: var(--border-strong);
   border-radius: var(--radius-btn);
   padding: var(--pad-md);
@@ -319,11 +344,11 @@ body {
   cursor: pointer;
 }
 .btn-3d:hover:not(:disabled) { background-color: var(--bg-surface-hover); }
-.btn-3d:active:not(:disabled) { transform: translateY(3px); border-bottom-width: 1px; margin-top: 3px; }
-.btn-3d.is-correct { background-color: #10b981; border-color: #047857; color: white; }
-.btn-3d.is-wrong { background-color: #f43f5e; border-color: #be123c; color: white; }
+.btn-3d:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; margin-top: 2px; }
+.btn-3d.is-correct { background-color: #2d8f00; border-color: #226b00; color: #ffffff; }
+.btn-3d.is-wrong { background-color: #cd5334; border-color: #a43e24; color: #ffffff; }
 
-/* Whiteboard Protection */
+/* Whiteboard Protection (Preserved) */
 .whiteboard-protect,
 .dark .whiteboard-protect {
   --bg-canvas: #ffffff !important;
@@ -339,8 +364,8 @@ body {
 }
 
 .whiteboard-protect svg text,
-.dark .whiteboard-protect svg text { 
-  fill: #1c1917 !important; 
+.dark .whiteboard-protect svg text {
+  fill: #1c1917 !important;
 }
 
 .whiteboard-protect .math-content,
@@ -361,7 +386,7 @@ html {
 
 @media (max-width: 1280px) {
   html {
-    font-size: 13px; 
+    font-size: 13px;
   }
 }
 
@@ -429,7 +454,7 @@ html {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background-image: 
+  background-image:
     radial-gradient(circle at 100% 100%, currentColor 0%, transparent 65%),
     radial-gradient(circle at 0% 0%, currentColor 0%, transparent 45%);
   opacity: var(--honeycomb-opacity, 0.045);
@@ -443,16 +468,16 @@ html {
 /* RUTNÄT WORK AREA GRID (Print & Projectors)        */
 /* ================================================= */
 .worksheet-grid-bg {
-  background-image: 
-    linear-gradient(to right, #94a3b8 1px, transparent 1px), 
+  background-image:
+    linear-gradient(to right, #94a3b8 1px, transparent 1px),
     linear-gradient(to bottom, #94a3b8 1px, transparent 1px);
   background-size: 30px 30px;
 }
 
 @media print {
   .worksheet-grid-bg {
-    background-image: 
-      linear-gradient(to right, #64748b 1px, transparent 1px), 
+    background-image:
+      linear-gradient(to right, #64748b 1px, transparent 1px),
       linear-gradient(to bottom, #64748b 1px, transparent 1px) !important;
     background-size: 30px 30px !important;
   }
@@ -486,7 +511,7 @@ html {
 .arcade-dark-protect .text-emerald-400 *,
 .arcade-dark-protect .text-emerald-400 .katex,
 .arcade-dark-protect .text-emerald-400 .katex * {
-  color: #34d399 !important;
+  color: #59d424 !important;
 }
 
 .arcade-dark-protect .text-amber-300,
@@ -512,16 +537,16 @@ html {
 }
 
 /* =========================================================================
-   AMBIENT SEARCH BAR BREATHING GLOW (Emerald Brand — Zero Indigo)
+   AMBIENT SEARCH BAR BREATHING GLOW (India Green Brand)
    ========================================================================= */
 @keyframes searchGlowPulse {
   0%, 100% {
-    box-shadow: 0 0 12px -3px rgba(16, 185, 129, 0.22);
-    border-color: rgba(16, 185, 129, 0.45);
+    box-shadow: 0 0 12px -3px rgba(45, 143, 0, 0.22);
+    border-color: rgba(45, 143, 0, 0.45);
   }
   50% {
-    box-shadow: 0 0 22px -1px rgba(16, 185, 129, 0.48);
-    border-color: rgba(16, 185, 129, 0.85);
+    box-shadow: 0 0 22px -1px rgba(45, 143, 0, 0.42);
+    border-color: rgba(45, 143, 0, 0.8);
   }
 }
 
@@ -557,46 +582,20 @@ html {
   color: var(--text-main);
 }
 
-/* Strict Accent Border Variants (Zero Pastel Washes) */
 .callout-danger {
-  border-left-color: #e11d48; /* rose-600 */
+  border-left-color: var(--role-attention);
 }
 
 .callout-warning {
-  border-left-color: #d97706; /* amber-600 */
+  border-left-color: var(--role-attention);
 }
 
 .callout-success {
-  border-left-color: #059669; /* emerald-600 */
+  border-left-color: var(--role-primary);
 }
 
 .callout-info {
-  border-left-color: #0284c7; /* sky-600 */
-}
-
-/* ========================================= */
-/* PRACTICE VIEW TWO-COLUMN LAYOUT           */
-/* ========================================= */
-.layout-twocol {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 1.5rem;
-  align-items: start;
-}
-
-.layout-main {
-  min-width: 0; /* Prevents flex/grid blowouts from wide math elements */
-}
-
-.layout-sidebar {
-  min-width: 0;
-}
-
-/* Responsive fallback for tablets and mobile */
-@media (max-width: 1024px) {
-  .layout-twocol {
-    grid-template-columns: 1fr;
-  }
+  border-left-color: var(--role-guide);
 }
 
 /* =========================================================================
@@ -610,7 +609,7 @@ html {
 }
 
 .practice-main {
-  min-width: 0; /* Prevents flex/grid blowouts from wide math elements */
+  min-width: 0;
 }
 
 .practice-sidebar {
@@ -628,7 +627,7 @@ html {
    ========================================================================= */
 .lab-twocol {
   display: grid;
-  grid-template-columns: 360px 1fr; /* 360px Sidebar on Left, Main on Right */
+  grid-template-columns: 360px 1fr;
   gap: 1.75rem;
   align-items: start;
 }
@@ -636,7 +635,7 @@ html {
 .lab-sidebar {
   min-width: 0;
   position: sticky;
-  top: 1.5rem; /* Locks the command center in view while scrolling topics */
+  top: 1.5rem;
 }
 
 .lab-main {

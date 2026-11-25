@@ -23,6 +23,7 @@ import SheetLibraryModal from '../modals/SheetLibraryModal';
 import ActivityHubModal from '../activities/modals/ActivityHubModal';
 import { getActivityDefinition } from '../activities/registry/activityRegistry';
 import UnitStudyGuideBanner from '../shared/UnitStudyGuideBanner';
+import StudentGateway from './StudentGateway';
 import {
     getTopicDisplayName as getTopicName,
     getPartDisplayTitle,
@@ -78,6 +79,8 @@ const Dashboard = ({
     onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, onLabOpen, onFractionLabOpen,
     onTimesTableOpen, onRelaunch, onViewReport, onEdit, activeBucket, onBackToGateway,
     onStartUnitStep, onOpenPosterNotes, onOpenLibrarySheet,
+    studentBuckets = [], loadingBuckets = false, folderOrder = [],
+    onSelectBucket, onResumeUnitStep,
     userRole = 'teacher'
 }) => {
     const [expandedCategory, setExpandedCategory] = useState('arithmetic');
@@ -166,9 +169,14 @@ const Dashboard = ({
     const latestUpdate = APP_UPDATES[0];
 
     const isEducator = ['teacher', 'super_admin'].includes(userRole);
+    const hasStudentUnits = !isEducator && (loadingBuckets || (studentBuckets && studentBuckets.length > 0));
     const isCuratedUnit = !isEducator && Boolean(activeBucket && activeBucket !== 'FREE_PLAY');
+    const [studentTab, setStudentTab] = useState('units');
 
-    const storageKey = `has_seen_dashboard_guide_${userRole}${isCuratedUnit ? '_unit' : ''}`;
+    const isShowingStudentGateway = hasStudentUnits && studentTab === 'units' && !isCuratedUnit;
+    const isShowingCuratedRoadmap = hasStudentUnits && studentTab === 'units' && isCuratedUnit;
+
+    const storageKey = `has_seen_dashboard_guide_${userRole}${isShowingCuratedRoadmap ? '_unit' : ''}`;
     const [showDashboardTutorial, setShowDashboardTutorial] = useState(false);
 
     useEffect(() => {
@@ -240,7 +248,7 @@ const Dashboard = ({
         }
 
         // 2. STUDENT IN CURATED UNIT WALKTHROUGH
-        if (isCuratedUnit) {
+        if (isShowingCuratedRoadmap) {
             return [
                 {
                     selector: '[data-tour="dash-unit-banner"]',
@@ -320,7 +328,7 @@ const Dashboard = ({
                 }
             }
         ];
-    }, [isEducator, isCuratedUnit]);
+    }, [isEducator, isShowingCuratedRoadmap]);
 
     const storageKeyProgress = useMemo(
         () => getUnitProgressStorageKey(profile, activeBucket),
@@ -859,9 +867,61 @@ const Dashboard = ({
                                 )}
                             </div>
 
+                            {/* Student Mode Switcher (Only when teacher has active units) */}
+                            {!diagnosticTarget && hasStudentUnits && (
+                                <div className="inline-flex self-start bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setStudentTab('units')}
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                            studentTab === 'units'
+                                                ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                        }`}
+                                    >
+                                        <Layers size={13} className={studentTab === 'units' ? 'text-emerald-600 dark:text-emerald-400' : ''} />
+                                        <span>{lang === 'sv' ? 'Mina områden' : 'My Units'}</span>
+                                        {studentBuckets.length > 0 && (
+                                            <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-mono text-[10px]">
+                                                {studentBuckets.length}
+                                            </span>
+                                        )}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setStudentTab('library')}
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                            studentTab === 'library'
+                                                ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                        }`}
+                                    >
+                                        <Compass size={13} className={studentTab === 'library' ? 'text-sky-600 dark:text-sky-400' : ''} />
+                                        <span>{lang === 'sv' ? 'Hela biblioteket' : 'Full Library'}</span>
+                                    </button>
+                                </div>
+                            )}
+
                             {/* Below Search Deck */}
                             {!diagnosticTarget && (
-                                isCuratedUnit ? (
+                                isShowingStudentGateway ? (
+                                    loadingBuckets ? (
+                                        <div className="py-16 flex items-center justify-center">
+                                            <div className="animate-spin h-8 w-8 border-4 border-emerald-600 border-t-transparent rounded-full" />
+                                        </div>
+                                    ) : (
+                                        <StudentGateway
+                                            embedded={true}
+                                            buckets={studentBuckets}
+                                            folderOrder={folderOrder}
+                                            profile={profile}
+                                            onSelectBucket={onSelectBucket}
+                                            onResumeUnitStep={onResumeUnitStep}
+                                            lang={lang}
+                                        />
+                                    )
+                                ) : isShowingCuratedRoadmap ? (
                                     /* Curated Bucket Roadmap */
                                     <div className="space-y-4">
                                         {progressPercentage === 100 && (
@@ -1605,13 +1665,13 @@ const Dashboard = ({
                 {/* ========================================================= */}
                 {/* ARCHITECTURAL FLOATING ACTION BAR                         */}
                 {/* ========================================================= */}
-                {activeTab === 'curriculum' && (
+                {activeTab === 'curriculum' && !isShowingStudentGateway && (
                     <div className={`fixed bottom-6 right-6 flex justify-end pointer-events-none z-30 transition-all duration-300 ${
-                        (!diagnosticTarget && (selectedTopic || (isCuratedUnit && nextUnfinishedStep))) 
+                        (!diagnosticTarget && (selectedTopic || (isShowingCuratedRoadmap && nextUnfinishedStep))) 
                             ? 'translate-y-0 opacity-100' 
                             : 'translate-y-16 opacity-0'
                     }`}>
-                        {isCuratedUnit && nextUnfinishedStep && !hasUserManuallySelected ? (
+                        {isShowingCuratedRoadmap && nextUnfinishedStep && !hasUserManuallySelected ? (
                             <button 
                                 type="button"
                                 onClick={() => {
