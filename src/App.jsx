@@ -7,11 +7,11 @@ import LandingView from './components/views/LandingView';
 import Dashboard from './components/views/Dashboard';
 import PracticeView from './components/views/PracticeView';
 import AuthView from './components/views/AuthView';
-import QuestionStudio from './components/views/QuestionStudio'; 
+import QuestionStudio from './components/views/QuestionStudio';
 import PrintView from './components/views/PrintView';
 import StudentLiveView from './components/views/StudentLiveView';
-import TeacherLiveView from './components/views/TeacherLiveView'; 
-import DoNowGrid from './components/views/DoNowGrid'; 
+import TeacherLiveView from './components/views/TeacherLiveView';
+import DoNowGrid from './components/views/DoNowGrid';
 import LandscapeReport from './components/reports/LandscapeReport';
 import ProfileView from './components/views/ProfileView';
 import TimesTable from './components/views/TimesTable';
@@ -24,9 +24,9 @@ import PosterNotesStudio from './components/views/PosterNotesStudio';
 import AboutModal from './components/modals/AboutModal';
 import LgrModal from './components/modals/LgrModal';
 import StatsModal from './components/modals/StatsModal';
-import StreakModal from './components/modals/StreakModal'; 
-import ContentModal from './components/modals/ContentModal'; 
-import DetourModal from './components/modals/DetourModal'; 
+import StreakModal from './components/modals/StreakModal';
+import ContentModal from './components/modals/ContentModal';
+import DetourModal from './components/modals/DetourModal';
 
 // Data & Constants
 import { UI_TEXT, LEVEL_DESCRIPTIONS, CATEGORIES } from './constants/localization';
@@ -35,7 +35,7 @@ import { getActivityDefinition } from './components/activities/registry/activity
 import { useSessionSync } from './hooks/useSessionSync';
 
 // Dynamically load the Analytics component. If blocked, return an empty ghost component.
-const IsolatedTracker = React.lazy(() => 
+const IsolatedTracker = React.lazy(() =>
     import('@vercel/analytics/react')
         .then((mod) => ({ default: mod.Analytics }))
         .catch(() => ({ default: () => null }))
@@ -63,6 +63,8 @@ import { checkDetourTrigger, checkDetourCompletion } from './core/rules/Progress
 
 export const PreferencesContext = createContext();
 
+const EARLY_CONCEPT_MISS_THRESHOLD = 2;
+
 const ResponsiveWrapper = ({ children, forceConstrain = false }) => {
     return (
         <div className={`w-full flex flex-col flex-1 ${forceConstrain ? 'overflow-hidden min-h-0 h-full' : ''}`}>
@@ -71,7 +73,7 @@ const ResponsiveWrapper = ({ children, forceConstrain = false }) => {
     );
 };
 
-// 🟢 Fail-safe Rescue UI if an unhydrated or crashed view tries to render
+// Fail-safe Rescue UI if an unhydrated or crashed view tries to render
 const SessionRescueCard = ({ lang = 'sv', onGoHome }) => {
     return (
         <div className="min-h-[80vh] flex items-center justify-center p-6 text-center select-none animate-in fade-in">
@@ -83,8 +85,8 @@ const SessionRescueCard = ({ lang = 'sv', onGoHome }) => {
                     {lang === 'sv' ? "Sessionen avbröts" : "Session Interrupted"}
                 </h3>
                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-                    {lang === 'sv' 
-                        ? "Sidan laddades om eller förlorade kontakten med rummet. Ingen fara, du kan hoppa direkt tillbaka till översikten." 
+                    {lang === 'sv'
+                        ? "Sidan laddades om eller förlorade kontakten med rummet. Ingen fara, du kan hoppa direkt tillbaka till översikten."
                         : "The page reloaded or lost connection with the active room. You can safely return to your dashboard."}
                 </p>
                 <button
@@ -104,7 +106,7 @@ function App() {
     const [session, setSession] = useState(null);
     const [profile, setProfile] = useState(null);
     const [loadingProfile, setLoadingProfile] = useState(true);
-    const [view, setView] = useState('landing'); 
+    const [view, setView] = useState('landing');
     const currentUserRef = useRef(null);
 
     const [showExpired, setShowExpired] = useState(false);
@@ -144,12 +146,12 @@ function App() {
     const toggleLang = () => setLang(prev => prev === 'sv' ? 'en' : 'sv');
 
     // --- 2. STUDENT & LIVE SESSION STATE ---
-    const [studentMode, setStudentMode] = useState(null); 
-    const [activeClass, setActiveClass] = useState(null); 
+    const [studentMode, setStudentMode] = useState(null);
+    const [activeClass, setActiveClass] = useState(null);
     const [activeRoom, setActiveRoom] = useState(null);
     const [studentAlias, setStudentAlias] = useState(localStorage.getItem('anpassa_alias') || '');
     const [reportData, setReportData] = useState(null);
-    const [prefilledCode, setPrefilledCode] = useState(''); 
+    const [prefilledCode, setPrefilledCode] = useState('');
 
     // --- 3. GAMEPLAY STATE ---
     const [topic, setTopic] = useState('');
@@ -165,6 +167,21 @@ function App() {
     const [usedHelp, setUsedHelp] = useState(false);
     const [useWordProblems, setUseWordProblems] = useState(false);
 
+    // Deterministic Concept Toggle State ('default' | 'auto' | 'manual')
+    const [includeConceptQuestions, setIncludeConceptQuestions] = useState(false);
+    const [conceptToggleSource, setConceptToggleSource] = useState('default');
+    const conceptToggleSourceRef = useRef('default');
+
+    useEffect(() => {
+        conceptToggleSourceRef.current = conceptToggleSource;
+    }, [conceptToggleSource]);
+
+    const setConceptMode = (enabled, source = 'manual') => {
+        conceptToggleSourceRef.current = source;
+        setConceptToggleSource(source);
+        setIncludeConceptQuestions(Boolean(enabled));
+    };
+
     const [activeUnitStepId, setActiveUnitStepId] = useState(null);
 
     // --- DETOUR / PREREQUISITE STATE ---
@@ -176,22 +193,22 @@ function App() {
     const [granularStats, setGranularStats] = useState({});
     const [history, setHistory] = useState([]);
     const [levelUpAvailable, setLevelUpAvailable] = useState(false);
-    
+
     // --- 5. MODALS & UI STATE ---
     const [aboutOpen, setAboutOpen] = useState(false);
     const [statsOpen, setStatsOpen] = useState(false);
     const [lgrOpen, setLgrOpen] = useState(false);
-    const [contentOpen, setContentOpen] = useState(false); 
+    const [contentOpen, setContentOpen] = useState(false);
     const [showStreakModal, setShowStreakModal] = useState(false);
 
     // --- 6. TOAST SYSTEM STATE ---
     const [toast, setToast] = useState(null);
 
     // --- 7. STUDIO & PRINT STATE ---
-    const [savedPacket, setSavedPacket] = useState([]); 
+    const [savedPacket, setSavedPacket] = useState([]);
     const [editingSheetId, setEditingSheetId] = useState(null);
     const [savedSlides, setSavedSlides] = useState(null);
-    const [savedBoardSettings, setSavedBoardSettings] = useState(null); 
+    const [savedBoardSettings, setSavedBoardSettings] = useState(null);
     const [sheetTitle, setSheetTitle] = useState("");
     const [studioMode, setStudioMode] = useState(null);
     const [includeAnswerKey, setIncludeAnswerKey] = useState(true);
@@ -291,7 +308,7 @@ function App() {
 
     const ui = UI_TEXT[lang];
 
-    // --- 10. SESSION MANAGER --- 
+    // --- 10. SESSION MANAGER ---
     const { setAppMode, syncNow, savePracticeEntry, saveFeatureState } = useSessionSync();
     const [questionStartTime, setQuestionStartTime] = useState(Date.now());
 
@@ -334,13 +351,13 @@ function App() {
         if (!activeRoom?.id) return;
         try {
             await supabase.from('responses').delete().eq('room_id', activeRoom.id).eq('student_alias', alias);
-            
+
             const currentKicked = activeRoom.kicked_students || [];
             const { error } = await supabase
                 .from('rooms')
                 .update({ kicked_students: [...currentKicked, alias] })
                 .eq('id', activeRoom.id);
-            
+
             if (error) throw error;
             setActiveRoom(prev => ({ ...prev, kicked_students: [...currentKicked, alias] }));
         } catch (err) {
@@ -350,7 +367,7 @@ function App() {
 
     const handleEndSession = async () => {
         if (!activeRoom?.id) return;
-        
+
         try {
             const { error } = await supabase
                 .from('rooms')
@@ -365,26 +382,42 @@ function App() {
             alert(lang === 'sv' ? "Kunde inte avsluta sessionen." : "Could not end session.");
         }
     };
-    
-    // --- WORD PROBLEM TOGGLE ---
+
+    // --- WORD PROBLEM & CONCEPT TOGGLE RE-FETCH ---
+    const didMountWordProblemRef = useRef(false);
     useEffect(() => {
+        if (!didMountWordProblemRef.current) {
+            didMountWordProblemRef.current = true;
+            return;
+        }
         if (view === 'practice' && topic && level && question) {
-            fetchQuestion(topic, level, lang, true);
+            fetchQuestion(topic, level, lang, true, { hideConcept: !includeConceptQuestions });
         }
     }, [useWordProblems]);
+
+    const didMountConceptToggleRef = useRef(false);
+    useEffect(() => {
+        if (!didMountConceptToggleRef.current) {
+            didMountConceptToggleRef.current = true;
+            return;
+        }
+        if (view === 'practice' && topic && level && question && !loading) {
+            fetchQuestion(topic, level, lang, true, { hideConcept: !includeConceptQuestions });
+        }
+    }, [includeConceptQuestions]);
 
     // --- STUDENT REAL-TIME KICK LISTENER ---
     useEffect(() => {
         if (view === 'live_session' && activeRoom?.id && studentAlias) {
             const channel = supabase.channel(`room_kick_global`)
-                .on('postgres_changes', { 
-                    event: 'DELETE', 
-                    schema: 'public', 
-                    table: 'responses' 
+                .on('postgres_changes', {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'responses'
                 }, (payload) => {
                     if (
-                        payload.old && 
-                        payload.old.student_alias === studentAlias && 
+                        payload.old &&
+                        payload.old.student_alias === studentAlias &&
                         payload.old.room_id === activeRoom.id
                     ) {
                         alert(lang === 'sv' ? "Sessionen avslutad för din del." : "Session ended for you.");
@@ -397,7 +430,7 @@ function App() {
         }
     }, [view, activeRoom?.id, studentAlias, lang]);
 
-    // 🟢 RECOVERY ENGINE: Safe Room Rehydration from URL
+    // RECOVERY ENGINE: Safe Room Rehydration from URL
     const hydrateLiveSessionByCode = async (code, currentUserId) => {
         if (!code) return false;
         try {
@@ -427,7 +460,7 @@ function App() {
         const handleUrlNavigation = async () => {
             const path = window.location.pathname.replace('/', '');
             const params = new URLSearchParams(window.location.search);
-            
+
             // 1. Practice Lab Configs
             if (params.has('config')) {
                 setPendingLabConfig(params.get('config'));
@@ -456,18 +489,18 @@ function App() {
             } else if (path) {
                 setView(path);
             }
-            
+
             if (params.has('topic')) setTopic(params.get('topic'));
             if (params.has('level')) setLevel(parseInt(params.get('level')));
         };
 
         window.addEventListener('popstate', handleUrlNavigation);
-        handleUrlNavigation(); 
-        
+        handleUrlNavigation();
+
         return () => window.removeEventListener('popstate', handleUrlNavigation);
     }, []);
 
-    // 🟢 DYNAMIC BROWSER URL SYNC (Preserves active room parameter on live views)
+    // DYNAMIC BROWSER URL SYNC (Preserves active room parameter on live views)
     useEffect(() => {
         const baseUrl = `/${view === 'landing' ? '' : view}`;
         let queryParams = "";
@@ -477,7 +510,7 @@ function App() {
         } else if ((view === 'teacher_live' || view === 'live_session') && activeRoom?.class_code) {
             queryParams = `?room=${activeRoom.class_code}`;
         }
-        
+
         if (window.location.pathname + window.location.search !== baseUrl + queryParams) {
             window.history.pushState({ view, topic, level }, "", baseUrl + queryParams);
         }
@@ -514,13 +547,13 @@ function App() {
 
             if (!res.ok) throw new Error("Batch refresh failed");
             const newResults = await res.json();
-            
+
             const updatedPacket = savedPacket.map((item, idx) => ({
                 ...item,
-                id: `dn-batch-${Date.now()}-${idx}`, 
-                resolvedData: newResults[idx].resolvedData 
+                id: `dn-batch-${Date.now()}-${idx}`,
+                resolvedData: newResults[idx].resolvedData
             }));
-            
+
             setSavedPacket(updatedPacket);
         } catch (e) {
             console.error("Batch refresh error:", e);
@@ -534,12 +567,12 @@ function App() {
         try {
             const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}`);
             const newData = await res.json();
-            
+
             const updatedPacket = [...savedPacket];
-            updatedPacket[idx] = { 
-                ...item, 
+            updatedPacket[idx] = {
+                ...item,
                 id: `dn-single-${Date.now()}-${idx}`,
-                resolvedData: newData 
+                resolvedData: newData
             };
             setSavedPacket(updatedPacket);
         } catch (e) {
@@ -563,13 +596,13 @@ function App() {
 
             if (s) {
                 const isSameUser = currentUserRef.current === s.user.id;
-                currentUserRef.current = s.user.id; 
-                
+                currentUserRef.current = s.user.id;
+
                 if (event === 'PASSWORD_RECOVERY') {
                     setView('profile');
                     fetchProfile(s.user.id);
                 } else {
-                    fetchProfile(s.user.id, isSameUser); 
+                    fetchProfile(s.user.id, isSameUser);
                 }
             } else {
                 currentUserRef.current = null;
@@ -585,15 +618,15 @@ function App() {
     // --- PROFILE GATEKEEPER ---
     const fetchProfile = async (uid, isSilent = false) => {
         if (!isSilent) setLoadingProfile(true);
-        
+
         try {
             const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
             if (error) throw error;
-            
+
             setProfile(data);
-            
+
             const isSetupIncomplete = !data || !data.subscription_status || !data.class_code;
-            const isExpired = data?.subscription_status === 'expired' || 
+            const isExpired = data?.subscription_status === 'expired' ||
                              (data?.subscription_end_date && new Date(data.subscription_end_date) < new Date());
 
             if (isExpired && data?.role === 'teacher') {
@@ -605,12 +638,12 @@ function App() {
                 if (currentView === 'profile') return 'profile';
                 if (isSetupIncomplete) return 'auth';
                 if (pendingLabConfig) return 'practice_lab';
-                
+
                 if (currentView === 'landing' || currentView === 'auth') {
                     if (topic && level) return 'practice';
                     return 'dashboard';
                 }
-                
+
                 return currentView;
             });
         } catch (err) {
@@ -631,9 +664,9 @@ function App() {
                         .from('teacher_buckets')
                         .select('*')
                         .eq('teacher_id', activeClass.id)
-                        .gt('expires_at', now) 
+                        .gt('expires_at', now)
                         .order('created_at', { ascending: false });
-                    
+
                     if (error) throw error;
                     setStudentBuckets(data || []);
                 } catch (err) {
@@ -662,39 +695,42 @@ function App() {
         setPendingLabConfig(null);
         setIsDetourActive(false);
         setOriginalTask(null);
+        setConceptMode(false, 'default');
         setTimerSettings(prev => ({ ...prev, isActive: false }));
         localStorage.removeItem('anpassa_alias');
-        setView('landing'); 
+        setView('landing');
     };
-    
+
     const handleStartUnitCheckpoint = (configCode, stepId) => {
         setActiveUnitStepId(stepId);
         setPendingLabConfig(configCode);
         setView('practice_lab');
     };
 
-    const goHome = (clearBucket = false) => { 
-        setStreak(0); 
-        setView('dashboard'); 
-        setQuestion(null); 
-        setTimerSettings(prev => ({ ...prev, isActive: false })); 
+    const goHome = (clearBucket = false) => {
+        setStreak(0);
+        setView('dashboard');
+        setQuestion(null);
+        setTimerSettings(prev => ({ ...prev, isActive: false }));
         if (clearBucket) {
             setActiveBucket(null);
         }
-        setIsDetourActive(false); 
+        setIsDetourActive(false);
         setOriginalTask(null);
+        setConceptMode(false, 'default');
         setSandboxLab('fractions');
         setActiveUnitStepId(null);
         setPendingLabConfig(null);
     };
 
-    const quitPractice = () => { 
-        setStreak(0); 
-        setView('dashboard'); 
-        setQuestion(null); 
-        setTimerSettings(prev => ({ ...prev, isActive: false })); 
-        setIsDetourActive(false); 
+    const quitPractice = () => {
+        setStreak(0);
+        setView('dashboard');
+        setQuestion(null);
+        setTimerSettings(prev => ({ ...prev, isActive: false }));
+        setIsDetourActive(false);
         setOriginalTask(null);
+        setConceptMode(false, 'default');
         setActiveUnitStepId(null);
     };
 
@@ -709,12 +745,10 @@ function App() {
             const current = raw ? JSON.parse(raw) : [];
             const idsToAdd = new Set(current);
 
-            // 1. If an explicit step ID was provided (e.g. from Checkpoint/TestLab)
             if (explicitId) {
                 idsToAdd.add(explicitId);
             }
 
-            // 2. Find ALL matching practice steps in the active unit payload
             const payloadParts = Array.isArray(activeBucket.payload) ? activeBucket.payload : [];
             payloadParts.forEach(part => {
                 const steps = Array.isArray(part.steps) ? part.steps : [];
@@ -726,7 +760,6 @@ function App() {
                 });
             });
 
-            // 3. Also store the generic compound keys for backward compatibility
             idsToAdd.add(`${completedTopic}_${completedLevel}`);
             idsToAdd.add(`step_prac_${completedTopic}_${completedLevel}`);
 
@@ -749,16 +782,30 @@ function App() {
                 setTopic(targetTopic);
                 setLevel(targetLevel);
                 setStreak(0);
+                setConceptMode(false, 'default');
                 setView('practice');
                 if (timerSettings.duration > 0) {
                     setTimerSettings(prev => ({ ...prev, isActive: true, remaining: timerSettings.duration }));
                 }
-                fetchQuestion(targetTopic, targetLevel, lang, true);
+                fetchQuestion(targetTopic, targetLevel, lang, true, { hideConcept: true });
             }
         } else {
-            // 'instruction' or 'test' steps render inline / via modal directly inside PracticeView
             setView('practice');
         }
+    };
+
+    const countConsecutiveMisses = (historyList, targetTopic, targetLevel) => {
+        if (!Array.isArray(historyList) || !targetTopic) return 0;
+        let count = 0;
+        for (const entry of historyList) {
+            if (!entry) break;
+            if (entry.topic === targetTopic && Number(entry.level) === Number(targetLevel) && !entry.correct && !entry.skipped) {
+                count += 1;
+            } else {
+                break;
+            }
+        }
+        return count;
     };
 
     const handleSubmit = async (e, directInput) => {
@@ -769,19 +816,19 @@ function App() {
         const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
 
         try {
-            const res = await fetch('/api/answer', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-                    answer: finalInput, token: question.token, streak, level, topic, 
+            const res = await fetch('/api/answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    answer: finalInput, token: question.token, streak, level, topic,
                     usedHelp: helpUsed, solutionUsed: isSolutionRevealed, attempts: (question.attempts || 0)
-                }) 
+                })
             });
             const result = await res.json();
 
             const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
             savePracticeEntry(topic, level, result.correct, revealedClues.length, timeSpent);
-            
+
             if (result.correct) {
                 safeTrack('Answer_Correct', { topic: topic, level: level.toString(), mode: view });
                 if (!isSolutionRevealed) {
@@ -789,15 +836,21 @@ function App() {
                     setStreak(result.newStreak); setTotalCorrect(prev => prev + 1);
                     updateStats(helpUsed ? 'correctHelp' : 'correctNoHelp');
 
+                    // Clear auto-enabled concept check once student answers correctly
+                    if (conceptToggleSourceRef.current === 'auto') {
+                        setConceptMode(false, 'default');
+                    }
+
                     if (isDetourActive && checkDetourCompletion(result.newStreak)) {
                         setFeedback('correct');
                         setTimeout(() => {
                             alert(lang === 'sv' ? "Snyggt jobbat! Nu är du redo för den ursprungliga uppgiften igen." : "Great job! You're ready for the original task again.");
                             setIsDetourActive(false);
+                            setConceptMode(false, 'default');
                             setTopic(originalTask.topic);
                             setLevel(originalTask.level);
                             setStreak(0);
-                            fetchQuestion(originalTask.topic, originalTask.level, lang);
+                            fetchQuestion(originalTask.topic, originalTask.level, lang, true, { hideConcept: true });
                             setOriginalTask(null);
                         }, 1500);
                         return;
@@ -805,15 +858,15 @@ function App() {
 
                     if (result.levelUp) {
                         setFeedback('correct');
+                        setConceptMode(false, 'default');
                         if (activeBucket && activeBucket !== 'FREE_PLAY') {
-                            // Pass topic and level directly so it finds and marks the real step ID!
                             markUnitStepComplete(topic, level, activeUnitStepId);
                         }
 
                         setTimeout(() => setLevelUpAvailable(true), 1000);
                         return;
                     }
-                    
+
                     if ([15, 25, 50].includes(result.newStreak)) setShowStreakModal(true);
                     else setTimeout(() => fetchQuestion(topic, level, lang), 1500);
                 }
@@ -823,16 +876,18 @@ function App() {
                 const updatedHistory = [newHistoryEntry, ...history];
                 setHistory(updatedHistory);
 
-                setQuestion({...question, attempts: (question.attempts || 0) + 1});
+                setQuestion({ ...question, attempts: (question.attempts || 0) + 1 });
                 updateStats('incorrect');
-                if ((question.attempts || 0) + 1 >= 2) { 
+                if ((question.attempts || 0) + 1 >= 2) {
                     setRevealedClues(question.clues || []); setIsSolutionRevealed(true); setStreak(0);
                 }
                 setFeedback('incorrect'); setStreak(0);
 
+                let detourTriggered = false;
                 if (!isDetourActive) {
                     const detourCheck = checkDetourTrigger(updatedHistory, topic, level, CONTENT_MAP);
                     if (detourCheck.shouldDetour) {
+                        detourTriggered = true;
                         setTimeout(() => {
                             setPendingDetour({
                                 topic: detourCheck.detourTopic,
@@ -841,6 +896,13 @@ function App() {
                             setIsDetourModalOpen(true);
                         }, 1500);
                     }
+                }
+
+                // Tier 1 Early Concept Check: after 2+ consecutive misses (before 6-miss detour),
+                // open up concept questions automatically unless manually set by the user
+                const recentMisses = countConsecutiveMisses(updatedHistory, topic, level);
+                if (!detourTriggered && recentMisses >= EARLY_CONCEPT_MISS_THRESHOLD && conceptToggleSourceRef.current !== 'manual') {
+                    setConceptMode(true, 'auto');
                 }
             }
         } catch (e) { console.error(e); }
@@ -864,25 +926,46 @@ function App() {
     const handleSkip = () => {
         setHistory(prev => [{ topic, level, correct: false, skipped: true, text: question.renderData.latex || question.renderData.description, time: Date.now() }, ...prev]);
         updateStats('skipped');
-        fetchQuestion(topic, level, lang, true);
+        fetchQuestion(topic, level, lang, true, { hideConcept: !includeConceptQuestions });
     };
 
     const handleChangeLevel = (delta) => {
         const maxLevel = Object.keys(LEVEL_DESCRIPTIONS[topic] || {}).length || 9;
         const newLvl = Math.max(1, Math.min(level + delta, maxLevel));
-        
+
         if (newLvl !== level) {
+            if (conceptToggleSourceRef.current === 'auto') {
+                setConceptMode(false, 'default');
+            }
             setLevel(newLvl);
-            fetchQuestion(topic, newLvl, lang);
+            fetchQuestion(topic, newLvl, lang, true, {
+                hideConcept: conceptToggleSourceRef.current === 'auto' ? true : !includeConceptQuestions
+            });
         }
     };
 
-    const fetchQuestion = async (t, l, lg, force = false) => {
+    const fetchQuestion = async (t, l, lg, force = false, overrideOptions = {}) => {
         if (!force && (showStreakModal || levelUpAvailable)) return;
+        const effectiveHideConcept = overrideOptions.hideConcept !== undefined
+            ? Boolean(overrideOptions.hideConcept)
+            : !includeConceptQuestions;
+
         setLoading(true); setFeedback(null); setInput(''); setRevealedClues([]); setUsedHelp(false); setIsSolutionRevealed(false); setLevelUpAvailable(false);
         try {
-            const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}&wordProblem=${useWordProblems}${force ? `&force=true&t=${Date.now()}` : ''}`);
-            
+            const params = new URLSearchParams({
+                topic: String(t),
+                level: String(l),
+                lang: String(lg),
+                wordProblem: String(useWordProblems),
+                hideConcept: String(effectiveHideConcept)
+            });
+            if (force) {
+                params.set('force', 'true');
+                params.set('t', String(Date.now()));
+            }
+
+            const res = await fetch(`/api/question?${params.toString()}`);
+
             if (!res.ok) {
                 console.error(`Backend returned status ${res.status}`);
                 setQuestion(null);
@@ -891,17 +974,23 @@ function App() {
 
             const data = await res.json();
             setQuestion(data);
-        } catch (e) { 
+        } catch (e) {
             console.error("CRITICAL CLIENT FETCH ERROR:", e);
-            setQuestion(null); 
+            setQuestion(null);
         } finally { setLoading(false); }
     };
 
     const startPractice = () => {
         if (topic && level) {
-            setStreak(0); setView('practice');
+            setStreak(0);
+            if (conceptToggleSourceRef.current === 'auto') {
+                setConceptMode(false, 'default');
+            }
+            setView('practice');
             if (timerSettings.duration > 0) setTimerSettings(prev => ({ ...prev, isActive: true, remaining: timerSettings.duration }));
-            fetchQuestion(topic, level, lang); 
+            fetchQuestion(topic, level, lang, true, {
+                hideConcept: conceptToggleSourceRef.current === 'auto' ? true : !includeConceptQuestions
+            });
         }
     };
 
@@ -917,16 +1006,14 @@ function App() {
 
             if (rawMode?.startsWith('activity_')) {
                 const gameKey = rawMode.replace(/^activity_/, '');
-                
-                // 1. Check standard packet locations
-                let rawList = 
-                    aqd?.packet || 
-                    aqd?.livePacket || 
-                    aqd?.board?.tiles || 
-                    roomData.packet || 
+
+                let rawList =
+                    aqd?.packet ||
+                    aqd?.livePacket ||
+                    aqd?.board?.tiles ||
+                    roomData.packet ||
                     [];
 
-                // 2. If packet is missing, check if active_worksheet_id can restore it
                 if ((!rawList || rawList.length === 0) && roomData.active_worksheet_id) {
                     const { data: sheet } = await supabase
                         .from('saved_sheets')
@@ -939,7 +1026,6 @@ function App() {
                     }
                 }
 
-                // 3. Fallback: If still empty, use the currently activeQuestion
                 if ((!rawList || rawList.length === 0) && aqd?.activeQuestion) {
                     rawList = [aqd.activeQuestion];
                 }
@@ -970,7 +1056,6 @@ function App() {
                 return;
             }
 
-            // Standard Worksheet / Do-Now fallback
             if (roomData.status === 'active') {
                 const packet = aqd?.packet || [];
                 setSavedPacket(Array.isArray(packet) ? packet : []);
@@ -1010,7 +1095,7 @@ function App() {
             setSavedPacket(archivedRoom.active_question_data.packet);
             setReportData(responses);
             setView('live_report');
-        } catch (e) { 
+        } catch (e) {
             alert("Kunde inte hämta rapporten.");
         } finally {
             setLoadingProfile(false);
@@ -1023,7 +1108,7 @@ function App() {
         setSavedPacket(archivedRoom.active_question_data.packet);
         setSheetTitle(archivedRoom.title || "Kopia av " + archivedRoom.class_code);
         const mode = archivedRoom.active_question_data.mode || 'worksheet';
-        setStudioMode(mode); 
+        setStudioMode(mode);
         setView('question_studio');
     };
 
@@ -1043,7 +1128,7 @@ function App() {
 
     useEffect(() => {
         if (view === 'practice' && topic && level && !question && !loading) {
-            fetchQuestion(topic, level, lang);
+            fetchQuestion(topic, level, lang, false, { hideConcept: !includeConceptQuestions });
         }
     }, [view, topic, level, lang]);
 
@@ -1060,8 +1145,8 @@ function App() {
                         {lang === 'sv' ? "Prenumeration Utgången" : "Subscription Expired"}
                     </h2>
                     <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed">
-                        {lang === 'sv' 
-                            ? "Din tillgång till plattformen har löpt ut. Vänligen kontakta support för att förnya din licens och återfå åtkomst till dina klassrum." 
+                        {lang === 'sv'
+                            ? "Din tillgång till plattformen har löpt ut. Vänligen kontakta support för att förnya din licens och återfå åtkomst till dina klassrum."
                             : "Your access to the platform has expired. Please contact support to renew your license and regain access to your classrooms."}
                     </p>
                     <a href="mailto:anpassa@proton.me" className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-2 mb-6 shadow-lg">
@@ -1076,29 +1161,29 @@ function App() {
     }
 
     if (view === 'landing' && !session) return (
-        <LandingView 
-            lang={lang} 
-            onTeacherLogin={() => setView('auth')} 
-            onStudentJoin={(m, code) => { 
-                setStudentMode(m); 
-                setPrefilledCode(code); 
-                setView('auth'); 
-            }} 
+        <LandingView
+            lang={lang}
+            onTeacherLogin={() => setView('auth')}
+            onStudentJoin={(m, code) => {
+                setStudentMode(m);
+                setPrefilledCode(code);
+                setView('auth');
+            }}
         />
     );
 
     if (view === 'auth') {
         return (
-            <AuthView 
-                lang={lang} 
-                studentMode={studentMode} 
-                initialCode={prefilledCode} 
-                onBack={() => setView('landing')} 
+            <AuthView
+                lang={lang}
+                studentMode={studentMode}
+                initialCode={prefilledCode}
+                onBack={() => setView('landing')}
                 onSuccess={(data) => {
                     if (data.role === 'student') {
                         setActiveClass(data.class);
-                        setProfile({ role: 'student', subscription_status: 'active' }); 
-                        
+                        setProfile({ role: 'student', subscription_status: 'active' });
+
                         if (pendingLabConfig) {
                             setView('practice_lab');
                         } else if (topic && level) {
@@ -1121,8 +1206,8 @@ function App() {
 
     let activeCategoryLabel = '';
     let activeTopicLabel = '';
-    let activeThemeColor = 'emerald'; 
-    
+    let activeThemeColor = 'emerald';
+
     if (view === 'practice' && topic) {
         if (isDetourActive) {
             activeCategoryLabel = lang === 'sv' ? 'Uppvärmning' : 'Warm-up';
@@ -1130,7 +1215,7 @@ function App() {
             const tData = CONTENT_MAP.flatMap(c => c.topics).find(t => t.id === topic);
             activeTopicLabel = tData?.label[lang] || topic;
         } else {
-            const catKey = Object.keys(CATEGORIES).find(key => 
+            const catKey = Object.keys(CATEGORIES).find(key =>
                 CATEGORIES[key]?.topics?.some(t => t.id === topic)
             );
             if (catKey) {
@@ -1142,50 +1227,50 @@ function App() {
         }
     }
 
-    const activeStudentCode = (profile?.role === 'student' && activeClass?.class_code) 
-        ? activeClass.class_code 
-        : (view === 'live_session' && studentAlias && activeRoom?.class_code) 
-            ? activeRoom.class_code 
+    const activeStudentCode = (profile?.role === 'student' && activeClass?.class_code)
+        ? activeClass.class_code
+        : (view === 'live_session' && studentAlias && activeRoom?.class_code)
+            ? activeRoom.class_code
             : null;
 
     return (
         <PreferencesContext.Provider value={{ theme, toggleTheme, lang, toggleLang }}>
             <div className="layout-app min-h-screen flex flex-col font-sans transition-colors duration-500">
-                
+
                 {activeStudentCode && (
                     <SessionManager teacherCode={activeStudentCode} lang={lang} />
                 )}
 
                 <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
                 <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
-                <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
+                <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} />
                 <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
-                <StreakModal 
-                    visible={showStreakModal} 
-                    onClose={() => { 
-                        setShowStreakModal(false); 
-                        fetchQuestion(topic, level, lang); 
-                    }} 
-                    streak={streak} 
-                    ui={ui} 
-                />            
-                {/* Only render the header on clean navigation views when no immersive activity or live room is active */}
-                {(view === 'dashboard' || view === 'practice' || view === 'times_table' || view === 'practice_lab') && 
-                !activeActivity && 
-                view !== 'teacher_live' && 
+                <StreakModal
+                    visible={showStreakModal}
+                    onClose={() => {
+                        setShowStreakModal(false);
+                        fetchQuestion(topic, level, lang);
+                    }}
+                    streak={streak}
+                    ui={ui}
+                />
+
+                {(view === 'dashboard' || view === 'practice' || view === 'times_table' || view === 'practice_lab') &&
+                !activeActivity &&
+                view !== 'teacher_live' &&
                 view !== 'live_session' && (
                     <header className="sticky top-2 z-40 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
                         <div className="max-w-[1400px] mx-auto w-full px-3 sm:px-5 py-0 flex flex-row items-center justify-between relative">
                             <div className="flex-1 flex justify-start">
                                 {view === 'practice' || view === 'times_table' ? (
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             if (view === 'practice') {
                                                 quitPractice();
                                             } else {
                                                 goHome(false);
                                             }
-                                        }} 
+                                        }}
                                         className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-[11px] uppercase tracking-widest transition-all group shrink-0"
                                     >
                                         <div className="w-7 h-7 rounded-full bg-[var(--bg-card)] flex items-center justify-center shadow-sm border border-[var(--border-main)] group-hover:shadow-md">
@@ -1218,10 +1303,10 @@ function App() {
                                     </span>
                                 </div>
                             )}
-                            
+
                             <div className="flex-1 flex flex-row items-center gap-2 sm:gap-3 justify-end flex-wrap sm:flex-nowrap">
                                 <PreferencesToggle />
-                                
+
                                 {(session || profile?.role === 'student') && (
                                     <button
                                         type="button"
@@ -1245,7 +1330,6 @@ function App() {
                 )}
 
             <div className="flex-1 flex flex-col relative overflow-x-hidden">
-                {/* 🟢 TOP PRIORITY: Render Resumed/Active Activity Engine */}
                 {activeActivity ? (() => {
                     const def = getActivityDefinition(activeActivity.key);
                     if (!def?.TeacherEngine) return null;
@@ -1279,13 +1363,13 @@ function App() {
                                 : [];
 
                             const dashboardNode = (
-                                <Dashboard 
-                                    profile={profile} 
-                                    lang={lang} 
-                                    selectedTopic={topic} 
-                                    selectedLevel={level} 
-                                    userRole={profile?.role || 'student'} 
-                                    activeBucket={activeBucket} 
+                                <Dashboard
+                                    profile={profile}
+                                    lang={lang}
+                                    selectedTopic={topic}
+                                    selectedLevel={level}
+                                    userRole={profile?.role || 'student'}
+                                    activeBucket={activeBucket}
                                     studentBuckets={activeStudentBuckets}
                                     loadingBuckets={loadingBuckets}
                                     folderOrder={activeClass?.folder_order || []}
@@ -1294,12 +1378,18 @@ function App() {
                                         setActiveBucket(bucket);
                                         handleLaunchUnitStep(step);
                                     }}
-                                    onBackToGateway={activeStudentBuckets.length > 0 ? () => setActiveBucket(null) : null} 
-                                    onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
+                                    onBackToGateway={activeStudentBuckets.length > 0 ? () => setActiveBucket(null) : null}
+                                    onSelect={(t, l) => {
+                                        if (conceptToggleSourceRef.current === 'auto') {
+                                            setConceptMode(false, 'default');
+                                        }
+                                        setTopic(t);
+                                        setLevel(l);
+                                    }}
                                     onStartUnitStep={handleLaunchUnitStep}
                                     onStart={startPractice}
                                     onStartCheckpoint={handleLaunchUnitStep}
-                                    ui={ui} 
+                                    ui={ui}
                                     onStudioOpen={(mode = null) => {
                                         setEditingSheetId(null);
                                         if (mode === 'board') {
@@ -1319,7 +1409,7 @@ function App() {
                                         setView('question_studio');
                                     }}
                                     onLabOpen={() => setView('practice_lab')}
-                                    onProfileOpen={() => setView('profile')} 
+                                    onProfileOpen={() => setView('profile')}
                                     onTimesTableOpen={() => setView('times_table')}
                                     onFractionLabOpen={() => {
                                         setSandboxLab('fractions');
@@ -1329,12 +1419,12 @@ function App() {
                                         setEditingSheetId(null);
                                         setSavedSlides(null);
                                         setSavedBoardSettings(null);
-                                        setSavedPacket([]); 
+                                        setSavedPacket([]);
                                         setSheetTitle(lang === 'sv' ? 'Presentationstavla' : 'Presentation Board');
                                         setView('presentation');
                                     }}
-                                    onRelaunch={handleRelaunchSession} 
-                                    onViewReport={handleViewArchiveReport} 
+                                    onRelaunch={handleRelaunchSession}
+                                    onViewReport={handleViewArchiveReport}
                                     onEdit={handleEditArchivedPacket}
                                     onStatsOpen={() => setStatsOpen(true)}
                                     onLgrOpen={() => setLgrOpen(true)}
@@ -1342,9 +1432,9 @@ function App() {
                                     onContentOpen={() => setContentOpen(true)}
                                     onOpenPosterNotes={handleOpenPosterNotes}
                                     onOpenLibrarySheet={handleOpenLibrarySheet}
-                                    timerSettings={timerSettings} 
-                                    toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} 
-                                    resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} 
+                                    timerSettings={timerSettings}
+                                    toggleTimer={(m) => setTimerSettings({ duration: m * 60, remaining: m * 60, isActive: m > 0 })}
+                                    resetTimer={() => setTimerSettings({ duration: 0, remaining: 0, isActive: false })}
                                 />
                             );
 
@@ -1365,20 +1455,20 @@ function App() {
                     </ResponsiveWrapper>
                 ) : view === 'profile' ? (
                     <ProfileView profile={profile} onBack={() => { fetchProfile(session.user.id); setView('dashboard'); }} lang={lang} />
-                ) : view === 'presentation' ? ( 
-                    <PresentationView 
-                        packet={savedPacket} 
+                ) : view === 'presentation' ? (
+                    <PresentationView
+                        packet={savedPacket}
                         initialSlides={savedSlides}
                         initialSettings={savedBoardSettings}
                         boardId={editingSheetId}
-                        sheetTitle={sheetTitle} 
-                        lang={lang} 
+                        sheetTitle={sheetTitle}
+                        lang={lang}
                         onClose={() => {
                             setEditingSheetId(null);
                             setSavedSlides(null);
                             setSavedBoardSettings(null);
                             setView('dashboard');
-                        }} 
+                        }}
                     />
                 ) : view === 'poster_notes' ? (
                     <ResponsiveWrapper forceConstrain={true}>
@@ -1396,28 +1486,32 @@ function App() {
                         />
                     </ResponsiveWrapper>
                 ) : view === 'sandbox' ? (
-                    <ManipulativeSandboxView 
+                    <ManipulativeSandboxView
                         labType={sandboxLab}
                         lang={lang}
                         onBack={() => setView('dashboard')}
                     />
                 ) : view === 'times_table' ? (
-                    <TimesTable 
-                        lang={lang} 
-                        onBack={() => setView('dashboard')} 
+                    <TimesTable
+                        lang={lang}
+                        onBack={() => setView('dashboard')}
                     />
                 ) : view === 'practice' ? (
                     <ResponsiveWrapper>
                         <PracticeView
-                            lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} 
+                            lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput}
                             handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip}
                             handleChangeLevel={handleChangeLevel}
-                            revealedClues={revealedClues} uiState={{ history, topic, level }} 
-                            actions={{ retry: (f) => fetchQuestion(topic, level, lang, f), goBack: quitPractice }} 
+                            revealedClues={revealedClues} uiState={{ history, topic, level }}
+                            actions={{ retry: (f) => fetchQuestion(topic, level, lang, f, { hideConcept: !includeConceptQuestions }), goBack: quitPractice }}
                             isSolutionRevealed={isSolutionRevealed} timerSettings={timerSettings} formatTime={formatTime}
                             toast={toast}
                             useWordProblems={useWordProblems}
                             setUseWordProblems={setUseWordProblems}
+                            includeConceptQuestions={includeConceptQuestions}
+                            setIncludeConceptQuestions={(nextVal) => setConceptMode(nextVal, 'manual')}
+                            conceptToggleSource={conceptToggleSource}
+                            setConceptToggleSource={setConceptToggleSource}
                             levelUpAvailable={levelUpAvailable}
                             setLevelUpAvailable={setLevelUpAvailable}
                             activeBucket={activeBucket}
@@ -1431,35 +1525,35 @@ function App() {
                     </ResponsiveWrapper>
                 ) : view === 'question_studio' ? (
                     <ResponsiveWrapper forceConstrain={true}>
-                        <QuestionStudio 
-                            profile={profile} ui={ui} lang={lang} initialSheetId={editingSheetId} initialPacket={savedPacket} setInitialPacket={setSavedPacket} 
-                            sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} studioMode={studioMode} setStudioMode={setStudioMode} 
-                            includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey} answerKeyStyle={answerKeyStyle} 
-                            setAnswerKeyStyle={setAnswerKeyStyle} 
+                        <QuestionStudio
+                            profile={profile} ui={ui} lang={lang} initialSheetId={editingSheetId} initialPacket={savedPacket} setInitialPacket={setSavedPacket}
+                            sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} studioMode={studioMode} setStudioMode={setStudioMode}
+                            includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey} answerKeyStyle={answerKeyStyle}
+                            setAnswerKeyStyle={setAnswerKeyStyle}
                             onClose={() => {
                                 setEditingSheetId(null);
                                 setView('dashboard');
-                            }} 
+                            }}
                             onOpenPosterNotes={handleOpenPosterNotes}
-                            onWorksheetGenerate={(p) => { 
-                                setSavedPacket(p); 
+                            onWorksheetGenerate={(p) => {
+                                setSavedPacket(p);
                                 setView('print');
                                 safeTrack('Worksheet_Generated', { size: p.length.toString() });
                                 saveFeatureState('worksheet_export', { count: 1, avg_size: p.length });
                             }}
-                            onDoNowGenerate={(conf, pack, liveData) => { 
-                                if (liveData?.room) { 
-                                    setActiveRoom(liveData.room); 
-                                    setSavedPacket(liveData.packet); 
-                                    setView('teacher_live'); 
-                                } else if (pack) { 
-                                    setSavedPacket(pack); 
-                                    if (conf?.title) setSheetTitle(conf.title); 
-                                    setView('do_now'); 
+                            onDoNowGenerate={(conf, pack, liveData) => {
+                                if (liveData?.room) {
+                                    setActiveRoom(liveData.room);
+                                    setSavedPacket(liveData.packet);
+                                    setView('teacher_live');
+                                } else if (pack) {
+                                    setSavedPacket(pack);
+                                    if (conf?.title) setSheetTitle(conf.title);
+                                    setView('do_now');
                                     safeTrack('DoNow_Generated', { size: pack.length.toString() });
                                     saveFeatureState('donow_generation', { count: 1, size: pack.length });
-                                } 
-                            }} 
+                                }
+                            }}
                         />
                     </ResponsiveWrapper>
                 ) : view === 'print' ? (
@@ -1468,8 +1562,8 @@ function App() {
                     <DoNowGrid questions={savedPacket} ui={ui} lang={lang} onBack={() => setView('question_studio')} onClose={() => setView('dashboard')} onRefreshAll={handleRefreshAllDoNow} onRefreshOne={handleRefreshOneDoNow} />
                 ) : view === 'practice_lab' ? (
                     <ResponsiveWrapper>
-                        <TestLabView 
-                            configCode={pendingLabConfig} 
+                        <TestLabView
+                            configCode={pendingLabConfig}
                             profile={profile}
                             lang={lang}
                             activeBucket={activeBucket}
@@ -1483,78 +1577,78 @@ function App() {
                     </ResponsiveWrapper>
                 ) : view === 'live_session' && activeRoom ? (
                     <ResponsiveWrapper>
-                        <GhostRadioGatekeeper 
-                            classCode={activeRoom.class_code} 
+                        <GhostRadioGatekeeper
+                            classCode={activeRoom.class_code}
                             lang={lang}
                             onDisconnect={handleStudentExitLive}
                         >
-                            <StudentLiveView 
-                                session={activeRoom} 
-                                packet={activeRoom.active_question_data?.packet || []} 
-                                lang={lang} 
-                                studentAlias={studentAlias} 
-                                onBack={handleStudentExitLive} 
+                            <StudentLiveView
+                                session={activeRoom}
+                                packet={activeRoom.active_question_data?.packet || []}
+                                lang={lang}
+                                studentAlias={studentAlias}
+                                onBack={handleStudentExitLive}
                             />
                         </GhostRadioGatekeeper>
                     </ResponsiveWrapper>
                 ) : view === 'teacher_live' && activeRoom ? (
-                    <TeacherLiveView 
-                        session={activeRoom} 
-                        packet={savedPacket} 
-                        lang={lang} 
-                        onEnd={handleEndSession} 
-                        onKick={handleKick} 
-                        onCreateReport={(res) => { setReportData(res); setView('live_report'); }} 
+                    <TeacherLiveView
+                        session={activeRoom}
+                        packet={savedPacket}
+                        lang={lang}
+                        onEnd={handleEndSession}
+                        onKick={handleKick}
+                        onCreateReport={(res) => { setReportData(res); setView('live_report'); }}
                         teacherClassCode={profile?.class_code}
                     />
                 ) : view === 'live_report' && activeRoom && reportData ? (
-                    <LandscapeReport 
-                        session={activeRoom} 
-                        packet={savedPacket} 
-                        responses={reportData} 
-                        onClose={() => { 
-                            if (activeRoom.status === 'closed') { 
-                                setView('dashboard'); 
-                                setActiveRoom(null); 
-                                setReportData(null); 
-                            } else { 
-                                setView('teacher_live'); 
-                            } 
-                        }} 
-                        lang={lang} 
+                    <LandscapeReport
+                        session={activeRoom}
+                        packet={savedPacket}
+                        responses={reportData}
+                        onClose={() => {
+                            if (activeRoom.status === 'closed') {
+                                setView('dashboard');
+                                setActiveRoom(null);
+                                setReportData(null);
+                            } else {
+                                setView('teacher_live');
+                            }
+                        }}
+                        lang={lang}
                     />
                 ) : (
-                    /* 🟢 RESCUE BRANCH: Replaces terminal ": null" to catch unhydrated or crashed states */
-                    <SessionRescueCard 
-                        lang={lang} 
-                        onGoHome={goHome} 
+                    <SessionRescueCard
+                        lang={lang}
+                        onGoHome={goHome}
                     />
                 )}
             </div>
 
-            <DetourModal 
-                isOpen={isDetourModalOpen} 
+            <DetourModal
+                isOpen={isDetourModalOpen}
                 lang={lang}
                 onAskCoach={() => {
                     setIsDetourModalOpen(false);
                     setPendingDetour(null);
-                    setHistory([]); 
+                    setHistory([]);
                 }}
                 onAcceptDetour={() => {
                     setIsDetourModalOpen(false);
                     if (pendingDetour) {
                         setOriginalTask({ topic, level });
                         setIsDetourActive(true);
+                        setConceptMode(false, 'default');
                         setTopic(pendingDetour.topic);
                         setLevel(pendingDetour.level);
                         setStreak(0);
-                        setHistory([]); 
-                        fetchQuestion(pendingDetour.topic, pendingDetour.level, lang);
+                        setHistory([]);
+                        fetchQuestion(pendingDetour.topic, pendingDetour.level, lang, true, { hideConcept: true });
                         setPendingDetour(null);
                     }
-                }} 
+                }}
             />
-            
+
             <Suspense fallback={null}>
                 <IsolatedTracker />
             </Suspense>

@@ -1,39 +1,46 @@
 /* ============================================================================
    ANPASSA DESIGN STANDARD — ORGANIZED COLOR & RESTRAINED GEOMETRY
    ============================================================================
-   1. IDENTITY & AESTHETIC
-      - Purpose-built mathematical workspace with organized color, generous
-        whitespace, and restrained corners over excessive card nesting.
-      - Math is the hero; structure comes from hierarchy, spacing, and rules.
+1. IDENTITY & AESTHETIC
+  - Purpose-built mathematical workspace with organized color, generous
+    whitespace, and restrained corners over excessive card nesting.
+  - Math is the hero; structure comes from hierarchy, spacing, and rules.
 
-   2. ORGANIZED COLOR SYSTEM (INDIA GREEN LED)
-      - India Green (#2d8f00): Signature brand, primary forward actions,
-        mastery states, active progress, and right-answer confirmation.
-      - Cerulean (#0075a2): Walkthroughs, worked examples, hints & guidance.
-      - Rosy Copper (#cd5334): Gentle correction, detours & attention states.
-      - Light Yellow (#f8fbdb): Warm paper sheet surface in light mode.
-      - Onyx (#0c120c): Primary ink in light mode; deep ground in dark mode.
+2. ORGANIZED COLOR SYSTEM (INDIA GREEN LED)
+  - India Green (#2d8f00): Signature brand, primary forward actions,
+    mastery states, active progress, and right-answer confirmation.
+  - Cerulean (#0075a2): Walkthroughs, worked examples, hints & guidance.
+  - Rosy Copper (#cd5334): Gentle correction, detours & attention states.
+  - Light Yellow (#f8fbdb): Warm paper sheet surface in light mode.
+  - Onyx (#0c120c): Primary ink in light mode; deep ground in dark mode.
 
-   3. TYPOGRAPHY & NUMERIC PRECISION
-      - UI & Print: Inter Variable / Inter (avoid font-black italic uppercase on
-        body buttons/titles).
-      - Data & Codes: JetBrains Mono (font-mono tabular-nums) for class codes,
-        PINs, timers, level badges, and accuracy metrics.
-      - Math Equations: KaTeX_Main (.math-content, .katex).
+3. TYPOGRAPHY & NUMERIC PRECISION
+  - Display & Headings: Outfit.
+  - UI & Print Prose: Plus Jakarta Sans.
+  - Data & Codes: JetBrains Mono (font-mono tabular-nums).
+  - Math Equations: KaTeX_Main (.math-content, .katex).
 
-   4. GEOMETRY & SURFACE PROTECTION
-      - Restrained radii: --radius-card (0.75rem / 12px) and --radius-btn
-        (0.5rem / 8px) instead of uniform heavy roundness everywhere.
-      - Preserve .whiteboard-protect and isolated slide/modal surfaces across
-        light and dark theme switches.
+4. GEOMETRY & SURFACE PROTECTION
+  - Restrained radii: --radius-card (0.75rem / 12px) and --radius-btn
+    (0.5rem / 8px) instead of uniform heavy roundness everywhere.
+  - Preserve .whiteboard-protect and isolated slide/modal surfaces across
+    light and dark theme switches.
    ============================================================================ */
 
-/* GLOBAL DEFAULT FONT FOR UI & WORKSHEETS */
+/* GLOBAL DEFAULT FONT FOR UI, HEADINGS & WORKSHEETS */
 body,
-.font-sans {
-  font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+.font-sans,
+.font-display,
+h1, h2, h3, h4 {
+  font-family: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* EDITORIAL DISPLAY & HEADINGS */
+.font-display,
+h1, h2, h3, h4 {
+  font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* MONOSPACE FOR CLASS CODES, PINS, TIMERS & DATA READOUTS */
@@ -46,7 +53,7 @@ body,
 .math-content,
 .katex .text,
 .katex .textrm {
-  font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .katex {
@@ -61,9 +68,9 @@ body,
   line-height: 1.15rem !important;
 }
 
-.text-\[9px\],
-.text-\[10px\],
-.text-\[11px\] {
+.text-[9px],
+.text-[10px],
+.text-[11px] {
   font-size: 0.725rem !important;
   line-height: 1.1rem !important;
 }
@@ -74,11 +81,11 @@ body,
 }
 
 :root {
-  /* ☀️ 1. WARM PAPER LIGHT THEME */
+  /* 1. WARM PAPER LIGHT THEME */
   --bg-canvas: #ecece6;
   --bg-card: #ffffff;
-  --bg-sheet: #fdfdfb; /* Calm warm paper sheet (or #f4f5e9 for a soft cream tint) */
-  --bg-surface: #e2e4d8;
+  --bg-sheet: #fdfdfb;
+  --bg-surface: #eaeaea;
   --bg-surface-hover: #d5d8c8;
 
   --text-main: #0c120c;
@@ -100,15 +107,15 @@ body,
   /* ORGANIZED COLOR ROLES — LIGHT MODE */
   --role-primary: #2d8f00;
   --role-primary-hover: #247300;
-  --role-primary-soft: rgba(45, 143, 0, 0.11);
+  --role-primary-soft: rgba(45, 143, 0, 0.12);
   --role-primary-text: #226b00;
 
   --role-guide: #0075a2;
-  --role-guide-soft: rgba(0, 117, 162, 0.11);
+  --role-guide-soft: rgba(0, 117, 162, 0.12);
   --role-guide-text: #005c80;
 
   --role-attention: #cd5334;
-  --role-attention-soft: rgba(205, 83, 52, 0.12);
+  --role-attention-soft: rgba(205, 83, 52, 0.13);
   --role-attention-text: #a43e24;
 
   /* AMBIENT BACKGROUND WAVES (Light) */
@@ -123,7 +130,7 @@ body,
   --brand-text: var(--role-primary-text);
 }
 
-/* 🌙 2. DEEP ONYX DARK THEME */
+/* 2. DEEP ONYX DARK THEME */
 .dark, [data-theme="dark"] {
   --bg-canvas: #0c120c;
   --bg-card: #131b13;
@@ -154,9 +161,9 @@ body,
   --role-attention-text: #f07d60;
 
   /* AMBIENT BACKGROUND WAVES (Dark) */
-  --ambient-emerald: rgba(45, 143, 0, 0.14);
-  --ambient-cobalt: rgba(0, 117, 162, 0.14);
-  --ambient-amber: rgba(205, 83, 52, 0.12);
+  --ambient-emerald: rgba(45, 143, 0, 0.15);
+  --ambient-cobalt: rgba(0, 117, 162, 0.15);
+  --ambient-amber: rgba(205, 83, 52, 0.13);
 
   --brand-bg: var(--role-primary-soft);
   --brand-border: rgba(89, 212, 36, 0.3);
@@ -164,7 +171,7 @@ body,
   --brand-text: var(--role-primary-text);
 }
 
-/* 🎯 3. FOCUS THEME (Active Practice & Live Study) */
+/* 3. FOCUS THEME (Active Practice & Live Study) */
 .theme-focus {
   --bg-canvas: #0c120c;
   --text-canvas: #f3f6ef;
@@ -182,9 +189,7 @@ body,
   --brand-text: var(--role-primary-text);
 }
 
-/* 🎨 4. DYNAMIC CATEGORY THEMES (Mapped to India Green, Cerulean & Rosy Copper) */
-
-/* --- LIGHT MODE (DEFAULT) --- */
+/* 4. DYNAMIC CATEGORY THEMES (Mapped to India Green, Cerulean & Rosy Copper) */
 .theme-emerald { --brand-bg: var(--role-primary-soft); --brand-border: rgba(45, 143, 0, 0.3); --brand-text: var(--role-primary-text); --brand-solid: var(--role-primary); }
 .theme-cobalt  { --brand-bg: var(--role-guide-soft); --brand-border: rgba(0, 117, 162, 0.3); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
 .theme-indigo  { --brand-bg: var(--role-guide-soft); --brand-border: rgba(0, 117, 162, 0.3); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
@@ -196,7 +201,6 @@ body,
 .theme-purple  { --brand-bg: var(--role-guide-soft); --brand-border: rgba(0, 117, 162, 0.3); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
 .theme-cyan    { --brand-bg: var(--role-guide-soft); --brand-border: rgba(0, 117, 162, 0.3); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
 
-/* --- DARK MODE OVERRIDES --- */
 .dark .theme-emerald, [data-theme="dark"] .theme-emerald { --brand-bg: var(--role-primary-soft); --brand-border: rgba(89, 212, 36, 0.32); --brand-text: var(--role-primary-text); --brand-solid: var(--role-primary); }
 .dark .theme-cobalt, [data-theme="dark"] .theme-cobalt   { --brand-bg: var(--role-guide-soft); --brand-border: rgba(56, 189, 248, 0.32); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
 .dark .theme-indigo, [data-theme="dark"] .theme-indigo   { --brand-bg: var(--role-guide-soft); --brand-border: rgba(56, 189, 248, 0.32); --brand-text: var(--role-guide-text); --brand-solid: var(--role-guide); }
@@ -218,6 +222,7 @@ body {
 
 .layout-app, .layout-wrapper {
   background-color: var(--bg-canvas) !important;
+  background-image: none !important;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -233,7 +238,7 @@ body {
   background-image:
     radial-gradient(circle at 100% 100%, var(--text-main) 0%, transparent 60%),
     radial-gradient(circle at 0% 0%, var(--text-main) 0%, transparent 35%);
-  opacity: 0.03;
+  opacity: 0.04;
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
   -webkit-mask-size: 40px;
   mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
@@ -295,7 +300,7 @@ body {
   background-color: var(--bg-card);
   border-radius: var(--radius-card);
   border: 1px solid var(--border-main);
-  transition: transform 160ms cubic-bezier(0.2, 0, 0, 1), border-color 160ms ease, box-shadow 160ms ease;
+  transition: transform 140ms cubic-bezier(0.2, 0, 0, 1), border-color 140ms cubic-bezier(0.2, 0, 0, 1), box-shadow 140ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -318,7 +323,7 @@ body {
   border-radius: var(--radius-btn);
   padding: var(--pad-md);
   font-weight: 700;
-  transition: transform 120ms cubic-bezier(0.2, 0, 0, 1), background-color 150ms ease, opacity 150ms ease;
+  transition: transform 120ms cubic-bezier(0.2, 0, 0, 1), background-color 140ms cubic-bezier(0.2, 0, 0, 1), opacity 140ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -328,7 +333,6 @@ body {
 .btn-brand:active:not(:disabled) { transform: scale(0.98); }
 .btn-brand:disabled { opacity: 0.45; cursor: not-allowed; }
 
-/* Tactile Control Button */
 .btn-3d {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-main);
@@ -337,7 +341,7 @@ body {
   border-radius: var(--radius-btn);
   padding: var(--pad-md);
   font-weight: 700;
-  transition: all 0.1s ease;
+  transition: all 120ms cubic-bezier(0.2, 0, 0, 1);
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -599,7 +603,7 @@ html {
 }
 
 /* =========================================================================
-   1. PRACTICE VIEW LAYOUT (Sidebar on Right)
+1. PRACTICE VIEW LAYOUT (Sidebar on Right)
    ========================================================================= */
 .practice-twocol {
   display: grid;
@@ -623,7 +627,7 @@ html {
 }
 
 /* =========================================================================
-   2. TEST LAB VIEW LAYOUT (Sticky Command Center Sidebar on Left)
+2. TEST LAB VIEW LAYOUT (Sticky Command Center Sidebar on Left)
    ========================================================================= */
 .lab-twocol {
   display: grid;

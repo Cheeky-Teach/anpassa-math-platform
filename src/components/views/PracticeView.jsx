@@ -35,7 +35,7 @@ import '../../styles/theme.css';
 // INTERNAL SUB-COMPONENT: PRACTICE CONTEXT HEADER
 // =========================================================================
 function PracticeContextHeader({
-    lang, uiState, activeBucket, isDetourActive, onLevelSelect, LEVEL_DESCRIPTIONS
+    lang, uiState, activeBucket, isDetourActive, isAutoConceptCheck, onLevelSelect, LEVEL_DESCRIPTIONS
 }) {
     const [isLevelMenuOpen, setIsLevelMenuOpen] = useState(false);
 
@@ -69,7 +69,7 @@ function PracticeContextHeader({
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-0.5">
                 <div className="min-w-0">
                     <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)]">
-                        <span className="text-[var(--brand-text)] font-semibold">
+                        <span className="text-[var(--role-primary-text)] font-semibold">
                             {categoryContext.categoryLabel}
                         </span>
                         <span className="opacity-50">·</span>
@@ -96,7 +96,7 @@ function PracticeContextHeader({
                                     <span className="truncate">{currentLevelDesc}</span>
                                 )}
                                 <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[var(--bg-surface)] group-hover:bg-[var(--role-primary-soft)] text-[var(--text-muted)] group-hover:text-[var(--role-primary-text)] transition-colors shrink-0">
-                                    <ChevronDown size={14} className={`transition-transform ${isLevelMenuOpen ? 'rotate-180' : ''}`} />
+                                    <ChevronDown size={14} className={`transition-transform duration-140 ${isLevelMenuOpen ? 'rotate-180' : ''}`} />
                                 </span>
                             </button>
 
@@ -108,7 +108,8 @@ function PracticeContextHeader({
                                             initial={{ opacity: 0, y: 6 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: 4 }}
-                                            className="absolute left-0 top-full mt-2 z-30 w-80 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl shadow-xl max-h-80 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-subtle)]"
+                                            transition={{ duration: 0.14 }}
+                                            className="absolute left-0 top-full mt-2 z-30 w-80 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-xl shadow-xl max-h-80 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-subtle)]"
                                         >
                                             {availableLevels.map(lvl => {
                                                 const isSelected = uiState.level === lvl;
@@ -124,13 +125,13 @@ function PracticeContextHeader({
                                                             setIsLevelMenuOpen(false);
                                                         }}
                                                         className={`w-full text-left px-3.5 py-2.5 transition-colors cursor-pointer flex items-center justify-between gap-2.5 ${
-                                                            isSelected ? 'bg-[var(--brand-bg)]' : 'hover:bg-[var(--bg-surface)]'
+                                                            isSelected ? 'bg-[var(--role-primary-soft)]' : 'hover:bg-[var(--bg-surface)]'
                                                         }`}
                                                     >
                                                         <div className="flex items-center gap-2.5 min-w-0">
                                                             <span className={`px-2 py-0.5 rounded-lg text-xs font-mono font-bold shrink-0 ${
                                                                 isSelected
-                                                                    ? 'bg-[var(--brand-solid)] text-white'
+                                                                    ? 'bg-[var(--role-primary)] text-white'
                                                                     : 'bg-[var(--bg-surface)] text-[var(--text-muted)]'
                                                             }`}>
                                                                 {lang === 'sv' ? `Nivå ${lvl}` : `Lvl ${lvl}`}
@@ -139,7 +140,7 @@ function PracticeContextHeader({
                                                                 {dText}
                                                             </span>
                                                         </div>
-                                                        {isSelected && <CheckCircle2 size={14} className="text-[var(--brand-text)] shrink-0" />}
+                                                        {isSelected && <CheckCircle2 size={14} className="text-[var(--role-primary-text)] shrink-0" />}
                                                     </button>
                                                 );
                                             })}
@@ -186,11 +187,29 @@ function PracticeContextHeader({
                         initial={{ opacity: 0, y: -6 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
+                        transition={{ duration: 0.14 }}
                         className="callout callout-warning flex items-center gap-2.5 text-xs font-semibold"
                     >
-                        <Zap className="text-amber-600 dark:text-amber-400 shrink-0" size={16} />
+                        <Zap className="text-[var(--role-attention-text)] shrink-0" size={16} />
                         <span>
                             {lang === 'sv' ? 'Uppvärmning för att stärka grunderna.' : 'Warm-up practice to reinforce fundamentals.'}
+                        </span>
+                    </motion.div>
+                )}
+
+                {!isDetourActive && isAutoConceptCheck && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.14 }}
+                        className="callout callout-info flex items-center gap-2.5 text-xs font-semibold"
+                    >
+                        <HelpCircle className="text-[var(--role-guide-text)] shrink-0" size={16} />
+                        <span>
+                            {lang === 'sv'
+                                ? 'Begreppsfrågor aktiverade efter upprepade försök för att ringa in vad som tar emot.'
+                                : 'Concept questions enabled after repeated misses to pinpoint what is getting in the way.'}
                         </span>
                     </motion.div>
                 )}
@@ -204,8 +223,10 @@ function PracticeContextHeader({
 // =========================================================================
 function PracticeSidebar({
     lang, ui, timerSettings, formatTime, isCurrentLevelWordProblemReady,
-    useWordProblems, onToggleWordProblems, revealedClues, question,
-    isSolutionRevealed, streak, uiState, isHistoryExpanded, setIsHistoryExpanded
+    useWordProblems, onToggleWordProblems, includeConceptQuestions,
+    conceptToggleSource, onToggleConceptQuestions,
+    revealedClues, question, isSolutionRevealed, streak, uiState,
+    isHistoryExpanded, setIsHistoryExpanded
 }) {
     const cluesLabel = ui.hintsTitle || (lang === 'sv' ? 'Ledtrådar' : 'Hints');
     const historyLabel = ui.historyTitle || (lang === 'sv' ? 'Historik' : 'History');
@@ -222,17 +243,17 @@ function PracticeSidebar({
 
     return (
         <aside className="practice-sidebar">
-            <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl divide-y divide-[var(--border-subtle)] overflow-hidden">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl divide-y divide-[var(--border-subtle)] overflow-hidden">
 
                 {/* 1. Timer (if active) */}
                 {timerSettings.isActive && (
                     <div className={`px-5 py-4 flex items-center justify-between ${
                         timerSettings.remaining < 60
-                            ? 'bg-rose-50/70 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300'
+                            ? 'bg-[var(--role-attention-soft)] text-[var(--role-attention-text)]'
                             : 'text-[var(--text-main)]'
                     }`}>
                         <div className="flex items-center gap-2 text-xs font-semibold">
-                            <Clock size={15} className={timerSettings.remaining < 60 ? 'animate-pulse text-rose-600 dark:text-rose-400' : 'text-[var(--text-muted)]'} />
+                            <Clock size={15} className={timerSettings.remaining < 60 ? 'animate-pulse text-[var(--role-attention-text)]' : 'text-[var(--text-muted)]'} />
                             <span>{lang === 'sv' ? 'Tid kvar' : 'Time left'}</span>
                         </div>
                         <span className="text-base font-bold font-mono">
@@ -247,7 +268,7 @@ function PracticeSidebar({
                         <span className="text-xs font-semibold text-[var(--text-main)] block truncate">
                             {lang === 'sv' ? 'Problemlösning' : 'Word Problems'}
                         </span>
-                        <span className="text-[11px] text-[var(--text-muted)] block truncate mt-0.5">
+                        <span className="text-xs text-[var(--text-muted)] block truncate mt-0.5">
                             {isCurrentLevelWordProblemReady
                                 ? (lang === 'sv' ? 'Träna med textuppgifter' : 'Practice with word context')
                                 : (lang === 'sv' ? 'Ej tillgängligt på denna nivå' : 'Not available on this level')}
@@ -261,10 +282,10 @@ function PracticeSidebar({
                             aria-checked={useWordProblems}
                             onClick={() => onToggleWordProblems(!useWordProblems)}
                             className={`w-10 h-6 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
-                                useWordProblems ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'
+                                useWordProblems ? 'bg-[var(--role-primary)]' : 'bg-[var(--border-strong)]'
                             }`}
                         >
-                            <div className={`w-5 h-5 rounded-full bg-white shadow-2xs transition-transform ${
+                            <div className={`w-5 h-5 rounded-full bg-white shadow-2xs transition-transform duration-140 ${
                                 useWordProblems ? 'translate-x-4' : 'translate-x-0'
                             }`} />
                         </button>
@@ -273,7 +294,46 @@ function PracticeSidebar({
                     )}
                 </div>
 
-                {/* 3. Clues / Hints */}
+                {/* 3. Concept Questions Switch (Matches Word Problems Switch Styling) */}
+                <div className="px-5 py-4 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-xs font-semibold text-[var(--text-main)] truncate">
+                                {lang === 'sv' ? 'Begreppsfrågor' : 'Concept Questions'}
+                            </span>
+                            {includeConceptQuestions && conceptToggleSource === 'auto' && (
+                                <span className="px-1.5 py-0.5 rounded bg-[var(--role-guide-soft)] text-[var(--role-guide-text)] text-xs font-semibold shrink-0">
+                                    {lang === 'sv' ? 'Auto' : 'Auto'}
+                                </span>
+                            )}
+                        </div>
+                        <span className="text-xs text-[var(--text-muted)] block truncate mt-0.5">
+                            {includeConceptQuestions
+                                ? (conceptToggleSource === 'auto'
+                                    ? (lang === 'sv' ? 'Aktiverat efter upprepade missar' : 'Enabled after repeated misses')
+                                    : (lang === 'sv' ? 'Flerval & begrepp i rotation' : 'Multiple-choice & concepts included'))
+                                : (lang === 'sv' ? 'Fokus på beräkningar först' : 'Focused on calculations first')}
+                        </span>
+                    </div>
+
+                    <button
+                        type="button"
+                        role="switch"
+                        aria-checked={includeConceptQuestions}
+                        onClick={() => onToggleConceptQuestions(!includeConceptQuestions)}
+                        className={`w-10 h-6 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
+                            includeConceptQuestions
+                                ? (conceptToggleSource === 'auto' ? 'bg-[var(--role-guide)]' : 'bg-[var(--role-primary)]')
+                                : 'bg-[var(--border-strong)]'
+                        }`}
+                    >
+                        <div className={`w-5 h-5 rounded-full bg-white shadow-2xs transition-transform duration-140 ${
+                            includeConceptQuestions ? 'translate-x-4' : 'translate-x-0'
+                        }`} />
+                    </button>
+                </div>
+
+                {/* 4. Clues / Hints */}
                 <div className="px-5 py-4 space-y-2.5">
                     <h3 className="text-xs font-semibold text-[var(--text-muted)]">
                         {cluesLabel}
@@ -289,7 +349,7 @@ function PracticeSidebar({
                     </div>
                 </div>
 
-                {/* 4. Session Metrics & Quiet Streak */}
+                {/* 5. Session Metrics & Quiet Streak */}
                 <div className="px-5 py-4 space-y-3">
                     <div className="flex items-center justify-between">
                         <h3 className="text-xs font-semibold text-[var(--text-muted)]">
@@ -302,7 +362,7 @@ function PracticeSidebar({
                                 </span>
                             )}
                             <span className={`inline-flex items-center gap-1 font-bold ${
-                                streak > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--text-muted)]'
+                                streak > 0 ? 'text-[var(--role-attention-text)]' : 'text-[var(--text-muted)]'
                             }`}>
                                 <Flame size={13} className={streak > 0 ? 'fill-current' : ''} />
                                 {streak}
@@ -311,10 +371,10 @@ function PracticeSidebar({
                     </div>
 
                     <div className="w-full h-1.5 bg-[var(--bg-surface)] rounded-full overflow-hidden flex">
-                        {stats.correct > 0 && <div style={{ width: `${getPct(stats.correct)}%` }} className="bg-emerald-600 h-full transition-all duration-500" title={ui.stat_correct} />}
-                        {stats.help > 0 && <div style={{ width: `${getPct(stats.help)}%` }} className="bg-amber-500 h-full transition-all duration-500" title={ui.stat_help} />}
-                        {stats.wrong > 0 && <div style={{ width: `${getPct(stats.wrong)}%` }} className="bg-rose-500 h-full transition-all duration-500" title={ui.stat_wrong} />}
-                        {stats.skipped > 0 && <div style={{ width: `${getPct(stats.skipped)}%` }} className="bg-[var(--border-strong)] h-full transition-all duration-500" title={ui.stat_skip} />}
+                        {stats.correct > 0 && <div style={{ width: `${getPct(stats.correct)}%` }} className="bg-[var(--role-primary)] h-full transition-all duration-300" title={ui.stat_correct} />}
+                        {stats.help > 0 && <div style={{ width: `${getPct(stats.help)}%` }} className="bg-[var(--role-guide)] h-full transition-all duration-300" title={ui.stat_help} />}
+                        {stats.wrong > 0 && <div style={{ width: `${getPct(stats.wrong)}%` }} className="bg-[var(--role-attention)] h-full transition-all duration-300" title={ui.stat_wrong} />}
+                        {stats.skipped > 0 && <div style={{ width: `${getPct(stats.skipped)}%` }} className="bg-[var(--border-strong)] h-full transition-all duration-300" title={ui.stat_skip} />}
                     </div>
 
                     {/* Collapsible History */}
@@ -340,11 +400,11 @@ function PracticeSidebar({
                                         const usedHelp = entry.clueUsed || entry.solutionUsed;
                                         const isSkipped = entry.skipped;
 
-                                        let iconClass = 'text-rose-500';
+                                        let iconClass = 'text-[var(--role-attention-text)]';
                                         let Icon = XCircle;
                                         if (isSkipped) { iconClass = 'text-[var(--text-muted)]'; Icon = MinusCircle; }
-                                        else if (isCorrect && !usedHelp) { iconClass = 'text-emerald-600 dark:text-emerald-400'; Icon = CheckCircle2; }
-                                        else if (isCorrect && usedHelp) { iconClass = 'text-amber-500'; Icon = HelpCircle; }
+                                        else if (isCorrect && !usedHelp) { iconClass = 'text-[var(--role-primary-text)]'; Icon = CheckCircle2; }
+                                        else if (isCorrect && usedHelp) { iconClass = 'text-[var(--role-guide-text)]'; Icon = HelpCircle; }
 
                                         return (
                                             <div key={idx} className="flex items-center justify-between gap-2.5 bg-[var(--bg-surface)]/70 px-3 py-2 rounded-xl">
@@ -354,7 +414,7 @@ function PracticeSidebar({
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-1.5 shrink-0">
-                                                    <span className="text-[10px] font-mono text-[var(--text-muted)]">Lv {entry.level}</span>
+                                                    <span className="text-xs font-mono text-[var(--text-muted)]">Lv {entry.level}</span>
                                                     <Icon size={13} className={iconClass} />
                                                 </div>
                                             </div>
@@ -373,12 +433,18 @@ function PracticeSidebar({
 // =========================================================================
 // MAIN EXPORT: PRACTICE VIEW (UNIFIED FREE PLAY + CURATED UNIT WORKSPACE)
 // =========================================================================
+const CONCEPT_TRIGGER_MISSES = 2;
+
 const PracticeView = ({
     lang, ui, question, loading, feedback, input, setInput, streak,
     handleSubmit, handleHint, handleSolution, handleSkip,
     handleChangeLevel, revealedClues, uiState, actions,
     levelUpAvailable, setLevelUpAvailable, isSolutionRevealed,
     timerSettings, formatTime, toast, useWordProblems, setUseWordProblems,
+    includeConceptQuestions: externalConceptEnabled,
+    setIncludeConceptQuestions: setExternalConceptEnabled,
+    conceptToggleSource: externalConceptSource,
+    setConceptToggleSource: setExternalConceptSource,
     activeBucket, isDetourActive, onAdvanceUnitStep, onBackToRoadmap,
     profile = null,
     activeClass = null,
@@ -391,6 +457,64 @@ const PracticeView = ({
     const [activeInstructionStep, setActiveInstructionStep] = useState(null);
     const [activeInstructionSlideIdx, setActiveInstructionSlideIdx] = useState(0);
     const retryRef = useRef(actions.retry);
+
+    // Deterministic Concept Toggle state (supports controlled props or local state fallback)
+    const [internalConceptEnabled, setInternalConceptEnabled] = useState(false);
+    const [internalConceptSource, setInternalConceptSource] = useState('default'); // 'default' | 'auto' | 'manual'
+
+    const includeConceptQuestions = externalConceptEnabled !== undefined
+        ? Boolean(externalConceptEnabled)
+        : internalConceptEnabled;
+
+    const conceptToggleSource = externalConceptSource || internalConceptSource;
+
+    const updateConceptToggle = (nextEnabled, source = 'manual') => {
+        if (typeof setExternalConceptEnabled === 'function') {
+            setExternalConceptEnabled(nextEnabled);
+        } else {
+            setInternalConceptEnabled(nextEnabled);
+        }
+        if (typeof setExternalConceptSource === 'function') {
+            setExternalConceptSource(source);
+        } else {
+            setInternalConceptSource(source);
+        }
+    };
+
+    // Count consecutive recent misses on the active topic & level
+    const consecutiveTopicMisses = useMemo(() => {
+        const hist = Array.isArray(uiState?.history) ? uiState.history : [];
+        let misses = 0;
+        for (const item of hist) {
+            if (!item) break;
+            const sameTopic = !item.topic || item.topic === uiState.topic;
+            const sameLevel = item.level === undefined || Number(item.level) === Number(uiState.level);
+            if (sameTopic && sameLevel && !item.correct && !item.skipped) {
+                misses += 1;
+            } else {
+                break;
+            }
+        }
+        return misses;
+    }, [uiState?.history, uiState?.topic, uiState?.level]);
+
+    // Auto-enable concept questions on 2+ consecutive misses (before 6-miss detour), unless manually set
+    useEffect(() => {
+        if (isDetourActive) return;
+
+        if (consecutiveTopicMisses >= CONCEPT_TRIGGER_MISSES && !includeConceptQuestions && conceptToggleSource !== 'manual') {
+            updateConceptToggle(true, 'auto');
+        } else if (consecutiveTopicMisses === 0 && includeConceptQuestions && conceptToggleSource === 'auto') {
+            updateConceptToggle(false, 'default');
+        }
+    }, [consecutiveTopicMisses, includeConceptQuestions, conceptToggleSource, isDetourActive]);
+
+    // Reset auto-enabled concept checks when switching topic or level
+    useEffect(() => {
+        if (conceptToggleSource === 'auto') {
+            updateConceptToggle(false, 'default');
+        }
+    }, [uiState.topic, uiState.level]);
 
     const { isOpen: isCoachOpen, openCoach, closeCoach, coachProps } = useMyCoach(question, lang);
 
@@ -420,7 +544,6 @@ const PracticeView = ({
         setCompletedStepIds(prev => persistStepComplete(progressStorageKey, stepId, prev));
     };
 
-    // Resolve active unit step (explicit ID first, otherwise matching topic/level or first unfinished)
     const activeUnitStep = useMemo(() => {
         if (!isCuratedUnit) return null;
         if (activeUnitStepId) {
@@ -437,7 +560,6 @@ const PracticeView = ({
 
     const activeCheckpointStep = activeUnitStep?.type === 'test' ? activeUnitStep : null;
 
-    // Open walkthrough slides inline in the center stage without leaving PracticeView
     const handleOpenWalkthrough = async (step) => {
         setActiveInstructionSlideIdx(step.slideIndex || 0);
         if (step.sheetId) {
@@ -523,7 +645,6 @@ const PracticeView = ({
         handleSelectUnitStepFromRail(nextStep, ownerPart);
     };
 
-    // Load walkthrough inline if landing directly on an instruction step
     useEffect(() => {
         if (activeUnitStep && (activeUnitStep.type === 'instruction' || activeUnitStep.sheetId)) {
             handleOpenWalkthrough(activeUnitStep);
@@ -634,10 +755,29 @@ const PracticeView = ({
         setUseWordProblems(enabled);
     };
 
+    const onToggleConceptQuestions = (enabled) => {
+        updateConceptToggle(enabled, 'manual');
+        syncProgress('practice_concept_questions_toggled', {
+            app_mode: 'practice',
+            topic: uiState.topic,
+            level: uiState.level,
+            enabled,
+            source: 'manual'
+        });
+    };
+
     const nextStepAfterCurrent = activeUnitStep ? getNextUnitStep(allUnitSteps, activeUnitStep.id) : null;
+    const isAutoConceptCheck = includeConceptQuestions && conceptToggleSource === 'auto';
+
+    // Left accent stripe reflects active workspace state without loud card fills
+    const sheetStripeClass = isDetourActive
+        ? 'border-l-4 border-l-[var(--role-attention)]'
+        : (isAutoConceptCheck || question?.type === 'concept')
+            ? 'border-l-4 border-l-[var(--role-guide)]'
+            : 'border-l-4 border-l-[var(--role-primary)]';
 
     return (
-        <div className={`theme-${theme.color} layout-wrapper font-sans relative z-10 animate-in fade-in pb-10 !pt-3 xl:!pt-5`}>
+        <div className={`theme-${theme.color} layout-wrapper drafting-desk-bg font-sans relative z-10 animate-in fade-in pb-10 !pt-3 xl:!pt-5`}>
 
             {/* Curated Unit Step Completion Modal */}
             <AnimatePresence>
@@ -647,13 +787,14 @@ const PracticeView = ({
                             initial={{ opacity: 0, scale: 0.96 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.96 }}
-                            className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-2xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl"
+                            transition={{ duration: 0.14 }}
+                            className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl"
                         >
-                            <div className="w-14 h-14 bg-emerald-600/15 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <div className="w-14 h-14 bg-[var(--role-primary-soft)] text-[var(--role-primary-text)] rounded-xl flex items-center justify-center mx-auto mb-4">
                                 <Trophy size={28} />
                             </div>
 
-                            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 block mb-1">
+                            <span className="text-xs font-semibold text-[var(--role-primary-text)] block mb-1">
                                 {activeBucket.name}
                             </span>
                             <h3 className="text-xl font-bold tracking-tight text-[var(--text-main)] mb-2">
@@ -677,7 +818,7 @@ const PracticeView = ({
                                             onAdvanceUnitStep();
                                         }
                                     }}
-                                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl transition-colors active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+                                    className="w-full py-3 bg-[var(--role-primary)] hover:bg-[var(--role-primary-hover)] text-white font-semibold text-sm rounded-xl transition-colors active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     <span>
                                         {nextStepAfterCurrent
@@ -717,13 +858,14 @@ const PracticeView = ({
             <AnimatePresence>
                 {toast && (
                     <motion.div
-                        initial={{ opacity: 0, y: -16, x: '-50%' }}
+                        initial={{ opacity: 0, y: -14, x: '-50%' }}
                         animate={{ opacity: 1, y: 0, x: '-50%' }}
                         exit={{ opacity: 0, y: -10, x: '-50%' }}
+                        transition={{ duration: 0.14 }}
                         className="fixed top-20 left-1/2 z-[70] w-full max-w-md px-4"
                     >
-                        <div className={`p-4 rounded-2xl shadow-xl border flex items-center gap-3.5 bg-[var(--bg-card)] ${toast.type === 'success' ? 'border-emerald-500' : 'border-amber-500'}`}>
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white'}`}>
+                        <div className={`p-4 rounded-xl shadow-xl border flex items-center gap-3.5 bg-[var(--bg-card)] ${toast.type === 'success' ? 'border-[var(--role-primary)]' : 'border-[var(--role-guide)]'}`}>
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${toast.type === 'success' ? 'bg-[var(--role-primary)] text-white' : 'bg-[var(--role-guide)] text-white'}`}>
                                 {toast.type === 'success' ? <Trophy size={20} /> : <Zap size={20} />}
                             </div>
                             <div>
@@ -758,6 +900,7 @@ const PracticeView = ({
                                 uiState={uiState}
                                 activeBucket={activeBucket}
                                 isDetourActive={isDetourActive}
+                                isAutoConceptCheck={isAutoConceptCheck}
                                 onLevelSelect={onLevelSelect}
                                 LEVEL_DESCRIPTIONS={LEVEL_DESCRIPTIONS}
                             />
@@ -771,11 +914,10 @@ const PracticeView = ({
                                 const canGoNextSlide = activeInstructionSlideIdx < totalWalkthroughSlides - 1;
 
                                 return (
-                                    <div className="w-full max-w-5xl mx-auto flex flex-col gap-3 animate-in fade-in duration-150">
-                                        {/* Clean Inline Walkthrough Header Bar */}
-                                        <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                                    <div className="w-full max-w-5xl mx-auto flex flex-col gap-3 animate-in fade-in duration-140">
+                                        <div className="bg-[var(--bg-card)] border border-[var(--border-main)] border-l-4 border-l-[var(--role-guide)] rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
                                             <div className="flex items-center gap-2.5 min-w-0">
-                                                <span className="px-2.5 py-1 rounded-lg bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 text-xs font-semibold shrink-0">
+                                                <span className="px-2.5 py-1 rounded-lg bg-[var(--role-guide-soft)] text-[var(--role-guide-text)] text-xs font-semibold shrink-0">
                                                     {lang === 'sv' ? 'Genomgång' : 'Walkthrough'}
                                                 </span>
                                                 <h2 className="text-sm sm:text-base font-bold text-[var(--text-main)] truncate">
@@ -800,8 +942,8 @@ const PracticeView = ({
                                                     }}
                                                     className={`px-4 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                                                         canGoNextSlide
-                                                            ? 'bg-[var(--bg-surface)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
-                                                            : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                                            ? 'bg-[var(--bg-surface)] hover:bg-[var(--role-primary-soft)] text-[var(--role-primary-text)] border border-[var(--brand-border)]'
+                                                            : 'bg-[var(--role-primary)] hover:bg-[var(--role-primary-hover)] text-white'
                                                     }`}
                                                 >
                                                     <span>{lang === 'sv' ? 'Klar & gå vidare →' : 'Done & Continue →'}</span>
@@ -809,7 +951,6 @@ const PracticeView = ({
                                             </div>
                                         </div>
 
-                                        {/* Compact Inline Slide Stage */}
                                         <div className="w-full h-[clamp(340px,56vh,480px)]">
                                             <SlideViewerCore
                                                 slide={walkthroughSlides[activeInstructionSlideIdx]}
@@ -823,9 +964,8 @@ const PracticeView = ({
                                             />
                                         </div>
 
-                                        {/* Bottom Slide Pagination Bar (Multi-slide walkthroughs) */}
                                         {totalWalkthroughSlides > 1 && (
-                                            <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3">
+                                            <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl px-4 py-2.5 flex items-center justify-between gap-3">
                                                 <button
                                                     type="button"
                                                     disabled={!canGoPrevSlide}
@@ -843,9 +983,9 @@ const PracticeView = ({
                                                                 key={sIdx}
                                                                 type="button"
                                                                 onClick={() => setActiveInstructionSlideIdx(sIdx)}
-                                                                className={`h-2 rounded-full transition-all cursor-pointer ${
+                                                                className={`h-2 rounded-full transition-all duration-140 cursor-pointer ${
                                                                     sIdx === activeInstructionSlideIdx
-                                                                        ? 'w-6 bg-sky-600'
+                                                                        ? 'w-6 bg-[var(--role-guide)]'
                                                                         : 'w-2 bg-[var(--border-strong)] hover:opacity-80'
                                                                 }`}
                                                                 title={`${lang === 'sv' ? 'Sida' : 'Slide'} ${sIdx + 1}`}
@@ -861,7 +1001,7 @@ const PracticeView = ({
                                                     <button
                                                         type="button"
                                                         onClick={() => setActiveInstructionSlideIdx(i => Math.min(totalWalkthroughSlides - 1, i + 1))}
-                                                        className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                                        className="px-4 py-2 rounded-xl bg-[var(--role-guide)] hover:opacity-95 text-white text-xs font-semibold flex items-center gap-1.5 transition-opacity cursor-pointer"
                                                     >
                                                         <span>{lang === 'sv' ? 'Nästa sida' : 'Next slide'}</span>
                                                         <ChevronRight size={15} />
@@ -873,7 +1013,7 @@ const PracticeView = ({
                                                             markStepCompleteLocal(activeInstructionStep.id);
                                                             handleAdvanceToNextUnitStep(activeInstructionStep.id);
                                                         }}
-                                                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                                        className="px-4 py-2 rounded-xl bg-[var(--role-primary)] hover:bg-[var(--role-primary-hover)] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                                                     >
                                                         <span>{lang === 'sv' ? 'Klar & gå vidare' : 'Done & Continue'}</span>
                                                         <ChevronRight size={15} />
@@ -895,10 +1035,10 @@ const PracticeView = ({
                         ) : (
                             <div className="practice-twocol">
                                 <div className="practice-main">
-                                    <main className={`bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl p-5 sm:p-6 xl:p-9 ${shake ? 'animate-shake' : ''} flex flex-col relative`}>
+                                    <main className={`bg-[var(--bg-card)] border border-[var(--border-main)] ${sheetStripeClass} rounded-xl p-5 sm:p-6 xl:p-9 ${shake ? 'animate-shake' : ''} flex flex-col relative transition-colors duration-140`}>
                                         {loading ? (
                                             <div className="py-32 text-center flex flex-col items-center gap-3">
-                                                <div className="w-8 h-8 border-[3px] border-t-transparent text-[var(--brand-text)] rounded-full animate-spin border-current" />
+                                                <div className="w-8 h-8 border-[3px] border-t-transparent text-[var(--role-primary-text)] rounded-full animate-spin border-current" />
                                                 <span className="text-xs font-medium text-[var(--text-muted)]">
                                                     {lang === 'sv' ? 'Laddar uppgift...' : 'Loading question...'}
                                                 </span>
@@ -913,6 +1053,7 @@ const PracticeView = ({
                                                                 initial={{ opacity: 0 }}
                                                                 animate={{ opacity: 1 }}
                                                                 exit={{ opacity: 0 }}
+                                                                transition={{ duration: 0.14 }}
                                                                 className="flex justify-end mb-2"
                                                             >
                                                                 <div className="inline-flex items-center gap-1.5">
@@ -922,7 +1063,7 @@ const PracticeView = ({
                                                                             setShowExampleBanner(false);
                                                                             onCoachClick();
                                                                         }}
-                                                                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400 hover:underline cursor-pointer"
+                                                                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--role-guide-text)] hover:underline cursor-pointer"
                                                                     >
                                                                         <Play size={11} fill="currentColor" />
                                                                         <span>{lang === 'sv' ? 'Se exempel' : 'See example'}</span>
@@ -967,7 +1108,7 @@ const PracticeView = ({
                                                             disabled={!question?.clues || revealedClues.length >= question?.clues.length}
                                                             className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold rounded-xl bg-[var(--bg-surface)] text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] disabled:opacity-35 disabled:cursor-not-allowed transition-colors cursor-pointer"
                                                         >
-                                                            <Zap size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                                                            <Zap size={14} className="text-[var(--role-attention-text)] shrink-0" />
                                                             <span>{ui.btnHint || (lang === 'sv' ? 'Ledtråd' : 'Hint')}</span>
                                                         </button>
 
@@ -977,7 +1118,7 @@ const PracticeView = ({
                                                             className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold rounded-xl bg-[var(--bg-surface)] text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] transition-colors cursor-pointer"
                                                             title={lang === 'sv' ? 'Starta steg-för-steg-guide' : 'Start interactive step guide'}
                                                         >
-                                                            <HelpCircle size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
+                                                            <HelpCircle size={14} className="text-[var(--role-guide-text)] shrink-0" />
                                                             <span>{lang === 'sv' ? 'Hjälp' : 'Help'}</span>
                                                         </button>
 
@@ -1004,6 +1145,9 @@ const PracticeView = ({
                                     isCurrentLevelWordProblemReady={isCurrentLevelWordProblemReady}
                                     useWordProblems={useWordProblems}
                                     onToggleWordProblems={onToggleWordProblems}
+                                    includeConceptQuestions={includeConceptQuestions}
+                                    conceptToggleSource={conceptToggleSource}
+                                    onToggleConceptQuestions={onToggleConceptQuestions}
                                     revealedClues={revealedClues}
                                     question={question}
                                     isSolutionRevealed={isSolutionRevealed}

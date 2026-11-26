@@ -1,11 +1,10 @@
-// src/components/views/Dashboard.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { 
-  ChevronDown, ChevronUp, ChevronRight, Zap, Play, Clock, Book, Info, 
-  Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings, 
+import {
+  ChevronDown, ChevronUp, ChevronRight, Zap, Play, Clock, Book, Info,
+  Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings,
   History, Target, LayoutGrid, RotateCcw, FileSpreadsheet,
-  PlayCircle, Grid3X3, Beaker, Newspaper, X, 
+  PlayCircle, Grid3X3, Beaker, Newspaper, X,
   Layers, PieChart, HelpCircle, Check, Compass, BookOpen,
   Calculator, Variable, Shapes
 } from 'lucide-react';
@@ -36,51 +35,49 @@ import {
     getNextUnitStep
 } from '../../core/utils/unitProgressUtils';
 
-// Domain visual personalities mapped to Anpassa's signature palette
 const DOMAIN_VISUALS = {
     arithmetic: {
         Icon: Calculator,
-        accent: '#2d8f00',        // India Green
-        softBg: 'rgba(45, 143, 0, 0.18)',
-        borderTint: 'rgba(45, 143, 0, 0.42)',
-        tabInactiveBg: 'linear-gradient(155deg, rgba(255,255,255,0.45) 0%, rgba(45, 143, 0, 0.14) 55%, rgba(45, 143, 0, 0.07) 100%)',
-        tabActiveBg: 'linear-gradient(180deg, rgba(45, 143, 0, 0.25) 0%, rgba(45, 143, 0, 0.08) 55%, var(--bg-card) 100%)'
+        accent: '#2d8f00',
+        softBg: 'rgba(45, 143, 0, 0.12)',
+        borderTint: 'rgba(45, 143, 0, 0.35)',
+        tabActiveSplit: 'linear-gradient(135deg, rgba(45, 143, 0, 0.20) 0%, rgba(45, 143, 0, 0.20) 52%, var(--bg-card) 52%, var(--bg-card) 100%)',
+        tabInactiveBg: 'var(--bg-card)'
     },
     algebra: {
         Icon: Variable,
-        accent: '#0075a2',        // Cerulean
-        softBg: 'rgba(0, 117, 162, 0.18)',
-        borderTint: 'rgba(0, 117, 162, 0.42)',
-        tabInactiveBg: 'linear-gradient(155deg, rgba(255,255,255,0.45) 0%, rgba(0, 117, 162, 0.14) 55%, rgba(0, 117, 162, 0.07) 100%)',
-        tabActiveBg: 'linear-gradient(180deg, rgba(0, 117, 162, 0.25) 0%, rgba(0, 117, 162, 0.08) 55%, var(--bg-card) 100%)'
+        accent: '#0075a2',
+        softBg: 'rgba(0, 117, 162, 0.12)',
+        borderTint: 'rgba(0, 117, 162, 0.35)',
+        tabActiveSplit: 'linear-gradient(135deg, rgba(0, 117, 162, 0.20) 0%, rgba(0, 117, 162, 0.20) 52%, var(--bg-card) 52%, var(--bg-card) 100%)',
+        tabInactiveBg: 'var(--bg-card)'
     },
     geometry: {
         Icon: Shapes,
-        accent: '#c28500',        // Saturated Warm Gold / Ochre
-        softBg: 'rgba(217, 155, 0, 0.22)',
-        borderTint: 'rgba(217, 155, 0, 0.45)',
-        tabInactiveBg: 'linear-gradient(155deg, rgba(255,255,255,0.6) 0%, rgba(248, 251, 219, 0.92) 55%, rgba(217, 155, 0, 0.12) 100%)',
-        tabActiveBg: 'linear-gradient(180deg, rgba(248, 251, 219, 1) 0%, rgba(217, 155, 0, 0.14) 55%, var(--bg-card) 100%)'
+        accent: '#c28500',
+        softBg: 'rgba(217, 155, 0, 0.16)',
+        borderTint: 'rgba(217, 155, 0, 0.40)',
+        tabActiveSplit: 'linear-gradient(135deg, #f8fbdb 0%, #f8fbdb 52%, var(--bg-card) 52%, var(--bg-card) 100%)',
+        tabInactiveBg: 'var(--bg-card)'
     },
     statistics: {
         Icon: BarChart3,
-        accent: '#cd5334',        // Rosy Copper
-        softBg: 'rgba(205, 83, 52, 0.18)',
-        borderTint: 'rgba(205, 83, 52, 0.42)',
-        tabInactiveBg: 'linear-gradient(155deg, rgba(255,255,255,0.45) 0%, rgba(205, 83, 52, 0.14) 55%, rgba(205, 83, 52, 0.07) 100%)',
-        tabActiveBg: 'linear-gradient(180deg, rgba(205, 83, 52, 0.25) 0%, rgba(205, 83, 52, 0.08) 55%, var(--bg-card) 100%)'
+        accent: '#cd5334',
+        softBg: 'rgba(205, 83, 52, 0.12)',
+        borderTint: 'rgba(205, 83, 52, 0.35)',
+        tabActiveSplit: 'linear-gradient(135deg, rgba(205, 83, 52, 0.20) 0%, rgba(205, 83, 52, 0.20) 52%, var(--bg-card) 52%, var(--bg-card) 100%)',
+        tabInactiveBg: 'var(--bg-card)'
     }
 };
 
-// Helper to retrieve level description, math example, and layout format
 const getLevelMetadata = (topicId, level, lang = 'sv') => {
     if (!topicId || level === undefined || level === null) {
         return { description: "", mathExample: "", isSentence: false };
     }
     const descriptionsObj = typeof LEVEL_DESCRIPTIONS !== 'undefined' ? LEVEL_DESCRIPTIONS : {};
     const topicDesc = descriptionsObj[topicId]?.[level];
-    const description = typeof topicDesc === 'object' 
-        ? (topicDesc[lang] || topicDesc.sv || "") 
+    const description = typeof topicDesc === 'object'
+        ? (topicDesc[lang] || topicDesc.sv || "")
         : (topicDesc || "");
 
     let mathExample = "";
@@ -90,7 +87,7 @@ const getLevelMetadata = (topicId, level, lang = 'sv') => {
             if (foundTopic) {
                 const foundLevel = foundTopic.levels?.find(l => l.lvl === level);
                 const firstVar = foundLevel?.variations?.[0];
-                const rawEx = foundLevel?.ex 
+                const rawEx = foundLevel?.ex
                     || (typeof firstVar?.desc === 'object' ? (firstVar.desc[lang] || firstVar.desc.sv) : firstVar?.ex)
                     || "";
 
@@ -110,8 +107,8 @@ const getLevelMetadata = (topicId, level, lang = 'sv') => {
     return { description, mathExample, isSentence };
 };
 
-const Dashboard = ({ 
-    profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
+const Dashboard = ({
+    profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart,
     timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen, onStartCheckpoint,
     onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, onLabOpen, onFractionLabOpen,
     onTimesTableOpen, onRelaunch, onViewReport, onEdit, activeBucket, onBackToGateway,
@@ -121,7 +118,7 @@ const Dashboard = ({
     userRole = 'teacher'
 }) => {
     const [expandedCategory, setExpandedCategory] = useState('arithmetic');
-    const [activeTab, setActiveTab] = useState('curriculum'); 
+    const [activeTab, setActiveTab] = useState('curriculum');
     const [archivedSessions, setArchivedSessions] = useState([]);
     const [isLoadingArchive, setIsLoadingArchive] = useState(false);
     const [activeSessions, setActiveSessions] = useState([]);
@@ -180,8 +177,7 @@ const Dashboard = ({
             active_sessions_count: (count) => `${count} pågående lektioner`,
             click_to_resume: "Klicka för att återuppta",
             untitled_session: "Namnlös lektion",
-            pin_label: "PIN",
-            domain_browse_hint: "Välj matteområde:"
+            pin_label: "PIN"
         },
         en: {
             tools_section: "Tools", class_code_label: "Class Code", connected_code_label: "Connected to code",
@@ -199,8 +195,7 @@ const Dashboard = ({
             active_sessions_count: (count) => `${count} active sessions`,
             click_to_resume: "Click to resume",
             untitled_session: "Untitled session",
-            pin_label: "PIN",
-            domain_browse_hint: "Choose math domain:"
+            pin_label: "PIN"
         }
     };
 
@@ -415,7 +410,7 @@ const Dashboard = ({
         }
         setActiveInstructionModal(step);
     };
-    
+
     const fetchActiveSession = async () => {
         if (!['teacher', 'super_admin'].includes(userRole) || !profile?.id) return;
         try {
@@ -437,7 +432,7 @@ const Dashboard = ({
             year: 'numeric', month: 'short', day: 'numeric'
         });
         return {
-            text: isExpired 
+            text: isExpired
                 ? (lang === 'sv' ? `Inaktiv den ${formattedDate}` : `Expired on ${formattedDate}`)
                 : (lang === 'sv' ? `Aktiv till ${formattedDate}` : `Active until ${formattedDate}`),
             isExpired
@@ -455,7 +450,7 @@ const Dashboard = ({
                 .eq('status', 'closed')
                 .gt('created_at', cutoff)
                 .order('created_at', { ascending: false });
-            
+
             if (error) throw error;
 
             const processed = (data || []).map(room => {
@@ -470,12 +465,12 @@ const Dashboard = ({
                     month: 'short', day: 'numeric'
                 }) : '';
 
-                return { 
-                    ...room, 
-                    accuracy, 
+                return {
+                    ...room,
+                    accuracy,
                     studentCount: uniqueStudents,
-                    expirationText: isExpired 
-                        ? (lang === 'sv' ? "Utgick" : "Expired") 
+                    expirationText: isExpired
+                        ? (lang === 'sv' ? "Utgick" : "Expired")
                         : (lang === 'sv' ? `Raderas ${formattedExpires}` : `Expires ${formattedExpires}`)
                 };
             });
@@ -494,13 +489,10 @@ const Dashboard = ({
                 isEducator
                     ? 'grid grid-cols-1 lg:grid-cols-[268px_1fr] xl:grid-cols-[284px_1fr] gap-6'
                     : 'flex flex-col gap-4'
-            }`}>           
-                {/* ========================================================= */}
-                {/* LEFT COLUMN: TEACHER COMMAND CENTER (EDUCATORS ONLY)      */}
-                {/* ========================================================= */}
+            }`}>
+                {/* LEFT COLUMN: TEACHER COMMAND CENTER */}
                 {isEducator && (
                     <aside className="w-full flex flex-col gap-3.5">
-                        {/* Teacher Identity & Class Code Card */}
                         <div data-tour="dash-educator-profile" className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-4 flex flex-col gap-3">
                             <div className="flex items-center gap-3">
                                 <div className="w-9 h-9 bg-[var(--role-primary)] rounded-lg flex items-center justify-center text-white shrink-0">
@@ -529,11 +521,7 @@ const Dashboard = ({
                                 );
                             })()}
 
-                            {/* Class Code Block */}
-                            <div
-                                style={{ background: 'linear-gradient(135deg, rgba(45, 143, 0, 0.10) 0%, rgba(0, 117, 162, 0.06) 100%)' }}
-                                className="flex flex-col items-center px-3 py-2.5 rounded-lg border border-[var(--brand-border)]"
-                            >
+                            <div className="flex flex-col items-center px-3 py-2.5 rounded-lg bg-[var(--bg-surface)] border-l-4 border-l-[var(--role-primary)] border border-[var(--border-main)]">
                                 <span className="text-xs font-semibold text-[var(--text-muted)] mb-0.5">
                                     {t.class_code_label}
                                 </span>
@@ -542,7 +530,7 @@ const Dashboard = ({
                                 </span>
 
                                 {profile?.class_code && (
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={() => setShowCapacityModal(true)}
                                         className="mt-2 flex items-center gap-1.5 px-2.5 py-1 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-lg text-xs font-semibold text-[var(--text-main)] hover:border-[var(--role-primary)] hover:text-[var(--role-primary-text)] transition-colors cursor-pointer"
@@ -553,26 +541,24 @@ const Dashboard = ({
                                 )}
                             </div>
 
-                            <button 
+                            <button
                                 type="button"
-                                onClick={onProfileOpen} 
+                                onClick={onProfileOpen}
                                 className="w-full flex items-center justify-center gap-2 py-2 bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-main)] rounded-lg text-xs font-semibold hover:border-[var(--role-primary)] hover:text-[var(--role-primary-text)] transition-colors cursor-pointer"
                             >
                                 <Settings size={13} /> {t.profile_btn}
                             </button>
                         </div>
 
-                        {/* Teacher Tools — Soft Tinted Gradient Cards */}
                         <div data-tour="dash-educator-tools" className="flex flex-col gap-2">
                             <span className="text-xs font-semibold text-[var(--text-muted)] px-1">
                                 {t.tools_section}
                             </span>
 
-                            {/* Primary Action: Question Studio (India Green) */}
-                            <button 
+                            <button
                                 type="button"
                                 onClick={() => setIsLibraryModalOpen(true)}
-                                className="group flex items-center gap-3 p-3.5 bg-[var(--role-primary)] hover:bg-[var(--role-primary-hover)] text-white rounded-xl transition-all shadow-xs active:scale-[0.98] text-left w-full cursor-pointer"
+                                className="group flex items-center gap-3 p-3.5 bg-[var(--role-primary)] hover:bg-[var(--role-primary-hover)] text-white rounded-xl transition-colors active:scale-[0.98] text-left w-full cursor-pointer"
                             >
                                 <div className="w-9 h-9 bg-white/15 rounded-lg flex items-center justify-center shrink-0">
                                     <Zap size={17} fill="currentColor" />
@@ -583,14 +569,12 @@ const Dashboard = ({
                                 </div>
                             </button>
 
-                            {/* Secondary Tool: Digital Manipulatives (Cerulean Tint Wash) */}
-                            <button 
+                            <button
                                 type="button"
-                                onClick={onFractionLabOpen} 
-                                style={{ background: 'linear-gradient(135deg, rgba(0, 117, 162, 0.13) 0%, rgba(0, 117, 162, 0.04) 100%)' }}
-                                className="card-tactile group flex items-center gap-3 p-3 text-left w-full cursor-pointer border-[rgba(0,117,162,0.28)]"
+                                onClick={onFractionLabOpen}
+                                className="card-tactile border-l-4 border-l-[var(--role-guide)] group flex items-center gap-3 p-3 text-left w-full cursor-pointer"
                             >
-                                <div className="w-8 h-8 bg-[var(--role-guide)] rounded-lg flex items-center justify-center text-white shrink-0 shadow-2xs">
+                                <div className="w-8 h-8 bg-[var(--role-guide-soft)] border border-[var(--role-guide)]/30 rounded-lg flex items-center justify-center text-[var(--role-guide-text)] shrink-0">
                                     <PieChart size={16} />
                                 </div>
                                 <div className="min-w-0">
@@ -603,14 +587,12 @@ const Dashboard = ({
                                 </div>
                             </button>
 
-                            {/* Secondary Tool: Test Lab (Rosy Copper Tint Wash) */}
-                            <button 
+                            <button
                                 type="button"
-                                onClick={onLabOpen} 
-                                style={{ background: 'linear-gradient(135deg, rgba(205, 83, 52, 0.13) 0%, rgba(205, 83, 52, 0.04) 100%)' }}
-                                className="card-tactile group flex items-center gap-3 p-3 text-left w-full cursor-pointer border-[rgba(205,83,52,0.28)]"
+                                onClick={onLabOpen}
+                                className="card-tactile border-l-4 border-l-[var(--role-attention)] group flex items-center gap-3 p-3 text-left w-full cursor-pointer"
                             >
-                                <div className="w-8 h-8 bg-[var(--role-attention)] rounded-lg flex items-center justify-center text-white shrink-0 shadow-2xs">
+                                <div className="w-8 h-8 bg-[var(--role-attention-soft)] border border-[var(--role-attention)]/30 rounded-lg flex items-center justify-center text-[var(--role-attention-text)] shrink-0">
                                     <Beaker size={16} />
                                 </div>
                                 <div className="min-w-0">
@@ -623,24 +605,23 @@ const Dashboard = ({
                                 </div>
                             </button>
 
-                            {/* Inline Timer Control */}
                             <div className="flex items-center gap-2.5 p-2.5 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl w-full">
                                 <div className="w-8 h-8 bg-[var(--role-primary-soft)] border border-[var(--brand-border)] rounded-lg flex items-center justify-center text-[var(--role-primary-text)] shrink-0">
                                     <Clock size={15} />
                                 </div>
                                 <div className="flex-1 flex items-center gap-1.5">
-                                    <select 
-                                        value={timerSettings.duration / 60} 
-                                        onChange={(e) => toggleTimer(Number(e.target.value))} 
+                                    <select
+                                        value={timerSettings.duration / 60}
+                                        onChange={(e) => toggleTimer(Number(e.target.value))}
                                         className="flex-1 bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] py-1.5 px-2.5 rounded-lg text-xs font-bold font-mono outline-none cursor-pointer focus:border-[var(--role-primary)]"
                                     >
                                         <option value="0">{t.timer_off}</option>
                                         {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
                                     </select>
                                     {timerSettings.duration > 0 && (
-                                        <button 
+                                        <button
                                             type="button"
-                                            onClick={resetTimer} 
+                                            onClick={resetTimer}
                                             className="p-1.5 text-[var(--role-attention-text)] bg-[var(--role-attention-soft)] rounded-lg border border-[var(--role-attention)]/30 hover:opacity-85 transition-opacity cursor-pointer"
                                         >
                                             <RotateCcw size={13} />
@@ -649,21 +630,18 @@ const Dashboard = ({
                                 </div>
                             </div>
 
-                            {/* Bottom Row Compact Tinted Tools */}
                             <div className="grid grid-cols-2 gap-2">
-                                <button 
+                                <button
                                     type="button"
-                                    onClick={onTimesTableOpen} 
-                                    style={{ background: 'linear-gradient(135deg, rgba(45, 143, 0, 0.10) 0%, rgba(45, 143, 0, 0.03) 100%)' }}
+                                    onClick={onTimesTableOpen}
                                     className="card-tactile w-full flex flex-col items-center justify-center gap-1.5 p-3 text-center cursor-pointer"
                                 >
                                     <Grid3X3 size={16} className="text-[var(--role-primary-text)]" />
                                     <span className="font-bold text-xs text-[var(--text-main)]">{t.times_table_title}</span>
                                 </button>
-                                <button 
+                                <button
                                     type="button"
-                                    onClick={onStatsOpen} 
-                                    style={{ background: 'linear-gradient(135deg, rgba(0, 117, 162, 0.10) 0%, rgba(0, 117, 162, 0.03) 100%)' }}
+                                    onClick={onStatsOpen}
                                     className="card-tactile w-full flex flex-col items-center justify-center gap-1.5 p-3 text-center cursor-pointer"
                                 >
                                     <BarChart3 size={16} className="text-[var(--role-guide-text)]" />
@@ -672,34 +650,33 @@ const Dashboard = ({
                             </div>
                         </div>
 
-                        {/* Utility Links */}
                         <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl p-2 grid grid-cols-2 gap-1.5">
-                            <button 
+                            <button
                                 type="button"
-                                onClick={onContentOpen} 
+                                onClick={onContentOpen}
                                 className="px-2.5 py-2 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-xs font-semibold text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
                                 <span className="truncate">{t.content_map}</span>
                             </button>
-                            <button 
+                            <button
                                 type="button"
-                                onClick={() => setShowDashboardTutorial(true)} 
+                                onClick={() => setShowDashboardTutorial(true)}
                                 className="px-2.5 py-2 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-xs font-semibold text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
                                 <HelpCircle size={12} className="text-[var(--role-guide-text)] shrink-0" />
                                 <span className="truncate">{lang === 'sv' ? "Snabbguide" : "Quick Guide"}</span>
                             </button>
-                            <button 
+                            <button
                                 type="button"
-                                onClick={onLgrOpen} 
+                                onClick={onLgrOpen}
                                 className="px-2.5 py-2 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-xs font-semibold text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
                                 <Book size={12} className="text-[var(--role-primary-text)] shrink-0" />
                                 <span className="truncate">{t.lgr_link}</span>
                             </button>
-                            <button 
+                            <button
                                 type="button"
-                                onClick={onAboutOpen} 
+                                onClick={onAboutOpen}
                                 className="px-2.5 py-2 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-xs font-semibold text-[var(--text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
                                 <Info size={12} className="text-[var(--text-muted)] shrink-0" />
@@ -709,20 +686,16 @@ const Dashboard = ({
                     </aside>
                 )}
 
-                {/* ========================================================= */}
-                {/* MAIN CONTENT COLUMN                                       */}
-                {/* ========================================================= */}
+                {/* MAIN CONTENT COLUMN */}
                 <main className="w-full min-w-0 flex flex-col">
-                    
-                    {/* Active Session Resume Banner (Rosy Copper Attention Role) */}
                     {activeSessions.length > 0 && isEducator && (
-                        <div className="mb-4 p-4 bg-[var(--role-attention)] rounded-xl shadow-xs flex flex-col gap-2.5 animate-in slide-in-from-top-2 duration-300 text-white">
+                        <div className="mb-4 p-4 bg-[var(--role-attention)] rounded-xl flex flex-col gap-2.5 animate-in slide-in-from-top-2 duration-140 text-white">
                             <div className="flex items-center justify-between border-b border-white/15 pb-2">
                                 <div className="flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                                     <h3 className="text-xs font-bold tracking-wide text-white">
-                                        {activeSessions.length === 1 
-                                            ? t.resume_h 
+                                        {activeSessions.length === 1
+                                            ? t.resume_h
                                             : t.active_sessions_count(activeSessions.length)}
                                     </h3>
                                 </div>
@@ -733,13 +706,13 @@ const Dashboard = ({
 
                             <div className={`grid gap-2 ${activeSessions.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                                 {activeSessions.map((sessionItem) => {
-                                    const modeLabel = sessionItem.active_question_data?.mode 
-                                        ? String(sessionItem.active_question_data.mode).replace(/^activity_/, '').replace(/_/g, ' ') 
+                                    const modeLabel = sessionItem.active_question_data?.mode
+                                        ? String(sessionItem.active_question_data.mode).replace(/^activity_/, '').replace(/_/g, ' ')
                                         : null;
 
                                     return (
-                                        <div 
-                                            key={sessionItem.id} 
+                                        <div
+                                            key={sessionItem.id}
                                             className="bg-black/15 hover:bg-black/25 border border-white/15 rounded-lg p-2.5 flex items-center justify-between gap-3 transition-colors"
                                         >
                                             <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -763,9 +736,9 @@ const Dashboard = ({
                                                 </div>
                                             </div>
 
-                                            <button 
+                                            <button
                                                 type="button"
-                                                onClick={() => onRelaunch(sessionItem)} 
+                                                onClick={() => onRelaunch(sessionItem)}
                                                 className="shrink-0 px-3.5 py-1.5 bg-white text-[var(--role-attention-text)] hover:bg-white/90 rounded-lg font-bold text-xs transition-colors cursor-pointer"
                                             >
                                                 {t.resume_btn}
@@ -777,19 +750,18 @@ const Dashboard = ({
                         </div>
                     )}
 
-                    {/* Educator Top Navigation Tabs & Changelog Trigger */}
                     {isEducator && (
                         <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
                             <div
                                 data-tour="dash-educator-tabs"
                                 className="inline-flex bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1"
                             >
-                                <button 
+                                <button
                                     type="button"
-                                    onClick={() => setActiveTab('curriculum')} 
-                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                                        activeTab === 'curriculum' 
-                                            ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]' 
+                                    onClick={() => setActiveTab('curriculum')}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                                        activeTab === 'curriculum'
+                                            ? 'bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-main)]'
                                             : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                                     }`}
                                 >
@@ -797,12 +769,12 @@ const Dashboard = ({
                                     {t.curriculum_title}
                                 </button>
 
-                                <button 
+                                <button
                                     type="button"
-                                    onClick={() => setActiveTab('hub')} 
-                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                                        activeTab === 'hub' 
-                                            ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]' 
+                                    onClick={() => setActiveTab('hub')}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                                        activeTab === 'hub'
+                                            ? 'bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-main)]'
                                             : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                                     }`}
                                 >
@@ -810,12 +782,12 @@ const Dashboard = ({
                                     {lang === 'sv' ? "Grupper" : "Custom Units"}
                                 </button>
 
-                                <button 
+                                <button
                                     type="button"
-                                    onClick={() => setActiveTab('archive')} 
-                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                                        activeTab === 'archive' 
-                                            ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]' 
+                                    onClick={() => setActiveTab('archive')}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                                        activeTab === 'archive'
+                                            ? 'bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-main)]'
                                             : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                                     }`}
                                 >
@@ -824,9 +796,9 @@ const Dashboard = ({
                                 </button>
                             </div>
 
-                            <button 
+                            <button
                                 type="button"
-                                onClick={() => setShowUpdateLog(true)} 
+                                onClick={() => setShowUpdateLog(true)}
                                 className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-main)] hover:border-[var(--role-primary)] text-xs transition-colors group cursor-pointer"
                                 title={t.view_all}
                             >
@@ -841,15 +813,12 @@ const Dashboard = ({
                         </div>
                     )}
 
-                    {/* Tab Content */}
                     {activeTab === 'hub' ? (
-                        <div className="animate-in fade-in duration-200 pb-20">
+                        <div className="animate-in fade-in duration-140 pb-20">
                             <TeacherHubManager lang={lang} teacherId={profile?.id} />
                         </div>
                     ) : activeTab === 'curriculum' ? (
-                        <div className="flex flex-col space-y-4 animate-in fade-in duration-200">
-                            
-                            {/* Unified Spotlight Search, Student Tools & Diagnostic Workspace */}
+                        <div className="flex flex-col space-y-4 animate-in fade-in duration-140">
                             <div data-tour="dash-concept-search" className="relative">
                                 <ConceptMapDashboard
                                     lang={lang}
@@ -871,7 +840,7 @@ const Dashboard = ({
                                         <button
                                             type="button"
                                             onClick={() => setShowDashboardTutorial(true)}
-                                            className="pointer-events-auto px-3 py-1.5 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] border border-[var(--border-main)] hover:border-[var(--role-guide)] text-xs font-semibold text-[var(--text-main)] inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                                            className="pointer-events-auto px-3 py-1.5 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] border border-[var(--border-main)] hover:border-[var(--role-guide)] text-xs font-semibold text-[var(--text-main)] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                                         >
                                             <HelpCircle size={13} className="text-[var(--role-guide-text)] shrink-0" />
                                             <span>{lang === 'sv' ? 'Guide' : 'Guide'}</span>
@@ -880,22 +849,21 @@ const Dashboard = ({
                                 )}
                             </div>
 
-                            {/* Student Mode Switcher (Only when teacher has active units) */}
                             {!diagnosticTarget && hasStudentUnits && (
                                 <div className="inline-flex self-start bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1">
                                     <button
                                         type="button"
                                         onClick={() => setStudentTab('units')}
-                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
                                             studentTab === 'units'
-                                                ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]'
+                                                ? 'bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-main)]'
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                                         }`}
                                     >
                                         <Layers size={13} className={studentTab === 'units' ? 'text-[var(--role-primary-text)]' : ''} />
                                         <span>{lang === 'sv' ? 'Mina områden' : 'My Units'}</span>
                                         {studentBuckets.length > 0 && (
-                                            <span className="px-1.5 py-0.2 rounded bg-[var(--role-primary-soft)] text-[var(--role-primary-text)] font-mono text-xs">
+                                            <span className="px-1.5 py-0.5 rounded bg-[var(--role-primary-soft)] text-[var(--role-primary-text)] font-mono text-xs">
                                                 {studentBuckets.length}
                                             </span>
                                         )}
@@ -904,9 +872,9 @@ const Dashboard = ({
                                     <button
                                         type="button"
                                         onClick={() => setStudentTab('library')}
-                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
                                             studentTab === 'library'
-                                                ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]'
+                                                ? 'bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-main)]'
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                                         }`}
                                     >
@@ -916,7 +884,6 @@ const Dashboard = ({
                                 </div>
                             )}
 
-                            {/* Below Search Deck */}
                             {!diagnosticTarget && (
                                 isShowingStudentGateway ? (
                                     loadingBuckets ? (
@@ -935,10 +902,9 @@ const Dashboard = ({
                                         />
                                     )
                                 ) : isShowingCuratedRoadmap ? (
-                                    /* Curated Bucket Roadmap */
                                     <div className="space-y-4">
                                         {progressPercentage === 100 && (
-                                            <div className="w-full bg-[var(--role-primary)] rounded-xl p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in-95 duration-300">
+                                            <div className="w-full bg-[var(--role-primary)] rounded-xl p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
                                                 <div className="flex items-center gap-3.5">
                                                     <div className="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
                                                         <Award size={26} className="text-[#f8fbdb]" />
@@ -951,8 +917,8 @@ const Dashboard = ({
                                                             {lang === 'sv' ? "Alla moment är avklarade!" : "All parts completed!"}
                                                         </h3>
                                                         <p className="text-xs font-medium text-white/90 mt-0.5">
-                                                            {lang === 'sv' 
-                                                                ? `Du har gått igenom alla ${allUnitSteps.length} moment i ${activeBucket.name}.` 
+                                                            {lang === 'sv'
+                                                                ? `Du har gått igenom alla ${allUnitSteps.length} moment i ${activeBucket.name}.`
                                                                 : `You have mastered all ${allUnitSteps.length} steps in ${activeBucket.name}.`}
                                                         </p>
                                                     </div>
@@ -977,14 +943,13 @@ const Dashboard = ({
                                             />
                                         </div>
 
-                                        {/* Parts Sequence */}
                                         <div data-tour="dash-unit-parts" className="space-y-3">
                                             {curatedParts.map((part, pIdx) => {
                                                 const partSteps = part.steps || [];
                                                 const partCompletedCount = partSteps.filter(s => checkIsStepCompleted(s, completedStepIds)).length;
                                                 const isPartFullyCompleted = partSteps.length > 0 && partCompletedCount === partSteps.length;
-                                                const isPartCollapsed = collapsedPartSections[part.id] !== undefined 
-                                                    ? Boolean(collapsedPartSections[part.id]) 
+                                                const isPartCollapsed = collapsedPartSections[part.id] !== undefined
+                                                    ? Boolean(collapsedPartSections[part.id])
                                                     : true;
 
                                                 const defaultStep = partSteps.find(s => !checkIsStepCompleted(s, completedStepIds)) || partSteps[0] || null;
@@ -1032,11 +997,11 @@ const Dashboard = ({
                                                     : (partPreviewQuestion?.renderData?.description || '');
 
                                                 return (
-                                                    <div 
-                                                        key={part.id || pIdx} 
+                                                    <div
+                                                        key={part.id || pIdx}
                                                         className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-main)] overflow-hidden transition-colors"
                                                     >
-                                                        <div 
+                                                        <div
                                                             onClick={handleExpandOrTogglePart}
                                                             className="bg-[var(--bg-surface)]/70 hover:bg-[var(--bg-surface)] px-4 py-3 border-b border-[var(--border-main)] flex items-center justify-between cursor-pointer select-none group transition-colors"
                                                         >
@@ -1070,7 +1035,6 @@ const Dashboard = ({
 
                                                         {!isPartCollapsed && (
                                                             <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                                                                {/* Left Column: Step Timeline */}
                                                                 <div className="lg:col-span-6 space-y-1">
                                                                     {partSteps.map((step, sIdx) => {
                                                                         const isCompleted = checkIsStepCompleted(step, completedStepIds);
@@ -1120,7 +1084,7 @@ const Dashboard = ({
                                                                                     <button
                                                                                         type="button"
                                                                                         onClick={() => handleSelectStepForPreview(step)}
-                                                                                        className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-2.5 cursor-pointer ${
+                                                                                        className={`w-full text-left p-3 rounded-xl border transition-colors flex items-center justify-between gap-2.5 cursor-pointer ${
                                                                                             isInspected
                                                                                                 ? isInstruction
                                                                                                     ? 'bg-[var(--role-guide-soft)] border-[var(--role-guide)]'
@@ -1174,7 +1138,7 @@ const Dashboard = ({
                                                                                                     <Check size={11} strokeWidth={3} />
                                                                                                 </span>
                                                                                             )}
-                                                                                            <ChevronRight size={15} className={`transition-transform ${isInspected ? 'text-[var(--text-main)] translate-x-0.5' : 'text-[var(--text-muted)]'}`} />
+                                                                                            <ChevronRight size={15} className={`transition-transform duration-140 ${isInspected ? 'text-[var(--text-main)] translate-x-0.5' : 'text-[var(--text-muted)]'}`} />
                                                                                         </div>
                                                                                     </button>
                                                                                 </div>
@@ -1183,7 +1147,6 @@ const Dashboard = ({
                                                                     })}
                                                                 </div>
 
-                                                                {/* Right Column: Step Inspector Card */}
                                                                 {inspectedStep && (
                                                                     <div className="lg:col-span-6 lg:sticky lg:top-6 bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-xl p-5 space-y-4">
                                                                         {inspIsInstruction ? (
@@ -1223,7 +1186,7 @@ const Dashboard = ({
                                                                                 <button
                                                                                     type="button"
                                                                                     onClick={() => onStartUnitStep ? onStartUnitStep(inspectedStep, part) : handleOpenInstruction(inspectedStep)}
-                                                                                    className="w-full py-3 px-4 rounded-lg bg-[var(--role-guide)] hover:opacity-95 text-white font-bold text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                                                                                    className="w-full py-3 px-4 rounded-lg bg-[var(--role-guide)] hover:opacity-95 text-white font-bold text-xs transition-opacity active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                                                                                 >
                                                                                     <Play size={14} fill="currentColor" />
                                                                                     <span>
@@ -1270,7 +1233,7 @@ const Dashboard = ({
                                                                                 <button
                                                                                     type="button"
                                                                                     onClick={() => onStartUnitStep ? onStartUnitStep(inspectedStep, part) : onStartCheckpoint?.(inspectedStep.configCode, inspectedStep.id)}
-                                                                                    className="w-full py-3 px-4 rounded-lg bg-[var(--role-attention)] hover:opacity-95 text-white font-bold text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                                                                                    className="w-full py-3 px-4 rounded-lg bg-[var(--role-attention)] hover:opacity-95 text-white font-bold text-xs transition-opacity active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                                                                                 >
                                                                                     <Play size={14} fill="currentColor" />
                                                                                     <span>
@@ -1365,7 +1328,7 @@ const Dashboard = ({
                                                                                             if (onStart) onStart();
                                                                                         }
                                                                                     }}
-                                                                                    className="w-full py-3 px-4 rounded-lg bg-[var(--role-primary)] hover:bg-[var(--role-primary-hover)] text-white font-bold text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                                                                                    className="w-full py-3 px-4 rounded-lg bg-[var(--role-primary)] hover:bg-[var(--role-primary-hover)] text-white font-bold text-xs transition-colors active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                                                                                 >
                                                                                     <Play size={14} fill="currentColor" />
                                                                                     <span>
@@ -1386,7 +1349,7 @@ const Dashboard = ({
                                         </div>
                                     </div>
                                 ) : (
-
+                                    /* HARD DIAGONAL SPLIT TABS + LEFT-STRIPE TOPIC WORKSPACE */
                                     <div className="flex flex-col">
                                         {openDropdownTopicId && (
                                             <div
@@ -1395,19 +1358,14 @@ const Dashboard = ({
                                             />
                                         )}
 
-                                        {/* Flush Folder Tab Strip — Watermark icon + subtle sheen, zero gap below */}
                                         <div
                                             data-tour="dash-category-strip"
-                                            className="grid grid-cols-2 lg:grid-cols-4 border-t border-x border-[var(--border-strong)] rounded-t-xl overflow-hidden bg-[var(--bg-surface)]"
+                                            className="grid grid-cols-2 lg:grid-cols-4 border-t border-x border-[var(--border-main)] rounded-t-xl overflow-hidden bg-[var(--bg-card)]"
                                         >
                                             {Object.entries(CATEGORIES).map(([catKey, category], idx) => {
                                                 const isActive = expandedCategory === catKey;
                                                 const vis = DOMAIN_VISUALS[catKey] || DOMAIN_VISUALS.arithmetic;
                                                 const DomainIcon = vis.Icon;
-                                                const previewTopics = (category.topics || [])
-                                                    .slice(0, 2)
-                                                    .map(tp => tp.label[lang] || tp.label.sv)
-                                                    .join(', ');
 
                                                 return (
                                                     <button
@@ -1415,275 +1373,260 @@ const Dashboard = ({
                                                         type="button"
                                                         onClick={() => setExpandedCategory(catKey)}
                                                         style={{
-                                                            background: isActive ? vis.tabActiveBg : vis.tabInactiveBg,
-                                                            borderTopWidth: '4px',
-                                                            borderTopColor: vis.accent,
-                                                            borderBottom: isActive ? 'none' : '1px solid var(--border-strong)',
-                                                            boxShadow: isActive
-                                                                ? 'inset 0 1px 0 rgba(255, 255, 255, 0.65)'
-                                                                : 'inset 0 1px 0 rgba(255, 255, 255, 0.4)'
+                                                            background: isActive ? vis.tabActiveSplit : vis.tabInactiveBg,
+                                                            borderBottom: isActive
+                                                                ? '1px solid transparent'
+                                                                : '1px solid var(--border-main)'
                                                         }}
-                                                        className={`group relative overflow-hidden text-left p-4 transition-all cursor-pointer flex flex-col justify-between gap-2.5 min-h-[92px] ${
-                                                            idx > 0 ? 'border-l border-[var(--border-strong)]' : ''
-                                                        } ${isActive ? 'z-10' : 'hover:brightness-[0.98]'}`}
+                                                        className={`group relative overflow-hidden text-left px-4 py-3.5 transition-[background,color,border-color] duration-140 ease-[cubic-bezier(0.2,0,0,1)] cursor-pointer flex items-center justify-between gap-2.5 min-h-[54px] ${
+                                                            idx > 0 ? 'border-l border-[var(--border-main)]' : ''
+                                                        }`}
                                                     >
-                                                        {/* Oversized Watermark Icon Shadow */}
                                                         <DomainIcon
-                                                            size={84}
-                                                            strokeWidth={1.75}
+                                                            size={58}
+                                                            strokeWidth={1.6}
                                                             style={{ color: vis.accent }}
                                                             aria-hidden="true"
-                                                            className={`pointer-events-none select-none absolute -right-3 -bottom-3 -rotate-12 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-6 ${
-                                                                isActive ? 'opacity-[0.16]' : 'opacity-[0.09]'
+                                                            className={`pointer-events-none select-none absolute -right-2 -bottom-2 -rotate-12 transition-transform duration-140 ease-[cubic-bezier(0.2,0,0,1)] ${
+                                                                isActive
+                                                                    ? 'opacity-[0.18] scale-105'
+                                                                    : 'opacity-[0.07] group-hover:opacity-[0.12]'
                                                             }`}
                                                         />
 
-                                                        {/* Foreground Header Row */}
-                                                        <div className="relative z-10 flex items-center justify-between gap-2 w-full">
-                                                            <span
-                                                                style={{ color: vis.accent }}
-                                                                className="text-xs font-mono font-extrabold tracking-wide"
-                                                            >
-                                                                0{idx + 1}
-                                                            </span>
-                                                            <span
-                                                                style={{
-                                                                    backgroundColor: isActive ? vis.accent : 'var(--bg-card)',
-                                                                    color: isActive ? '#ffffff' : 'var(--text-main)',
-                                                                    borderColor: vis.accent
-                                                                }}
-                                                                className="px-2 py-0.5 rounded text-xs font-mono font-bold border shrink-0"
-                                                            >
-                                                                {category.topics.length}
-                                                            </span>
-                                                        </div>
+                                                        <span
+                                                            className={`relative z-10 text-sm tracking-tight truncate ${
+                                                                isActive
+                                                                    ? 'font-extrabold text-[var(--text-main)]'
+                                                                    : 'font-semibold text-[var(--text-muted)] group-hover:text-[var(--text-main)]'
+                                                            }`}
+                                                        >
+                                                            {category.label[lang]}
+                                                        </span>
 
-                                                        {/* Foreground Title & Topic Preview */}
-                                                        <div className="relative z-10 min-w-0 w-full pr-6">
-                                                            <span className="font-extrabold text-sm sm:text-[15px] text-[var(--text-main)] block truncate">
-                                                                {category.label[lang]}
-                                                            </span>
-                                                            {previewTopics && (
-                                                                <p className="text-xs font-medium text-[var(--text-muted)] truncate mt-0.5">
-                                                                    {previewTopics}...
-                                                                </p>
-                                                            )}
-                                                        </div>
+                                                        <span
+                                                            style={
+                                                                isActive
+                                                                    ? { backgroundColor: vis.accent, color: '#ffffff' }
+                                                                    : { backgroundColor: 'var(--bg-surface)', color: 'var(--text-muted)' }
+                                                            }
+                                                            className="relative z-10 px-2 py-0.5 rounded-full text-xs font-mono font-bold shrink-0"
+                                                        >
+                                                            {category.topics.length}
+                                                        </span>
+
+                                                        {isActive && (
+                                                            <span
+                                                                style={{ backgroundColor: vis.accent }}
+                                                                className="absolute bottom-0 left-0 right-0 h-[3px]"
+                                                            />
+                                                        )}
                                                     </button>
                                                 );
                                             })}
                                         </div>
 
-                                        {/* Flush Topic Workspace Container — Shares border directly with active tab */}
                                         <div
                                             data-tour="dash-topic-grid"
-                                            className="bg-[var(--bg-card)] border-x border-b border-[var(--border-strong)] rounded-b-xl p-4 sm:p-5 space-y-4 -mt-px"
+                                            className="bg-[var(--bg-card)] border-x border-b border-[var(--border-main)] rounded-b-xl p-4 sm:p-5 space-y-4 -mt-px"
                                         >
-                                            {/* Domain Section Subheader */}
-                                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-3">
-                                                <div className="flex items-center gap-2.5">
-                                                    <span
-                                                        style={{ backgroundColor: activeDomainVisual.accent }}
-                                                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                                                    />
-                                                    <h2 className="text-base sm:text-lg font-extrabold text-[var(--text-main)] tracking-tight">
-                                                        {activeCategoryData.label[lang]}
-                                                    </h2>
-                                                </div>
-                                                <span className="text-xs font-mono font-semibold text-[var(--text-muted)]">
-                                                    {t.topics_count(activeCategoryData.topics.length)}
-                                                </span>
-                                            </div>
 
-                                            {/* Topic Grid */}
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                {activeCategoryData.topics.map(topic => {
-                                                    const isThisTopicSelected = selectedTopic === topic.id && selectedLevel > 0;
-                                                    const isDropdownOpen = openDropdownTopicId === topic.id;
-                                                    const availableLevels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(
-                                                        lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl]
-                                                    );
+                                            {/* Flush Topic Workspace Container (No Redundant Subheader) */}
+                                            <div
+                                                key={expandedCategory}
+                                                data-tour="dash-topic-grid"
+                                                className="bg-[var(--bg-card)] border-x border-b border-[var(--border-main)] rounded-b-xl p-3.5 sm:p-4 -mt-px animate-in fade-in duration-140"
+                                            >
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                    {activeCategoryData.topics.map(topic => {
+                                                        const isThisTopicSelected = selectedTopic === topic.id && selectedLevel > 0;
+                                                        const isDropdownOpen = openDropdownTopicId === topic.id;
+                                                        const availableLevels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(
+                                                            lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl]
+                                                        );
 
-                                                    const diagnosticStartLvl = availableLevels.length > 0
-                                                        ? availableLevels[Math.min(Math.floor((availableLevels.length - 1) / 2), 2)]
-                                                        : 1;
+                                                        const diagnosticStartLvl = availableLevels.length > 0
+                                                            ? availableLevels[Math.min(Math.floor((availableLevels.length - 1) / 2), 2)]
+                                                            : 1;
 
-                                                    const selectedMeta = isThisTopicSelected
-                                                        ? getLevelMetadata(topic.id, selectedLevel, lang)
-                                                        : null;
+                                                        const selectedMeta = isThisTopicSelected
+                                                            ? getLevelMetadata(topic.id, selectedLevel, lang)
+                                                            : null;
 
-                                                    return (
-                                                        <div
-                                                            key={topic.id}
-                                                            style={
-                                                                isThisTopicSelected
-                                                                    ? {
-                                                                        backgroundColor: activeDomainVisual.softBg,
-                                                                        borderColor: activeDomainVisual.accent,
-                                                                        borderWidth: '2px'
-                                                                    }
-                                                                    : { backgroundColor: 'var(--bg-surface)' }
-                                                            }
-                                                            className={`relative p-3.5 rounded-lg border border-[var(--border-main)] transition-colors ${
-                                                                isDropdownOpen ? 'z-30' : 'z-10'
-                                                            }`}
-                                                        >
-                                                            {/* Topic Title & Level Count */}
-                                                            <div className="font-bold text-[var(--text-main)] mb-2.5 flex items-center justify-between gap-2 text-sm leading-snug">
-                                                                <span className="truncate">{topic.label[lang]}</span>
-                                                                <span
-                                                                    style={{
-                                                                        backgroundColor: activeDomainVisual.softBg,
-                                                                        color: 'var(--text-main)',
-                                                                        borderColor: activeDomainVisual.borderTint
-                                                                    }}
-                                                                    className="text-xs font-bold font-mono px-2 py-0.5 rounded border shrink-0"
-                                                                >
-                                                                    {availableLevels.length} {lang === 'sv' ? 'nivåer' : 'levels'}
-                                                                </span>
-                                                            </div>
-
-                                                            {/* Level Selector Dropdown Trigger */}
-                                                            <div className="relative">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setOpenDropdownTopicId(isDropdownOpen ? null : topic.id)}
-                                                                    style={
-                                                                        isDropdownOpen || isThisTopicSelected
-                                                                            ? { borderColor: activeDomainVisual.accent }
-                                                                            : undefined
-                                                                    }
-                                                                    className="w-full py-2 pl-3 pr-2.5 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-lg text-xs font-semibold text-[var(--text-main)] flex items-center justify-between gap-2 transition-colors cursor-pointer text-left"
-                                                                >
-                                                                    <span className="truncate">
-                                                                        {isThisTopicSelected ? (
-                                                                            <>
-                                                                                <span
-                                                                                    style={{ color: activeDomainVisual.accent }}
-                                                                                    className="font-bold font-mono"
-                                                                                >
-                                                                                    {lang === 'sv' ? `Nivå ${selectedLevel}` : `Level ${selectedLevel}`}
-                                                                                </span>
-                                                                                {selectedMeta?.description && (
-                                                                                    <span className="text-[var(--text-muted)] font-medium">
-                                                                                        {' '}— {selectedMeta.description}
-                                                                                    </span>
-                                                                                )}
-                                                                            </>
-                                                                        ) : (
-                                                                            <span className="text-[var(--text-muted)]">{t.select_level}</span>
-                                                                        )}
-                                                                    </span>
-                                                                    <ChevronDown
-                                                                        size={15}
-                                                                        style={isDropdownOpen ? { color: activeDomainVisual.accent } : undefined}
-                                                                        className={`shrink-0 text-[var(--text-muted)] transition-transform duration-150 ${isDropdownOpen ? 'rotate-180' : ''}`}
-                                                                    />
-                                                                </button>
-
-                                                                {/* Floating Level Menu */}
-                                                                {isDropdownOpen && (
-                                                                    <div
-                                                                        style={{ borderColor: activeDomainVisual.accent }}
-                                                                        className="absolute left-0 right-0 top-full mt-1 bg-[var(--bg-card)] border rounded-lg shadow-xl max-h-72 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)] animate-in fade-in slide-in-from-top-1 duration-150"
-                                                                    >
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                const targetLvl = isThisTopicSelected ? selectedLevel : diagnosticStartLvl;
-                                                                                setOpenDropdownTopicId(null);
-                                                                                setDiagnosticTarget({
-                                                                                    topicId: topic.id,
-                                                                                    level: targetLvl,
-                                                                                    isNewGoal: true
-                                                                                });
-                                                                                onSelect(topic.id, targetLvl);
-                                                                            }}
-                                                                            style={{ backgroundColor: activeDomainVisual.softBg }}
-                                                                            className="w-full text-left p-3 hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-between gap-2"
-                                                                        >
-                                                                            <div className="flex items-center gap-2 min-w-0">
-                                                                                <Compass size={14} style={{ color: activeDomainVisual.accent }} className="shrink-0" />
-                                                                                <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                                                                                    {lang === 'sv' ? 'Hitta rätt nivå...' : 'Find the right level...'}
-                                                                                </span>
-                                                                            </div>
-                                                                            <span style={{ color: activeDomainVisual.accent }} className="text-xs font-bold shrink-0">
-                                                                                {lang === 'sv' ? 'Testa →' : 'Try →'}
-                                                                            </span>
-                                                                        </button>
-
-                                                                        {availableLevels.map(lvl => {
-                                                                            const { description, mathExample } = getLevelMetadata(topic.id, lvl, lang);
-                                                                            const isRowSelected = isThisTopicSelected && selectedLevel === lvl;
-
-                                                                            return (
-                                                                                <button
-                                                                                    key={lvl}
-                                                                                    type="button"
-                                                                                    onClick={() => {
-                                                                                        onSelect(topic.id, lvl);
-                                                                                        setOpenDropdownTopicId(null);
-                                                                                    }}
-                                                                                    style={isRowSelected ? { backgroundColor: activeDomainVisual.softBg } : undefined}
-                                                                                    className={`w-full text-left p-3 transition-colors cursor-pointer flex flex-col gap-1 ${
-                                                                                        isRowSelected ? '' : 'hover:bg-[var(--bg-surface)]'
-                                                                                    }`}
-                                                                                >
-                                                                                    <div className="flex items-center gap-2 w-full">
-                                                                                        <span
-                                                                                            style={
-                                                                                                isRowSelected
-                                                                                                    ? { backgroundColor: activeDomainVisual.accent, color: '#ffffff' }
-                                                                                                    : undefined
-                                                                                            }
-                                                                                            className={`px-2 py-0.5 rounded text-xs font-bold font-mono shrink-0 ${
-                                                                                                isRowSelected
-                                                                                                    ? ''
-                                                                                                    : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
-                                                                                            }`}
-                                                                                        >
-                                                                                            {lang === 'sv' ? `Nivå ${lvl}` : `Lvl ${lvl}`}
-                                                                                        </span>
-                                                                                        <span className="text-xs font-bold text-[var(--text-main)] truncate">
-                                                                                            {description}
-                                                                                        </span>
-                                                                                    </div>
-
-                                                                                    {mathExample && (
-                                                                                        <div className="text-xs font-medium text-[var(--text-muted)] line-clamp-1 pl-1 flex items-center gap-1">
-                                                                                            <span className="opacity-60">Ex:</span>
-                                                                                            <MathDisplay content={mathExample} />
-                                                                                        </div>
-                                                                                    )}
-                                                                                </button>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Selected Level Full Example Preview */}
-                                                            {isThisTopicSelected && selectedMeta?.mathExample && (
-                                                                <div className="mt-2.5 p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-main)] flex items-start gap-2 animate-in fade-in duration-150">
+                                                        return (
+                                                            <div
+                                                                key={topic.id}
+                                                                style={
+                                                                    isThisTopicSelected
+                                                                        ? {
+                                                                            backgroundColor: 'var(--bg-card)',
+                                                                            borderColor: activeDomainVisual.accent,
+                                                                            borderLeftWidth: '4px',
+                                                                            borderLeftColor: activeDomainVisual.accent
+                                                                        }
+                                                                        : {
+                                                                            backgroundColor: 'var(--bg-surface)',
+                                                                            borderLeftWidth: '4px',
+                                                                            borderLeftColor: activeDomainVisual.borderTint
+                                                                        }
+                                                                }
+                                                                className={`relative p-3.5 rounded-lg border border-[var(--border-main)] transition-colors duration-140 ${
+                                                                    isDropdownOpen ? 'z-30' : 'z-10'
+                                                                }`}
+                                                            >
+                                                                <div className="font-bold text-[var(--text-main)] mb-2.5 flex items-center justify-between gap-2 text-sm leading-snug">
+                                                                    <span className="truncate">{topic.label[lang]}</span>
                                                                     <span
                                                                         style={{
                                                                             backgroundColor: activeDomainVisual.softBg,
                                                                             color: 'var(--text-main)',
                                                                             borderColor: activeDomainVisual.borderTint
                                                                         }}
-                                                                        className="text-xs font-bold font-mono border px-1.5 py-0.5 rounded shrink-0 mt-0.5"
+                                                                        className="text-xs font-bold font-mono px-2 py-0.5 rounded border shrink-0"
                                                                     >
-                                                                        Ex
+                                                                        {availableLevels.length} {lang === 'sv' ? 'nivåer' : 'levels'}
                                                                     </span>
-                                                                    <div className="text-xs font-semibold text-[var(--text-main)] leading-snug break-words min-w-0 flex-1">
-                                                                        <MathDisplay content={selectedMeta.mathExample} />
-                                                                    </div>
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
+
+                                                                <div className="relative">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setOpenDropdownTopicId(isDropdownOpen ? null : topic.id)}
+                                                                        style={
+                                                                            isDropdownOpen || isThisTopicSelected
+                                                                                ? { borderColor: activeDomainVisual.accent }
+                                                                                : undefined
+                                                                        }
+                                                                        className="w-full py-2 pl-3 pr-2.5 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-lg text-xs font-semibold text-[var(--text-main)] flex items-center justify-between gap-2 transition-colors cursor-pointer text-left"
+                                                                    >
+                                                                        <span className="truncate">
+                                                                            {isThisTopicSelected ? (
+                                                                                <>
+                                                                                    <span
+                                                                                        style={{ color: activeDomainVisual.accent }}
+                                                                                        className="font-bold font-mono"
+                                                                                    >
+                                                                                        {lang === 'sv' ? `Nivå ${selectedLevel}` : `Level ${selectedLevel}`}
+                                                                                    </span>
+                                                                                    {selectedMeta?.description && (
+                                                                                        <span className="text-[var(--text-muted)] font-medium">
+                                                                                            {' '}— {selectedMeta.description}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </>
+                                                                            ) : (
+                                                                                <span className="text-[var(--text-muted)]">{t.select_level}</span>
+                                                                            )}
+                                                                        </span>
+                                                                        <ChevronDown
+                                                                            size={15}
+                                                                            style={isDropdownOpen ? { color: activeDomainVisual.accent } : undefined}
+                                                                            className={`shrink-0 text-[var(--text-muted)] transition-transform duration-140 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                                                                        />
+                                                                    </button>
+
+                                                                    {isDropdownOpen && (
+                                                                        <div
+                                                                            style={{ borderColor: activeDomainVisual.accent }}
+                                                                            className="absolute left-0 right-0 top-full mt-1 bg-[var(--bg-card)] border rounded-lg shadow-xl max-h-60 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)] animate-in fade-in duration-120"
+                                                                        >
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    const targetLvl = isThisTopicSelected ? selectedLevel : diagnosticStartLvl;
+                                                                                    setOpenDropdownTopicId(null);
+                                                                                    setDiagnosticTarget({
+                                                                                        topicId: topic.id,
+                                                                                        level: targetLvl,
+                                                                                        isNewGoal: true
+                                                                                    });
+                                                                                    onSelect(topic.id, targetLvl);
+                                                                                }}
+                                                                                style={{ backgroundColor: activeDomainVisual.softBg }}
+                                                                                className="w-full text-left p-3 hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-between gap-2"
+                                                                            >
+                                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                                    <Compass size={14} style={{ color: activeDomainVisual.accent }} className="shrink-0" />
+                                                                                    <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                                                                                        {lang === 'sv' ? 'Hitta rätt nivå...' : 'Find the right level...'}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <span style={{ color: activeDomainVisual.accent }} className="text-xs font-bold shrink-0">
+                                                                                    {lang === 'sv' ? 'Testa →' : 'Try →'}
+                                                                                </span>
+                                                                            </button>
+
+                                                                            {availableLevels.map(lvl => {
+                                                                                const { description, mathExample } = getLevelMetadata(topic.id, lvl, lang);
+                                                                                const isRowSelected = isThisTopicSelected && selectedLevel === lvl;
+
+                                                                                return (
+                                                                                    <button
+                                                                                        key={lvl}
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            onSelect(topic.id, lvl);
+                                                                                            setOpenDropdownTopicId(null);
+                                                                                        }}
+                                                                                        style={isRowSelected ? { backgroundColor: activeDomainVisual.softBg } : undefined}
+                                                                                        className={`w-full text-left p-3 transition-colors cursor-pointer flex flex-col gap-1 ${
+                                                                                            isRowSelected ? '' : 'hover:bg-[var(--bg-surface)]'
+                                                                                        }`}
+                                                                                    >
+                                                                                        <div className="flex items-center gap-2 w-full">
+                                                                                            <span
+                                                                                                style={
+                                                                                                    isRowSelected
+                                                                                                        ? { backgroundColor: activeDomainVisual.accent, color: '#ffffff' }
+                                                                                                        : undefined
+                                                                                                }
+                                                                                                className={`px-2 py-0.5 rounded text-xs font-bold font-mono shrink-0 ${
+                                                                                                    isRowSelected
+                                                                                                        ? ''
+                                                                                                        : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)]'
+                                                                                                }`}
+                                                                                            >
+                                                                                                {lang === 'sv' ? `Nivå ${lvl}` : `Lvl ${lvl}`}
+                                                                                            </span>
+                                                                                            <span className="text-xs font-bold text-[var(--text-main)] truncate">
+                                                                                                {description}
+                                                                                            </span>
+                                                                                        </div>
+
+                                                                                        {mathExample && (
+                                                                                            <div className="text-xs font-medium text-[var(--text-muted)] line-clamp-1 pl-1 flex items-center gap-1">
+                                                                                                <span className="opacity-60">Ex:</span>
+                                                                                                <MathDisplay content={mathExample} />
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </button>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {isThisTopicSelected && selectedMeta?.mathExample && (
+                                                                    <div className="mt-2.5 p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-main)] flex items-start gap-2 animate-in fade-in duration-120">
+                                                                        <span
+                                                                            style={{
+                                                                                backgroundColor: activeDomainVisual.softBg,
+                                                                                color: 'var(--text-main)',
+                                                                                borderColor: activeDomainVisual.borderTint
+                                                                            }}
+                                                                            className="text-xs font-bold font-mono border px-1.5 py-0.5 rounded shrink-0 mt-0.5"
+                                                                        >
+                                                                            Ex
+                                                                        </span>
+                                                                        <div className="text-xs font-semibold text-[var(--text-main)] leading-snug break-words min-w-0 flex-1">
+                                                                            <MathDisplay content={selectedMeta.mathExample} />
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1691,8 +1634,7 @@ const Dashboard = ({
                             )}
                         </div>
                     ) : (
-                        /* Session Archive Tab */
-                        <div className="animate-in fade-in duration-200 space-y-3 pb-20">
+                        <div className="animate-in fade-in duration-140 space-y-3 pb-20">
                             {isLoadingArchive ? (
                                 <div className="flex items-center justify-center p-16">
                                     <div className="animate-spin h-8 w-8 border-4 border-[var(--role-primary)] border-t-transparent rounded-full" />
@@ -1707,11 +1649,11 @@ const Dashboard = ({
                                     const isDoNow = session.active_question_data?.mode === 'donow';
 
                                     return (
-                                        <div key={session.id} className="card-tactile p-4 flex flex-col lg:flex-row items-center justify-between gap-4">
+                                        <div key={session.id} className="card-tactile border-l-4 border-l-[var(--role-primary)] p-4 flex flex-col lg:flex-row items-center justify-between gap-4">
                                             <div className="flex items-center gap-4 flex-1 min-w-0 w-full">
                                                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border ${
-                                                    isDoNow 
-                                                        ? 'bg-[var(--role-guide-soft)] text-[var(--role-guide-text)] border-[var(--role-guide)]/30' 
+                                                    isDoNow
+                                                        ? 'bg-[var(--role-guide-soft)] text-[var(--role-guide-text)] border-[var(--role-guide)]/30'
                                                         : 'bg-[var(--role-primary-soft)] text-[var(--role-primary-text)] border-[var(--brand-border)]'
                                                 }`}>
                                                     {isDoNow ? <LayoutGrid size={20} /> : <FileSpreadsheet size={20} />}
@@ -1738,37 +1680,37 @@ const Dashboard = ({
                                                 <div>
                                                     <span className="block text-xs font-semibold text-[var(--text-muted)]">{t.accuracy_label}</span>
                                                     <div className={`text-lg font-extrabold font-mono ${
-                                                        session.accuracy > 70 
-                                                            ? 'text-[var(--role-primary-text)]' 
-                                                            : session.accuracy > 40 
-                                                                ? 'text-[var(--role-guide-text)]' 
+                                                        session.accuracy > 70
+                                                            ? 'text-[var(--role-primary-text)]'
+                                                            : session.accuracy > 40
+                                                                ? 'text-[var(--role-guide-text)]'
                                                                 : 'text-[var(--role-attention-text)]'
                                                     }`}>
                                                         {session.accuracy}%
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
                                             <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                                                <button 
+                                                <button
                                                     type="button"
-                                                    onClick={() => onViewReport(session)} 
+                                                    onClick={() => onViewReport(session)}
                                                     className="flex-1 lg:flex-none px-3.5 py-2 bg-[var(--bg-surface)] text-[var(--text-main)] rounded-lg text-xs font-bold hover:border-[var(--role-primary)] transition-colors border border-[var(--border-strong)] cursor-pointer"
                                                 >
                                                     {t.view_report}
                                                 </button>
-                                                <button 
+                                                <button
                                                     type="button"
-                                                    onClick={() => onEdit(session)} 
-                                                    className="p-2 bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)] rounded-lg transition-colors hover:border-[var(--role-guide)] hover:text-[var(--role-guide-text)] cursor-pointer" 
+                                                    onClick={() => onEdit(session)}
+                                                    className="p-2 bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)] rounded-lg transition-colors hover:border-[var(--role-guide)] hover:text-[var(--role-guide-text)] cursor-pointer"
                                                     title={t.edit_btn}
                                                 >
                                                     <PenTool size={15} />
                                                 </button>
-                                                <button 
+                                                <button
                                                     type="button"
-                                                    onClick={() => onRelaunch(session)} 
-                                                    className="flex-1 lg:flex-none px-4 py-2 bg-[var(--role-primary)] hover:bg-[var(--role-primary-hover)] text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer"
+                                                    onClick={() => onRelaunch(session)}
+                                                    className="flex-1 lg:flex-none px-4 py-2 bg-[var(--role-primary)] hover:bg-[var(--role-primary-hover)] text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-colors cursor-pointer"
                                                 >
                                                     <RotateCcw size={13}/> {t.relaunch_btn}
                                                 </button>
@@ -1781,17 +1723,15 @@ const Dashboard = ({
                     )}
                 </main>
 
-                {/* ========================================================= */}
-                {/* ARCHITECTURAL FLOATING ACTION BAR                         */}
-                {/* ========================================================= */}
+                {/* ARCHITECTURAL FLOATING ACTION BAR */}
                 {activeTab === 'curriculum' && !isShowingStudentGateway && (
-                    <div className={`fixed bottom-6 right-6 flex justify-end pointer-events-none z-30 transition-all duration-300 ${
-                        (!diagnosticTarget && (selectedTopic || (isShowingCuratedRoadmap && nextUnfinishedStep))) 
-                            ? 'translate-y-0 opacity-100' 
+                    <div className={`fixed bottom-6 right-6 flex justify-end pointer-events-none z-30 transition-all duration-140 ${
+                        (!diagnosticTarget && (selectedTopic || (isShowingCuratedRoadmap && nextUnfinishedStep)))
+                            ? 'translate-y-0 opacity-100'
                             : 'translate-y-16 opacity-0'
                     }`}>
                         {isShowingCuratedRoadmap && nextUnfinishedStep && !hasUserManuallySelected ? (
-                            <button 
+                            <button
                                 type="button"
                                 onClick={() => {
                                     if (onStartUnitStep) {
@@ -1803,8 +1743,8 @@ const Dashboard = ({
                                     } else if (onStart) {
                                         onStart();
                                     }
-                                }} 
-                                className={`px-6 py-3.5 rounded-xl font-bold text-sm pointer-events-auto flex items-center gap-2.5 active:scale-[0.98] transition-all text-white shadow-lg cursor-pointer ${
+                                }}
+                                className={`px-6 py-3.5 rounded-xl font-bold text-sm pointer-events-auto flex items-center gap-2.5 active:scale-[0.98] transition-colors text-white shadow-lg cursor-pointer ${
                                     nextUnfinishedStep.type === 'test'
                                         ? 'bg-[var(--role-attention)] hover:opacity-95'
                                         : nextUnfinishedStep.type === 'instruction'
@@ -1828,10 +1768,10 @@ const Dashboard = ({
                                 )}
                             </button>
                         ) : (
-                            <button 
+                            <button
                                 type="button"
-                                onClick={onStart} 
-                                className="px-7 py-3.5 rounded-xl font-bold text-base pointer-events-auto flex items-center gap-3 bg-[var(--role-primary)] hover:bg-[var(--role-primary-hover)] active:scale-[0.98] transition-all text-white shadow-lg cursor-pointer"
+                                onClick={onStart}
+                                className="px-7 py-3.5 rounded-xl font-bold text-base pointer-events-auto flex items-center gap-3 bg-[var(--role-primary)] hover:bg-[var(--role-primary-hover)] active:scale-[0.98] transition-colors text-white shadow-lg cursor-pointer"
                             >
                                 <span>{t.start_btn}</span>
                                 <Play fill="currentColor" size={18} />
@@ -1840,10 +1780,9 @@ const Dashboard = ({
                     </div>
                 )}
 
-                {/* Changelog Modal */}
                 {showUpdateLog && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6">
-                        <div className="bg-[var(--bg-card)] w-full max-w-2xl max-h-[80vh] rounded-xl border border-[var(--border-strong)] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+                        <div className="bg-[var(--bg-card)] w-full max-w-2xl max-h-[80vh] rounded-xl border border-[var(--border-strong)] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-140">
                             <div className="bg-[var(--bg-surface)] px-6 py-5 border-b border-[var(--border-main)] shrink-0 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2.5 bg-[var(--role-primary-soft)] text-[var(--role-primary-text)] border border-[var(--brand-border)] rounded-lg">
@@ -1851,15 +1790,15 @@ const Dashboard = ({
                                     </div>
                                     <h2 className="text-lg font-extrabold text-[var(--text-main)]">Ändringslogg</h2>
                                 </div>
-                                <button 
+                                <button
                                     type="button"
-                                    onClick={() => setShowUpdateLog(false)} 
+                                    onClick={() => setShowUpdateLog(false)}
                                     className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors cursor-pointer"
                                 >
                                     <X size={18} />
                                 </button>
                             </div>
-                            
+
                             <div className="overflow-y-auto p-6 space-y-8 custom-scrollbar bg-[var(--bg-card)]">
                                 {APP_UPDATES.map((update) => (
                                     <div key={update.id} className="relative pl-6 border-l-2 border-[var(--border-strong)] pb-2">
@@ -1889,7 +1828,6 @@ const Dashboard = ({
                 )}
             </div>
 
-            {/* INTERACTIVE ROLE- & MODE-AWARE SPOTLIGHT WALKTHROUGH TOUR */}
             <SpotlightTour
                 steps={dashboardTourSteps}
                 isOpen={showDashboardTutorial}
@@ -1897,7 +1835,7 @@ const Dashboard = ({
                 lang={lang}
             />
 
-            <CapacityModal 
+            <CapacityModal
                 visible={showCapacityModal}
                 onClose={() => setShowCapacityModal(false)}
                 classCode={profile?.class_code}
