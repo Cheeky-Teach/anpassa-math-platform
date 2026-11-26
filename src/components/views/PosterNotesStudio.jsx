@@ -14,7 +14,9 @@ import {
   Maximize2,
   FileText,
   Presentation,
-  Lightbulb
+  Lightbulb, 
+  Lock,
+  Building2
 } from 'lucide-react';
 import QuestionSummoner from './QuestionSummoner';
 import { PRESENTATION_THEMES } from '../../constants/presentationThemes';
@@ -80,6 +82,10 @@ export default function PosterNotesStudio({
   const [writingSpace, setWritingSpace] = useState(initialConfig?.writingSpace || 'standard');
   const [blankHeightsByExample, setBlankHeightsByExample] = useState(
     initialConfig?.blankHeightsByExample || {}
+  );
+  const hasSchool = Boolean(profile?.school_id || profile?.school_name?.trim());
+  const [chosenVisibility, setChosenVisibility] = useState(
+    initialConfig?.visibility === 'school' ? 'school' : 'private'
   );
 
   // Viewport Zoom ('fit' | 'manual')
@@ -188,7 +194,16 @@ export default function PosterNotesStudio({
     if (initialConfig.blankHeightsByExample) {
       setBlankHeightsByExample(initialConfig.blankHeightsByExample);
     }
+    if (initialConfig.visibility) {
+      setChosenVisibility(initialConfig.visibility);
+    }
   }, [initialConfig]);
+
+  useEffect(() => {
+    if (!hasSchool && chosenVisibility === 'school') {
+      setChosenVisibility('private');
+    }
+  }, [hasSchool, chosenVisibility]);
 
   useEffect(() => {
     try {
@@ -275,11 +290,13 @@ export default function PosterNotesStudio({
       title: finalTitle,
       type: 'poster_notes',
       user_id: userId,
-      visibility: 'private',
+      visibility: hasSchool ? chosenVisibility : 'private',
+      school_id: profile?.school_id || null,
       school_name: profile?.school_name?.trim() || null,
       packet: { schemaVersion: 1, examples, pages },
       config: {
         schemaVersion: 1,
+        visibility: hasSchool ? chosenVisibility : 'private',
         documentMode,
         posterLayout,
         themeSkin,
@@ -874,6 +891,35 @@ export default function PosterNotesStudio({
             <Save size={13} className="text-emerald-600" />
             <span>{lang === 'sv' ? 'Spara' : 'Save'}</span>
           </button>
+
+          {hasSchool && (
+            <div className="hidden sm:flex items-center gap-0.5 bg-[var(--bg-surface)] p-0.5 rounded-xl border border-[var(--border-main)] shrink-0">
+              <button
+                type="button"
+                onClick={() => setChosenVisibility('private')}
+                title={lang === 'sv' ? 'Privat' : 'Private'}
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                  chosenVisibility === 'private'
+                    ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                <Lock size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setChosenVisibility('school')}
+                title={lang === 'sv' ? 'Dela med skolan' : 'Share with school'}
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                  chosenVisibility === 'school'
+                    ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xs border border-[var(--border-main)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                <Building2 size={12} />
+              </button>
+            </div>
+          )}
 
           {/* Handout vs. Classroom Poster Mode Switch */}
           <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] p-0.5 rounded-xl shrink-0">

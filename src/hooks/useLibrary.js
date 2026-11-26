@@ -25,6 +25,11 @@ export function useLibrary(profile = null, lang = 'sv') {
                 setFolders([]);
             }
 
+            if (libraryTab === 'school' && !profile?.school_id) {
+                setSavedSheets([]);
+                return;
+            }
+
             let query = supabase.from('saved_sheets').select('*').order('updated_at', { ascending: false });
 
             if (libraryTab === 'private') {
@@ -32,7 +37,10 @@ export function useLibrary(profile = null, lang = 'sv') {
                 if (isTrashView) query = query.not('deleted_at', 'is', null);
                 else query = query.is('deleted_at', null);
             } else if (libraryTab === 'school') {
-                query = query.eq('visibility', 'school').eq('school_name', profile?.school_name).is('deleted_at', null);
+                query = query
+                    .eq('visibility', 'school')
+                    .eq('school_id', profile.school_id)
+                    .is('deleted_at', null);
             } else {
                 query = query.eq('visibility', 'public').is('deleted_at', null);
             }
@@ -45,7 +53,7 @@ export function useLibrary(profile = null, lang = 'sv') {
         } finally {
             setIsLoading(false);
         }
-    }, [libraryTab, isTrashView, profile?.school_name]);
+    }, [libraryTab, isTrashView, profile?.school_id]);
 
     useEffect(() => {
         fetchLibrary();
@@ -109,6 +117,7 @@ export function useLibrary(profile = null, lang = 'sv') {
             type: sheet.type,
             user_id: user.id,
             visibility: 'private',
+            school_id: profile?.school_id || null,
             school_name: profile?.school_name?.trim() || null,
             packet: sheet.packet,
             config: sheet.config || {},

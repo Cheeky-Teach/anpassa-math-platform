@@ -682,6 +682,7 @@ const Dashboard = ({
                                 <Info size={12} className="text-[var(--text-muted)] shrink-0" />
                                 <span className="truncate">{t.about_link}</span>
                             </button>
+                            
                         </div>
                     </aside>
                 )}

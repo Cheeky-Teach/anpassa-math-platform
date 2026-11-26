@@ -249,6 +249,7 @@ export default function QuestionStudio({
           type: setupMode || 'worksheet',
           user_id: userId,
           visibility: chosenVisibility,
+          school_id: profile?.school_id || null,
           school_name: profile?.school_name?.trim() || null,
           packet,
           config: {

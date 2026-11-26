@@ -17,6 +17,8 @@ import WhiteboardDrawer from '../whiteboard/WhiteboardDrawer';
 import AlgebraTileTool from '../whiteboard/tools/manipulatives/AlgebraTileTool';
 import FractionShapesTool from '../whiteboard/tools/geometry/FractionShapesTool';
 import CoordinatePlaneTool from '../whiteboard/tools/analysis/CoordinatePlaneTool';
+import { StudentPrivacyBadge, PrivacyPolicyModal } from '../modals/PrivacyPolicyModal';
+import { PrivacyPolicyContent } from '../modals/PrivacyPolicyModal';
 
 // --- MOTION PRESETS ---
 const VIEWPORT_CONFIG = { once: false, amount: 0.16 };
@@ -331,6 +333,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
 
     const [showFacit, setShowFacit] = useState(false);
     const [liveMatrix, setLiveMatrix] = useState(INITIAL_LIVE_MATRIX);
+    const [showPrivacy, setShowPrivacy] = useState(false);
 
     useEffect(() => {
         const interval = setInterval(() => setTestLabToggle(prev => !prev), 3200);
@@ -684,6 +687,9 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                                         <ArrowRight size={14} />
                                     </button>
                                 </form>
+                                <div className="mt-2.5 pt-2 border-t border-slate-100">
+                                    <StudentPrivacyBadge lang={lang} compact />
+                                </div>          
                             </div>
 
                             <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 focus-within:border-amber-500 transition-colors">
@@ -718,6 +724,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                         </motion.div>
                     </div>
                 </header>
+                
 
                 {/* =========================================================================
                     BAND 1: DEDICATED GUIDED NOTES SHOWCASE (Directional Fly-In)
@@ -1627,6 +1634,11 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                                 Anpassa
                             </span>
                             <p>{t.footer_motto}</p>
+
+                            <button type="button" onClick={() => setShowPrivacy(true)} className="text-xs text-[var(--text-muted)] hover:underline">
+                            {lang === 'sv' ? 'Integritetspolicy & GDPR' : 'Privacy & Data Policy'}
+                            </button>
+                            <PrivacyPolicyModal isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} lang={lang} />
                         </div>
                     </motion.div>
                 </footer>
