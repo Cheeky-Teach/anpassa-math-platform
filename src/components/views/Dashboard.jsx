@@ -6,7 +6,7 @@ import {
   History, Target, LayoutGrid, RotateCcw, FileSpreadsheet,
   PlayCircle, Grid3X3, Beaker, Newspaper, X,
   Layers, PieChart, HelpCircle, Check, Compass, BookOpen,
-  Calculator, Variable, Shapes
+  Calculator, Variable, Shapes, ShieldCheck
 } from 'lucide-react';
 
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
@@ -24,6 +24,7 @@ import ActivityHubModal from '../activities/modals/ActivityHubModal';
 import { getActivityDefinition } from '../activities/registry/activityRegistry';
 import UnitStudyGuideBanner from '../shared/UnitStudyGuideBanner';
 import StudentGateway from './StudentGateway';
+import { PrivacyPolicyModal, PrivacyPolicyContent } from '../modals/PrivacyPolicyModal';
 import {
     getTopicDisplayName as getTopicName,
     getPartDisplayTitle,
@@ -134,6 +135,7 @@ const Dashboard = ({
     const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
     const [showActivityHub, setShowActivityHub] = useState(false);
     const [activeSetupModal, setActiveSetupModal] = useState(null);
+    const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
     const fetchPartStepSample = async (topicId, level, variationKey = null) => {
         if (!topicId) {
@@ -681,6 +683,17 @@ const Dashboard = ({
                             >
                                 <Info size={12} className="text-[var(--text-muted)] shrink-0" />
                                 <span className="truncate">{t.about_link}</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowPrivacyModal(true)}
+                                title={lang === 'sv' ? 'Integritetspolicy & GDPR' : 'Privacy & Data Policy'}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] border border-transparent hover:border-[var(--border-main)] transition-colors cursor-pointer"
+                                >
+                                <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+                                <span className="hidden md:inline">
+                                    {lang === 'sv' ? 'Integritet' : 'Privacy'}
+                                </span>
                             </button>
                             
                         </div>
@@ -1842,6 +1855,11 @@ const Dashboard = ({
                 classCode={profile?.class_code}
                 lang={lang}
             />
+            <PrivacyPolicyModal
+                isOpen={showPrivacyModal}
+                onClose={() => setShowPrivacyModal(false)}
+                lang={lang}
+                />
             <InstructionSlideModal
                 isOpen={!!activeInstructionModal}
                 onClose={() => setActiveInstructionModal(null)}
@@ -1978,6 +1996,7 @@ const Dashboard = ({
                     />
                 );
             })()}
+
         </div>
     );
 };

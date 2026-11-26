@@ -13,56 +13,84 @@ export function PrivacyPolicyContent({ lang = 'sv', contactEmail = '' }) {
   const copy = PRIVACY_POLICY_CONTENT[lang] || PRIVACY_POLICY_CONTENT.sv;
 
   return (
-    <div className="space-y-6 text-[var(--text-main)]">
+    <div className="space-y-5 text-[var(--text-main)]">
       {/* Header */}
       <div className="space-y-2">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+        <div
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-btn)] text-xs font-semibold border"
+          style={{
+            backgroundColor: 'var(--brand-bg)',
+            borderColor: 'var(--brand-border)',
+            color: 'var(--brand-text)'
+          }}
+        >
           <ShieldCheck size={14} />
           <span>{copy.badge}</span>
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{copy.title}</h2>
-        <p className="text-sm text-[var(--text-muted)] leading-relaxed">{copy.subtitle}</p>
-        <p className="text-xs text-[var(--text-muted)]">
+        <h2 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-main)]">
+          {copy.title}
+        </h2>
+        <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+          {copy.subtitle}
+        </p>
+        <p className="text-xs font-mono text-[var(--text-muted)]">
           {lang === 'sv' ? 'Senast uppdaterad:' : 'Last updated:'} {copy.lastUpdated}
         </p>
       </div>
 
-      {/* Quick Reference Box */}
-      <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-main)] p-4 sm:p-5 space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+      {/* Quick Reference Box (Uses Design System Callout) */}
+      <div className="callout callout-success space-y-2.5">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
           {copy.summaryTitle}
         </h3>
         <ul className="space-y-2">
           {copy.summaryBullets.map((bullet, idx) => (
-            <li key={idx} className="flex items-start gap-2.5 text-sm leading-snug">
-              <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+            <li key={idx} className="flex items-start gap-2.5 text-sm leading-snug text-[var(--text-main)]">
+              <CheckCircle2
+                size={16}
+                className="shrink-0 mt-0.5"
+                style={{ color: 'var(--role-primary)' }}
+              />
               <span>{bullet}</span>
             </li>
           ))}
         </ul>
       </div>
 
-      {/* Detailed Sections */}
-      <div className="space-y-4">
+      {/* Detailed White Cards */}
+      <div className="space-y-3.5">
         {copy.sections.map((section) => {
           const IconComponent = SECTION_ICONS[section.icon] || ShieldCheck;
           return (
             <section
               key={section.id}
-              className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border-main)] p-4 sm:p-5 space-y-3"
+              className="rounded-[var(--radius-card)] bg-[var(--bg-card)] border border-[var(--border-main)] p-4 sm:p-5 space-y-3"
             >
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)]">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="p-1.5 rounded-[var(--radius-btn)] border"
+                  style={{
+                    backgroundColor: 'var(--brand-bg)',
+                    borderColor: 'var(--brand-border)',
+                    color: 'var(--brand-text)'
+                  }}
+                >
                   <IconComponent size={16} />
                 </div>
-                <h3 className="text-base font-bold">{section.heading}</h3>
+                <h3 className="font-display text-base font-bold text-[var(--text-main)]">
+                  {section.heading}
+                </h3>
               </div>
 
               <div className="space-y-3 pl-1">
                 {section.items.map((item, idx) => (
                   <div key={idx} className="space-y-0.5">
-                    <p className="text-sm font-semibold">{item.label}</p>
-                    <p className="text-sm text-[var(--text-muted)] leading-relaxed">{item.text}</p>
+                    <p className="text-sm font-semibold text-[var(--text-main)]">
+                      {item.label}
+                    </p>
+                    <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+                      {item.text}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -106,15 +134,15 @@ export function PrivacyPolicyModal({ isOpen, onClose, lang = 'sv', contactEmail 
       aria-label={copy.title}
     >
       <div
-        className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-3xl bg-[var(--bg-card)] border border-[var(--border-strong)] shadow-2xl overflow-hidden"
+        className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-[var(--radius-card)] bg-[var(--bg-canvas)] border border-[var(--border-strong)] shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Close Bar */}
-        <div className="flex items-center justify-end px-5 py-3 border-b border-[var(--border-main)] bg-[var(--bg-surface)]">
+        <div className="flex items-center justify-end px-5 py-3 border-b border-[var(--border-main)] bg-[var(--bg-card)]">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-main)] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-btn)] text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] border border-transparent hover:border-[var(--border-main)] transition-colors cursor-pointer"
           >
             <span>{copy.closeLabel}</span>
             <X size={14} />
@@ -122,13 +150,14 @@ export function PrivacyPolicyModal({ isOpen, onClose, lang = 'sv', contactEmail 
         </div>
 
         {/* Scrollable Policy Body */}
-        <div className="overflow-y-auto p-5 sm:p-7">
+        <div className="overflow-y-auto p-5 sm:p-6">
           <PrivacyPolicyContent lang={lang} contactEmail={contactEmail} />
         </div>
       </div>
     </div>
   );
 }
+
 export function StudentPrivacyBadge({ lang = 'sv', contactEmail = '', compact = false }) {
   const [open, setOpen] = useState(false);
   const copy = PRIVACY_POLICY_CONTENT[lang] || PRIVACY_POLICY_CONTENT.sv;
@@ -143,22 +172,22 @@ export function StudentPrivacyBadge({ lang = 'sv', contactEmail = '', compact = 
   return (
     <>
       {compact ? (
-        <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
+        <div className="flex items-center justify-between gap-2 text-xs text-[var(--text-muted)]">
           <span className="inline-flex items-center gap-1.5 min-w-0 truncate">
-            <ShieldCheck size={13} className="text-emerald-600 shrink-0" />
+            <ShieldCheck size={13} className="shrink-0" style={{ color: 'var(--role-primary)' }} />
             <span className="truncate">{shortText}</span>
           </span>
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="text-slate-600 hover:text-emerald-700 underline underline-offset-2 font-medium shrink-0 cursor-pointer"
+            className="underline underline-offset-2 font-medium shrink-0 cursor-pointer text-[var(--text-main)] hover:opacity-80"
           >
             {shortLink}
           </button>
         </div>
       ) : (
         <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-[var(--text-muted)]">
-          <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+          <ShieldCheck size={14} className="shrink-0" style={{ color: 'var(--role-primary)' }} />
           <span>{copy.studentJoinBanner}</span>
           <button
             type="button"
